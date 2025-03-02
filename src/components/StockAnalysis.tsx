@@ -127,7 +127,7 @@ const StockAnalysis = ({ symbol }: StockAnalysisProps) => {
         </TabsContent>
         
         <TabsContent value="dcf">
-          <DCFTabContent financials={financials} symbol={symbol} />
+          <DCFTabContent symbol={symbol} stockData={financials[0]} />
         </TabsContent>
       </Tabs>
     </div>
