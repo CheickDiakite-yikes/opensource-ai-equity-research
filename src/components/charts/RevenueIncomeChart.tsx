@@ -10,7 +10,7 @@ import {
   ResponsiveContainer,
   Legend
 } from "recharts";
-import { formatCurrency } from "@/lib/utils";
+import { formatFinancialTableValue } from "@/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { motion } from "framer-motion";
 
@@ -54,7 +54,7 @@ const RevenueIncomeChart: React.FC<RevenueIncomeChartProps> = ({ data }) => {
                 tickFormatter={(value) => `$${(value / 1000000000).toFixed(0)}B`}
               />
               <Tooltip 
-                formatter={(value: number) => [formatCurrency(value), ""]}
+                formatter={(value: number) => [formatFinancialTableValue(value), ""]}
                 labelFormatter={(label) => `Year: ${label}`}
                 contentStyle={{ 
                   backgroundColor: 'rgba(255, 255, 255, 0.95)', 

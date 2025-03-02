@@ -1,7 +1,7 @@
 
 import React from "react";
 import { Card, CardHeader, CardTitle } from "@/components/ui/card";
-import { formatCurrency } from "@/lib/utils";
+import { formatFinancialTableValue } from "@/lib/utils";
 
 interface FinancialDataItem {
   year: string;
@@ -48,7 +48,7 @@ const CashFlowTable: React.FC<CashFlowTableProps> = ({ data }) => {
               <td className="pl-4">Net Income</td>
               {data.map((item) => (
                 <td key={`net-income-${item.year}`} className="text-right">
-                  {formatCurrency(item.netIncome)}
+                  {formatFinancialTableValue(item.netIncome)}
                 </td>
               ))}
             </tr>
@@ -57,7 +57,7 @@ const CashFlowTable: React.FC<CashFlowTableProps> = ({ data }) => {
               <td className="pl-4">Depreciation & Amortization</td>
               {data.map((item) => (
                 <td key={`depreciation-${item.year}`} className="text-right">
-                  {formatCurrency(item.depreciation || item.netIncome * 0.15)}
+                  {formatFinancialTableValue(item.depreciation || item.netIncome * 0.15)}
                 </td>
               ))}
             </tr>
@@ -66,7 +66,7 @@ const CashFlowTable: React.FC<CashFlowTableProps> = ({ data }) => {
               <td className="pl-4">Change in Working Capital</td>
               {data.map((item) => (
                 <td key={`working-capital-${item.year}`} className="text-right">
-                  {formatCurrency(item.changeInWorkingCapital || item.netIncome * 0.05)}
+                  {formatFinancialTableValue(item.changeInWorkingCapital || item.netIncome * 0.05)}
                 </td>
               ))}
             </tr>
@@ -75,7 +75,7 @@ const CashFlowTable: React.FC<CashFlowTableProps> = ({ data }) => {
               <td className="font-medium pl-2">Cash Flow from Operations</td>
               {data.map((item) => (
                 <td key={`cf-operations-${item.year}`} className="text-right font-medium">
-                  {formatCurrency(item.operatingCashFlow || item.netIncome * 1.2)}
+                  {formatFinancialTableValue(item.operatingCashFlow || item.netIncome * 1.2)}
                 </td>
               ))}
             </tr>
@@ -91,7 +91,7 @@ const CashFlowTable: React.FC<CashFlowTableProps> = ({ data }) => {
               <td className="pl-4">Capital Expenditures</td>
               {data.map((item) => (
                 <td key={`capex-${item.year}`} className="text-right">
-                  {formatCurrency((item.capitalExpenditure || item.netIncome * -0.3) * -1)}
+                  {formatFinancialTableValue((item.capitalExpenditure || item.netIncome * -0.3) * -1)}
                 </td>
               ))}
             </tr>
@@ -100,7 +100,7 @@ const CashFlowTable: React.FC<CashFlowTableProps> = ({ data }) => {
               <td className="font-medium pl-2">Cash Flow from Investing</td>
               {data.map((item) => (
                 <td key={`cf-investing-${item.year}`} className="text-right font-medium">
-                  {formatCurrency(item.investmentCashFlow || item.netIncome * -0.35)}
+                  {formatFinancialTableValue(item.investmentCashFlow || item.netIncome * -0.35)}
                 </td>
               ))}
             </tr>
@@ -116,7 +116,7 @@ const CashFlowTable: React.FC<CashFlowTableProps> = ({ data }) => {
               <td className="font-medium pl-2">Cash Flow from Financing</td>
               {data.map((item) => (
                 <td key={`cf-financing-${item.year}`} className="text-right font-medium">
-                  {formatCurrency(item.financingCashFlow || item.netIncome * -0.5)}
+                  {formatFinancialTableValue(item.financingCashFlow || item.netIncome * -0.5)}
                 </td>
               ))}
             </tr>
@@ -125,7 +125,7 @@ const CashFlowTable: React.FC<CashFlowTableProps> = ({ data }) => {
               <td className="font-medium">NET CHANGE IN CASH</td>
               {data.map((item) => (
                 <td key={`net-change-cash-${item.year}`} className="text-right font-semibold">
-                  {formatCurrency(item.netChangeInCash || 
+                  {formatFinancialTableValue(item.netChangeInCash || 
                     (item.operatingCashFlow || item.netIncome * 1.2) + 
                     (item.investmentCashFlow || item.netIncome * -0.35) + 
                     (item.financingCashFlow || item.netIncome * -0.5)
@@ -138,7 +138,7 @@ const CashFlowTable: React.FC<CashFlowTableProps> = ({ data }) => {
               <td className="font-medium">FREE CASH FLOW</td>
               {data.map((item) => (
                 <td key={`free-cash-flow-${item.year}`} className="text-right font-semibold">
-                  {formatCurrency(item.freeCashFlow || 
+                  {formatFinancialTableValue(item.freeCashFlow || 
                     (item.operatingCashFlow || item.netIncome * 1.2) + 
                     (item.capitalExpenditure || item.netIncome * -0.3)
                   )}

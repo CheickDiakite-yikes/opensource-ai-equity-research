@@ -1,7 +1,7 @@
 
 import React from "react";
 import { Card, CardHeader, CardTitle } from "@/components/ui/card";
-import { formatCurrency } from "@/lib/utils";
+import { formatFinancialTableValue } from "@/lib/utils";
 
 interface FinancialDataItem {
   year: string;
@@ -56,7 +56,7 @@ const BalanceSheetTable: React.FC<BalanceSheetTableProps> = ({ data }) => {
               <td className="pl-4">Cash & Equivalents</td>
               {data.map((item) => (
                 <td key={`cash-${item.year}`} className="text-right">
-                  {formatCurrency(item.cashAndCashEquivalents || 0)}
+                  {formatFinancialTableValue(item.cashAndCashEquivalents || 0)}
                 </td>
               ))}
             </tr>
@@ -65,7 +65,7 @@ const BalanceSheetTable: React.FC<BalanceSheetTableProps> = ({ data }) => {
               <td className="pl-4">Short-Term Investments</td>
               {data.map((item) => (
                 <td key={`short-investments-${item.year}`} className="text-right">
-                  {formatCurrency(item.shortTermInvestments || 0)}
+                  {formatFinancialTableValue(item.shortTermInvestments || 0)}
                 </td>
               ))}
             </tr>
@@ -74,7 +74,7 @@ const BalanceSheetTable: React.FC<BalanceSheetTableProps> = ({ data }) => {
               <td className="pl-4">Accounts Receivable</td>
               {data.map((item) => (
                 <td key={`receivables-${item.year}`} className="text-right">
-                  {formatCurrency(item.accountsReceivable || 0)}
+                  {formatFinancialTableValue(item.accountsReceivable || 0)}
                 </td>
               ))}
             </tr>
@@ -83,7 +83,7 @@ const BalanceSheetTable: React.FC<BalanceSheetTableProps> = ({ data }) => {
               <td className="pl-4">Inventory</td>
               {data.map((item) => (
                 <td key={`inventory-${item.year}`} className="text-right">
-                  {formatCurrency(item.inventory || 0)}
+                  {formatFinancialTableValue(item.inventory || 0)}
                 </td>
               ))}
             </tr>
@@ -92,7 +92,7 @@ const BalanceSheetTable: React.FC<BalanceSheetTableProps> = ({ data }) => {
               <td className="font-medium pl-2">Total Current Assets</td>
               {data.map((item) => (
                 <td key={`total-current-assets-${item.year}`} className="text-right font-medium">
-                  {formatCurrency(item.totalCurrentAssets || 0)}
+                  {formatFinancialTableValue(item.totalCurrentAssets || 0)}
                 </td>
               ))}
             </tr>
@@ -101,7 +101,7 @@ const BalanceSheetTable: React.FC<BalanceSheetTableProps> = ({ data }) => {
               <td className="pl-4">Property, Plant & Equipment</td>
               {data.map((item) => (
                 <td key={`ppe-${item.year}`} className="text-right">
-                  {formatCurrency(item.propertyPlantEquipment || 0)}
+                  {formatFinancialTableValue(item.propertyPlantEquipment || 0)}
                 </td>
               ))}
             </tr>
@@ -110,7 +110,7 @@ const BalanceSheetTable: React.FC<BalanceSheetTableProps> = ({ data }) => {
               <td className="pl-4">Long-Term Investments</td>
               {data.map((item) => (
                 <td key={`long-investments-${item.year}`} className="text-right">
-                  {formatCurrency(item.longTermInvestments || 0)}
+                  {formatFinancialTableValue(item.longTermInvestments || 0)}
                 </td>
               ))}
             </tr>
@@ -119,7 +119,7 @@ const BalanceSheetTable: React.FC<BalanceSheetTableProps> = ({ data }) => {
               <td className="pl-4">Intangible Assets</td>
               {data.map((item) => (
                 <td key={`intangibles-${item.year}`} className="text-right">
-                  {formatCurrency(item.intangibleAssets || 0)}
+                  {formatFinancialTableValue(item.intangibleAssets || 0)}
                 </td>
               ))}
             </tr>
@@ -128,7 +128,7 @@ const BalanceSheetTable: React.FC<BalanceSheetTableProps> = ({ data }) => {
               <td className="font-medium pl-2">Total Non-Current Assets</td>
               {data.map((item) => (
                 <td key={`total-non-current-assets-${item.year}`} className="text-right font-medium">
-                  {formatCurrency(item.totalNonCurrentAssets || 0)}
+                  {formatFinancialTableValue(item.totalNonCurrentAssets || 0)}
                 </td>
               ))}
             </tr>
@@ -137,7 +137,7 @@ const BalanceSheetTable: React.FC<BalanceSheetTableProps> = ({ data }) => {
               <td className="font-medium">TOTAL ASSETS</td>
               {data.map((item) => (
                 <td key={`total-assets-${item.year}`} className="text-right font-semibold">
-                  {formatCurrency(item.totalAssets)}
+                  {formatFinancialTableValue(item.totalAssets)}
                 </td>
               ))}
             </tr>
@@ -153,7 +153,7 @@ const BalanceSheetTable: React.FC<BalanceSheetTableProps> = ({ data }) => {
               <td className="pl-4">Accounts Payable</td>
               {data.map((item) => (
                 <td key={`payables-${item.year}`} className="text-right">
-                  {formatCurrency(item.accountsPayable || 0)}
+                  {formatFinancialTableValue(item.accountsPayable || 0)}
                 </td>
               ))}
             </tr>
@@ -162,7 +162,7 @@ const BalanceSheetTable: React.FC<BalanceSheetTableProps> = ({ data }) => {
               <td className="pl-4">Short-Term Debt</td>
               {data.map((item) => (
                 <td key={`short-debt-${item.year}`} className="text-right">
-                  {formatCurrency(item.shortTermDebt || 0)}
+                  {formatFinancialTableValue(item.shortTermDebt || 0)}
                 </td>
               ))}
             </tr>
@@ -171,7 +171,7 @@ const BalanceSheetTable: React.FC<BalanceSheetTableProps> = ({ data }) => {
               <td className="font-medium pl-2">Total Current Liabilities</td>
               {data.map((item) => (
                 <td key={`total-current-liabilities-${item.year}`} className="text-right font-medium">
-                  {formatCurrency(item.totalCurrentLiabilities || 0)}
+                  {formatFinancialTableValue(item.totalCurrentLiabilities || 0)}
                 </td>
               ))}
             </tr>
@@ -180,7 +180,7 @@ const BalanceSheetTable: React.FC<BalanceSheetTableProps> = ({ data }) => {
               <td className="pl-4">Long-Term Debt</td>
               {data.map((item) => (
                 <td key={`long-debt-${item.year}`} className="text-right">
-                  {formatCurrency(item.longTermDebt || 0)}
+                  {formatFinancialTableValue(item.longTermDebt || 0)}
                 </td>
               ))}
             </tr>
@@ -189,7 +189,7 @@ const BalanceSheetTable: React.FC<BalanceSheetTableProps> = ({ data }) => {
               <td className="font-medium pl-2">Total Non-Current Liabilities</td>
               {data.map((item) => (
                 <td key={`total-non-current-liabilities-${item.year}`} className="text-right font-medium">
-                  {formatCurrency(item.totalNonCurrentLiabilities || 0)}
+                  {formatFinancialTableValue(item.totalNonCurrentLiabilities || 0)}
                 </td>
               ))}
             </tr>
@@ -198,7 +198,7 @@ const BalanceSheetTable: React.FC<BalanceSheetTableProps> = ({ data }) => {
               <td className="font-medium">TOTAL LIABILITIES</td>
               {data.map((item) => (
                 <td key={`total-liabilities-${item.year}`} className="text-right font-semibold">
-                  {formatCurrency(item.totalLiabilities)}
+                  {formatFinancialTableValue(item.totalLiabilities)}
                 </td>
               ))}
             </tr>
@@ -207,7 +207,7 @@ const BalanceSheetTable: React.FC<BalanceSheetTableProps> = ({ data }) => {
               <td className="font-medium">TOTAL EQUITY</td>
               {data.map((item) => (
                 <td key={`total-equity-${item.year}`} className="text-right font-semibold">
-                  {formatCurrency(item.totalEquity)}
+                  {formatFinancialTableValue(item.totalEquity)}
                 </td>
               ))}
             </tr>
@@ -216,7 +216,7 @@ const BalanceSheetTable: React.FC<BalanceSheetTableProps> = ({ data }) => {
               <td className="font-medium">TOTAL LIABILITIES & EQUITY</td>
               {data.map((item) => (
                 <td key={`total-liabilities-equity-${item.year}`} className="text-right font-semibold">
-                  {formatCurrency(item.totalLiabilities + item.totalEquity)}
+                  {formatFinancialTableValue(item.totalLiabilities + item.totalEquity)}
                 </td>
               ))}
             </tr>

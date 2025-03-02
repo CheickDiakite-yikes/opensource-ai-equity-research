@@ -33,6 +33,24 @@ export function formatLargeNumber(value: number): string {
   return formatCurrency(value);
 }
 
+// Improved function for financial tables to format in billions/millions
+export function formatFinancialTableValue(value: number): string {
+  if (Math.abs(value) >= 1_000_000_000) {
+    return `$${(value / 1_000_000_000).toFixed(2)}B`;
+  } else if (Math.abs(value) >= 1_000_000) {
+    return `$${(value / 1_000_000).toFixed(2)}M`;
+  } else if (Math.abs(value) >= 1_000) {
+    return `$${(value / 1_000).toFixed(1)}K`;
+  }
+
+  return formatCurrency(value);
+}
+
+// Format ratios and multiples with "x" suffix
+export function formatMultiple(value: number): string {
+  return `${value.toFixed(2)}x`;
+}
+
 export function formatPercentage(value: number): string {
   return `${value.toFixed(2)}%`;
 }
@@ -99,7 +117,7 @@ export function debounce<F extends (...args: any[]) => any>(
   };
 }
 
-// Adding the missing formatDate function
+// Formatting date for display
 export function formatDate(dateString: string): string {
   if (!dateString) return '';
   
@@ -113,7 +131,7 @@ export function formatDate(dateString: string): string {
   });
 }
 
-// Adding the missing generateReportHTML function
+// Generate HTML for reports
 export function generateReportHTML(title: string, content: string): string {
   return `
     <!DOCTYPE html>
