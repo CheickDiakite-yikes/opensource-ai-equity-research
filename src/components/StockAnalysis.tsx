@@ -2,12 +2,20 @@
 import { useState, useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card } from "@/components/ui/card";
-import { fetchIncomeStatements, fetchBalanceSheets, fetchKeyRatios } from "@/services/api";
-import type { IncomeStatement, BalanceSheet, KeyRatio } from "@/types";
+import { 
+  fetchIncomeStatements, 
+  fetchBalanceSheets, 
+  fetchKeyRatios,
+  fetchCashFlowStatements
+} from "@/services/api";
+import type { IncomeStatement, BalanceSheet, KeyRatio, CashFlowStatement } from "@/types";
 import LoadingSkeleton from "@/components/LoadingSkeleton";
 import FinancialsTabContent from "@/components/sections/FinancialsTabContent";
+import BalanceSheetTabContent from "@/components/sections/BalanceSheetTabContent";
+import CashFlowTabContent from "@/components/sections/CashFlowTabContent";
 import RatiosTabContent from "@/components/sections/RatiosTabContent";
 import GrowthTabContent from "@/components/sections/GrowthTabContent";
+import DCFTabContent from "@/components/sections/DCFTabContent";
 import { prepareFinancialData, prepareRatioData } from "@/utils/financialDataUtils";
 
 interface StockAnalysisProps {
@@ -19,6 +27,7 @@ const StockAnalysis = ({ symbol }: StockAnalysisProps) => {
   const [error, setError] = useState<string | null>(null);
   const [income, setIncome] = useState<IncomeStatement[]>([]);
   const [balance, setBalance] = useState<BalanceSheet[]>([]);
+  const [cashflow, setCashflow] = useState<CashFlowStatement[]>([]);
   const [ratios, setRatios] = useState<KeyRatio[]>([]);
 
   useEffect(() => {
@@ -27,9 +36,10 @@ const StockAnalysis = ({ symbol }: StockAnalysisProps) => {
         setIsLoading(true);
         setError(null);
         
-        const [incomeData, balanceData, ratiosData] = await Promise.all([
+        const [incomeData, balanceData, cashflowData, ratiosData] = await Promise.all([
           fetchIncomeStatements(symbol),
           fetchBalanceSheets(symbol),
+          fetchCashFlowStatements(symbol),
           fetchKeyRatios(symbol)
         ]);
         
@@ -41,12 +51,17 @@ const StockAnalysis = ({ symbol }: StockAnalysisProps) => {
           new Date(b.date).getTime() - new Date(a.date).getTime()
         );
         
+        const sortedCashflow = [...cashflowData].sort((a, b) => 
+          new Date(b.date).getTime() - new Date(a.date).getTime()
+        );
+        
         const sortedRatios = [...ratiosData].sort((a, b) => 
           new Date(b.date).getTime() - new Date(a.date).getTime()
         );
         
         setIncome(sortedIncome);
         setBalance(sortedBalance);
+        setCashflow(sortedCashflow);
         setRatios(sortedRatios);
       } catch (err) {
         console.error("Error fetching financial data:", err);
@@ -61,7 +76,7 @@ const StockAnalysis = ({ symbol }: StockAnalysisProps) => {
     }
   }, [symbol]);
 
-  const financials = prepareFinancialData(income, balance);
+  const financials = prepareFinancialData(income, balance, cashflow);
   const ratioData = prepareRatioData(ratios);
 
   if (isLoading) {
@@ -81,15 +96,26 @@ const StockAnalysis = ({ symbol }: StockAnalysisProps) => {
 
   return (
     <div className="space-y-6">
-      <Tabs defaultValue="financials" className="w-full">
-        <TabsList>
-          <TabsTrigger value="financials">Financial Statements</TabsTrigger>
+      <Tabs defaultValue="income-statement" className="w-full">
+        <TabsList className="grid grid-cols-3 md:grid-cols-6 mb-6">
+          <TabsTrigger value="income-statement">Income Statement</TabsTrigger>
+          <TabsTrigger value="balance-sheet">Balance Sheet</TabsTrigger>
+          <TabsTrigger value="cash-flow">Cash Flow</TabsTrigger>
           <TabsTrigger value="ratios">Financial Ratios</TabsTrigger>
           <TabsTrigger value="growth">Growth Analysis</TabsTrigger>
+          <TabsTrigger value="dcf">DCF Valuation</TabsTrigger>
         </TabsList>
         
-        <TabsContent value="financials">
+        <TabsContent value="income-statement">
           <FinancialsTabContent financials={financials} />
+        </TabsContent>
+        
+        <TabsContent value="balance-sheet">
+          <BalanceSheetTabContent financials={financials} />
+        </TabsContent>
+        
+        <TabsContent value="cash-flow">
+          <CashFlowTabContent financials={financials} />
         </TabsContent>
         
         <TabsContent value="ratios">
@@ -98,6 +124,10 @@ const StockAnalysis = ({ symbol }: StockAnalysisProps) => {
         
         <TabsContent value="growth">
           <GrowthTabContent financials={financials} />
+        </TabsContent>
+        
+        <TabsContent value="dcf">
+          <DCFTabContent financials={financials} symbol={symbol} />
         </TabsContent>
       </Tabs>
     </div>

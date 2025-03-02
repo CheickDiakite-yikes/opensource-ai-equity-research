@@ -1,5 +1,5 @@
 
-import type { IncomeStatement, BalanceSheet, KeyRatio } from "@/types";
+import type { IncomeStatement, BalanceSheet, KeyRatio, CashFlowStatement } from "@/types";
 import { formatCurrency } from "@/lib/utils";
 
 /**
@@ -7,16 +7,20 @@ import { formatCurrency } from "@/lib/utils";
  */
 export const prepareFinancialData = (
   income: IncomeStatement[], 
-  balance: BalanceSheet[]
+  balance: BalanceSheet[],
+  cashflow: CashFlowStatement[] = []
 ) => {
   if (income.length === 0) return [];
   
   return income.map((inc, index) => {
     const bal = balance[index] || {} as Partial<BalanceSheet>;
+    const cf = cashflow[index] || {} as Partial<CashFlowStatement>;
+    
     const year = new Date(inc.date).getFullYear().toString();
     
     return {
       year,
+      // Income Statement data
       revenue: inc.revenue,
       costOfRevenue: inc.costOfRevenue,
       grossProfit: inc.grossProfit,
@@ -24,9 +28,35 @@ export const prepareFinancialData = (
       operatingIncome: inc.operatingIncome,
       netIncome: inc.netIncome,
       eps: inc.eps,
+      
+      // Balance Sheet data
       totalAssets: bal.totalAssets || 0,
       totalLiabilities: bal.totalLiabilities || 0,
-      totalEquity: bal.totalStockholdersEquity || 0
+      totalEquity: bal.totalStockholdersEquity || 0,
+      cashAndCashEquivalents: bal.cashAndCashEquivalents || 0,
+      shortTermInvestments: bal.shortTermInvestments || 0,
+      accountsReceivable: bal.netReceivables || 0,
+      inventory: bal.inventory || 0,
+      totalCurrentAssets: bal.totalCurrentAssets || 0,
+      propertyPlantEquipment: bal.propertyPlantEquipmentNet || 0,
+      longTermInvestments: bal.longTermInvestments || 0,
+      intangibleAssets: bal.intangibleAssets || 0,
+      totalNonCurrentAssets: bal.totalNonCurrentAssets || 0,
+      accountsPayable: bal.accountPayables || 0,
+      shortTermDebt: bal.shortTermDebt || 0,
+      totalCurrentLiabilities: bal.totalCurrentLiabilities || 0,
+      longTermDebt: bal.longTermDebt || 0,
+      totalNonCurrentLiabilities: bal.totalNonCurrentLiabilities || 0,
+      
+      // Cash Flow data
+      operatingCashFlow: cf.operatingCashFlow || 0,
+      capitalExpenditure: cf.capitalExpenditure || 0,
+      freeCashFlow: cf.freeCashFlow || 0,
+      depreciation: cf.depreciationAndAmortization || 0,
+      changeInWorkingCapital: cf.changeInWorkingCapital || 0,
+      investmentCashFlow: cf.netCashUsedForInvestingActivites || 0,
+      financingCashFlow: cf.netCashUsedProvidedByFinancingActivities || 0,
+      netChangeInCash: cf.netChangeInCash || 0
     };
   });
 };
@@ -102,5 +132,20 @@ export const compareToIndustry = (value: number, industryAvg: number) => {
     return `Below Industry Average (${industryAvg.toFixed(1)}%)`;
   } else {
     return `At Industry Average (${industryAvg.toFixed(1)}%)`;
+  }
+};
+
+/**
+ * Format large numbers for display
+ */
+export const formatFinancialValue = (value: number): string => {
+  if (Math.abs(value) >= 1000000000) {
+    return `$${(value / 1000000000).toFixed(2)}B`;
+  } else if (Math.abs(value) >= 1000000) {
+    return `$${(value / 1000000).toFixed(2)}M`;
+  } else if (Math.abs(value) >= 1000) {
+    return `$${(value / 1000).toFixed(2)}K`;
+  } else {
+    return `$${value.toFixed(2)}`;
   }
 };

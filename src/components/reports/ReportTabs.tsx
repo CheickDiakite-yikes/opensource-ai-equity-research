@@ -1,11 +1,12 @@
 
 import React from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { FileText, TrendingUp, Info } from "lucide-react";
+import { FileText, TrendingUp, Info, Download, ArrowUp, ArrowDown } from "lucide-react";
 import { ResearchReport, StockPrediction } from "@/types";
 import ResearchReportDisplay from "./ResearchReportDisplay";
 import PricePredictionDisplay from "./PricePredictionDisplay";
 import { cn } from "@/lib/utils";
+import { motion } from "framer-motion";
 
 interface ReportTabsProps {
   report: ResearchReport | null;
@@ -15,19 +16,40 @@ interface ReportTabsProps {
 const ReportTabs: React.FC<ReportTabsProps> = ({ report, prediction }) => {
   if (!report && !prediction) {
     return (
-      <div className="flex flex-col items-center justify-center p-8 text-center rounded-lg border border-dashed border-muted-foreground/30 bg-muted/10">
-        <Info className="h-12 w-12 text-muted-foreground mb-4" />
-        <h3 className="text-lg font-medium mb-2">No Reports Generated</h3>
-        <p className="text-sm text-muted-foreground max-w-md">
-          Generate a research report or price prediction to see detailed analysis here.
-        </p>
+      <div className="flex flex-col items-center justify-center p-10 text-center rounded-lg border border-dashed border-muted-foreground/30 bg-muted/10 h-80">
+        <motion.div 
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+        >
+          <Info className="h-14 w-14 text-muted-foreground mb-5" />
+          <h3 className="text-xl font-medium mb-3">No Reports Generated</h3>
+          <p className="text-muted-foreground max-w-md mx-auto mb-6">
+            Generate a research report or price prediction to see detailed analysis here.
+            These AI-powered reports provide comprehensive insights into the stock's fundamentals and future prospects.
+          </p>
+          
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mt-4">
+            <div className="flex items-center gap-2 p-3 rounded-lg bg-primary/5 border border-primary/10 text-sm">
+              <FileText className="h-4 w-4 text-primary" />
+              <span>Research Reports</span>
+              <ArrowUp className="h-3 w-3 text-primary" />
+            </div>
+            
+            <div className="flex items-center gap-2 p-3 rounded-lg bg-primary/5 border border-primary/10 text-sm">
+              <TrendingUp className="h-4 w-4 text-primary" />
+              <span>Price Predictions</span>
+              <ArrowUp className="h-3 w-3 text-primary" />
+            </div>
+          </div>
+        </motion.div>
       </div>
     );
   }
   
   return (
     <Tabs defaultValue={report ? "report" : "prediction"} className="w-full">
-      <TabsList className="grid w-full grid-cols-2 p-1 mb-2">
+      <TabsList className="grid w-full grid-cols-2 p-1 mb-4">
         <TabsTrigger 
           value="report" 
           disabled={!report}
@@ -38,6 +60,11 @@ const ReportTabs: React.FC<ReportTabsProps> = ({ report, prediction }) => {
         >
           <FileText className="h-4 w-4" />
           <span>Research Report</span>
+          {report && (
+            <span className="ml-2 inline-flex items-center justify-center rounded-full bg-primary/10 text-primary text-xs font-medium h-5 w-5">
+              1
+            </span>
+          )}
         </TabsTrigger>
         <TabsTrigger 
           value="prediction" 
@@ -49,15 +76,36 @@ const ReportTabs: React.FC<ReportTabsProps> = ({ report, prediction }) => {
         >
           <TrendingUp className="h-4 w-4" />
           <span>Price Prediction</span>
+          {prediction && (
+            <span className="ml-2 inline-flex items-center justify-center rounded-full bg-primary/10 text-primary text-xs font-medium h-5 w-5">
+              1
+            </span>
+          )}
         </TabsTrigger>
       </TabsList>
       
       <TabsContent value="report" className="mt-6 animate-fade-in">
-        {report && <ResearchReportDisplay report={report} />}
+        {report && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.5 }}
+          >
+            <ResearchReportDisplay report={report} />
+          </motion.div>
+        )}
       </TabsContent>
       
       <TabsContent value="prediction" className="mt-6 animate-fade-in">
-        {prediction && <PricePredictionDisplay prediction={prediction} />}
+        {prediction && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.5 }}
+          >
+            <PricePredictionDisplay prediction={prediction} />
+          </motion.div>
+        )}
       </TabsContent>
     </Tabs>
   );

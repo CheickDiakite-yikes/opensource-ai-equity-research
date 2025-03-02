@@ -1,6 +1,6 @@
 
-import { useState } from "react";
-import { Card } from "@/components/ui/card";
+import { useState, useEffect } from "react";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { 
   Search, 
   BarChart4, 
@@ -11,7 +11,13 @@ import {
   ArrowRight,
   Info,
   Briefcase,
-  Sparkles
+  Sparkles,
+  Globe,
+  TrendingDown,
+  Star,
+  CheckCircle2,
+  BarChart,
+  Shield
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -20,16 +26,45 @@ import StockOverview from "@/components/StockOverview";
 import StockAnalysis from "@/components/StockAnalysis";
 import ResearchReportGenerator from "@/components/ResearchReportGenerator";
 import { cn } from "@/lib/utils";
+import { motion } from "framer-motion";
 
 const Index = () => {
   const [symbol, setSymbol] = useState<string>("");
   const [searchedSymbol, setSearchedSymbol] = useState<string>("");
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [recentSearches, setRecentSearches] = useState<string[]>([]);
+  const [featuredSymbols] = useState<{symbol: string, name: string}[]>([
+    { symbol: "AAPL", name: "Apple Inc." },
+    { symbol: "MSFT", name: "Microsoft Corp." },
+    { symbol: "AMZN", name: "Amazon.com Inc." },
+    { symbol: "GOOG", name: "Alphabet Inc." },
+    { symbol: "META", name: "Meta Platforms Inc." },
+    { symbol: "TSLA", name: "Tesla Inc." }
+  ]);
+
+  // Load recent searches from localStorage on component mount
+  useEffect(() => {
+    const savedSearches = localStorage.getItem('recentSearches');
+    if (savedSearches) {
+      setRecentSearches(JSON.parse(savedSearches));
+    }
+  }, []);
 
   const handleSearch = () => {
     if (!symbol.trim()) return;
+    
+    const symbolUpperCase = symbol.toUpperCase();
     setIsLoading(true);
-    setSearchedSymbol(symbol.toUpperCase());
+    setSearchedSymbol(symbolUpperCase);
+    
+    // Update recent searches
+    const updatedSearches = [
+      symbolUpperCase,
+      ...recentSearches.filter(s => s !== symbolUpperCase)
+    ].slice(0, 5); // Keep only the 5 most recent
+    
+    setRecentSearches(updatedSearches);
+    localStorage.setItem('recentSearches', JSON.stringify(updatedSearches));
     
     setTimeout(() => {
       setIsLoading(false);
@@ -40,6 +75,25 @@ const Index = () => {
     if (e.key === "Enter") {
       handleSearch();
     }
+  };
+
+  const clearSearch = () => {
+    setSearchedSymbol("");
+    setSymbol("");
+  };
+
+  const searchSymbol = (sym: string) => {
+    setSymbol(sym);
+    setSearchedSymbol(sym);
+    
+    // Update recent searches
+    const updatedSearches = [
+      sym,
+      ...recentSearches.filter(s => s !== sym)
+    ].slice(0, 5);
+    
+    setRecentSearches(updatedSearches);
+    localStorage.setItem('recentSearches', JSON.stringify(updatedSearches));
   };
 
   return (
@@ -65,7 +119,7 @@ const Index = () => {
             </div>
             <Button 
               onClick={handleSearch} 
-              disabled={isLoading} 
+              disabled={isLoading || !symbol.trim()} 
               size="sm"
               className="gap-1"
             >
@@ -85,40 +139,72 @@ const Index = () => {
       {/* Main Content */}
       <main className="container mx-auto p-6">
         {!searchedSymbol ? (
-          <div className="space-y-8 my-12">
-            <div className="text-center max-w-2xl mx-auto">
-              <h2 className="text-2xl font-bold mb-3">AI-Powered Stock Analysis</h2>
-              <p className="text-muted-foreground">
-                Utilize advanced AI tools to analyze stocks, generate comprehensive reports, 
-                and predict price movements with greater accuracy.
-              </p>
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            className="space-y-10 my-12"
+          >
+            <div className="text-center max-w-3xl mx-auto">
+              <motion.div
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 0.1, duration: 0.5 }}
+              >
+                <h2 className="text-3xl font-bold mb-4">AI-Powered Stock Analysis Platform</h2>
+                <p className="text-muted-foreground text-lg">
+                  Utilize advanced AI tools to analyze stocks, generate comprehensive reports, 
+                  and predict price movements with greater accuracy.
+                </p>
+              </motion.div>
             </div>
             
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-              <Card className="p-6 hover:shadow-md transition-all duration-300 hover:translate-y-[-4px] border-border/50 bg-card/40 backdrop-blur-sm">
-                <div className="flex items-start gap-4">
-                  <div className="p-2 bg-primary/10 rounded-full">
-                    <Search className="h-6 w-6 text-primary" />
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-medium">Search Companies</h3>
-                    <p className="text-muted-foreground mt-1 text-sm">
-                      Enter a stock ticker symbol to begin your research
-                    </p>
-                  </div>
-                </div>
-              </Card>
-              
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2, duration: 0.5 }}
+            >
+              <h3 className="text-lg font-medium mb-4 flex items-center gap-2">
+                <Star className="h-5 w-5 text-primary" />
+                Featured Companies
+              </h3>
+              <div className="grid gap-4 grid-cols-2 sm:grid-cols-3 lg:grid-cols-6">
+                {featuredSymbols.map((item) => (
+                  <Card 
+                    key={item.symbol}
+                    className="cursor-pointer hover:border-primary/50 transition-all duration-200"
+                    onClick={() => searchSymbol(item.symbol)}
+                  >
+                    <CardContent className="p-4 text-center">
+                      <div className="font-bold text-lg">{item.symbol}</div>
+                      <div className="text-sm text-muted-foreground">{item.name}</div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </motion.div>
+            
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3, duration: 0.5 }}
+              className="grid gap-6 md:grid-cols-3"
+            >
               <Card className="p-6 hover:shadow-md transition-all duration-300 hover:translate-y-[-4px] border-border/50 bg-card/40 backdrop-blur-sm">
                 <div className="flex items-start gap-4">
                   <div className="p-2 bg-primary/10 rounded-full">
                     <BarChart4 className="h-6 w-6 text-primary" />
                   </div>
                   <div>
-                    <h3 className="text-lg font-medium">Analyze Fundamentals</h3>
+                    <h3 className="text-lg font-medium">Comprehensive Analysis</h3>
                     <p className="text-muted-foreground mt-1 text-sm">
-                      Get comprehensive financial data and analysis
+                      Access detailed financial data including income statements, balance sheets, cash flows, and key ratios
                     </p>
+                    <div className="flex flex-wrap gap-2 mt-3">
+                      <span className="px-2 py-0.5 bg-muted text-xs rounded-full">Financial Ratios</span>
+                      <span className="px-2 py-0.5 bg-muted text-xs rounded-full">Growth Analysis</span>
+                      <span className="px-2 py-0.5 bg-muted text-xs rounded-full">DCF Valuation</span>
+                    </div>
                   </div>
                 </div>
               </Card>
@@ -129,19 +215,75 @@ const Index = () => {
                     <FileText className="h-6 w-6 text-primary" />
                   </div>
                   <div>
-                    <h3 className="text-lg font-medium">Generate Reports</h3>
+                    <h3 className="text-lg font-medium">AI Research Reports</h3>
                     <p className="text-muted-foreground mt-1 text-sm">
-                      Create detailed AI-powered equity research reports
+                      Generate detailed research reports with investment theses, valuation models, and recommendations
                     </p>
+                    <div className="flex flex-wrap gap-2 mt-3">
+                      <span className="px-2 py-0.5 bg-muted text-xs rounded-full">Investment Analysis</span>
+                      <span className="px-2 py-0.5 bg-muted text-xs rounded-full">Risk Assessment</span>
+                      <span className="px-2 py-0.5 bg-muted text-xs rounded-full">Recommendations</span>
+                    </div>
                   </div>
                 </div>
               </Card>
-            </div>
+              
+              <Card className="p-6 hover:shadow-md transition-all duration-300 hover:translate-y-[-4px] border-border/50 bg-card/40 backdrop-blur-sm">
+                <div className="flex items-start gap-4">
+                  <div className="p-2 bg-primary/10 rounded-full">
+                    <TrendingUp className="h-6 w-6 text-primary" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-medium">Price Predictions</h3>
+                    <p className="text-muted-foreground mt-1 text-sm">
+                      Get AI-powered stock price forecasts with potential upside/downside and confidence levels
+                    </p>
+                    <div className="flex flex-wrap gap-2 mt-3">
+                      <span className="px-2 py-0.5 bg-muted text-xs rounded-full">Short-Term</span>
+                      <span className="px-2 py-0.5 bg-muted text-xs rounded-full">Mid-Term</span>
+                      <span className="px-2 py-0.5 bg-muted text-xs rounded-full">Long-Term</span>
+                    </div>
+                  </div>
+                </div>
+              </Card>
+            </motion.div>
             
-            <div className="max-w-2xl mx-auto mt-12 p-4 rounded-lg border border-dashed border-primary/30 bg-primary/5">
+            {recentSearches.length > 0 && (
+              <motion.div 
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.4, duration: 0.5 }}
+              >
+                <h3 className="text-lg font-medium mb-4 flex items-center gap-2">
+                  <CheckCircle2 className="h-5 w-5 text-primary" />
+                  Recent Searches
+                </h3>
+                <div className="flex flex-wrap gap-2">
+                  {recentSearches.map((sym) => (
+                    <Button
+                      key={sym}
+                      variant="outline"
+                      size="sm"
+                      className="gap-1"
+                      onClick={() => searchSymbol(sym)}
+                    >
+                      <Briefcase className="h-4 w-4 text-primary" />
+                      {sym}
+                    </Button>
+                  ))}
+                </div>
+              </motion.div>
+            )}
+            
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.5, duration: 0.5 }}
+              className="max-w-3xl mx-auto mt-12 p-4 rounded-lg border border-dashed border-primary/30 bg-primary/5"
+            >
               <div className="flex gap-3 items-start">
                 <div className="p-2 bg-primary/10 rounded-full">
-                  <Info className="h-5 w-5 text-primary" />
+                  <Shield className="h-5 w-5 text-primary" />
                 </div>
                 <div>
                   <h3 className="text-base font-medium mb-1">How to use</h3>
@@ -153,8 +295,8 @@ const Index = () => {
                   </ol>
                 </div>
               </div>
-            </div>
-          </div>
+            </motion.div>
+          </motion.div>
         ) : (
           <div className="mt-6">
             <div className="flex items-center justify-between mb-6">
@@ -166,22 +308,29 @@ const Index = () => {
                 <p className="text-muted-foreground">Equity Research & Analysis</p>
               </div>
               <div className="flex items-center gap-2">
-                <Button variant="outline" size="sm" className="gap-1">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="gap-1"
+                  onClick={() => window.open(`https://finance.yahoo.com/quote/${searchedSymbol}`, '_blank')}
+                >
+                  <Globe className="h-4 w-4" />
+                  <span>External Data</span>
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="gap-1"
+                  onClick={() => window.open(`https://finance.yahoo.com/quote/${searchedSymbol}/history`, '_blank')}
+                >
                   <Calendar className="h-4 w-4" />
                   <span>Historical Data</span>
-                </Button>
-                <Button variant="outline" size="sm" className="gap-1">
-                  <TrendingUp className="h-4 w-4" />
-                  <span>Price Prediction</span>
                 </Button>
                 <Button 
                   size="sm" 
                   variant="ghost" 
                   className="text-muted-foreground hover:text-foreground"
-                  onClick={() => {
-                    setSearchedSymbol("");
-                    setSymbol("");
-                  }}
+                  onClick={clearSearch}
                 >
                   Clear
                 </Button>
@@ -191,7 +340,7 @@ const Index = () => {
             <Tabs defaultValue="overview" className="w-full">
               <TabsList className="grid w-full grid-cols-3 mb-6 p-1 bg-muted/30">
                 <TabsTrigger value="overview" className="flex items-center gap-2 py-3">
-                  <Search className="h-4 w-4" />
+                  <Briefcase className="h-4 w-4" />
                   <span>Overview</span>
                 </TabsTrigger>
                 <TabsTrigger value="analysis" className="flex items-center gap-2 py-3">
