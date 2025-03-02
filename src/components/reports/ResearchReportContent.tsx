@@ -47,7 +47,7 @@ const ResearchReportContent: React.FC<ResearchReportContentProps> = ({
           <CardHeader className="bg-gradient-to-r from-didi.darkBlue/10 to-didi.lightBlue/5 border-b border-border/30">
             <CardTitle className="flex items-center">
               <img 
-                src="/lovable-uploads/0a908707-8ada-47df-82b6-93b66dc7e24d.png" 
+                src="/lovable-uploads/253c2c77-f09d-4088-83eb-0299dfaf98f2.png" 
                 alt="DiDi Equity Research" 
                 className="h-7 mr-3" 
               />

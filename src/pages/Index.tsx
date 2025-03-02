@@ -102,8 +102,12 @@ const Index = () => {
       <header className="border-b border-border p-4 bg-gradient-to-r from-background to-secondary/30">
         <div className="container mx-auto flex justify-between items-center">
           <h1 className="text-2xl font-bold flex items-center gap-2">
-            <Sparkles className="h-5 w-5 text-primary" />
-            <span>AI Equity Research</span>
+            <img 
+              src="/lovable-uploads/253c2c77-f09d-4088-83eb-0299dfaf98f2.png" 
+              alt="DiDi Equity Research" 
+              className="h-10"
+            />
+            <span>Equity Research</span>
           </h1>
           <div className="flex items-center gap-4">
             <div className="relative w-64">
