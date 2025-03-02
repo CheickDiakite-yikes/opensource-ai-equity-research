@@ -1,6 +1,6 @@
 
 import { invokeSupabaseFunction, withRetry } from "./base";
-import { ReportRequest, ResearchReport, StockPrediction, NewsArticle, StockQuote } from "@/types";
+import { ReportRequest, ResearchReport, StockPrediction, NewsArticle, StockQuote, CustomDCFParams, CustomDCFResult } from "@/types";
 import { toast } from "@/components/ui/use-toast";
 
 /**
@@ -104,6 +104,39 @@ export const generateStockPrediction = async (
       description: "Could not generate the stock prediction. Please try again later.",
       variant: "destructive",
     });
+    return null;
+  }
+};
+
+/**
+ * Fetch custom DCF analysis with provided parameters
+ */
+export const fetchCustomDCF = async (
+  symbol: string,
+  params: CustomDCFParams
+): Promise<CustomDCFResult | null> => {
+  try {
+    console.log(`Generating custom DCF for ${symbol} with parameters:`, params);
+    
+    // Use retry logic for DCF calculation
+    const data = await withRetry(() => 
+      invokeSupabaseFunction<CustomDCFResult[]>('get-stock-data', {
+        symbol,
+        endpoint: 'custom-levered-dcf',
+        params
+      }),
+      1, // fewer retries for this operation
+      1000 // shorter initial delay
+    );
+    
+    if (!data || !Array.isArray(data) || data.length === 0) {
+      console.error("Failed to generate custom DCF or empty result");
+      return null;
+    }
+    
+    return data[0];
+  } catch (error) {
+    console.error("Error generating custom DCF:", error);
     return null;
   }
 };
