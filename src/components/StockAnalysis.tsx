@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -72,9 +71,10 @@ const StockAnalysis = ({ symbol }: StockAnalysisProps) => {
 
   // Prepare data for charts
   const prepareFinancialData = () => {
-    if (income.length === 0 || balance.length === 0) return [];
+    if (income.length === 0) return [];
     
     return income.map((inc, index) => {
+      // Safely access balance sheet data with fallbacks
       const bal = balance[index] || {};
       const year = new Date(inc.date).getFullYear().toString();
       
@@ -87,9 +87,9 @@ const StockAnalysis = ({ symbol }: StockAnalysisProps) => {
         operatingIncome: inc.operatingIncome,
         netIncome: inc.netIncome,
         eps: inc.eps,
-        totalAssets: bal.totalAssets,
-        totalLiabilities: bal.totalLiabilities,
-        totalEquity: bal.totalStockholdersEquity
+        totalAssets: bal.totalAssets || 0, // Added fallback
+        totalLiabilities: bal.totalLiabilities || 0, // Added fallback
+        totalEquity: bal.totalStockholdersEquity || 0 // Added fallback
       };
     });
   };
