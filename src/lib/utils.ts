@@ -14,6 +14,13 @@ export function cn(...inputs: ClassValue[]) {
  * Format a number as a currency string
  */
 export function formatCurrency(amount: number, currency: string = "USD"): string {
+  if (amount === null || amount === undefined) return 'N/A';
+  
+  // For very large numbers, use the large number formatter with currency symbol
+  if (Math.abs(amount) >= 1e6) {
+    return '$' + formatLargeNumber(amount);
+  }
+  
   return new Intl.NumberFormat('en-US', { 
     style: 'currency', 
     currency, 
@@ -30,13 +37,13 @@ export function formatLargeNumber(num: number): string {
   const absNum = Math.abs(num);
   
   if (absNum >= 1e12) {
-    return (num / 1e12).toFixed(1) + 'T';
+    return (num / 1e12).toFixed(2) + 'T';
   } else if (absNum >= 1e9) {
-    return (num / 1e9).toFixed(1) + 'B';
+    return (num / 1e9).toFixed(2) + 'B';
   } else if (absNum >= 1e6) {
-    return (num / 1e6).toFixed(1) + 'M';
+    return (num / 1e6).toFixed(2) + 'M';
   } else if (absNum >= 1e3) {
-    return (num / 1e3).toFixed(1) + 'K';
+    return (num / 1e3).toFixed(2) + 'K';
   } else {
     return num.toLocaleString();
   }
@@ -187,4 +194,19 @@ export function generateReportHTML(title: string, content: string): string {
     </body>
     </html>
   `;
+}
+
+/**
+ * Format financial values for better display in charts (in millions/billions)
+ */
+export function formatChartValue(value: number): string {
+  if (Math.abs(value) >= 1e9) {
+    return `$${(value / 1e9).toFixed(1)}B`;
+  } else if (Math.abs(value) >= 1e6) {
+    return `$${(value / 1e6).toFixed(1)}M`;
+  } else if (Math.abs(value) >= 1e3) {
+    return `$${(value / 1e3).toFixed(1)}K`;
+  } else {
+    return `$${value.toFixed(0)}`;
+  }
 }

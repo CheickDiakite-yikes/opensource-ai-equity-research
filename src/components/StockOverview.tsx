@@ -1,15 +1,31 @@
 
 import { useEffect, useState } from "react";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@/components/ui/button";
 import { cn, formatCurrency, formatLargeNumber, formatPercentage } from "@/lib/utils";
 import { StockProfile, StockQuote } from "@/types";
-import { TrendingUp, TrendingDown, Briefcase, Globe, Users } from "lucide-react";
+import { TrendingUp, TrendingDown, Briefcase, Globe, Users, FileText, Download, ExternalLink, MessageCircle } from "lucide-react";
 import { fetchStockProfile, fetchStockQuote } from "@/services/api";
 
 interface StockOverviewProps {
   symbol: string;
+}
+
+interface EarningsCall {
+  date: string;
+  quarter: string;
+  year: string;
+  url: string;
+  highlights: string[];
+}
+
+interface SECFiling {
+  type: string;
+  filingDate: string;
+  reportDate: string;
+  url: string;
 }
 
 const StockOverview = ({ symbol }: StockOverviewProps) => {
@@ -17,6 +33,65 @@ const StockOverview = ({ symbol }: StockOverviewProps) => {
   const [quote, setQuote] = useState<StockQuote | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  
+  // Mock data for earnings calls and SEC filings
+  const [earningsCalls] = useState<EarningsCall[]>([
+    {
+      date: "2023-10-25",
+      quarter: "Q3",
+      year: "2023",
+      url: "#",
+      highlights: [
+        "Revenue increased 23% year over year to $34.15B",
+        "Daily active users (DAUs) increased 5% year over year to 2.09B",
+        "Operating margin was 40%, compared to 20% in the prior year"
+      ]
+    },
+    {
+      date: "2023-07-26",
+      quarter: "Q2",
+      year: "2023",
+      url: "#",
+      highlights: [
+        "Revenue increased 11% year over year to $32.0B",
+        "Net income was $7.79B",
+        "Announced a $40B increase in share repurchase authorization"
+      ]
+    }
+  ]);
+  
+  const [secFilings] = useState<SECFiling[]>([
+    {
+      type: "10-K (Annual Report)",
+      filingDate: "2023-02-02",
+      reportDate: "2022-12-31",
+      url: "#"
+    },
+    {
+      type: "10-Q (Quarterly Report)",
+      filingDate: "2023-10-26",
+      reportDate: "2023-09-30",
+      url: "#"
+    },
+    {
+      type: "10-Q (Quarterly Report)",
+      filingDate: "2023-07-27",
+      reportDate: "2023-06-30",
+      url: "#"
+    },
+    {
+      type: "10-Q (Quarterly Report)",
+      filingDate: "2023-04-27",
+      reportDate: "2023-03-31",
+      url: "#"
+    },
+    {
+      type: "8-K (Current Report)",
+      filingDate: "2023-10-25",
+      reportDate: "2023-10-25",
+      url: "#"
+    }
+  ]);
 
   useEffect(() => {
     const loadData = async () => {
@@ -127,7 +202,7 @@ const StockOverview = ({ symbol }: StockOverviewProps) => {
             <div className="grid grid-cols-2 gap-2 text-sm">
               <div>
                 <p className="text-muted-foreground">Market Cap</p>
-                <p className="font-medium">{formatLargeNumber(quote.marketCap)}</p>
+                <p className="font-medium">{formatLargeNumber(quote.marketCap)} <span className="text-xs text-muted-foreground">(USD)</span></p>
               </div>
               <div>
                 <p className="text-muted-foreground">P/E Ratio</p>
@@ -211,6 +286,98 @@ const StockOverview = ({ symbol }: StockOverviewProps) => {
           </p>
         </CardContent>
       </Card>
+      
+      {/* New section: Earnings Transcript Analysis */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg flex items-center">
+            <MessageCircle className="h-5 w-5 mr-2 text-primary" />
+            Earnings Call Transcripts
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-6">
+            {earningsCalls.map((call, index) => (
+              <div key={index} className="border-b pb-4 last:border-0 last:pb-0">
+                <div className="flex items-center justify-between mb-2">
+                  <h4 className="font-medium flex items-center">
+                    {call.quarter} {call.year} Earnings Call
+                    <Badge variant="outline" className="ml-2">{new Date(call.date).toLocaleDateString()}</Badge>
+                  </h4>
+                  <Button variant="outline" size="sm" className="gap-1" asChild>
+                    <a href={call.url} target="_blank" rel="noopener noreferrer">
+                      <ExternalLink className="h-3.5 w-3.5" />
+                      <span>Full Transcript</span>
+                    </a>
+                  </Button>
+                </div>
+                <div className="text-sm text-muted-foreground">
+                  <h5 className="font-medium text-foreground mb-1">Key Highlights:</h5>
+                  <ul className="list-disc list-inside space-y-1">
+                    {call.highlights.map((highlight, i) => (
+                      <li key={i}>{highlight}</li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+      
+      {/* New section: SEC Filings */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg flex items-center">
+            <FileText className="h-5 w-5 mr-2 text-primary" />
+            SEC Filings
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b">
+                  <th className="text-left py-2 font-medium">Filing Type</th>
+                  <th className="text-left py-2 font-medium">Period End</th>
+                  <th className="text-left py-2 font-medium">Filed Date</th>
+                  <th className="text-right py-2 font-medium">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {secFilings.map((filing, index) => (
+                  <tr key={index} className="border-b last:border-0">
+                    <td className="py-3">{filing.type}</td>
+                    <td className="py-3">{new Date(filing.reportDate).toLocaleDateString()}</td>
+                    <td className="py-3">{new Date(filing.filingDate).toLocaleDateString()}</td>
+                    <td className="py-3 text-right">
+                      <Button variant="ghost" size="sm" className="gap-1 text-primary" asChild>
+                        <a href={filing.url} target="_blank" rel="noopener noreferrer">
+                          <Download className="h-3.5 w-3.5" />
+                          <span>Download</span>
+                        </a>
+                      </Button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <div className="mt-4 text-center">
+            <Button variant="outline" size="sm" asChild>
+              <a 
+                href={`https://www.sec.gov/edgar/search/#/entityName=${profile.companyName}`} 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="gap-1"
+              >
+                <ExternalLink className="h-4 w-4" />
+                <span>View All Filings on SEC.gov</span>
+              </a>
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 };
@@ -238,6 +405,8 @@ const LoadingSkeleton = () => (
     </div>
     
     <Skeleton className="h-48 w-full" />
+    <Skeleton className="h-64 w-full" />
+    <Skeleton className="h-64 w-full" />
   </div>
 );
 

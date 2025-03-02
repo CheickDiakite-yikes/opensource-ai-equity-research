@@ -1,7 +1,7 @@
 
 import React from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { formatCurrency } from "@/lib/utils";
+import { formatCurrency, formatLargeNumber } from "@/lib/utils";
 
 interface DCFTabContentProps {
   financials: any[];
@@ -20,9 +20,9 @@ const DCFTabContent: React.FC<DCFTabContentProps> = ({ financials, symbol }) => 
     },
     projections: [1, 2, 3, 4, 5].map(year => ({
       year: `Year ${year}`,
-      revenue: financials[0]?.revenue ? (financials[0].revenue * Math.pow(1.085, year)).toFixed(2) : 0,
-      ebit: financials[0]?.operatingIncome ? (financials[0].operatingIncome * Math.pow(1.09, year)).toFixed(2) : 0,
-      fcf: financials[0]?.netIncome ? (financials[0].netIncome * 0.8 * Math.pow(1.075, year)).toFixed(2) : 0
+      revenue: financials[0]?.revenue ? (financials[0].revenue * Math.pow(1.085, year)) : 0,
+      ebit: financials[0]?.operatingIncome ? (financials[0].operatingIncome * Math.pow(1.09, year)) : 0,
+      fcf: financials[0]?.netIncome ? (financials[0].netIncome * 0.8 * Math.pow(1.075, year)) : 0
     })),
     sensitivity: {
       headers: ["", "9.5%", "10.0%", "10.5%", "11.0%", "11.5%"],
@@ -80,6 +80,7 @@ const DCFTabContent: React.FC<DCFTabContentProps> = ({ financials, symbol }) => 
         <Card>
           <CardHeader>
             <CardTitle>Projected Cash Flows</CardTitle>
+            <p className="text-xs text-muted-foreground">All figures in millions (USD)</p>
           </CardHeader>
           <CardContent>
             <div className="overflow-x-auto">
@@ -96,9 +97,9 @@ const DCFTabContent: React.FC<DCFTabContentProps> = ({ financials, symbol }) => 
                   {mockDCFData.projections.map((proj, i) => (
                     <tr key={i} className="border-b last:border-0">
                       <td className="py-2">{proj.year}</td>
-                      <td className="text-right py-2">{formatCurrency(parseFloat(proj.revenue.toString()))}</td>
-                      <td className="text-right py-2">{formatCurrency(parseFloat(proj.ebit.toString()))}</td>
-                      <td className="text-right py-2">{formatCurrency(parseFloat(proj.fcf.toString()))}</td>
+                      <td className="text-right py-2">{formatLargeNumber(proj.revenue)}</td>
+                      <td className="text-right py-2">{formatLargeNumber(proj.ebit)}</td>
+                      <td className="text-right py-2">{formatLargeNumber(proj.fcf)}</td>
                     </tr>
                   ))}
                 </tbody>
