@@ -9,7 +9,7 @@ interface FeaturedCompaniesProps {
   onSelectSymbol: (symbol: string) => void;
 }
 
-const item = {
+const itemAnimation = {
   hidden: { opacity: 0, y: 20 },
   show: { opacity: 1, y: 0 }
 };
@@ -38,23 +38,23 @@ const FeaturedCompanies: React.FC<FeaturedCompaniesProps> = ({
       </div>
       
       <div className="grid gap-6 grid-cols-2 sm:grid-cols-3 lg:grid-cols-6">
-        {featuredSymbols.map((item, index) => {
+        {featuredSymbols.map((company, index) => {
           const trend = getTrendIndicator();
           
           return (
             <motion.div
-              key={item.symbol}
-              variants={item}
+              key={company.symbol}
+              variants={itemAnimation}
               transition={{ duration: 0.5, delay: index * 0.1 }}
             >
               <Card 
                 className="featured-card cursor-pointer overflow-hidden"
-                onClick={() => onSelectSymbol(item.symbol)}
+                onClick={() => onSelectSymbol(company.symbol)}
               >
                 <div className="h-1 bg-gradient-to-r from-primary/80 to-primary/30" />
                 <CardContent className="p-5 text-center">
-                  <div className="font-bold text-xl mb-1">{item.symbol}</div>
-                  <div className="text-sm text-muted-foreground mb-3 truncate">{item.name}</div>
+                  <div className="font-bold text-xl mb-1">{company.symbol}</div>
+                  <div className="text-sm text-muted-foreground mb-3 truncate">{company.name}</div>
                   <div className="flex items-center justify-center gap-1 text-sm">
                     {trend.icon}
                     <span className={trend.value.includes('+') ? 'text-green-600' : 'text-red-600'}>
