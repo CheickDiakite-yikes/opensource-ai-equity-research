@@ -1,7 +1,7 @@
-
 import { invokeSupabaseFunction } from "./base";
 import { EarningsCall, SECFiling } from "@/types";
 import { supabase } from "@/integrations/supabase/client";
+import { Json } from "@/integrations/supabase/types";
 
 /**
  * Fetch earnings call transcripts - first from database, then from API if needed
@@ -26,7 +26,9 @@ export const fetchEarningsTranscripts = async (symbol: string): Promise<Earnings
         date: transcript.date,
         content: transcript.content || "",
         url: transcript.url || `https://seekingalpha.com/symbol/${symbol}/earnings/transcripts`,
-        highlights: transcript.highlights || []
+        highlights: Array.isArray(transcript.highlights) 
+          ? transcript.highlights.map(item => String(item)) 
+          : []
       }));
     }
     
