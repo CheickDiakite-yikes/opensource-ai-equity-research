@@ -10,7 +10,7 @@ export * from './documentsService';
 import { fetchStockProfile, fetchStockQuote } from './profileService';
 import { fetchIncomeStatements, fetchBalanceSheets, fetchCashFlowStatements, fetchKeyRatios } from './financialService';
 import { fetchHistoricalPrices, fetchCompanyNews, fetchCompanyPeers } from './marketDataService';
-import { fetchEarningsTranscripts, fetchSECFilings } from './documentsService';
+import { fetchEarningsTranscripts, fetchSECFilings, triggerDocumentCaching } from './documentsService';
 
 /**
  * Get all financial data for a symbol
@@ -27,6 +27,12 @@ export const getAllFinancialData = async (symbol: string) => {
   const peers = await fetchCompanyPeers(symbol);
   const earningsTranscripts = await fetchEarningsTranscripts(symbol);
   const secFilings = await fetchSECFilings(symbol);
+
+  // Trigger background caching of company documents
+  // This happens asynchronously and doesn't affect the response time
+  if (profile) {
+    triggerDocumentCaching(symbol);
+  }
 
   return {
     profile,
