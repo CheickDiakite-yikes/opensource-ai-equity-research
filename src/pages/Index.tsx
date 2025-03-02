@@ -4,7 +4,6 @@ import Header from "@/components/layout/Header";
 import LandingView from "@/components/home/LandingView";
 import StockView from "@/components/stocks/StockView";
 import { toast } from "sonner";
-import { motion } from "framer-motion";
 
 const Index = () => {
   const [symbol, setSymbol] = useState<string>("");
@@ -85,7 +84,7 @@ const Index = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-gradient-to-br from-background to-muted/30">
       <Header 
         symbol={symbol}
         setSymbol={setSymbol}

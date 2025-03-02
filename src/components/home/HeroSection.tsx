@@ -12,7 +12,7 @@ const HeroSection: React.FC = () => {
         transition={{ duration: 0.8, ease: "easeOut" }}
         className="mb-8"
       >
-        <h1 className="text-5xl font-bold mb-6 bg-gradient-to-r from-blue-600 to-blue-400 bg-clip-text text-transparent">
+        <h1 className="text-5xl font-bold mb-6 bg-clip-text text-transparent bg-gradient-to-r from-primary to-blue-600">
           AI-Powered Stock Analysis
         </h1>
         <p className="text-muted-foreground text-xl max-w-3xl mx-auto leading-relaxed">
@@ -31,7 +31,7 @@ const HeroSection: React.FC = () => {
           animate={{ y: [0, 10, 0] }} 
           transition={{ repeat: Infinity, duration: 2 }}
         >
-          <ArrowDownCircle className="h-10 w-10 text-blue-500" />
+          <ArrowDownCircle className="h-10 w-10 text-primary/70" />
         </motion.div>
       </motion.div>
     </div>

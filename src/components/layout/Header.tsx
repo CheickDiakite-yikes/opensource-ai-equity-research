@@ -21,7 +21,7 @@ const Header: React.FC<HeaderProps> = ({
   handleKeyDown
 }) => {
   return (
-    <header className="border-b border-border py-4 px-6 backdrop-blur-md sticky top-0 z-10 shadow-md bg-background/95">
+    <header className="border-b border-border/40 py-4 px-6 bg-gradient-to-r from-background to-secondary/10 backdrop-blur-sm sticky top-0 z-10 shadow-sm">
       <div className="container mx-auto flex flex-col sm:flex-row justify-between items-center gap-4">
         <motion.div
           initial={{ opacity: 0, x: -20 }}
@@ -34,7 +34,7 @@ const Header: React.FC<HeaderProps> = ({
               alt="DiDi Equity Research" 
               className="h-10"
             />
-            <span className="bg-gradient-to-r from-blue-600 to-blue-400 bg-clip-text text-transparent">
+            <span className="bg-clip-text text-transparent bg-gradient-to-r from-primary to-blue-600">
               Equity Research
             </span>
           </h1>
@@ -53,7 +53,7 @@ const Header: React.FC<HeaderProps> = ({
               value={symbol}
               onChange={(e) => setSymbol(e.target.value)}
               onKeyDown={handleKeyDown}
-              className="pl-10 bg-background pr-4 h-10"
+              className="pl-10 bg-background/80 backdrop-blur-sm pr-4 border-border/50 focus:border-primary/50 transition-colors h-10"
             />
             <Search className="absolute left-3 top-2.5 h-5 w-5 text-muted-foreground" />
           </div>
