@@ -25,10 +25,9 @@ const Index = () => {
     setIsLoading(true);
     setSearchedSymbol(symbol.toUpperCase());
     
-    // Simulate loading for demo purposes
     setTimeout(() => {
       setIsLoading(false);
-    }, 800);
+    }, 500);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {

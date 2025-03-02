@@ -13,8 +13,10 @@ import {
   BarChart,
   Bar
 } from "recharts";
-import { formatCurrency, formatLargeNumber, getPercentStyle } from "@/lib/utils";
+import { formatCurrency, formatLargeNumber } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
+import { fetchIncomeStatements, fetchBalanceSheets, fetchKeyRatios } from "@/services/api";
+import type { IncomeStatement, BalanceSheet, KeyRatio } from "@/types";
 
 interface StockAnalysisProps {
   symbol: string;
@@ -22,24 +24,43 @@ interface StockAnalysisProps {
 
 const StockAnalysis = ({ symbol }: StockAnalysisProps) => {
   const [isLoading, setIsLoading] = useState(true);
-  const [financials, setFinancials] = useState<any[]>([]);
-  const [ratios, setRatios] = useState<any[]>([]);
+  const [error, setError] = useState<string | null>(null);
+  const [income, setIncome] = useState<IncomeStatement[]>([]);
+  const [balance, setBalance] = useState<BalanceSheet[]>([]);
+  const [ratios, setRatios] = useState<KeyRatio[]>([]);
 
   useEffect(() => {
     const fetchFinancialData = async () => {
       try {
-        console.log(`Fetching financial data for ${symbol}`);
         setIsLoading(true);
+        setError(null);
         
-        // This would be replaced with actual API calls
-        // For demo purposes, using mock data
-        setTimeout(() => {
-          setFinancials(mockFinancialData);
-          setRatios(mockRatioData);
-          setIsLoading(false);
-        }, 1500);
-      } catch (error) {
-        console.error("Error fetching financial data:", error);
+        const [incomeData, balanceData, ratiosData] = await Promise.all([
+          fetchIncomeStatements(symbol),
+          fetchBalanceSheets(symbol),
+          fetchKeyRatios(symbol)
+        ]);
+        
+        // Sort data by date for consistency (newest to oldest)
+        const sortedIncome = [...incomeData].sort((a, b) => 
+          new Date(b.date).getTime() - new Date(a.date).getTime()
+        );
+        
+        const sortedBalance = [...balanceData].sort((a, b) => 
+          new Date(b.date).getTime() - new Date(a.date).getTime()
+        );
+        
+        const sortedRatios = [...ratiosData].sort((a, b) => 
+          new Date(b.date).getTime() - new Date(a.date).getTime()
+        );
+        
+        setIncome(sortedIncome);
+        setBalance(sortedBalance);
+        setRatios(sortedRatios);
+      } catch (err) {
+        console.error("Error fetching financial data:", err);
+        setError(err.message);
+      } finally {
         setIsLoading(false);
       }
     };
@@ -49,8 +70,67 @@ const StockAnalysis = ({ symbol }: StockAnalysisProps) => {
     }
   }, [symbol]);
 
+  // Prepare data for charts
+  const prepareFinancialData = () => {
+    if (income.length === 0 || balance.length === 0) return [];
+    
+    return income.map((inc, index) => {
+      const bal = balance[index] || {};
+      const year = new Date(inc.date).getFullYear().toString();
+      
+      return {
+        year,
+        revenue: inc.revenue,
+        costOfRevenue: inc.costOfRevenue,
+        grossProfit: inc.grossProfit,
+        operatingExpenses: inc.operatingExpenses || (inc.sellingGeneralAndAdministrativeExpenses + (inc.researchAndDevelopmentExpenses || 0)),
+        operatingIncome: inc.operatingIncome,
+        netIncome: inc.netIncome,
+        eps: inc.eps,
+        totalAssets: bal.totalAssets,
+        totalLiabilities: bal.totalLiabilities,
+        totalEquity: bal.totalStockholdersEquity
+      };
+    });
+  };
+
+  const prepareRatioData = () => {
+    if (ratios.length === 0) return [];
+    
+    return ratios.map(ratio => {
+      const year = new Date(ratio.date).getFullYear().toString();
+      
+      return {
+        year,
+        peRatio: ratio.priceEarningsRatio,
+        pbRatio: ratio.priceToBookRatio,
+        roe: ratio.returnOnEquity,
+        roa: ratio.returnOnAssets,
+        currentRatio: ratio.currentRatio,
+        debtToEquity: ratio.debtEquityRatio,
+        grossMargin: ratio.grossProfitMargin,
+        operatingMargin: ratio.operatingProfitMargin,
+        netMargin: ratio.netProfitMargin
+      };
+    });
+  };
+
+  const financials = prepareFinancialData();
+  const ratioData = prepareRatioData();
+
   if (isLoading) {
     return <LoadingSkeleton />;
+  }
+
+  if (error || financials.length === 0) {
+    return (
+      <Card className="p-6">
+        <div className="text-center py-8">
+          <h3 className="text-lg font-medium text-red-600 mb-2">Error Loading Financial Data</h3>
+          <p className="text-muted-foreground">{error || `No financial data available for ${symbol}`}</p>
+        </div>
+      </Card>
+    );
   }
 
   return (
@@ -198,7 +278,7 @@ const StockAnalysis = ({ symbol }: StockAnalysisProps) => {
         
         <TabsContent value="ratios" className="mt-4 space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {ratios.map((ratio, index) => (
+            {ratioData.map((ratio, index) => (
               <Card key={index}>
                 <CardHeader className="pb-2">
                   <CardTitle className="text-base">{ratio.year}</CardTitle>
@@ -207,35 +287,35 @@ const StockAnalysis = ({ symbol }: StockAnalysisProps) => {
                   <dl className="space-y-2 text-sm">
                     <div className="flex justify-between">
                       <dt className="text-muted-foreground">P/E Ratio</dt>
-                      <dd className="font-medium">{ratio.peRatio.toFixed(2)}</dd>
+                      <dd className="font-medium">{ratio.peRatio?.toFixed(2) || 'N/A'}</dd>
                     </div>
                     <div className="flex justify-between">
                       <dt className="text-muted-foreground">P/B Ratio</dt>
-                      <dd className="font-medium">{ratio.pbRatio.toFixed(2)}</dd>
+                      <dd className="font-medium">{ratio.pbRatio?.toFixed(2) || 'N/A'}</dd>
                     </div>
                     <div className="flex justify-between">
                       <dt className="text-muted-foreground">ROE</dt>
-                      <dd className="font-medium">{(ratio.roe * 100).toFixed(2)}%</dd>
+                      <dd className="font-medium">{ratio.roe ? (ratio.roe * 100).toFixed(2) + '%' : 'N/A'}</dd>
                     </div>
                     <div className="flex justify-between">
                       <dt className="text-muted-foreground">ROA</dt>
-                      <dd className="font-medium">{(ratio.roa * 100).toFixed(2)}%</dd>
+                      <dd className="font-medium">{ratio.roa ? (ratio.roa * 100).toFixed(2) + '%' : 'N/A'}</dd>
                     </div>
                     <div className="flex justify-between">
                       <dt className="text-muted-foreground">Current Ratio</dt>
-                      <dd className="font-medium">{ratio.currentRatio.toFixed(2)}</dd>
+                      <dd className="font-medium">{ratio.currentRatio?.toFixed(2) || 'N/A'}</dd>
                     </div>
                     <div className="flex justify-between">
                       <dt className="text-muted-foreground">Debt/Equity</dt>
-                      <dd className="font-medium">{ratio.debtToEquity.toFixed(2)}</dd>
+                      <dd className="font-medium">{ratio.debtToEquity?.toFixed(2) || 'N/A'}</dd>
                     </div>
                     <div className="flex justify-between">
                       <dt className="text-muted-foreground">Gross Margin</dt>
-                      <dd className="font-medium">{(ratio.grossMargin * 100).toFixed(2)}%</dd>
+                      <dd className="font-medium">{ratio.grossMargin ? (ratio.grossMargin * 100).toFixed(2) + '%' : 'N/A'}</dd>
                     </div>
                     <div className="flex justify-between">
                       <dt className="text-muted-foreground">Net Margin</dt>
-                      <dd className="font-medium">{(ratio.netMargin * 100).toFixed(2)}%</dd>
+                      <dd className="font-medium">{ratio.netMargin ? (ratio.netMargin * 100).toFixed(2) + '%' : 'N/A'}</dd>
                     </div>
                   </dl>
                 </CardContent>
@@ -249,7 +329,7 @@ const StockAnalysis = ({ symbol }: StockAnalysisProps) => {
             </CardHeader>
             <CardContent className="h-80">
               <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={ratios}>
+                <LineChart data={ratioData}>
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="year" />
                   <YAxis tickFormatter={(value) => `${(value * 100).toFixed(0)}%`} />
@@ -332,31 +412,43 @@ const StockAnalysis = ({ symbol }: StockAnalysisProps) => {
               <CardTitle>5-Year Growth Rates</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="metric-card">
-                  <span className="metric-label">Revenue CAGR</span>
-                  <span className="metric-value">12.8%</span>
-                  <span className="mt-1 text-xs text-green-600">
-                    Above Industry Average (8.5%)
-                  </span>
+              {financials.length >= 2 ? (
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <div className="p-4 border rounded-lg">
+                    <span className="block text-sm text-muted-foreground mb-1">Revenue CAGR</span>
+                    <span className="text-xl font-semibold block">
+                      {calculateCAGR(financials, 'revenue').toFixed(2)}%
+                    </span>
+                    <span className="mt-1 text-xs text-green-600 block">
+                      {compareToIndustry(calculateCAGR(financials, 'revenue'), 8.5)}
+                    </span>
+                  </div>
+                  
+                  <div className="p-4 border rounded-lg">
+                    <span className="block text-sm text-muted-foreground mb-1">EPS CAGR</span>
+                    <span className="text-xl font-semibold block">
+                      {calculateCAGR(financials, 'eps').toFixed(2)}%
+                    </span>
+                    <span className="mt-1 text-xs text-green-600 block">
+                      {compareToIndustry(calculateCAGR(financials, 'eps'), 9.4)}
+                    </span>
+                  </div>
+                  
+                  <div className="p-4 border rounded-lg">
+                    <span className="block text-sm text-muted-foreground mb-1">Net Income CAGR</span>
+                    <span className="text-xl font-semibold block">
+                      {calculateCAGR(financials, 'netIncome').toFixed(2)}%
+                    </span>
+                    <span className="mt-1 text-xs text-green-600 block">
+                      {compareToIndustry(calculateCAGR(financials, 'netIncome'), 7.2)}
+                    </span>
+                  </div>
                 </div>
-                
-                <div className="metric-card">
-                  <span className="metric-label">EPS CAGR</span>
-                  <span className="metric-value">15.2%</span>
-                  <span className="mt-1 text-xs text-green-600">
-                    Above Industry Average (9.4%)
-                  </span>
-                </div>
-                
-                <div className="metric-card">
-                  <span className="metric-label">Free Cash Flow CAGR</span>
-                  <span className="metric-value">10.5%</span>
-                  <span className="mt-1 text-xs text-green-600">
-                    Above Industry Average (7.2%)
-                  </span>
-                </div>
-              </div>
+              ) : (
+                <p className="text-center text-muted-foreground py-6">
+                  Insufficient historical data to calculate growth rates
+                </p>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
@@ -368,21 +460,45 @@ const StockAnalysis = ({ symbol }: StockAnalysisProps) => {
 // Helper function to calculate year-over-year growth
 const calculateGrowth = (data: any[], key: string) => {
   return data.map((item, index) => {
-    if (index === 0) {
+    if (index === data.length - 1) {
       return { year: item.year, growth: 0 };
     }
     
-    const previousValue = data[index - 1][key];
     const currentValue = item[key];
-    const growth = previousValue !== 0 
-      ? ((currentValue - previousValue) / Math.abs(previousValue)) * 100 
+    const nextValue = data[index + 1][key];
+    const growth = nextValue !== 0 
+      ? ((currentValue - nextValue) / Math.abs(nextValue)) * 100 
       : 0;
       
     return {
       year: item.year,
       growth
     };
-  }).slice(1); // Remove the first item since it has no growth rate
+  }).filter((item, index) => index < data.length - 1);
+};
+
+// Calculate Compound Annual Growth Rate (CAGR)
+const calculateCAGR = (data: any[], key: string) => {
+  if (data.length < 2) return 0;
+  
+  const newest = data[0][key];
+  const oldest = data[data.length - 1][key];
+  const years = data.length - 1;
+  
+  if (oldest <= 0 || newest <= 0) return 0;
+  
+  return ((Math.pow(newest / oldest, 1 / years) - 1) * 100);
+};
+
+// Compare to industry average
+const compareToIndustry = (value: number, industryAvg: number) => {
+  if (value > industryAvg) {
+    return `Above Industry Average (${industryAvg.toFixed(1)}%)`;
+  } else if (value < industryAvg) {
+    return `Below Industry Average (${industryAvg.toFixed(1)}%)`;
+  } else {
+    return `At Industry Average (${industryAvg.toFixed(1)}%)`;
+  }
 };
 
 const LoadingSkeleton = () => (
@@ -399,138 +515,5 @@ const LoadingSkeleton = () => (
     <Skeleton className="h-80 w-full" />
   </div>
 );
-
-// Mock Financial Data
-const mockFinancialData = [
-  {
-    year: "2019",
-    revenue: 9500000000,
-    costOfRevenue: 5700000000,
-    grossProfit: 3800000000,
-    operatingExpenses: 2300000000,
-    operatingIncome: 1500000000,
-    netIncome: 1200000000,
-    eps: 3.15,
-    totalAssets: 15000000000,
-    totalLiabilities: 8000000000,
-    totalEquity: 7000000000,
-  },
-  {
-    year: "2020",
-    revenue: 10200000000,
-    costOfRevenue: 6000000000,
-    grossProfit: 4200000000,
-    operatingExpenses: 2500000000,
-    operatingIncome: 1700000000,
-    netIncome: 1350000000,
-    eps: 3.52,
-    totalAssets: 16500000000,
-    totalLiabilities: 8700000000,
-    totalEquity: 7800000000,
-  },
-  {
-    year: "2021",
-    revenue: 11800000000,
-    costOfRevenue: 6800000000,
-    grossProfit: 5000000000,
-    operatingExpenses: 2900000000,
-    operatingIncome: 2100000000,
-    netIncome: 1650000000,
-    eps: 4.25,
-    totalAssets: 18500000000,
-    totalLiabilities: 9200000000,
-    totalEquity: 9300000000,
-  },
-  {
-    year: "2022",
-    revenue: 13500000000,
-    costOfRevenue: 7700000000,
-    grossProfit: 5800000000,
-    operatingExpenses: 3200000000,
-    operatingIncome: 2600000000,
-    netIncome: 2000000000,
-    eps: 5.10,
-    totalAssets: 21000000000,
-    totalLiabilities: 10500000000,
-    totalEquity: 10500000000,
-  },
-  {
-    year: "2023",
-    revenue: 15400000000,
-    costOfRevenue: 8600000000,
-    grossProfit: 6800000000,
-    operatingExpenses: 3600000000,
-    operatingIncome: 3200000000,
-    netIncome: 2450000000,
-    eps: 6.18,
-    totalAssets: 24500000000,
-    totalLiabilities: 12000000000,
-    totalEquity: 12500000000,
-  }
-];
-
-// Mock Ratio Data
-const mockRatioData = [
-  {
-    year: "2019",
-    peRatio: 18.5,
-    pbRatio: 2.8,
-    roe: 0.171,
-    roa: 0.08,
-    currentRatio: 1.8,
-    debtToEquity: 0.9,
-    grossMargin: 0.4,
-    operatingMargin: 0.158,
-    netMargin: 0.126,
-  },
-  {
-    year: "2020",
-    peRatio: 20.2,
-    pbRatio: 3.1,
-    roe: 0.173,
-    roa: 0.082,
-    currentRatio: 1.9,
-    debtToEquity: 0.85,
-    grossMargin: 0.412,
-    operatingMargin: 0.167,
-    netMargin: 0.132,
-  },
-  {
-    year: "2021",
-    peRatio: 22.8,
-    pbRatio: 3.4,
-    roe: 0.177,
-    roa: 0.089,
-    currentRatio: 2.0,
-    debtToEquity: 0.75,
-    grossMargin: 0.424,
-    operatingMargin: 0.178,
-    netMargin: 0.14,
-  },
-  {
-    year: "2022",
-    peRatio: 24.1,
-    pbRatio: 3.6,
-    roe: 0.19,
-    roa: 0.095,
-    currentRatio: 2.1,
-    debtToEquity: 0.7,
-    grossMargin: 0.43,
-    operatingMargin: 0.193,
-    netMargin: 0.148,
-  },
-  {
-    year: "2023",
-    peRatio: 25.5,
-    pbRatio: 3.8,
-    roe: 0.196,
-    roa: 0.1,
-    currentRatio: 2.2,
-    debtToEquity: 0.65,
-    grossMargin: 0.442,
-    operatingMargin: 0.208,
-    netMargin: 0.159,
-  }
-];
 
 export default StockAnalysis;

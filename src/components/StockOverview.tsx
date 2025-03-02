@@ -1,19 +1,70 @@
 
+import { useEffect, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { cn, formatCurrency, formatLargeNumber, formatPercentage, getPercentStyle } from "@/lib/utils";
+import { Skeleton } from "@/components/ui/skeleton";
+import { cn, formatCurrency, formatLargeNumber, formatPercentage } from "@/lib/utils";
 import { StockProfile, StockQuote } from "@/types";
 import { TrendingUp, TrendingDown, Briefcase, Globe, Users } from "lucide-react";
+import { fetchStockProfile, fetchStockQuote } from "@/services/api";
 
 interface StockOverviewProps {
-  profile: StockProfile;
-  quote: StockQuote;
-  className?: string;
+  symbol: string;
 }
 
-const StockOverview = ({ profile, quote, className }: StockOverviewProps) => {
+const StockOverview = ({ symbol }: StockOverviewProps) => {
+  const [profile, setProfile] = useState<StockProfile | null>(null);
+  const [quote, setQuote] = useState<StockQuote | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        
+        const [profileData, quoteData] = await Promise.all([
+          fetchStockProfile(symbol),
+          fetchStockQuote(symbol)
+        ]);
+        
+        if (!profileData || !quoteData) {
+          throw new Error("Failed to fetch data for " + symbol);
+        }
+        
+        setProfile(profileData);
+        setQuote(quoteData);
+      } catch (err) {
+        console.error("Error loading stock overview data:", err);
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (symbol) {
+      loadData();
+    }
+  }, [symbol]);
+
+  if (loading) {
+    return <LoadingSkeleton />;
+  }
+
+  if (error || !profile || !quote) {
+    return (
+      <Card className="p-6">
+        <div className="text-center py-8">
+          <h3 className="text-lg font-medium text-red-600 mb-2">Error Loading Data</h3>
+          <p className="text-muted-foreground">{error || "Unable to load data for this symbol"}</p>
+        </div>
+      </Card>
+    );
+  }
+
   return (
-    <div className={cn("space-y-6", className)}>
+    <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div className="flex items-center space-x-4">
           {profile.image && (
@@ -163,5 +214,31 @@ const StockOverview = ({ profile, quote, className }: StockOverviewProps) => {
     </div>
   );
 };
+
+const LoadingSkeleton = () => (
+  <div className="space-y-6">
+    <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+      <div className="flex items-center space-x-4">
+        <Skeleton className="h-16 w-16 rounded-lg" />
+        <div>
+          <Skeleton className="h-7 w-48 mb-2" />
+          <Skeleton className="h-4 w-64" />
+        </div>
+      </div>
+      <div className="flex flex-col items-start md:items-end">
+        <Skeleton className="h-8 w-24 mb-2" />
+        <Skeleton className="h-5 w-32" />
+      </div>
+    </div>
+    
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <Skeleton className="h-40 w-full" />
+      <Skeleton className="h-40 w-full" />
+      <Skeleton className="h-40 w-full" />
+    </div>
+    
+    <Skeleton className="h-48 w-full" />
+  </div>
+);
 
 export default StockOverview;
