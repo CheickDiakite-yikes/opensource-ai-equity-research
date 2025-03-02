@@ -13,6 +13,17 @@ interface LandingViewProps {
   onSelectSymbol: (symbol: string) => void;
 }
 
+const container = {
+  hidden: { opacity: 0 },
+  show: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.2,
+      delayChildren: 0.3
+    }
+  }
+};
+
 const LandingView: React.FC<LandingViewProps> = ({ 
   recentSearches, 
   featuredSymbols, 
@@ -20,10 +31,10 @@ const LandingView: React.FC<LandingViewProps> = ({
 }) => {
   return (
     <motion.div 
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5 }}
-      className="space-y-10 my-12"
+      variants={container}
+      initial="hidden"
+      animate="show"
+      className="space-y-12 my-12"
     >
       <HeroSection />
       <FeaturedCompanies 

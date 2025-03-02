@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import Header from "@/components/layout/Header";
 import LandingView from "@/components/home/LandingView";
 import StockView from "@/components/stocks/StockView";
+import { toast } from "sonner";
 
 const Index = () => {
   const [symbol, setSymbol] = useState<string>("");
@@ -44,7 +45,10 @@ const Index = () => {
     
     setTimeout(() => {
       setIsLoading(false);
-    }, 500);
+      toast.success(`Successfully loaded data for ${symbolUpperCase}`, {
+        duration: 3000,
+      });
+    }, 800);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -56,6 +60,9 @@ const Index = () => {
   const clearSearch = () => {
     setSearchedSymbol("");
     setSymbol("");
+    toast.info("Returned to home view", {
+      duration: 2000,
+    });
   };
 
   const searchSymbol = (sym: string) => {
@@ -70,10 +77,14 @@ const Index = () => {
     
     setRecentSearches(updatedSearches);
     localStorage.setItem('recentSearches', JSON.stringify(updatedSearches));
+    
+    toast.success(`Loading data for ${sym}`, {
+      duration: 3000,
+    });
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-gradient-to-br from-background to-muted/30">
       <Header 
         symbol={symbol}
         setSymbol={setSymbol}

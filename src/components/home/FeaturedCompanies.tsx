@@ -1,6 +1,6 @@
 
 import React from "react";
-import { Star } from "lucide-react";
+import { Star, TrendingUp, TrendingDown } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { motion } from "framer-motion";
 
@@ -9,33 +9,63 @@ interface FeaturedCompaniesProps {
   onSelectSymbol: (symbol: string) => void;
 }
 
+const item = {
+  hidden: { opacity: 0, y: 20 },
+  show: { opacity: 1, y: 0 }
+};
+
 const FeaturedCompanies: React.FC<FeaturedCompaniesProps> = ({ 
   featuredSymbols, 
   onSelectSymbol 
 }) => {
+  // Random trend indicators for demo purposes
+  const getTrendIndicator = () => {
+    return Math.random() > 0.5 ? 
+      { icon: <TrendingUp className="h-4 w-4 text-green-500" />, value: `+${(Math.random() * 5).toFixed(2)}%` } :
+      { icon: <TrendingDown className="h-4 w-4 text-red-500" />, value: `-${(Math.random() * 5).toFixed(2)}%` };
+  };
+
   return (
     <motion.div 
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: 0.2, duration: 0.5 }}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.5 }}
+      className="mb-12"
     >
-      <h3 className="text-lg font-medium mb-4 flex items-center gap-2">
-        <Star className="h-5 w-5 text-primary" />
-        Featured Companies
-      </h3>
-      <div className="grid gap-4 grid-cols-2 sm:grid-cols-3 lg:grid-cols-6">
-        {featuredSymbols.map((item) => (
-          <Card 
-            key={item.symbol}
-            className="cursor-pointer hover:border-primary/50 transition-all duration-200"
-            onClick={() => onSelectSymbol(item.symbol)}
-          >
-            <CardContent className="p-4 text-center">
-              <div className="font-bold text-lg">{item.symbol}</div>
-              <div className="text-sm text-muted-foreground">{item.name}</div>
-            </CardContent>
-          </Card>
-        ))}
+      <div className="flex items-center gap-2 mb-6">
+        <Star className="h-5 w-5 text-yellow-500" />
+        <h2 className="text-2xl font-bold">Featured Companies</h2>
+      </div>
+      
+      <div className="grid gap-6 grid-cols-2 sm:grid-cols-3 lg:grid-cols-6">
+        {featuredSymbols.map((item, index) => {
+          const trend = getTrendIndicator();
+          
+          return (
+            <motion.div
+              key={item.symbol}
+              variants={item}
+              transition={{ duration: 0.5, delay: index * 0.1 }}
+            >
+              <Card 
+                className="featured-card cursor-pointer overflow-hidden"
+                onClick={() => onSelectSymbol(item.symbol)}
+              >
+                <div className="h-1 bg-gradient-to-r from-primary/80 to-primary/30" />
+                <CardContent className="p-5 text-center">
+                  <div className="font-bold text-xl mb-1">{item.symbol}</div>
+                  <div className="text-sm text-muted-foreground mb-3 truncate">{item.name}</div>
+                  <div className="flex items-center justify-center gap-1 text-sm">
+                    {trend.icon}
+                    <span className={trend.value.includes('+') ? 'text-green-600' : 'text-red-600'}>
+                      {trend.value}
+                    </span>
+                  </div>
+                </CardContent>
+              </Card>
+            </motion.div>
+          );
+        })}
       </div>
     </motion.div>
   );
