@@ -210,16 +210,19 @@ export const downloadEarningsTranscript = async (symbol: string, quarter: string
     
     if (response && response.content) {
       // Store it in the database for future use
-      await supabase
-        .from('earnings_transcripts')
-        .upsert({
-          symbol,
-          quarter,
-          year,
-          date: new Date().toISOString().split('T')[0],
-          content: response.content
-        })
-        .catch(err => console.error("Error caching transcript:", err));
+      try {
+        await supabase
+          .from('earnings_transcripts')
+          .upsert({
+            symbol,
+            quarter,
+            year,
+            date: new Date().toISOString().split('T')[0],
+            content: response.content
+          });
+      } catch (err) {
+        console.error("Error caching transcript:", err);
+      }
         
       return response.content;
     }
