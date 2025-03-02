@@ -1,3 +1,4 @@
+
 import { invokeSupabaseFunction } from "./base";
 import { EarningsCall, SECFiling } from "@/types";
 import { supabase } from "@/integrations/supabase/client";
@@ -150,7 +151,10 @@ export const downloadEarningsTranscript = async (symbol: string, quarter: string
       .eq('year', year)
       .single();
     
-    if (error) throw error;
+    if (error) {
+      console.error("Error fetching transcript:", error);
+      return null;
+    }
     
     if (data && data.content) {
       return data.content;

@@ -9,7 +9,87 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      earnings_transcripts: {
+        Row: {
+          content: string | null
+          created_at: string | null
+          date: string
+          highlights: Json | null
+          id: number
+          quarter: string
+          symbol: string
+          title: string | null
+          url: string | null
+          year: string
+        }
+        Insert: {
+          content?: string | null
+          created_at?: string | null
+          date: string
+          highlights?: Json | null
+          id?: number
+          quarter: string
+          symbol: string
+          title?: string | null
+          url?: string | null
+          year: string
+        }
+        Update: {
+          content?: string | null
+          created_at?: string | null
+          date?: string
+          highlights?: Json | null
+          id?: number
+          quarter?: string
+          symbol?: string
+          title?: string | null
+          url?: string | null
+          year?: string
+        }
+        Relationships: []
+      }
+      sec_filings: {
+        Row: {
+          cik: string | null
+          content: string | null
+          created_at: string | null
+          filing_date: string
+          filing_number: string | null
+          form: string
+          id: number
+          report_date: string | null
+          symbol: string
+          type: string
+          url: string | null
+        }
+        Insert: {
+          cik?: string | null
+          content?: string | null
+          created_at?: string | null
+          filing_date: string
+          filing_number?: string | null
+          form: string
+          id?: number
+          report_date?: string | null
+          symbol: string
+          type: string
+          url?: string | null
+        }
+        Update: {
+          cik?: string | null
+          content?: string | null
+          created_at?: string | null
+          filing_date?: string
+          filing_number?: string | null
+          form?: string
+          id?: number
+          report_date?: string | null
+          symbol?: string
+          type?: string
+          url?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
