@@ -5,7 +5,8 @@ import { FileText, AlertCircle } from "lucide-react";
 import ReportGeneratorForm from "@/components/reports/ReportGeneratorForm";
 import ReportTabs from "@/components/reports/ReportTabs";
 import { ReportData } from "./useResearchReportData";
-import { ResearchReport, StockPrediction } from "@/types";
+import { ResearchReport } from "@/types/aiAnalysisTypes";
+import { StockPrediction } from "@/types/aiAnalysisTypes";
 
 interface ResearchReportContentProps {
   data: ReportData;
