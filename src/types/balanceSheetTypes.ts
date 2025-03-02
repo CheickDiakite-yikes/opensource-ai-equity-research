@@ -22,4 +22,5 @@ export interface FinancialDataItem {
 
 export interface BalanceSheetTableProps {
   data: FinancialDataItem[];
+  denomination?: 'millions' | 'billions' | 'thousands';
 }

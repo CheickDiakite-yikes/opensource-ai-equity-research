@@ -19,6 +19,9 @@ interface IncomeStatementTableProps {
 }
 
 const IncomeStatementTable: React.FC<IncomeStatementTableProps> = ({ data }) => {
+  // Set consistent denomination for this table
+  const denomination = 'millions';
+  
   return (
     <Card>
       <CardHeader>
@@ -27,6 +30,11 @@ const IncomeStatementTable: React.FC<IncomeStatementTableProps> = ({ data }) => 
       <div className="px-4 overflow-auto">
         <table className="w-full financial-table">
           <thead>
+            <tr>
+              <th colSpan={data.length + 1} className="text-left text-sm text-muted-foreground pb-2">
+                (All figures in $millions)
+              </th>
+            </tr>
             <tr className="border-b">
               <th className="text-left">Metric</th>
               {data.map((item) => (
@@ -39,7 +47,7 @@ const IncomeStatementTable: React.FC<IncomeStatementTableProps> = ({ data }) => 
               <td>Revenue</td>
               {data.map((item) => (
                 <td key={`revenue-${item.year}`} className="text-right">
-                  {formatFinancialTableValue(item.revenue)}
+                  {formatFinancialTableValue(item.revenue, denomination)}
                 </td>
               ))}
             </tr>
@@ -47,7 +55,7 @@ const IncomeStatementTable: React.FC<IncomeStatementTableProps> = ({ data }) => 
               <td>Cost of Revenue</td>
               {data.map((item) => (
                 <td key={`costOfRevenue-${item.year}`} className="text-right">
-                  {formatFinancialTableValue(item.costOfRevenue)}
+                  {formatFinancialTableValue(item.costOfRevenue, denomination)}
                 </td>
               ))}
             </tr>
@@ -55,7 +63,7 @@ const IncomeStatementTable: React.FC<IncomeStatementTableProps> = ({ data }) => 
               <td>Gross Profit</td>
               {data.map((item) => (
                 <td key={`grossProfit-${item.year}`} className="text-right">
-                  {formatFinancialTableValue(item.grossProfit)}
+                  {formatFinancialTableValue(item.grossProfit, denomination)}
                 </td>
               ))}
             </tr>
@@ -63,7 +71,7 @@ const IncomeStatementTable: React.FC<IncomeStatementTableProps> = ({ data }) => 
               <td>Operating Expenses</td>
               {data.map((item) => (
                 <td key={`operatingExpenses-${item.year}`} className="text-right">
-                  {formatFinancialTableValue(item.operatingExpenses)}
+                  {formatFinancialTableValue(item.operatingExpenses, denomination)}
                 </td>
               ))}
             </tr>
@@ -71,7 +79,7 @@ const IncomeStatementTable: React.FC<IncomeStatementTableProps> = ({ data }) => 
               <td>Operating Income</td>
               {data.map((item) => (
                 <td key={`operatingIncome-${item.year}`} className="text-right">
-                  {formatFinancialTableValue(item.operatingIncome)}
+                  {formatFinancialTableValue(item.operatingIncome, denomination)}
                 </td>
               ))}
             </tr>
@@ -79,7 +87,7 @@ const IncomeStatementTable: React.FC<IncomeStatementTableProps> = ({ data }) => 
               <td>Net Income</td>
               {data.map((item) => (
                 <td key={`netIncome-${item.year}`} className="text-right">
-                  {formatFinancialTableValue(item.netIncome)}
+                  {formatFinancialTableValue(item.netIncome, denomination)}
                 </td>
               ))}
             </tr>

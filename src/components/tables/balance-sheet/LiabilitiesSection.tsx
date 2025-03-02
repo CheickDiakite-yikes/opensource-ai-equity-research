@@ -5,9 +5,10 @@ import { formatFinancialTableValue } from "@/lib/utils";
 
 interface LiabilitiesSectionProps {
   data: FinancialDataItem[];
+  denomination?: 'millions' | 'billions' | 'thousands';
 }
 
-const LiabilitiesSection: React.FC<LiabilitiesSectionProps> = ({ data }) => {
+const LiabilitiesSection: React.FC<LiabilitiesSectionProps> = ({ data, denomination = 'millions' }) => {
   return (
     <>
       <tr className="bg-muted/30">
@@ -21,7 +22,7 @@ const LiabilitiesSection: React.FC<LiabilitiesSectionProps> = ({ data }) => {
         <td className="pl-4">Accounts Payable</td>
         {data.map((item) => (
           <td key={`payables-${item.year}`} className="text-right">
-            {formatFinancialTableValue(item.accountsPayable || 0)}
+            {formatFinancialTableValue(item.accountsPayable || 0, denomination)}
           </td>
         ))}
       </tr>
@@ -30,7 +31,7 @@ const LiabilitiesSection: React.FC<LiabilitiesSectionProps> = ({ data }) => {
         <td className="pl-4">Short-Term Debt</td>
         {data.map((item) => (
           <td key={`short-debt-${item.year}`} className="text-right">
-            {formatFinancialTableValue(item.shortTermDebt || 0)}
+            {formatFinancialTableValue(item.shortTermDebt || 0, denomination)}
           </td>
         ))}
       </tr>
@@ -39,7 +40,7 @@ const LiabilitiesSection: React.FC<LiabilitiesSectionProps> = ({ data }) => {
         <td className="font-medium pl-2">Total Current Liabilities</td>
         {data.map((item) => (
           <td key={`total-current-liabilities-${item.year}`} className="text-right font-medium">
-            {formatFinancialTableValue(item.totalCurrentLiabilities || 0)}
+            {formatFinancialTableValue(item.totalCurrentLiabilities || 0, denomination)}
           </td>
         ))}
       </tr>
@@ -48,7 +49,7 @@ const LiabilitiesSection: React.FC<LiabilitiesSectionProps> = ({ data }) => {
         <td className="pl-4">Long-Term Debt</td>
         {data.map((item) => (
           <td key={`long-debt-${item.year}`} className="text-right">
-            {formatFinancialTableValue(item.longTermDebt || 0)}
+            {formatFinancialTableValue(item.longTermDebt || 0, denomination)}
           </td>
         ))}
       </tr>
@@ -57,7 +58,7 @@ const LiabilitiesSection: React.FC<LiabilitiesSectionProps> = ({ data }) => {
         <td className="font-medium pl-2">Total Non-Current Liabilities</td>
         {data.map((item) => (
           <td key={`total-non-current-liabilities-${item.year}`} className="text-right font-medium">
-            {formatFinancialTableValue(item.totalNonCurrentLiabilities || 0)}
+            {formatFinancialTableValue(item.totalNonCurrentLiabilities || 0, denomination)}
           </td>
         ))}
       </tr>
@@ -66,7 +67,7 @@ const LiabilitiesSection: React.FC<LiabilitiesSectionProps> = ({ data }) => {
         <td className="font-medium">TOTAL LIABILITIES</td>
         {data.map((item) => (
           <td key={`total-liabilities-${item.year}`} className="text-right font-semibold">
-            {formatFinancialTableValue(item.totalLiabilities)}
+            {formatFinancialTableValue(item.totalLiabilities, denomination)}
           </td>
         ))}
       </tr>

@@ -8,6 +8,9 @@ import LiabilitiesSection from "./balance-sheet/LiabilitiesSection";
 import EquitySection from "./balance-sheet/EquitySection";
 
 const BalanceSheetTable: React.FC<BalanceSheetTableProps> = ({ data }) => {
+  // Set consistent denomination for this table
+  const denomination = 'millions';
+
   return (
     <Card>
       <CardHeader>
@@ -15,11 +18,11 @@ const BalanceSheetTable: React.FC<BalanceSheetTableProps> = ({ data }) => {
       </CardHeader>
       <div className="px-4 overflow-auto">
         <table className="w-full financial-table">
-          <TableHeader data={data} />
+          <TableHeader data={data} denomination={denomination} />
           <tbody>
-            <AssetsSection data={data} />
-            <LiabilitiesSection data={data} />
-            <EquitySection data={data} />
+            <AssetsSection data={data} denomination={denomination} />
+            <LiabilitiesSection data={data} denomination={denomination} />
+            <EquitySection data={data} denomination={denomination} />
           </tbody>
         </table>
       </div>

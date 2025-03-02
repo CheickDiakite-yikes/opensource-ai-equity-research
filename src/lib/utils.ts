@@ -1,4 +1,3 @@
-
 import { type ClassValue, clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
 
@@ -34,16 +33,25 @@ export function formatLargeNumber(value: number): string {
 }
 
 // Improved function for financial tables to format in billions/millions
-export function formatFinancialTableValue(value: number): string {
-  if (Math.abs(value) >= 1_000_000_000) {
-    return `$${(value / 1_000_000_000).toFixed(2)}B`;
-  } else if (Math.abs(value) >= 1_000_000) {
-    return `$${(value / 1_000_000).toFixed(2)}M`;
-  } else if (Math.abs(value) >= 1_000) {
-    return `$${(value / 1_000).toFixed(1)}K`;
+export function formatFinancialTableValue(value: number, scale: 'millions' | 'billions' | 'thousands' = 'millions'): string {
+  if (value === 0) return "$0.00";
+  
+  let scaleFactor = 1000000; // Default to millions
+  let suffix = "M";
+  
+  if (scale === 'billions') {
+    scaleFactor = 1000000000;
+    suffix = "B";
+  } else if (scale === 'thousands') {
+    scaleFactor = 1000;
+    suffix = "K";
   }
-
-  return formatCurrency(value);
+  
+  // Convert to the specified scale
+  const scaledValue = value / scaleFactor;
+  
+  // Format with 2 decimal places and the appropriate suffix
+  return `$${scaledValue.toFixed(2)}${suffix}`;
 }
 
 // Format ratios and multiples with "x" suffix

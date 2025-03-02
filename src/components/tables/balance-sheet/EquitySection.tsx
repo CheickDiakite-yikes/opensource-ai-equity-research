@@ -5,16 +5,17 @@ import { formatFinancialTableValue } from "@/lib/utils";
 
 interface EquitySectionProps {
   data: FinancialDataItem[];
+  denomination?: 'millions' | 'billions' | 'thousands';
 }
 
-const EquitySection: React.FC<EquitySectionProps> = ({ data }) => {
+const EquitySection: React.FC<EquitySectionProps> = ({ data, denomination = 'millions' }) => {
   return (
     <>
       <tr className="border-t">
         <td className="font-medium">TOTAL EQUITY</td>
         {data.map((item) => (
           <td key={`total-equity-${item.year}`} className="text-right font-semibold">
-            {formatFinancialTableValue(item.totalEquity)}
+            {formatFinancialTableValue(item.totalEquity, denomination)}
           </td>
         ))}
       </tr>
@@ -23,7 +24,7 @@ const EquitySection: React.FC<EquitySectionProps> = ({ data }) => {
         <td className="font-medium">TOTAL LIABILITIES & EQUITY</td>
         {data.map((item) => (
           <td key={`total-liabilities-equity-${item.year}`} className="text-right font-semibold">
-            {formatFinancialTableValue(item.totalLiabilities + item.totalEquity)}
+            {formatFinancialTableValue(item.totalLiabilities + item.totalEquity, denomination)}
           </td>
         ))}
       </tr>
