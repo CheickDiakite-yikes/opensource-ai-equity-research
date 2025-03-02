@@ -112,10 +112,11 @@ const DCFTabContent: React.FC<DCFTabContentProps> = ({ financials, symbol }) => 
       <Card>
         <CardHeader>
           <CardTitle>Sensitivity Analysis</CardTitle>
+          <p className="text-xs text-muted-foreground">Stock price in USD based on different inputs</p>
         </CardHeader>
         <CardContent>
           <div className="text-sm text-muted-foreground mb-4">
-            The table below shows how changes in the discount rate (WACC) and terminal growth rate affect the estimated intrinsic value.
+            The table below shows how changes in the discount rate (WACC) and terminal growth rate affect the estimated stock price.
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
@@ -147,7 +148,7 @@ const DCFTabContent: React.FC<DCFTabContentProps> = ({ financials, symbol }) => 
                                 : ''
                           }`}
                         >
-                          {formatCurrency(adjustedPrice)}
+                          {formatCurrency(parseFloat(adjustedPrice.toFixed(2)))}
                         </td>
                       );
                     })}

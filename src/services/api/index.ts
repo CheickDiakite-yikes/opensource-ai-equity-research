@@ -4,11 +4,13 @@ export * from './profileService';
 export * from './financialService';
 export * from './marketDataService';
 export * from './analysisService';
+export * from './documentsService';
 
 // Composite functions
 import { fetchStockProfile, fetchStockQuote } from './profileService';
 import { fetchIncomeStatements, fetchBalanceSheets, fetchCashFlowStatements, fetchKeyRatios } from './financialService';
 import { fetchHistoricalPrices, fetchCompanyNews, fetchCompanyPeers } from './marketDataService';
+import { fetchEarningsTranscripts, fetchSECFilings } from './documentsService';
 
 /**
  * Get all financial data for a symbol
@@ -23,6 +25,8 @@ export const getAllFinancialData = async (symbol: string) => {
   const historicalPrices = await fetchHistoricalPrices(symbol);
   const news = await fetchCompanyNews(symbol);
   const peers = await fetchCompanyPeers(symbol);
+  const earningsTranscripts = await fetchEarningsTranscripts(symbol);
+  const secFilings = await fetchSECFilings(symbol);
 
   return {
     profile,
@@ -33,6 +37,8 @@ export const getAllFinancialData = async (symbol: string) => {
     keyRatios,
     historicalPrices,
     news,
-    peers
+    peers,
+    earningsTranscripts,
+    secFilings
   };
 };

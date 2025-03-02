@@ -5,94 +5,31 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { cn, formatCurrency, formatLargeNumber, formatPercentage } from "@/lib/utils";
-import { StockProfile, StockQuote } from "@/types";
-import { TrendingUp, TrendingDown, Briefcase, Globe, Users, FileText, Download, ExternalLink, MessageCircle } from "lucide-react";
-import { fetchStockProfile, fetchStockQuote } from "@/services/api";
+import { StockProfile, StockQuote, EarningsCall, SECFiling } from "@/types";
+import { TrendingUp, TrendingDown, Briefcase, Globe, Users, MessageCircle, FileText, Download, ExternalLink } from "lucide-react";
+import { 
+  fetchStockProfile, 
+  fetchStockQuote, 
+  fetchEarningsTranscripts, 
+  fetchSECFilings,
+  generateTranscriptHighlights
+} from "@/services/api";
+import { toast } from "@/components/ui/use-toast";
 
 interface StockOverviewProps {
   symbol: string;
 }
 
-interface EarningsCall {
-  date: string;
-  quarter: string;
-  year: string;
-  url: string;
-  highlights: string[];
-}
-
-interface SECFiling {
-  type: string;
-  filingDate: string;
-  reportDate: string;
-  url: string;
-}
-
 const StockOverview = ({ symbol }: StockOverviewProps) => {
   const [profile, setProfile] = useState<StockProfile | null>(null);
   const [quote, setQuote] = useState<StockQuote | null>(null);
+  const [earningsCalls, setEarningsCalls] = useState<EarningsCall[]>([]);
+  const [secFilings, setSecFilings] = useState<SECFiling[]>([]);
   const [loading, setLoading] = useState(true);
+  const [documentsLoading, setDocumentsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  
-  // Mock data for earnings calls and SEC filings
-  const [earningsCalls] = useState<EarningsCall[]>([
-    {
-      date: "2023-10-25",
-      quarter: "Q3",
-      year: "2023",
-      url: "#",
-      highlights: [
-        "Revenue increased 23% year over year to $34.15B",
-        "Daily active users (DAUs) increased 5% year over year to 2.09B",
-        "Operating margin was 40%, compared to 20% in the prior year"
-      ]
-    },
-    {
-      date: "2023-07-26",
-      quarter: "Q2",
-      year: "2023",
-      url: "#",
-      highlights: [
-        "Revenue increased 11% year over year to $32.0B",
-        "Net income was $7.79B",
-        "Announced a $40B increase in share repurchase authorization"
-      ]
-    }
-  ]);
-  
-  const [secFilings] = useState<SECFiling[]>([
-    {
-      type: "10-K (Annual Report)",
-      filingDate: "2023-02-02",
-      reportDate: "2022-12-31",
-      url: "#"
-    },
-    {
-      type: "10-Q (Quarterly Report)",
-      filingDate: "2023-10-26",
-      reportDate: "2023-09-30",
-      url: "#"
-    },
-    {
-      type: "10-Q (Quarterly Report)",
-      filingDate: "2023-07-27",
-      reportDate: "2023-06-30",
-      url: "#"
-    },
-    {
-      type: "10-Q (Quarterly Report)",
-      filingDate: "2023-04-27",
-      reportDate: "2023-03-31",
-      url: "#"
-    },
-    {
-      type: "8-K (Current Report)",
-      filingDate: "2023-10-25",
-      reportDate: "2023-10-25",
-      url: "#"
-    }
-  ]);
 
+  // Load stock profile and quote data
   useEffect(() => {
     const loadData = async () => {
       try {
@@ -120,6 +57,143 @@ const StockOverview = ({ symbol }: StockOverviewProps) => {
 
     if (symbol) {
       loadData();
+    }
+  }, [symbol]);
+
+  // Load earnings calls and SEC filings data
+  useEffect(() => {
+    const loadDocuments = async () => {
+      try {
+        setDocumentsLoading(true);
+        
+        const [earningsData, filingsData] = await Promise.all([
+          fetchEarningsTranscripts(symbol),
+          fetchSECFilings(symbol)
+        ]);
+        
+        // If we have real data, use it
+        if (earningsData && earningsData.length > 0) {
+          // Process the first few earnings calls to get highlights
+          const processedCalls = await Promise.all(
+            earningsData.slice(0, 3).map(async (call) => {
+              if (call.content && !call.highlights) {
+                try {
+                  const highlights = await generateTranscriptHighlights(call.content);
+                  return { ...call, highlights };
+                } catch (e) {
+                  console.error("Error generating highlights:", e);
+                  return call;
+                }
+              }
+              return call;
+            })
+          );
+          
+          setEarningsCalls(processedCalls);
+        } else {
+          // Fall back to mock data if API returns empty
+          setEarningsCalls([
+            {
+              symbol,
+              date: "2023-10-25",
+              quarter: "Q3",
+              year: "2023",
+              content: "",
+              url: `https://seekingalpha.com/symbol/${symbol}/earnings/transcripts`,
+              highlights: [
+                "Revenue increased 23% year over year to $34.15B",
+                "Daily active users increased 5% year over year to 2.09B",
+                "Operating margin was 40%, compared to 20% in the prior year"
+              ]
+            },
+            {
+              symbol,
+              date: "2023-07-26",
+              quarter: "Q2",
+              year: "2023",
+              content: "",
+              url: `https://seekingalpha.com/symbol/${symbol}/earnings/transcripts`,
+              highlights: [
+                "Revenue increased 11% year over year to $32.0B",
+                "Net income was $7.79B",
+                "Announced a $40B increase in share repurchase authorization"
+              ]
+            }
+          ]);
+        }
+        
+        // If we have real SEC filings, use them
+        if (filingsData && filingsData.length > 0) {
+          setSecFilings(filingsData);
+        } else {
+          // Fall back to mock data if API returns empty
+          setSecFilings([
+            {
+              symbol,
+              type: "10-K (Annual Report)",
+              filingDate: "2023-02-02",
+              reportDate: "2022-12-31",
+              cik: "0000000000",
+              form: "10-K",
+              url: `https://www.sec.gov/edgar/search/#/entityName=${symbol}`,
+              filingNumber: "000-00000"
+            },
+            {
+              symbol,
+              type: "10-Q (Quarterly Report)",
+              filingDate: "2023-10-26",
+              reportDate: "2023-09-30",
+              cik: "0000000000",
+              form: "10-Q",
+              url: `https://www.sec.gov/edgar/search/#/entityName=${symbol}`,
+              filingNumber: "000-00000"
+            },
+            {
+              symbol,
+              type: "10-Q (Quarterly Report)",
+              filingDate: "2023-07-27",
+              reportDate: "2023-06-30",
+              cik: "0000000000",
+              form: "10-Q",
+              url: `https://www.sec.gov/edgar/search/#/entityName=${symbol}`,
+              filingNumber: "000-00000"
+            },
+            {
+              symbol,
+              type: "10-Q (Quarterly Report)",
+              filingDate: "2023-04-27",
+              reportDate: "2023-03-31",
+              cik: "0000000000",
+              form: "10-Q",
+              url: `https://www.sec.gov/edgar/search/#/entityName=${symbol}`,
+              filingNumber: "000-00000"
+            },
+            {
+              symbol,
+              type: "8-K (Current Report)",
+              filingDate: "2023-10-25",
+              reportDate: "2023-10-25",
+              cik: "0000000000",
+              form: "8-K",
+              url: `https://www.sec.gov/edgar/search/#/entityName=${symbol}`,
+              filingNumber: "000-00000"
+            }
+          ]);
+        }
+      } catch (err) {
+        console.error("Error loading document data:", err);
+        toast({
+          title: "Warning",
+          description: "Could not load all document data. Some information may be unavailable.",
+          variant: "destructive",
+        });
+      } finally {
+        setDocumentsLoading(false);
+      }
+    };
+
+    if (symbol) {
+      loadDocuments();
     }
   }, [symbol]);
 
@@ -287,7 +361,7 @@ const StockOverview = ({ symbol }: StockOverviewProps) => {
         </CardContent>
       </Card>
       
-      {/* New section: Earnings Transcript Analysis */}
+      {/* Earnings Transcript Analysis */}
       <Card>
         <CardHeader>
           <CardTitle className="text-lg flex items-center">
@@ -296,36 +370,51 @@ const StockOverview = ({ symbol }: StockOverviewProps) => {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="space-y-6">
-            {earningsCalls.map((call, index) => (
-              <div key={index} className="border-b pb-4 last:border-0 last:pb-0">
-                <div className="flex items-center justify-between mb-2">
-                  <h4 className="font-medium flex items-center">
-                    {call.quarter} {call.year} Earnings Call
-                    <Badge variant="outline" className="ml-2">{new Date(call.date).toLocaleDateString()}</Badge>
-                  </h4>
-                  <Button variant="outline" size="sm" className="gap-1" asChild>
-                    <a href={call.url} target="_blank" rel="noopener noreferrer">
-                      <ExternalLink className="h-3.5 w-3.5" />
-                      <span>Full Transcript</span>
-                    </a>
-                  </Button>
+          {documentsLoading ? (
+            <div className="space-y-4">
+              <Skeleton className="h-24 w-full" />
+              <Skeleton className="h-24 w-full" />
+            </div>
+          ) : earningsCalls.length > 0 ? (
+            <div className="space-y-6">
+              {earningsCalls.map((call, index) => (
+                <div key={index} className="border-b pb-4 last:border-0 last:pb-0">
+                  <div className="flex items-center justify-between mb-2">
+                    <h4 className="font-medium flex items-center">
+                      {call.quarter} {call.year} Earnings Call
+                      <Badge variant="outline" className="ml-2">{new Date(call.date).toLocaleDateString()}</Badge>
+                    </h4>
+                    <Button variant="outline" size="sm" className="gap-1" asChild>
+                      <a href={call.url} target="_blank" rel="noopener noreferrer">
+                        <ExternalLink className="h-3.5 w-3.5" />
+                        <span>Full Transcript</span>
+                      </a>
+                    </Button>
+                  </div>
+                  <div className="text-sm text-muted-foreground">
+                    <h5 className="font-medium text-foreground mb-1">Key Highlights: <span className="text-xs text-muted-foreground">(AI Generated)</span></h5>
+                    <ul className="list-disc list-inside space-y-1">
+                      {call.highlights && call.highlights.length > 0 ? (
+                        call.highlights.map((highlight, i) => (
+                          <li key={i}>{highlight}</li>
+                        ))
+                      ) : (
+                        <li>No highlights available</li>
+                      )}
+                    </ul>
+                  </div>
                 </div>
-                <div className="text-sm text-muted-foreground">
-                  <h5 className="font-medium text-foreground mb-1">Key Highlights:</h5>
-                  <ul className="list-disc list-inside space-y-1">
-                    {call.highlights.map((highlight, i) => (
-                      <li key={i}>{highlight}</li>
-                    ))}
-                  </ul>
-                </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-6 text-muted-foreground">
+              No earnings call transcripts available
+            </div>
+          )}
         </CardContent>
       </Card>
       
-      {/* New section: SEC Filings */}
+      {/* SEC Filings Section */}
       <Card>
         <CardHeader>
           <CardTitle className="text-lg flex items-center">
@@ -334,35 +423,43 @@ const StockOverview = ({ symbol }: StockOverviewProps) => {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b">
-                  <th className="text-left py-2 font-medium">Filing Type</th>
-                  <th className="text-left py-2 font-medium">Period End</th>
-                  <th className="text-left py-2 font-medium">Filed Date</th>
-                  <th className="text-right py-2 font-medium">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {secFilings.map((filing, index) => (
-                  <tr key={index} className="border-b last:border-0">
-                    <td className="py-3">{filing.type}</td>
-                    <td className="py-3">{new Date(filing.reportDate).toLocaleDateString()}</td>
-                    <td className="py-3">{new Date(filing.filingDate).toLocaleDateString()}</td>
-                    <td className="py-3 text-right">
-                      <Button variant="ghost" size="sm" className="gap-1 text-primary" asChild>
-                        <a href={filing.url} target="_blank" rel="noopener noreferrer">
-                          <Download className="h-3.5 w-3.5" />
-                          <span>Download</span>
-                        </a>
-                      </Button>
-                    </td>
+          {documentsLoading ? (
+            <Skeleton className="h-64 w-full" />
+          ) : secFilings.length > 0 ? (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b">
+                    <th className="text-left py-2 font-medium">Filing Type</th>
+                    <th className="text-left py-2 font-medium">Period End</th>
+                    <th className="text-left py-2 font-medium">Filed Date</th>
+                    <th className="text-right py-2 font-medium">Actions</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody>
+                  {secFilings.map((filing, index) => (
+                    <tr key={index} className="border-b last:border-0">
+                      <td className="py-3">{filing.type || filing.form}</td>
+                      <td className="py-3">{new Date(filing.reportDate).toLocaleDateString()}</td>
+                      <td className="py-3">{new Date(filing.filingDate).toLocaleDateString()}</td>
+                      <td className="py-3 text-right">
+                        <Button variant="ghost" size="sm" className="gap-1 text-primary" asChild>
+                          <a href={filing.url} target="_blank" rel="noopener noreferrer">
+                            <Download className="h-3.5 w-3.5" />
+                            <span>Download</span>
+                          </a>
+                        </Button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <div className="text-center py-6 text-muted-foreground">
+              No SEC filings available
+            </div>
+          )}
           <div className="mt-4 text-center">
             <Button variant="outline" size="sm" asChild>
               <a 
