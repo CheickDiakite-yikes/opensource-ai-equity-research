@@ -5,11 +5,7 @@ project_id = "rnpcygrrxeeqphdjuesh"
 [api]
 enabled = true
 port = 54321
-types = "src/integrations/supabase/types.ts"
-
-[api.endpoint]
-port = 54321
-hostname = "localhost"
+# Removing invalid keys: endpoint, types
 
 [functions.generate-transcript-highlights]
 verify_jwt = false
