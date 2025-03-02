@@ -40,7 +40,6 @@ const StockAnalysis = ({ symbol }: StockAnalysisProps) => {
           fetchKeyRatios(symbol)
         ]);
         
-        // Sort data by date for consistency (newest to oldest)
         const sortedIncome = [...incomeData].sort((a, b) => 
           new Date(b.date).getTime() - new Date(a.date).getTime()
         );
@@ -69,13 +68,11 @@ const StockAnalysis = ({ symbol }: StockAnalysisProps) => {
     }
   }, [symbol]);
 
-  // Prepare data for charts
   const prepareFinancialData = () => {
     if (income.length === 0) return [];
     
     return income.map((inc, index) => {
-      // Safely access balance sheet data with fallbacks
-      const bal = balance[index] || {};
+      const bal = balance[index] || {} as Partial<BalanceSheet>;
       const year = new Date(inc.date).getFullYear().toString();
       
       return {
@@ -87,9 +84,9 @@ const StockAnalysis = ({ symbol }: StockAnalysisProps) => {
         operatingIncome: inc.operatingIncome,
         netIncome: inc.netIncome,
         eps: inc.eps,
-        totalAssets: bal.totalAssets || 0, // Added fallback
-        totalLiabilities: bal.totalLiabilities || 0, // Added fallback
-        totalEquity: bal.totalStockholdersEquity || 0 // Added fallback
+        totalAssets: bal.totalAssets || 0,
+        totalLiabilities: bal.totalLiabilities || 0,
+        totalEquity: bal.totalStockholdersEquity || 0
       };
     });
   };
@@ -457,7 +454,6 @@ const StockAnalysis = ({ symbol }: StockAnalysisProps) => {
   );
 };
 
-// Helper function to calculate year-over-year growth
 const calculateGrowth = (data: any[], key: string) => {
   return data.map((item, index) => {
     if (index === data.length - 1) {
@@ -477,7 +473,6 @@ const calculateGrowth = (data: any[], key: string) => {
   }).filter((item, index) => index < data.length - 1);
 };
 
-// Calculate Compound Annual Growth Rate (CAGR)
 const calculateCAGR = (data: any[], key: string) => {
   if (data.length < 2) return 0;
   
@@ -490,7 +485,6 @@ const calculateCAGR = (data: any[], key: string) => {
   return ((Math.pow(newest / oldest, 1 / years) - 1) * 100);
 };
 
-// Compare to industry average
 const compareToIndustry = (value: number, industryAvg: number) => {
   if (value > industryAvg) {
     return `Above Industry Average (${industryAvg.toFixed(1)}%)`;
