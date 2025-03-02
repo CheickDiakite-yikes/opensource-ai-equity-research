@@ -42,8 +42,6 @@ const ProfitabilityChart: React.FC<ProfitabilityChartProps> = ({ data }) => {
             <LineChart 
               data={data}
               margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
-              animationDuration={1500}
-              animationEasing="ease-out"
             >
               <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
               <XAxis 
@@ -76,6 +74,7 @@ const ProfitabilityChart: React.FC<ProfitabilityChartProps> = ({ data }) => {
                 strokeWidth={3}
                 dot={{ r: 4, strokeWidth: 2 }}
                 activeDot={{ r: 6, strokeWidth: 2 }}
+                isAnimationActive={true}
                 animationDuration={1800}
               />
               <Line 
@@ -86,6 +85,7 @@ const ProfitabilityChart: React.FC<ProfitabilityChartProps> = ({ data }) => {
                 strokeWidth={3}
                 dot={{ r: 4, strokeWidth: 2 }}
                 activeDot={{ r: 6, strokeWidth: 2 }}
+                isAnimationActive={true}
                 animationDuration={1800}
                 animationBegin={300}
               />
@@ -97,6 +97,7 @@ const ProfitabilityChart: React.FC<ProfitabilityChartProps> = ({ data }) => {
                 strokeWidth={3}
                 dot={{ r: 4, strokeWidth: 2 }}
                 activeDot={{ r: 6, strokeWidth: 2 }}
+                isAnimationActive={true}
                 animationDuration={1800}
                 animationBegin={600}
               />

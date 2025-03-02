@@ -42,8 +42,6 @@ const CashFlowChart: React.FC<CashFlowChartProps> = ({ data }) => {
             <BarChart
               data={chartData}
               margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
-              animationDuration={1200}
-              animationEasing="ease-out"
             >
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
               <XAxis 
@@ -72,6 +70,7 @@ const CashFlowChart: React.FC<CashFlowChartProps> = ({ data }) => {
                 dataKey="Operating Cash Flow" 
                 fill="#1d4ed8" 
                 radius={[4, 4, 0, 0]}
+                isAnimationActive={true}
                 animationDuration={1500}
                 animationEasing="ease-out"
               />
@@ -79,6 +78,7 @@ const CashFlowChart: React.FC<CashFlowChartProps> = ({ data }) => {
                 dataKey="Free Cash Flow" 
                 fill="#3b82f6" 
                 radius={[4, 4, 0, 0]}
+                isAnimationActive={true}
                 animationDuration={1500}
                 animationEasing="ease-out"
                 animationBegin={300}
@@ -87,6 +87,7 @@ const CashFlowChart: React.FC<CashFlowChartProps> = ({ data }) => {
                 dataKey="Investment Cash Flow" 
                 fill="#60a5fa" 
                 radius={[4, 4, 0, 0]}
+                isAnimationActive={true}
                 animationDuration={1500}
                 animationEasing="ease-out"
                 animationBegin={600}

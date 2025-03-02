@@ -41,8 +41,6 @@ const RevenueIncomeChart: React.FC<RevenueIncomeChartProps> = ({ data }) => {
             <BarChart 
               data={data}
               margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
-              animationDuration={1000}
-              animationEasing="ease-out"
             >
               <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
               <XAxis 
@@ -71,6 +69,7 @@ const RevenueIncomeChart: React.FC<RevenueIncomeChartProps> = ({ data }) => {
                 name="Revenue" 
                 fill="#1d4ed8" 
                 radius={[4, 4, 0, 0]}
+                isAnimationActive={true}
                 animationDuration={1500}
                 animationEasing="ease-out"
               />
@@ -79,6 +78,7 @@ const RevenueIncomeChart: React.FC<RevenueIncomeChartProps> = ({ data }) => {
                 name="Net Income" 
                 fill="#3b82f6" 
                 radius={[4, 4, 0, 0]}
+                isAnimationActive={true}
                 animationDuration={1500}
                 animationEasing="ease-out"
                 animationBegin={300}

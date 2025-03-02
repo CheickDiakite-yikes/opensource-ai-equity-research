@@ -42,8 +42,6 @@ const GrowthChart: React.FC<GrowthChartProps> = ({ data, title, color }) => {
             <BarChart 
               data={data}
               margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
-              animationDuration={1000}
-              animationEasing="ease-out"
             >
               <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
               <XAxis 
@@ -73,6 +71,7 @@ const GrowthChart: React.FC<GrowthChartProps> = ({ data, title, color }) => {
                 fill={color} 
                 name={`${title} YoY`} 
                 radius={[4, 4, 0, 0]}
+                isAnimationActive={true}
                 animationDuration={1500}
                 animationEasing="ease-out"
               />
