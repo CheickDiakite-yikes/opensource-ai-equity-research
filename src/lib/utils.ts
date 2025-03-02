@@ -1,4 +1,3 @@
-
 import { type ClassValue, clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
 import { format } from "date-fns";
@@ -11,14 +10,18 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 /**
- * Format a number as a currency string
+ * Format a number as a currency string with improved formatting for large numbers
  */
 export function formatCurrency(amount: number, currency: string = "USD"): string {
   if (amount === null || amount === undefined) return 'N/A';
   
   // For very large numbers, use the large number formatter with currency symbol
-  if (Math.abs(amount) >= 1e6) {
-    return '$' + formatLargeNumber(amount);
+  if (Math.abs(amount) >= 1e9) {
+    return '$' + (amount / 1e9).toFixed(2) + 'B';
+  } else if (Math.abs(amount) >= 1e6) {
+    return '$' + (amount / 1e6).toFixed(2) + 'M';
+  } else if (Math.abs(amount) >= 1e3) {
+    return '$' + (amount / 1e3).toFixed(1) + 'K';
   }
   
   return new Intl.NumberFormat('en-US', { 
@@ -29,7 +32,7 @@ export function formatCurrency(amount: number, currency: string = "USD"): string
 }
 
 /**
- * Format a large number with abbreviations (K, M, B, T)
+ * Format a large number with abbreviations (K, M, B, T) and improved precision
  */
 export function formatLargeNumber(num: number): string {
   if (num === null || num === undefined) return 'N/A';
@@ -43,9 +46,9 @@ export function formatLargeNumber(num: number): string {
   } else if (absNum >= 1e6) {
     return (num / 1e6).toFixed(2) + 'M';
   } else if (absNum >= 1e3) {
-    return (num / 1e3).toFixed(2) + 'K';
+    return (num / 1e3).toFixed(1) + 'K';
   } else {
-    return num.toLocaleString();
+    return num.toLocaleString(undefined, {maximumFractionDigits: 2});
   }
 }
 
@@ -67,17 +70,25 @@ export function calculatePercentChange(current: number, previous: number): numbe
 
 /**
  * Format a percentage with sign and decimal places
+ * Improved to handle different decimal place requirements
  */
 export function formatPercentage(value: number, decimals: number = 2): string {
-  const formattedValue = value.toFixed(decimals);
-  return `${value > 0 ? '+' : ''}${formattedValue}%`;
+  if (value === null || value === undefined) return 'N/A';
+  
+  const sign = value > 0 ? '+' : '';
+  return `${sign}${value.toFixed(decimals)}%`;
 }
 
 /**
  * Style percentage based on value (positive/negative)
+ * Enhanced with more style options
  */
 export function getPercentStyle(value: number): string {
-  return value > 0 ? 'text-green-600' : value < 0 ? 'text-red-600' : 'text-gray-500';
+  if (value > 5) return 'text-green-600 font-medium';
+  if (value > 0) return 'text-green-500';
+  if (value < -5) return 'text-red-600 font-medium';
+  if (value < 0) return 'text-red-500';
+  return 'text-gray-500';
 }
 
 /**
@@ -198,15 +209,31 @@ export function generateReportHTML(title: string, content: string): string {
 
 /**
  * Format financial values for better display in charts (in millions/billions)
+ * Improved precision and formatting
  */
 export function formatChartValue(value: number): string {
-  if (Math.abs(value) >= 1e9) {
-    return `$${(value / 1e9).toFixed(1)}B`;
-  } else if (Math.abs(value) >= 1e6) {
-    return `$${(value / 1e6).toFixed(1)}M`;
-  } else if (Math.abs(value) >= 1e3) {
-    return `$${(value / 1e3).toFixed(1)}K`;
+  if (value === null || value === undefined) return 'N/A';
+  
+  const absValue = Math.abs(value);
+  const sign = value < 0 ? '-' : '';
+  
+  if (absValue >= 1e12) {
+    return `${sign}$${(absValue / 1e12).toFixed(2)}T`;
+  } else if (absValue >= 1e9) {
+    return `${sign}$${(absValue / 1e9).toFixed(2)}B`;
+  } else if (absValue >= 1e6) {
+    return `${sign}$${(absValue / 1e6).toFixed(2)}M`;
+  } else if (absValue >= 1e3) {
+    return `${sign}$${(absValue / 1e3).toFixed(1)}K`;
   } else {
-    return `$${value.toFixed(0)}`;
+    return `${sign}$${absValue.toFixed(0)}`;
   }
+}
+
+/**
+ * Format ratio values with proper decimal places
+ */
+export function formatRatio(value: number, decimals: number = 2): string {
+  if (value === null || value === undefined) return 'N/A';
+  return value.toFixed(decimals) + 'x';
 }

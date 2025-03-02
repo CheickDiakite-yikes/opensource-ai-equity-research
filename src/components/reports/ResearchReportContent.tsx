@@ -7,6 +7,7 @@ import ReportTabs from "@/components/reports/ReportTabs";
 import { ReportData } from "./useResearchReportData";
 import { ResearchReport } from "@/types/aiAnalysisTypes";
 import { StockPrediction } from "@/types/aiAnalysisTypes";
+import { motion } from "framer-motion";
 
 interface ResearchReportContentProps {
   data: ReportData;
@@ -37,36 +38,51 @@ const ResearchReportContent: React.FC<ResearchReportContentProps> = ({
 }) => {
   return (
     <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center">
-            <FileText className="mr-2 h-5 w-5" />
-            Research Report Generator
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {showDataWarning && (
-            <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-md text-amber-800 text-sm">
-              <div className="flex">
-                <AlertCircle className="h-5 w-5 mr-2 flex-shrink-0" />
-                <p>Limited financial data available. Report accuracy may be affected.</p>
-              </div>
-            </div>
-          )}
-          
-          <ReportGeneratorForm 
-            reportType={reportType}
-            setReportType={setReportType}
-            onGenerateReport={onGenerateReport}
-            onPredictPrice={onPredictPrice}
-            isGenerating={isGenerating}
-            isPredicting={isPredicting}
-            hasData={hasStockData}
-          />
-          
-          <ReportTabs report={report} prediction={prediction} />
-        </CardContent>
-      </Card>
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+      >
+        <Card className="overflow-hidden border-border/60 shadow-md">
+          <CardHeader className="bg-gradient-to-r from-didi.darkBlue/10 to-didi.lightBlue/5 border-b border-border/30">
+            <CardTitle className="flex items-center">
+              <img 
+                src="/lovable-uploads/0a908707-8ada-47df-82b6-93b66dc7e24d.png" 
+                alt="DiDi Equity Research" 
+                className="h-7 mr-3" 
+              />
+              <span className="text-didi.darkBlue">Research Report Generator</span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-6">
+            {showDataWarning && (
+              <motion.div 
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3, delay: 0.2 }}
+                className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-md text-amber-800 text-sm"
+              >
+                <div className="flex">
+                  <AlertCircle className="h-5 w-5 mr-2 flex-shrink-0" />
+                  <p>Limited financial data available. Report accuracy may be affected.</p>
+                </div>
+              </motion.div>
+            )}
+            
+            <ReportGeneratorForm 
+              reportType={reportType}
+              setReportType={setReportType}
+              onGenerateReport={onGenerateReport}
+              onPredictPrice={onPredictPrice}
+              isGenerating={isGenerating}
+              isPredicting={isPredicting}
+              hasData={hasStockData}
+            />
+            
+            <ReportTabs report={report} prediction={prediction} />
+          </CardContent>
+        </Card>
+      </motion.div>
     </div>
   );
 };
