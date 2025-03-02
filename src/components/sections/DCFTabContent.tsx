@@ -96,9 +96,9 @@ const DCFTabContent: React.FC<DCFTabContentProps> = ({ financials, symbol }) => 
                   {mockDCFData.projections.map((proj, i) => (
                     <tr key={i} className="border-b last:border-0">
                       <td className="py-2">{proj.year}</td>
-                      <td className="text-right py-2">{formatCurrency(proj.revenue)}</td>
-                      <td className="text-right py-2">{formatCurrency(proj.ebit)}</td>
-                      <td className="text-right py-2">{formatCurrency(proj.fcf)}</td>
+                      <td className="text-right py-2">{formatCurrency(parseFloat(proj.revenue.toString()))}</td>
+                      <td className="text-right py-2">{formatCurrency(parseFloat(proj.ebit.toString()))}</td>
+                      <td className="text-right py-2">{formatCurrency(parseFloat(proj.fcf.toString()))}</td>
                     </tr>
                   ))}
                 </tbody>
