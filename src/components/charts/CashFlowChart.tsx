@@ -2,7 +2,7 @@
 import React from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ReferenceLine } from "recharts";
-import { formatFinancialTableValue } from "@/lib/utils";
+import { formatFinancialTableValue, formatLargeNumber } from "@/lib/utils";
 import { motion } from "framer-motion";
 
 interface CashFlowChartProps {
@@ -23,6 +23,9 @@ const CashFlowChart: React.FC<CashFlowChartProps> = ({ data }) => {
       "Investment Cash Flow": Math.abs(investmentCashFlow) * -1 // Make negative for visualization
     };
   });
+
+  // Set consistent denomination for formatting tooltip values
+  const denomination = 'millions';
 
   return (
     <motion.div
@@ -55,7 +58,7 @@ const CashFlowChart: React.FC<CashFlowChartProps> = ({ data }) => {
                 tickFormatter={(value) => `$${(value / 1000000000).toFixed(1)}B`}
               />
               <Tooltip 
-                formatter={(value: number) => [formatFinancialTableValue(value), ""]}
+                formatter={(value: number) => [formatFinancialTableValue(value, denomination), ""]}
                 labelFormatter={(label) => `Year: ${label}`}
                 contentStyle={{ 
                   backgroundColor: 'rgba(255, 255, 255, 0.95)', 

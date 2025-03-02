@@ -160,9 +160,9 @@ const DCFTabContent: React.FC<DCFTabContentProps> = ({ financials, symbol }) => 
                       {mockDCFData.projections.map((proj, i) => (
                         <tr key={i} className="border-b last:border-0">
                           <td className="py-2">{proj.year}</td>
-                          <td className="text-right py-2">{formatLargeNumber(proj.revenue)}</td>
-                          <td className="text-right py-2">{formatLargeNumber(proj.ebit)}</td>
-                          <td className="text-right py-2">{formatLargeNumber(proj.fcf)}</td>
+                          <td className="text-right py-2">${(proj.revenue / 1000000).toFixed(2)}</td>
+                          <td className="text-right py-2">${(proj.ebit / 1000000).toFixed(2)}</td>
+                          <td className="text-right py-2">${(proj.fcf / 1000000).toFixed(2)}</td>
                         </tr>
                       ))}
                     </tbody>

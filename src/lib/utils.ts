@@ -37,21 +37,18 @@ export function formatFinancialTableValue(value: number, scale: 'millions' | 'bi
   if (value === 0) return "$0.00";
   
   let scaleFactor = 1000000; // Default to millions
-  let suffix = "M";
   
   if (scale === 'billions') {
     scaleFactor = 1000000000;
-    suffix = "B";
   } else if (scale === 'thousands') {
     scaleFactor = 1000;
-    suffix = "K";
   }
   
   // Convert to the specified scale
   const scaledValue = value / scaleFactor;
   
-  // Format with 2 decimal places and the appropriate suffix
-  return `$${scaledValue.toFixed(2)}${suffix}`;
+  // Format with 2 decimal places
+  return `$${scaledValue.toFixed(2)}`;
 }
 
 // Format ratios and multiples with "x" suffix
