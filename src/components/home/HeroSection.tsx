@@ -1,7 +1,7 @@
 
 import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { ArrowDownCircle, BarChart4, Brain, ChartLineUp, Search, TrendingUp } from "lucide-react";
+import { ArrowDownCircle, BarChart4, Brain, ChartLine, Search, TrendingUp } from "lucide-react";
 
 const HeroSection: React.FC = () => {
   const [isVisible, setIsVisible] = useState(false);
@@ -29,7 +29,7 @@ const HeroSection: React.FC = () => {
       transition: {
         duration: 2,
         repeat: Infinity,
-        repeatType: "reverse"
+        repeatType: "reverse" as const
       }
     }
   };
@@ -47,7 +47,7 @@ const HeroSection: React.FC = () => {
         animate={isVisible ? "visible" : "hidden"}
       >
         <motion.div variants={iconVariant} className="absolute top-[20%] left-[15%] text-primary/20">
-          <ChartLineUp size={28} />
+          <ChartLine size={28} />
         </motion.div>
         <motion.div variants={iconVariant} className="absolute top-[10%] right-[20%] text-blue-400/20">
           <BarChart4 size={32} />
