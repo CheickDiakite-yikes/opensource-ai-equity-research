@@ -1,64 +1,21 @@
 
-import React, { useState, useEffect } from "react";
+import React from "react";
 import { Card, CardHeader, CardContent, CardTitle } from "@/components/ui/card";
 import GrowthChart from "@/components/charts/GrowthChart";
 import GrowthRateCard from "@/components/cards/GrowthRateCard";
-import GrowthInsightsCard from "@/components/sections/GrowthInsightsCard";
 import { calculateCAGR, calculateGrowth, compareToIndustry } from "@/utils/financialDataUtils";
-import { generateGrowthInsights } from "@/services/api/insightsService";
-import { GrowthInsight } from "@/services/api/insightsService";
-import { EarningsCall, SECFiling } from "@/types";
 
 interface GrowthTabContentProps {
   financials: any[];
-  symbol: string;
-  transcripts?: EarningsCall[];
-  filings?: SECFiling[];
 }
 
-const GrowthTabContent: React.FC<GrowthTabContentProps> = ({ 
-  financials, 
-  symbol,
-  transcripts = [],
-  filings = []
-}) => {
-  const [insights, setInsights] = useState<GrowthInsight[]>([]);
-  const [isLoadingInsights, setIsLoadingInsights] = useState<boolean>(false);
-  const [insightsError, setInsightsError] = useState<string | null>(null);
-  
-  // Get the most recent transcript and filing
-  const latestTranscript = transcripts && transcripts.length > 0 ? transcripts[0] : undefined;
-  const latestFiling = filings && filings.length > 0 ? filings[0] : undefined;
-
-  // Calculate growth data
+const GrowthTabContent: React.FC<GrowthTabContentProps> = ({ financials }) => {
   const revenueGrowthData = calculateGrowth(financials, 'revenue');
   const netIncomeGrowthData = calculateGrowth(financials, 'netIncome');
   
   const revenueCagr = calculateCAGR(financials, 'revenue');
   const epsCagr = calculateCAGR(financials, 'eps');
   const netIncomeCagr = calculateCAGR(financials, 'netIncome');
-  
-  // Fetch growth insights when component mounts or when documents change
-  useEffect(() => {
-    const fetchInsights = async () => {
-      if (!symbol) return;
-      
-      setIsLoadingInsights(true);
-      setInsightsError(null);
-      
-      try {
-        const result = await generateGrowthInsights(symbol, latestTranscript, latestFiling);
-        setInsights(result);
-      } catch (error) {
-        console.error("Failed to fetch growth insights:", error);
-        setInsightsError("Unable to analyze growth trends at this time");
-      } finally {
-        setIsLoadingInsights(false);
-      }
-    };
-    
-    fetchInsights();
-  }, [symbol, latestTranscript, latestFiling]);
 
   return (
     <div className="mt-4 space-y-6">
@@ -111,14 +68,6 @@ const GrowthTabContent: React.FC<GrowthTabContentProps> = ({
           )}
         </CardContent>
       </Card>
-      
-      <GrowthInsightsCard
-        insights={insights}
-        isLoading={isLoadingInsights}
-        error={insightsError}
-        transcriptDate={latestTranscript?.date}
-        filingDate={latestFiling?.filingDate}
-      />
     </div>
   );
 };

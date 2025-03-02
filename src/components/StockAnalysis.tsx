@@ -1,129 +1,133 @@
-import React from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Skeleton } from "@/components/ui/skeleton";
+
+import { useState, useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import StockOverview from "@/components/StockOverview";
-import FinancialHighlights from "@/components/sections/FinancialHighlights";
-import IncomeStatementTable from "@/components/tables/IncomeStatementTable";
-import BalanceSheetTable from "@/components/tables/BalanceSheetTable";
-import CashFlowStatementTable from "@/components/tables/CashFlowStatementTable";
-import KeyRatiosTable from "@/components/tables/KeyRatiosTable";
+import { Card } from "@/components/ui/card";
+import { 
+  fetchIncomeStatements, 
+  fetchBalanceSheets, 
+  fetchKeyRatios,
+  fetchCashFlowStatements
+} from "@/services/api";
+import type { IncomeStatement, BalanceSheet, KeyRatio, CashFlowStatement } from "@/types";
+import LoadingSkeleton from "@/components/LoadingSkeleton";
+import FinancialsTabContent from "@/components/sections/FinancialsTabContent";
+import BalanceSheetTabContent from "@/components/sections/BalanceSheetTabContent";
+import CashFlowTabContent from "@/components/sections/CashFlowTabContent";
+import RatiosTabContent from "@/components/sections/RatiosTabContent";
 import GrowthTabContent from "@/components/sections/GrowthTabContent";
-import ValuationTabContent from "@/components/sections/ValuationTabContent";
-import { useStockData } from "@/components/stocks/useStockData";
+import DCFTabContent from "@/components/sections/DCFTabContent";
+import { prepareFinancialData, prepareRatioData } from "@/utils/financialDataUtils";
 
 interface StockAnalysisProps {
   symbol: string;
 }
 
-const StockAnalysis: React.FC<StockAnalysisProps> = ({ symbol }) => {
-  const { 
-    data, 
-    isLoading, 
-    error 
-  } = useStockData(symbol);
+const StockAnalysis = ({ symbol }: StockAnalysisProps) => {
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [income, setIncome] = useState<IncomeStatement[]>([]);
+  const [balance, setBalance] = useState<BalanceSheet[]>([]);
+  const [cashflow, setCashflow] = useState<CashFlowStatement[]>([]);
+  const [ratios, setRatios] = useState<KeyRatio[]>([]);
+
+  useEffect(() => {
+    const fetchFinancialData = async () => {
+      try {
+        setIsLoading(true);
+        setError(null);
+        
+        const [incomeData, balanceData, cashflowData, ratiosData] = await Promise.all([
+          fetchIncomeStatements(symbol),
+          fetchBalanceSheets(symbol),
+          fetchCashFlowStatements(symbol),
+          fetchKeyRatios(symbol)
+        ]);
+        
+        const sortedIncome = [...incomeData].sort((a, b) => 
+          new Date(b.date).getTime() - new Date(a.date).getTime()
+        );
+        
+        const sortedBalance = [...balanceData].sort((a, b) => 
+          new Date(b.date).getTime() - new Date(a.date).getTime()
+        );
+        
+        const sortedCashflow = [...cashflowData].sort((a, b) => 
+          new Date(b.date).getTime() - new Date(a.date).getTime()
+        );
+        
+        const sortedRatios = [...ratiosData].sort((a, b) => 
+          new Date(b.date).getTime() - new Date(a.date).getTime()
+        );
+        
+        setIncome(sortedIncome);
+        setBalance(sortedBalance);
+        setCashflow(sortedCashflow);
+        setRatios(sortedRatios);
+      } catch (err) {
+        console.error("Error fetching financial data:", err);
+        setError(err.message);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    if (symbol) {
+      fetchFinancialData();
+    }
+  }, [symbol]);
+
+  const financials = prepareFinancialData(income, balance, cashflow);
+  const ratioData = prepareRatioData(ratios);
 
   if (isLoading) {
+    return <LoadingSkeleton />;
+  }
+
+  if (error || financials.length === 0) {
     return (
-      <Card className="w-full">
-        <CardHeader>
-          <CardTitle>
-            <Skeleton className="h-6 w-40" />
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid gap-4">
-            <Skeleton className="h-4 w-32" />
-            <Skeleton className="h-4 w-48" />
-            <Skeleton className="h-4 w-24" />
-          </div>
-        </CardContent>
+      <Card className="p-6">
+        <div className="text-center py-8">
+          <h3 className="text-lg font-medium text-red-600 mb-2">Error Loading Financial Data</h3>
+          <p className="text-muted-foreground">{error || `No financial data available for ${symbol}`}</p>
+        </div>
       </Card>
     );
   }
-
-  if (error) {
-    return (
-      <Card className="w-full">
-        <CardHeader>
-          <CardTitle>Error</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-red-500">{error}</p>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  if (!data) {
-    return <p>No data available.</p>;
-  }
-
-  const { 
-    profile, 
-    quote, 
-    incomeStatements, 
-    balanceSheets, 
-    cashFlowStatements, 
-    keyRatios 
-  } = data;
 
   return (
-    <div className="space-y-4">
-      <FinancialHighlights 
-        profile={profile} 
-        quote={quote} 
-        incomeStatements={incomeStatements} 
-        balanceSheets={balanceSheets} 
-        cashFlowStatements={cashFlowStatements} 
-        keyRatios={keyRatios} 
-      />
-      
-      <Tabs defaultValue="growth" className="w-full">
-        <TabsList className="bg-secondary rounded-md p-1">
-          <TabsTrigger value="income">Income Stmt</TabsTrigger>
-          <TabsTrigger value="balance">Balance Sheet</TabsTrigger>
-          <TabsTrigger value="cashflow">Cash Flow</TabsTrigger>
-          <TabsTrigger value="ratios">Key Ratios</TabsTrigger>
-          <TabsTrigger value="growth">Growth</TabsTrigger>
-          <TabsTrigger value="valuation">Valuation</TabsTrigger>
+    <div className="space-y-6">
+      <Tabs defaultValue="income-statement" className="w-full">
+        <TabsList className="grid grid-cols-3 md:grid-cols-6 mb-6">
+          <TabsTrigger value="income-statement">Income Statement</TabsTrigger>
+          <TabsTrigger value="balance-sheet">Balance Sheet</TabsTrigger>
+          <TabsTrigger value="cash-flow">Cash Flow</TabsTrigger>
+          <TabsTrigger value="ratios">Financial Ratios</TabsTrigger>
+          <TabsTrigger value="growth">Growth Analysis</TabsTrigger>
+          <TabsTrigger value="dcf">DCF Valuation</TabsTrigger>
         </TabsList>
         
-        <TabsContent value="income" className="animate-fade-in">
-          <IncomeStatementTable incomeStatements={incomeStatements} />
+        <TabsContent value="income-statement">
+          <FinancialsTabContent financials={financials} />
         </TabsContent>
         
-        <TabsContent value="balance" className="animate-fade-in">
-          <BalanceSheetTable balanceSheets={balanceSheets} />
+        <TabsContent value="balance-sheet">
+          <BalanceSheetTabContent financials={financials} />
         </TabsContent>
         
-        <TabsContent value="cashflow" className="animate-fade-in">
-          <CashFlowStatementTable cashFlowStatements={cashFlowStatements} />
+        <TabsContent value="cash-flow">
+          <CashFlowTabContent financials={financials} />
         </TabsContent>
         
-        <TabsContent value="ratios" className="animate-fade-in">
-          <KeyRatiosTable keyRatios={keyRatios} />
+        <TabsContent value="ratios">
+          <RatiosTabContent ratioData={ratioData} symbol={symbol} />
         </TabsContent>
-
-        <TabsContent value="growth" className="animate-fade-in">
-          <GrowthTabContent 
-            financials={incomeStatements} 
-            symbol={symbol}
-            transcripts={data.transcripts}
-            filings={data.filings}
-          />
+        
+        <TabsContent value="growth">
+          <GrowthTabContent financials={financials} />
         </TabsContent>
-
-        <TabsContent value="valuation" className="animate-fade-in">
-          <ValuationTabContent 
-            profile={profile}
-            quote={quote}
-            incomeStatements={incomeStatements}
-            balanceSheets={balanceSheets}
-            cashFlowStatements={cashFlowStatements}
-          />
+        
+        <TabsContent value="dcf">
+          <DCFTabContent financials={financials} symbol={symbol} />
         </TabsContent>
       </Tabs>
     </div>
