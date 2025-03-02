@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useEffect, useRef } from "react";
 import { Star, Sparkles, Rocket } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { motion } from "framer-motion";
@@ -32,6 +32,57 @@ const FeaturedCompanies: React.FC<FeaturedCompaniesProps> = ({
   featuredSymbols, 
   onSelectSymbol 
 }) => {
+  const containerRef = useRef<HTMLDivElement>(null);
+  
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+    
+    // Create asteroids that move across the container
+    const createAsteroid = () => {
+      const asteroid = document.createElement('div');
+      asteroid.className = 'asteroid';
+      
+      // Random size between 2 and 8px
+      const size = Math.random() * 6 + 2;
+      asteroid.style.width = `${size}px`;
+      asteroid.style.height = `${size}px`;
+      
+      // Start from random position on the left
+      asteroid.style.left = '-10px';
+      asteroid.style.top = `${Math.random() * 100}%`;
+      
+      // Random opacity
+      asteroid.style.opacity = `${Math.random() * 0.7 + 0.3}`;
+      
+      // Add animation
+      asteroid.style.transition = `transform ${Math.random() * 10 + 10}s linear, opacity 0.5s ease`;
+      
+      // Append to container
+      container.appendChild(asteroid);
+      
+      // Start animation after a small delay
+      setTimeout(() => {
+        asteroid.style.transform = `translateX(${container.offsetWidth + 20}px) translateY(${Math.random() * 200 - 100}px)`;
+      }, 10);
+      
+      // Remove after animation completes
+      setTimeout(() => {
+        asteroid.remove();
+      }, 20000);
+    };
+    
+    // Create asteroids periodically
+    const interval = setInterval(createAsteroid, 1000);
+    
+    // Initial asteroids
+    for (let i = 0; i < 10; i++) {
+      setTimeout(createAsteroid, i * 200);
+    }
+    
+    return () => clearInterval(interval);
+  }, []);
+  
   // Random trend indicators for demo purposes
   const getTrendIndicator = () => {
     return Math.random() > 0.5 ? 
@@ -40,7 +91,7 @@ const FeaturedCompanies: React.FC<FeaturedCompaniesProps> = ({
   };
 
   return (
-    <div className="relative">
+    <div className="relative" ref={containerRef}>
       {/* Animated stars in the background */}
       {[...Array(20)].map((_, i) => (
         <motion.div
@@ -73,7 +124,7 @@ const FeaturedCompanies: React.FC<FeaturedCompaniesProps> = ({
       >
         <div className="flex items-center gap-2 mb-8">
           <Star className="h-6 w-6 text-yellow-400" />
-          <h2 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-600">
+          <h2 className="text-2xl font-bold cosmic-text">
             Featured Companies
           </h2>
         </div>
@@ -109,12 +160,12 @@ const FeaturedCompanies: React.FC<FeaturedCompaniesProps> = ({
                 />
                 
                 <Card 
-                  className="featured-card cursor-pointer overflow-hidden bg-gradient-to-b from-slate-900/90 to-slate-800/90 text-white border border-blue-500/30 backdrop-blur-sm hover:shadow-lg hover:shadow-blue-500/20"
+                  className="cosmic-card cursor-pointer overflow-hidden border-blue-500/30 backdrop-blur-sm hover:shadow-lg hover:shadow-blue-500/20"
                   onClick={() => onSelectSymbol(company.symbol)}
                 >
                   <div className="h-1 bg-gradient-to-r from-blue-500 to-purple-500" />
                   <CardContent className="p-5 text-center">
-                    <div className="font-bold text-xl mb-1 bg-clip-text text-transparent bg-gradient-to-r from-blue-300 to-purple-300">
+                    <div className="font-bold text-xl mb-1 cosmic-text">
                       {company.symbol}
                     </div>
                     <div className="text-sm text-blue-100/80 mb-3 truncate">

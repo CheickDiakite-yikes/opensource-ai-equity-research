@@ -21,7 +21,7 @@ const Header: React.FC<HeaderProps> = ({
   handleKeyDown
 }) => {
   return (
-    <header className="border-b border-border/40 py-4 px-6 bg-gradient-to-r from-background to-secondary/10 backdrop-blur-sm sticky top-0 z-10 shadow-sm">
+    <header className="border-b border-white/10 py-4 px-6 backdrop-blur-md sticky top-0 z-10 shadow-md">
       <div className="container mx-auto flex flex-col sm:flex-row justify-between items-center gap-4">
         <motion.div
           initial={{ opacity: 0, x: -20 }}
@@ -34,7 +34,7 @@ const Header: React.FC<HeaderProps> = ({
               alt="DiDi Equity Research" 
               className="h-10"
             />
-            <span className="bg-clip-text text-transparent bg-gradient-to-r from-primary to-blue-600">
+            <span className="cosmic-text">
               Equity Research
             </span>
           </h1>
@@ -53,14 +53,14 @@ const Header: React.FC<HeaderProps> = ({
               value={symbol}
               onChange={(e) => setSymbol(e.target.value)}
               onKeyDown={handleKeyDown}
-              className="pl-10 bg-background/80 backdrop-blur-sm pr-4 border-border/50 focus:border-primary/50 transition-colors h-10"
+              className="pl-10 bg-slate-800/50 backdrop-blur-sm pr-4 border-blue-500/30 focus:border-blue-400 transition-colors h-10 text-white"
             />
-            <Search className="absolute left-3 top-2.5 h-5 w-5 text-muted-foreground" />
+            <Search className="absolute left-3 top-2.5 h-5 w-5 text-blue-300" />
           </div>
           <Button 
             onClick={handleSearch} 
             disabled={isLoading || !symbol.trim()} 
-            className="gap-1 px-4 h-10"
+            className="gap-1 px-4 h-10 bg-blue-600 hover:bg-blue-500 text-white"
           >
             {isLoading ? (
               <span className="flex items-center gap-2">
