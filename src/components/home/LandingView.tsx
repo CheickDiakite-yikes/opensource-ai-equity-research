@@ -34,35 +34,8 @@ const LandingView: React.FC<LandingViewProps> = ({
       variants={container}
       initial="hidden"
       animate="show"
-      className="space-y-12 my-12 relative z-10"
+      className="space-y-12 my-12"
     >
-      {/* Add floating elements for cosmic effect */}
-      {[...Array(5)].map((_, i) => (
-        <motion.div
-          key={`orbital-${i}`}
-          className="absolute opacity-30 z-0"
-          style={{
-            width: Math.random() * 4 + 2,
-            height: Math.random() * 4 + 2,
-            backgroundColor: 'white',
-            borderRadius: '50%',
-            filter: 'blur(1px)',
-            boxShadow: '0 0 8px 2px rgba(255, 255, 255, 0.5)',
-            top: `${Math.random() * 80 + 10}%`,
-            left: `${Math.random() * 80 + 10}%`,
-          }}
-          animate={{
-            x: [0, Math.random() * 100 - 50, 0],
-            y: [0, Math.random() * 100 - 50, 0],
-          }}
-          transition={{
-            duration: Math.random() * 20 + 20,
-            repeat: Infinity,
-            ease: "easeInOut"
-          }}
-        />
-      ))}
-      
       <HeroSection />
       <FeaturedCompanies 
         featuredSymbols={featuredSymbols} 
