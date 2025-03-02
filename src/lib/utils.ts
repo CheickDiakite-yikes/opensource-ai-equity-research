@@ -37,6 +37,10 @@ export function formatPercentage(value: number): string {
   return `${value.toFixed(2)}%`;
 }
 
+export function formatMultiple(value: number): string {
+  return `${value.toFixed(2)}x`;
+}
+
 export function formatCompactNumber(value: number): string {
   const formatter = new Intl.NumberFormat("en-US", {
     notation: "compact",
@@ -99,7 +103,7 @@ export function debounce<F extends (...args: any[]) => any>(
   };
 }
 
-// Adding the missing formatDate function
+// Format a date string to a human-readable format
 export function formatDate(dateString: string): string {
   if (!dateString) return '';
   
@@ -113,7 +117,7 @@ export function formatDate(dateString: string): string {
   });
 }
 
-// Adding the missing generateReportHTML function
+// Generate HTML content for a report
 export function generateReportHTML(title: string, content: string): string {
   return `
     <!DOCTYPE html>
@@ -168,4 +172,33 @@ export function generateReportHTML(title: string, content: string): string {
     </body>
     </html>
   `;
+}
+
+// Format numbers for DCF display (added as requested by user)
+export function formatDCFValue(value: number): string {
+  if (Math.abs(value) >= 1_000_000_000) {
+    return `${(value / 1_000_000_000).toFixed(2)}B`;
+  } else if (Math.abs(value) >= 1_000_000) {
+    return `${(value / 1_000_000).toFixed(2)}M`;
+  } else if (Math.abs(value) >= 1_000) {
+    return `${(value / 1_000).toFixed(2)}K`;
+  }
+  
+  return value.toFixed(2);
+}
+
+// Format financial metrics based on their type
+export function formatFinancialMetric(value: number, type: 'currency' | 'percentage' | 'multiple' | 'ratio' = 'currency'): string {
+  switch (type) {
+    case 'currency':
+      return formatLargeNumber(value);
+    case 'percentage':
+      return formatPercentage(value);
+    case 'multiple':
+      return formatMultiple(value);
+    case 'ratio':
+      return value.toFixed(2);
+    default:
+      return value.toString();
+  }
 }
