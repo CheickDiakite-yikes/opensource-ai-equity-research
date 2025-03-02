@@ -136,9 +136,11 @@ export const useStockData = (symbol: string) => {
     queryFn: () => fetchStockData(symbol),
     enabled: !!symbol,
     staleTime: 5 * 60 * 1000, // 5 minutes
-    onError: (err) => {
-      console.error("Error fetching stock data:", err);
-      toast.error("Failed to load stock data");
+    meta: {
+      onError: (err: Error) => {
+        console.error("Error fetching stock data:", err);
+        toast.error("Failed to load stock data");
+      }
     }
   });
 

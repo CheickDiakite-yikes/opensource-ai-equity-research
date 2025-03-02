@@ -1,6 +1,28 @@
-
 import type { IncomeStatement, BalanceSheet, KeyRatio, CashFlowStatement } from "@/types";
-import { formatCurrency } from "@/lib/utils";
+
+/**
+ * Format currency values for display
+ * @param value - The number to format
+ * @param abbreviate - Whether to abbreviate large numbers (e.g., 1.2B)
+ */
+export const formatCurrency = (value: number, abbreviate = false): string => {
+  if (abbreviate) {
+    if (Math.abs(value) >= 1000000000) {
+      return `$${(value / 1000000000).toFixed(1)}B`;
+    } else if (Math.abs(value) >= 1000000) {
+      return `$${(value / 1000000).toFixed(1)}M`;
+    } else if (Math.abs(value) >= 1000) {
+      return `$${(value / 1000).toFixed(1)}K`;
+    }
+  }
+  
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2
+  }).format(value);
+};
 
 /**
  * Prepares financial data for charts and tables
