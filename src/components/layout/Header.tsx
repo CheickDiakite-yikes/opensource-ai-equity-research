@@ -30,7 +30,7 @@ const Header: React.FC<HeaderProps> = ({
         >
           <h1 className="text-2xl font-bold flex items-center gap-2">
             <img 
-              src="/lovable-uploads/1e3c657c-1d0d-47f6-8182-ffd8ac803802.png" 
+              src="/lovable-uploads/288626b2-84b1-4aca-9399-864c39d76976.png" 
               alt="DiDi Equity Research" 
               className="h-10"
             />
