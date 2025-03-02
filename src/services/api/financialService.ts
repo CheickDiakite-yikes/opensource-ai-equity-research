@@ -21,6 +21,24 @@ export const fetchIncomeStatements = async (symbol: string): Promise<IncomeState
 };
 
 /**
+ * Fetch income statement - TTM (Trailing Twelve Months)
+ */
+export const fetchIncomeStatementTTM = async (symbol: string): Promise<any> => {
+  try {
+    const data = await invokeSupabaseFunction<any>('get-stock-data', { 
+      symbol, 
+      endpoint: 'income-statement-ttm' 
+    });
+    
+    if (!data || !Array.isArray(data)) return null;
+    return data[0];
+  } catch (error) {
+    console.error("Error fetching TTM income statement:", error);
+    return null;
+  }
+};
+
+/**
  * Fetch balance sheets
  */
 export const fetchBalanceSheets = async (symbol: string): Promise<BalanceSheet[]> => {

@@ -119,7 +119,7 @@ const StockAnalysis = ({ symbol }: StockAnalysisProps) => {
         </TabsContent>
         
         <TabsContent value="ratios">
-          <RatiosTabContent ratioData={ratioData} />
+          <RatiosTabContent ratioData={ratioData} symbol={symbol} />
         </TabsContent>
         
         <TabsContent value="growth">
