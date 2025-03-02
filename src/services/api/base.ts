@@ -14,15 +14,52 @@ export const invokeSupabaseFunction = async <T>(
       body: payload
     });
 
-    if (error) throw new Error(error.message);
+    if (error) {
+      console.error(`Error invoking ${functionName}:`, error);
+      throw new Error(error.message);
+    }
+    
+    if (!data) {
+      console.warn(`No data returned from ${functionName}`);
+      return null;
+    }
+    
     return data as T;
   } catch (error) {
     console.error(`Error invoking ${functionName}:`, error);
-    toast({
-      title: "Error",
-      description: `API Error: ${error.message}`,
-      variant: "destructive",
-    });
+    
+    // Show a toast error only if it's not a server connection issue
+    // to avoid flooding users with errors during connectivity issues
+    if (!error.message.includes('Failed to fetch') && 
+        !error.message.includes('Network error')) {
+      toast({
+        title: "API Error",
+        description: `Error fetching data: ${error.message}`,
+        variant: "destructive",
+      });
+    }
+    
     return null;
+  }
+};
+
+/**
+ * Utility to retry a function with exponential backoff
+ */
+export const withRetry = async <T>(
+  fn: () => Promise<T>,
+  retries = 3,
+  delay = 1000,
+  backoff = 2
+): Promise<T> => {
+  try {
+    return await fn();
+  } catch (error) {
+    if (retries <= 0) throw error;
+    
+    console.info(`Retrying after ${delay}ms, ${retries} retries left`);
+    await new Promise(resolve => setTimeout(resolve, delay));
+    
+    return withRetry(fn, retries - 1, delay * backoff, backoff);
   }
 };
