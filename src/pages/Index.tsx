@@ -95,7 +95,7 @@ const Index = () => {
         handleKeyDown={handleKeyDown}
       />
 
-      <main className="w-full">
+      <main className="container mx-auto p-6">
         {!searchedSymbol ? (
           <LandingView 
             recentSearches={recentSearches}
