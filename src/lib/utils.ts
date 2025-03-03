@@ -32,7 +32,6 @@ export function formatLargeNumber(value: number): string {
   return formatCurrency(value);
 }
 
-// Improved function for financial tables to format in billions/millions with thousands separators
 export function formatFinancialTableValue(value: number, scale: 'millions' | 'billions' | 'thousands' = 'millions'): string {
   if (value === 0) return "$0.00";
   
@@ -58,7 +57,6 @@ export function formatFinancialTableValue(value: number, scale: 'millions' | 'bi
   return formatter.format(scaledValue);
 }
 
-// Format ratios and multiples with "x" suffix
 export function formatMultiple(value: number): string {
   return `${value.toFixed(2)}x`;
 }
@@ -129,7 +127,6 @@ export function debounce<F extends (...args: any[]) => any>(
   };
 }
 
-// Formatting date for display
 export function formatDate(dateString: string): string {
   if (!dateString) return '';
   
@@ -143,7 +140,6 @@ export function formatDate(dateString: string): string {
   });
 }
 
-// Generate HTML for reports
 export function generateReportHTML(title: string, content: string): string {
   return `
     <!DOCTYPE html>
@@ -198,4 +194,25 @@ export function generateReportHTML(title: string, content: string): string {
     </body>
     </html>
   `;
+}
+
+export function isValidUrl(urlString: string): boolean {
+  try {
+    new URL(urlString);
+    return true;
+  } catch (e) {
+    return false;
+  }
+}
+
+export function isValidImageUrl(urlString: string): boolean {
+  if (!isValidUrl(urlString)) return false;
+  
+  // Check if URL ends with common image extensions
+  const hasImageExtension = /\.(jpeg|jpg|gif|png|webp)($|\?)/i.test(urlString);
+  
+  // Also check if URL contains image extensions (might have query params after)
+  const containsImageExt = /\.(jpeg|jpg|gif|png|webp)/i.test(urlString);
+  
+  return hasImageExtension || containsImageExt;
 }

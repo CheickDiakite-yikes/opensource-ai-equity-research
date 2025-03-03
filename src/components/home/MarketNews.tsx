@@ -1,7 +1,7 @@
 
 import React from "react";
 import { motion } from "framer-motion";
-import { Newspaper, ExternalLink, Calendar, ImageOff, Building } from "lucide-react";
+import { Newspaper, ExternalLink, Calendar, ImageOff, Building, ThumbsUp, ThumbsDown, MinusCircle } from "lucide-react";
 import { Card, CardContent, CardImage } from "@/components/ui/card";
 import SectionHeader from "./SectionHeader";
 import { MarketNewsArticle } from "@/services/api/marketData/newsService";
@@ -13,6 +13,7 @@ import {
   TooltipTrigger
 } from "@/components/ui/tooltip";
 import { fetchCompanyLogo } from "@/services/api/marketData";
+import { Badge } from "@/components/ui/badge";
 
 interface MarketNewsProps {
   newsData: MarketNewsArticle[];
@@ -78,22 +79,56 @@ const MarketNews: React.FC<MarketNewsProps> = ({
   function getImageUrl(imageUrl: string | undefined, symbol?: string | null): string {
     if (!imageUrl) return '/placeholder.svg';
     
-    const isValidUrl = imageUrl.startsWith('http') && 
-      (imageUrl.endsWith('.jpg') || 
-       imageUrl.endsWith('.jpeg') || 
-       imageUrl.endsWith('.png') || 
-       imageUrl.endsWith('.webp') ||
-       imageUrl.endsWith('.gif') ||
-       imageUrl.includes('.jpg') || 
-       imageUrl.includes('.png') ||
-       imageUrl.includes('.jpeg'));
-    
-    if (!isValidUrl) {
+    try {
+      // Test if it's a valid URL
+      new URL(imageUrl);
+      
+      const isValidImageFormat = imageUrl.match(/\.(jpeg|jpg|gif|png|webp)($|\?)/i) !== null;
+      
+      if (!isValidImageFormat) {
+        console.log("Valid URL but not standard image format:", imageUrl);
+        // It could still be an image with query parameters, so let's see if it contains image file extensions
+        const containsImageExt = imageUrl.match(/\.(jpeg|jpg|gif|png|webp)/i) !== null;
+        if (!containsImageExt) {
+          return '/placeholder.svg';
+        }
+      }
+      
+      return imageUrl;
+    } catch (e) {
       console.log("Invalid image URL detected:", imageUrl);
       return '/placeholder.svg';
     }
+  }
+
+  function getSentimentIcon(sentiment?: string) {
+    if (!sentiment) return null;
     
-    return imageUrl;
+    switch(sentiment.toLowerCase()) {
+      case 'positive':
+        return <ThumbsUp className="h-3 w-3 text-green-500" />;
+      case 'negative':
+        return <ThumbsDown className="h-3 w-3 text-red-500" />;
+      case 'neutral':
+        return <MinusCircle className="h-3 w-3 text-yellow-500" />;
+      default:
+        return null;
+    }
+  }
+
+  function getSentimentColor(sentiment?: string): string {
+    if (!sentiment) return "bg-muted text-muted-foreground";
+    
+    switch(sentiment.toLowerCase()) {
+      case 'positive':
+        return "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100";
+      case 'negative':
+        return "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-100";
+      case 'neutral':
+        return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-100";
+      default:
+        return "bg-muted text-muted-foreground";
+    }
   }
 
   React.useEffect(() => {
@@ -142,11 +177,22 @@ const MarketNews: React.FC<MarketNewsProps> = ({
                           </div>
                       }
                     />
-                    {article.symbol && (
-                      <div className="absolute top-3 right-3 bg-black/60 backdrop-blur-sm text-white text-xs px-2 py-1 rounded">
-                        {article.symbol}
-                      </div>
-                    )}
+                    <div className="absolute top-3 right-3 flex gap-2">
+                      {article.symbol && (
+                        <div className="bg-black/60 backdrop-blur-sm text-white text-xs px-2 py-1 rounded">
+                          {article.symbol}
+                        </div>
+                      )}
+                      {article.sentiment && (
+                        <Badge variant="outline" className={`text-xs px-2 py-1 ${getSentimentColor(article.sentiment)}`}>
+                          <span className="flex items-center gap-1">
+                            {getSentimentIcon(article.sentiment)}
+                            {article.sentiment}
+                            {article.sentimentScore && ` (${article.sentimentScore.toFixed(2)})`}
+                          </span>
+                        </Badge>
+                      )}
+                    </div>
                     
                     <div className="p-5 space-y-3">
                       <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
