@@ -41,6 +41,29 @@ const NewsCard: React.FC<NewsCardProps> = ({ article }) => {
   // Ensure URL is properly formatted
   const articleUrl = article.url || "#";
   
+  // Function to validate URL
+  const isValidUrl = (urlString: string): boolean => {
+    try {
+      // Check if URL is absolute
+      return Boolean(urlString && 
+        (urlString.startsWith('http://') || 
+         urlString.startsWith('https://')) &&
+        urlString !== 'https://' && 
+        urlString !== 'http://');
+    } catch (e) {
+      console.error("Invalid URL:", urlString, e);
+      return false;
+    }
+  };
+  
+  // Validate and potentially fix the URL
+  const validArticleUrl = isValidUrl(articleUrl) ? articleUrl : "#";
+  
+  // Log for debugging purposes
+  if (!isValidUrl(articleUrl)) {
+    console.warn("Invalid news article URL:", articleUrl, "Full article data:", article);
+  }
+  
   return (
     <Card className="bg-card/70 backdrop-blur-sm border border-muted/50 overflow-hidden shadow-md hover-card-highlight transition-all duration-300 hover:shadow-lg group">
       <CardContent className="p-0">
@@ -100,13 +123,13 @@ const NewsCard: React.FC<NewsCardProps> = ({ article }) => {
           </p>
           
           <a 
-            href={articleUrl} 
+            href={validArticleUrl} 
             target="_blank" 
             rel="noopener noreferrer"
             className="flex items-center text-xs font-medium text-primary hover:text-primary/80 transition-colors mt-2 pt-2 border-t border-muted"
             onClick={(e) => {
-              // Prevent navigation if URL is invalid or '#'
-              if (!articleUrl || articleUrl === '#') {
+              // Prevent navigation if URL is invalid
+              if (!isValidUrl(articleUrl)) {
                 e.preventDefault();
                 console.warn('News article has no valid URL:', article);
               }

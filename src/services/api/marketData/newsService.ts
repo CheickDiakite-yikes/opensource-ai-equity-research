@@ -53,17 +53,32 @@ export const fetchMarketNews = async (limit: number = 6): Promise<MarketNewsArti
       // Map the Finnhub response to our MarketNewsArticle format
       const mappedNews = result
         .slice(0, limit)
-        .map((item: any) => ({
-          ...item,
-          // Add compatibility fields for existing components
-          publishedDate: new Date(item.datetime * 1000).toISOString().split('T')[0],
-          title: item.headline,
-          text: item.summary,
-          site: item.source
-        }));
+        .map((item: any) => {
+          // Validate URL before mapping
+          if (!item.url || (!item.url.startsWith('http://') && !item.url.startsWith('https://'))) {
+            console.warn("Article with invalid URL:", item);
+          }
+          
+          return {
+            ...item,
+            // Add compatibility fields for existing components
+            publishedDate: new Date(item.datetime * 1000).toISOString().split('T')[0],
+            title: item.headline,
+            text: item.summary,
+            site: item.source
+          };
+        })
+        .filter((item: any) => {
+          // Filter out items with invalid URLs
+          return item.url && 
+                 (item.url.startsWith('http://') || item.url.startsWith('https://')) &&
+                 item.url !== 'http://' && 
+                 item.url !== 'https://';
+        });
       
       if (mappedNews.length > 0) {
         console.log("Mapped news items count:", mappedNews.length);
+        console.log("First news item URL:", mappedNews[0].url);
         return mappedNews;
       }
     }

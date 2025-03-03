@@ -71,19 +71,53 @@ serve(async (req) => {
     
     // Log a sample item if available to debug URL issues
     if (news.length > 0) {
-      console.log("Sample news item URL:", news[0].url);
+      console.log("Sample news item:", {
+        headline: news[0].headline,
+        url: news[0].url,
+        image: news[0].image
+      });
     }
+    
+    // Helper function to validate and normalize URLs
+    const validateUrl = (url: string): string => {
+      if (!url) return "";
+      
+      try {
+        // Check if URL is absolute
+        if (!url.startsWith('http://') && !url.startsWith('https://')) {
+          url = 'https://' + url;
+        }
+        
+        // Validate URL by trying to create a URL object
+        new URL(url);
+        return url;
+      } catch (e) {
+        console.warn(`Invalid URL: ${url}`, e);
+        return "";
+      }
+    };
     
     // Validate and ensure each news item has a valid URL
     const validatedNews = news
       .slice(0, limit)
       .map(item => {
         // Make sure URL is absolute and properly formatted
-        if (item.url && !item.url.startsWith('http')) {
-          item.url = `https://${item.url}`;
+        if (item.url) {
+          const validatedUrl = validateUrl(item.url);
+          item.url = validatedUrl;
+          
+          // Log URLs for debugging purposes
+          console.log(`Processed URL: ${item.headline} -> ${item.url}`);
         }
+        
+        // Also validate image URL
+        if (item.image) {
+          item.image = validateUrl(item.image);
+        }
+        
         return item;
-      });
+      })
+      .filter(item => item.url); // Filter out items without valid URLs
 
     // Return the news items
     return new Response(JSON.stringify(validatedNews), {
