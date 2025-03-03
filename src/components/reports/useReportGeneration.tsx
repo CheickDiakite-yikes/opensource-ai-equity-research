@@ -5,6 +5,7 @@ import {
   generateResearchReport,
   generateStockPrediction
 } from "@/services/api";
+import { processFinancialDataForCharts } from "@/lib/utils";
 
 import type { 
   ReportRequest,
@@ -36,6 +37,9 @@ export const useReportGeneration = (symbol: string, data: ReportData) => {
       
       setIsGenerating(true);
       
+      // Process financial data for charts
+      const financialCharts = processFinancialDataForCharts(data.income, data.balance, data.cashflow);
+      
       const reportRequest: ReportRequest = {
         symbol,
         companyName: data.profile.companyName,
@@ -59,7 +63,13 @@ export const useReportGeneration = (symbol: string, data: ReportData) => {
         throw new Error("Failed to generate report");
       }
       
-      setReport(generatedReport);
+      // Add chart data to the report
+      const enhancedReport = {
+        ...generatedReport,
+        financialCharts
+      };
+      
+      setReport(enhancedReport);
       
       toast({
         title: "Report Generated",
