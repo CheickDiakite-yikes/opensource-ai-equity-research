@@ -17,73 +17,26 @@ import RatiosTabContent from "@/components/sections/RatiosTabContent";
 import GrowthTabContent from "@/components/sections/GrowthTabContent";
 import DCFTabContent from "@/components/sections/DCFTabContent";
 import { prepareFinancialData, prepareRatioData } from "@/utils/financialDataUtils";
+import { useResearchReportData } from "@/components/reports/useResearchReportData";
 
 interface StockAnalysisProps {
   symbol: string;
 }
 
 const StockAnalysis = ({ symbol }: StockAnalysisProps) => {
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [income, setIncome] = useState<IncomeStatement[]>([]);
-  const [balance, setBalance] = useState<BalanceSheet[]>([]);
-  const [cashflow, setCashflow] = useState<CashFlowStatement[]>([]);
-  const [ratios, setRatios] = useState<KeyRatio[]>([]);
-
-  useEffect(() => {
-    const fetchFinancialData = async () => {
-      try {
-        setIsLoading(true);
-        setError(null);
-        
-        const [incomeData, balanceData, cashflowData, ratiosData] = await Promise.all([
-          fetchIncomeStatements(symbol),
-          fetchBalanceSheets(symbol),
-          fetchCashFlowStatements(symbol),
-          fetchKeyRatios(symbol)
-        ]);
-        
-        const sortedIncome = [...incomeData].sort((a, b) => 
-          new Date(b.date).getTime() - new Date(a.date).getTime()
-        );
-        
-        const sortedBalance = [...balanceData].sort((a, b) => 
-          new Date(b.date).getTime() - new Date(a.date).getTime()
-        );
-        
-        const sortedCashflow = [...cashflowData].sort((a, b) => 
-          new Date(b.date).getTime() - new Date(a.date).getTime()
-        );
-        
-        const sortedRatios = [...ratiosData].sort((a, b) => 
-          new Date(b.date).getTime() - new Date(a.date).getTime()
-        );
-        
-        setIncome(sortedIncome);
-        setBalance(sortedBalance);
-        setCashflow(sortedCashflow);
-        setRatios(sortedRatios);
-      } catch (err) {
-        console.error("Error fetching financial data:", err);
-        setError(err.message);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    if (symbol) {
-      fetchFinancialData();
-    }
-  }, [symbol]);
-
-  const financials = prepareFinancialData(income, balance, cashflow);
-  const ratioData = prepareRatioData(ratios);
+  // We'll use the useResearchReportData hook to get transcripts and filings
+  const { 
+    isLoading, 
+    data, 
+    error, 
+    hasFinancialData 
+  } = useResearchReportData(symbol);
 
   if (isLoading) {
     return <LoadingSkeleton />;
   }
 
-  if (error || financials.length === 0) {
+  if (error || !hasFinancialData) {
     return (
       <Card className="p-6">
         <div className="text-center py-8">
@@ -93,6 +46,10 @@ const StockAnalysis = ({ symbol }: StockAnalysisProps) => {
       </Card>
     );
   }
+
+  // Extract data from the useResearchReportData hook
+  const financials = prepareFinancialData(data.income, data.balance, data.cashflow);
+  const ratioData = prepareRatioData(data.ratios);
 
   return (
     <div className="space-y-6">
@@ -123,7 +80,12 @@ const StockAnalysis = ({ symbol }: StockAnalysisProps) => {
         </TabsContent>
         
         <TabsContent value="growth">
-          <GrowthTabContent financials={financials} />
+          <GrowthTabContent 
+            financials={financials} 
+            symbol={symbol}
+            transcripts={data.transcripts}
+            filings={data.filings}
+          />
         </TabsContent>
         
         <TabsContent value="dcf">

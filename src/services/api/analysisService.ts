@@ -1,6 +1,6 @@
 
 import { invokeSupabaseFunction, withRetry } from "./base";
-import { ReportRequest, ResearchReport, StockPrediction, NewsArticle, StockQuote, CustomDCFParams, CustomDCFResult } from "@/types";
+import { ReportRequest, ResearchReport, StockPrediction, NewsArticle, StockQuote, CustomDCFParams, CustomDCFResult, EarningsCall, SECFiling } from "@/types";
 import { toast } from "@/components/ui/use-toast";
 
 /**
@@ -137,6 +137,46 @@ export const fetchCustomDCF = async (
     return data[0];
   } catch (error) {
     console.error("Error generating custom DCF:", error);
+    return null;
+  }
+};
+
+/**
+ * Analyze growth insights from earnings calls and SEC filings
+ */
+export const analyzeGrowthInsights = async (
+  symbol: string,
+  transcripts: EarningsCall[],
+  filings: SECFiling[]
+): Promise<any[] | null> => {
+  try {
+    // Check if we have data to analyze
+    if (!transcripts.length && !filings.length) {
+      console.warn(`No transcripts or filings available for ${symbol}`);
+      return [];
+    }
+
+    console.log(`Analyzing growth insights for ${symbol} from ${transcripts.length} transcripts and ${filings.length} filings`);
+    
+    // Use retry logic for AI analysis
+    const data = await withRetry(() => 
+      invokeSupabaseFunction<any[]>('analyze-growth-insights', { 
+        symbol,
+        transcripts,
+        filings
+      }),
+      1,
+      1500
+    );
+    
+    if (!data) {
+      console.error("Failed to analyze growth insights");
+      return null;
+    }
+    
+    return data;
+  } catch (error) {
+    console.error("Error analyzing growth insights:", error);
     return null;
   }
 };

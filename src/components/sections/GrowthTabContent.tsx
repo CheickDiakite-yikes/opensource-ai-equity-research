@@ -3,13 +3,23 @@ import React from "react";
 import { Card, CardHeader, CardContent, CardTitle } from "@/components/ui/card";
 import GrowthChart from "@/components/charts/GrowthChart";
 import GrowthRateCard from "@/components/cards/GrowthRateCard";
+import GrowthInsightsCard from "@/components/cards/GrowthInsightsCard";
 import { calculateCAGR, calculateGrowth, compareToIndustry } from "@/utils/financialDataUtils";
+import { EarningsCall, SECFiling } from "@/types";
 
 interface GrowthTabContentProps {
   financials: any[];
+  symbol?: string;
+  transcripts?: EarningsCall[];
+  filings?: SECFiling[];
 }
 
-const GrowthTabContent: React.FC<GrowthTabContentProps> = ({ financials }) => {
+const GrowthTabContent: React.FC<GrowthTabContentProps> = ({ 
+  financials,
+  symbol = "",
+  transcripts = [],
+  filings = []
+}) => {
   const revenueGrowthData = calculateGrowth(financials, 'revenue');
   const netIncomeGrowthData = calculateGrowth(financials, 'netIncome');
   
@@ -68,6 +78,14 @@ const GrowthTabContent: React.FC<GrowthTabContentProps> = ({ financials }) => {
           )}
         </CardContent>
       </Card>
+
+      {symbol && (
+        <GrowthInsightsCard 
+          symbol={symbol}
+          transcripts={transcripts || []}
+          filings={filings || []}
+        />
+      )}
     </div>
   );
 };
