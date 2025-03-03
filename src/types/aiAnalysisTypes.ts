@@ -39,6 +39,15 @@ export interface ResearchReport {
   targetPrice: string;
   summary: string;
   sections: ReportSection[];
+  investmentThesis?: string;  // Core investment argument
+  businessOverview?: string;  // Overview of the company's business model and operations
+  industryAnalysis?: string;  // Analysis of the industry landscape
+  financialAnalysis?: string; // Detailed analysis of financial performance
+  growthProspects?: string;   // Evaluation of growth potential
+  valuation?: string;         // Valuation methodologies and justification
+  riskFactors?: string;       // Key risks that could impact investment thesis
+  esgConsiderations?: string; // Environmental, Social, and Governance factors
+  competitiveAnalysis?: string; // Analysis of competition and market position
 }
 
 export interface StockPrediction {

@@ -26,6 +26,29 @@ const ResearchReportDisplay: React.FC<ResearchReportDisplayProps> = ({ report })
       <p>${report.summary}</p>
     </div>`;
     
+    // Add standard sections first if they exist
+    const standardSections = [
+      { key: 'investmentThesis', title: 'Investment Thesis' },
+      { key: 'businessOverview', title: 'Business Overview' },
+      { key: 'industryAnalysis', title: 'Industry Analysis' },
+      { key: 'financialAnalysis', title: 'Financial Analysis' },
+      { key: 'growthProspects', title: 'Growth Prospects' },
+      { key: 'valuation', title: 'Valuation' },
+      { key: 'riskFactors', title: 'Risk Factors' },
+      { key: 'esgConsiderations', title: 'ESG Considerations' },
+      { key: 'competitiveAnalysis', title: 'Competitive Analysis' }
+    ];
+    
+    standardSections.forEach(section => {
+      if (report[section.key]) {
+        content += `<div class="section">
+          <h2>${section.title}</h2>
+          <div>${report[section.key]}</div>
+        </div>`;
+      }
+    });
+    
+    // Add any additional dynamic sections
     report.sections.forEach(section => {
       content += `<div class="section">
         <h2>${section.title}</h2>
@@ -50,6 +73,11 @@ const ResearchReportDisplay: React.FC<ResearchReportDisplayProps> = ({ report })
       title: "Report Downloaded",
       description: "Research report has been downloaded as HTML.",
     });
+  };
+
+  // Helper function to check if a specific section exists
+  const hasSection = (title) => {
+    return !!report.sections.find(section => section.title === title);
   };
 
   return (
@@ -86,6 +114,143 @@ const ResearchReportDisplay: React.FC<ResearchReportDisplayProps> = ({ report })
           <h3 className="font-medium">Report Sections</h3>
         </div>
         <div className="divide-y">
+          {/* Standard sections first if they exist */}
+          {report.investmentThesis && (
+            <details className="group">
+              <summary className="flex cursor-pointer list-none items-center justify-between p-4 hover:bg-muted/50">
+                <h4 className="font-medium">Investment Thesis</h4>
+                <ArrowRight className="h-4 w-4 transition-transform group-open:rotate-90" />
+              </summary>
+              <div className="p-4 pt-0">
+                <div 
+                  className="text-sm text-muted-foreground prose-sm max-w-none"
+                  dangerouslySetInnerHTML={{ __html: report.investmentThesis?.replace(/\n/g, '<br>') || '' }}
+                />
+              </div>
+            </details>
+          )}
+          
+          {report.businessOverview && (
+            <details className="group">
+              <summary className="flex cursor-pointer list-none items-center justify-between p-4 hover:bg-muted/50">
+                <h4 className="font-medium">Business Overview</h4>
+                <ArrowRight className="h-4 w-4 transition-transform group-open:rotate-90" />
+              </summary>
+              <div className="p-4 pt-0">
+                <div 
+                  className="text-sm text-muted-foreground prose-sm max-w-none"
+                  dangerouslySetInnerHTML={{ __html: report.businessOverview?.replace(/\n/g, '<br>') || '' }}
+                />
+              </div>
+            </details>
+          )}
+          
+          {report.industryAnalysis && (
+            <details className="group">
+              <summary className="flex cursor-pointer list-none items-center justify-between p-4 hover:bg-muted/50">
+                <h4 className="font-medium">Industry Analysis</h4>
+                <ArrowRight className="h-4 w-4 transition-transform group-open:rotate-90" />
+              </summary>
+              <div className="p-4 pt-0">
+                <div 
+                  className="text-sm text-muted-foreground prose-sm max-w-none"
+                  dangerouslySetInnerHTML={{ __html: report.industryAnalysis?.replace(/\n/g, '<br>') || '' }}
+                />
+              </div>
+            </details>
+          )}
+          
+          {report.financialAnalysis && (
+            <details className="group">
+              <summary className="flex cursor-pointer list-none items-center justify-between p-4 hover:bg-muted/50">
+                <h4 className="font-medium">Financial Analysis</h4>
+                <ArrowRight className="h-4 w-4 transition-transform group-open:rotate-90" />
+              </summary>
+              <div className="p-4 pt-0">
+                <div 
+                  className="text-sm text-muted-foreground prose-sm max-w-none"
+                  dangerouslySetInnerHTML={{ __html: report.financialAnalysis?.replace(/\n/g, '<br>') || '' }}
+                />
+              </div>
+            </details>
+          )}
+          
+          {report.growthProspects && (
+            <details className="group">
+              <summary className="flex cursor-pointer list-none items-center justify-between p-4 hover:bg-muted/50">
+                <h4 className="font-medium">Growth Prospects</h4>
+                <ArrowRight className="h-4 w-4 transition-transform group-open:rotate-90" />
+              </summary>
+              <div className="p-4 pt-0">
+                <div 
+                  className="text-sm text-muted-foreground prose-sm max-w-none"
+                  dangerouslySetInnerHTML={{ __html: report.growthProspects?.replace(/\n/g, '<br>') || '' }}
+                />
+              </div>
+            </details>
+          )}
+          
+          {report.valuation && (
+            <details className="group">
+              <summary className="flex cursor-pointer list-none items-center justify-between p-4 hover:bg-muted/50">
+                <h4 className="font-medium">Valuation</h4>
+                <ArrowRight className="h-4 w-4 transition-transform group-open:rotate-90" />
+              </summary>
+              <div className="p-4 pt-0">
+                <div 
+                  className="text-sm text-muted-foreground prose-sm max-w-none"
+                  dangerouslySetInnerHTML={{ __html: report.valuation?.replace(/\n/g, '<br>') || '' }}
+                />
+              </div>
+            </details>
+          )}
+          
+          {report.riskFactors && (
+            <details className="group">
+              <summary className="flex cursor-pointer list-none items-center justify-between p-4 hover:bg-muted/50">
+                <h4 className="font-medium">Risk Factors</h4>
+                <ArrowRight className="h-4 w-4 transition-transform group-open:rotate-90" />
+              </summary>
+              <div className="p-4 pt-0">
+                <div 
+                  className="text-sm text-muted-foreground prose-sm max-w-none"
+                  dangerouslySetInnerHTML={{ __html: report.riskFactors?.replace(/\n/g, '<br>') || '' }}
+                />
+              </div>
+            </details>
+          )}
+          
+          {report.esgConsiderations && (
+            <details className="group">
+              <summary className="flex cursor-pointer list-none items-center justify-between p-4 hover:bg-muted/50">
+                <h4 className="font-medium">ESG Considerations</h4>
+                <ArrowRight className="h-4 w-4 transition-transform group-open:rotate-90" />
+              </summary>
+              <div className="p-4 pt-0">
+                <div 
+                  className="text-sm text-muted-foreground prose-sm max-w-none"
+                  dangerouslySetInnerHTML={{ __html: report.esgConsiderations?.replace(/\n/g, '<br>') || '' }}
+                />
+              </div>
+            </details>
+          )}
+          
+          {report.competitiveAnalysis && (
+            <details className="group">
+              <summary className="flex cursor-pointer list-none items-center justify-between p-4 hover:bg-muted/50">
+                <h4 className="font-medium">Competitive Analysis</h4>
+                <ArrowRight className="h-4 w-4 transition-transform group-open:rotate-90" />
+              </summary>
+              <div className="p-4 pt-0">
+                <div 
+                  className="text-sm text-muted-foreground prose-sm max-w-none"
+                  dangerouslySetInnerHTML={{ __html: report.competitiveAnalysis?.replace(/\n/g, '<br>') || '' }}
+                />
+              </div>
+            </details>
+          )}
+          
+          {/* Dynamic sections */}
           {report.sections.map((section, index) => (
             <details key={index} className="group">
               <summary className="flex cursor-pointer list-none items-center justify-between p-4 hover:bg-muted/50">

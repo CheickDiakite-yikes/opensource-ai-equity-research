@@ -9,9 +9,7 @@ import {
 import type { 
   ReportRequest,
   ResearchReport,
-  StockQuote,
   StockPrediction,
-  NewsArticle,
 } from "@/types";
 
 import type { ReportData } from "./useResearchReportData";
@@ -53,7 +51,8 @@ export const useReportGeneration = (symbol: string, data: ReportData) => {
         peers: data.peers
       };
       
-      const generatedReport = await generateResearchReport(reportRequest);
+      // Include report type to guide AI generation
+      const generatedReport = await generateResearchReport(reportRequest, reportType);
       
       if (!generatedReport) {
         throw new Error("Failed to generate report");

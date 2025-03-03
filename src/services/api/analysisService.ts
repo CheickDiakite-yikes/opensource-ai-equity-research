@@ -4,9 +4,12 @@ import { ReportRequest, ResearchReport, StockPrediction, NewsArticle, StockQuote
 import { toast } from "@/components/ui/use-toast";
 
 /**
- * Generate research report with enhanced error handling
+ * Generate research report with enhanced error handling and report type
  */
-export const generateResearchReport = async (reportRequest: ReportRequest): Promise<ResearchReport | null> => {
+export const generateResearchReport = async (
+  reportRequest: ReportRequest, 
+  reportType: string = "comprehensive"
+): Promise<ResearchReport | null> => {
   try {
     // Validate input data
     if (!reportRequest.symbol || !reportRequest.companyName) {
@@ -19,11 +22,14 @@ export const generateResearchReport = async (reportRequest: ReportRequest): Prom
       return null;
     }
     
-    console.log(`Generating research report for ${reportRequest.symbol}`);
+    console.log(`Generating ${reportType} research report for ${reportRequest.symbol}`);
     
     // Use retry logic for AI report generation
     const data = await withRetry(() => 
-      invokeSupabaseFunction<ResearchReport>('generate-research-report', { reportRequest }),
+      invokeSupabaseFunction<ResearchReport>('generate-research-report', { 
+        reportRequest,
+        reportType // Pass the report type to guide AI generation
+      }),
       2, // fewer retries for this expensive operation
       2000 // longer initial delay
     );
