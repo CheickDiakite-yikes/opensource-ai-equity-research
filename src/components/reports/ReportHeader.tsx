@@ -3,7 +3,7 @@ import React from "react";
 import { Button } from "@/components/ui/button";
 import { FileDown, Tag } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { ResearchReport } from "@/types/aiAnalysisTypes";
+import { ResearchReport, RatingDetails } from "@/types";
 
 // Update the interface to match the props being passed
 export interface ReportHeaderProps {
@@ -11,11 +11,8 @@ export interface ReportHeaderProps {
   symbol: string;
   date: string;
   recommendation: string;
-  targetPrice: number;
-  ratingDetails?: {
-    ratingScale: string;
-    ratingJustification?: string;
-  };
+  targetPrice: string;
+  ratingDetails?: RatingDetails;
 }
 
 export const ReportHeader: React.FC<ReportHeaderProps> = ({ 
@@ -60,7 +57,7 @@ export const ReportHeader: React.FC<ReportHeaderProps> = ({
         </div>
         <div className="p-3 border rounded-lg flex-1">
           <span className="text-xs text-muted-foreground block mb-1">Price Target</span>
-          <span className="text-xl font-semibold">${targetPrice.toFixed(2)}</span>
+          <span className="text-xl font-semibold">{targetPrice}</span>
         </div>
         
         {/* Rating Details if available */}

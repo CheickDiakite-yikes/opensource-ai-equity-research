@@ -7,7 +7,13 @@ import { Lightbulb, TrendingUp, AlertTriangle, LineChart, Clock, Loader2 } from 
 import { analyzeGrowthInsights } from "@/services/api/analysisService";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/components/ui/use-toast";
-import { GrowthInsight } from "@/types/aiAnalysisTypes";
+
+interface GrowthInsight {
+  type: "positive" | "negative" | "neutral";
+  source: "earnings" | "filing" | "analysis";
+  sourceDate: string;
+  content: string;
+}
 
 interface GrowthInsightsCardProps {
   symbol: string;
@@ -63,7 +69,7 @@ const GrowthInsightsCard: React.FC<GrowthInsightsCardProps> = ({
         );
         
         if (result && Array.isArray(result)) {
-          setInsights(result as GrowthInsight[]);
+          setInsights(result);
           console.log("Growth insights:", result);
         } else {
           console.warn("Invalid growth insights response:", result);
@@ -159,7 +165,7 @@ const GrowthInsightsCard: React.FC<GrowthInsightsCardProps> = ({
                   </div>
                   <div className="space-y-1">
                     <div>
-                      {renderSourceBadge(insight.source, insight.sourceDate || '')}
+                      {renderSourceBadge(insight.source, insight.sourceDate)}
                     </div>
                     <p className="text-sm">
                       {insight.content}

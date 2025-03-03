@@ -60,9 +60,7 @@ Based on this information, predict the stock price for different time horizons a
     "oneYear": number
   },
   "sentimentAnalysis": string,
-  "confidence": number,
-  "bullishFactors": [string, string, string],
-  "bearishFactors": [string, string, string],
+  "confidenceLevel": number,
   "keyDrivers": [string, string, string],
   "risks": [string, string, string]
 }`;
@@ -89,16 +87,10 @@ Based on this information, predict the stock price for different time horizons a
       symbol,
       currentPrice: quote.price,
       predictedPrice: predictionData.predictedPrice,
-      percentageChange: 0, // We'll calculate this later
-      timeframe: "1 year",
-      confidence: predictionData.confidence,
-      bullishFactors: predictionData.bullishFactors || [],
-      bearishFactors: predictionData.bearishFactors || [],
-      technicalIndicators: [],
-      sentimentScore: 0,
       sentimentAnalysis: predictionData.sentimentAnalysis,
-      keyDrivers: predictionData.keyDrivers || [],
-      risks: predictionData.risks || []
+      confidenceLevel: predictionData.confidenceLevel,
+      keyDrivers: predictionData.keyDrivers,
+      risks: predictionData.risks
     };
   } catch (error) {
     console.error("Error generating stock prediction:", error);
@@ -114,14 +106,8 @@ Based on this information, predict the stock price for different time horizons a
         sixMonths: quote.price,
         oneYear: quote.price
       },
-      percentageChange: 0,
-      timeframe: "1 year",
-      confidence: 0,
-      bullishFactors: ["Unable to determine"],
-      bearishFactors: ["Unable to determine"],
-      technicalIndicators: [],
-      sentimentScore: 0,
       sentimentAnalysis: "Error generating prediction",
+      confidenceLevel: 0,
       keyDrivers: ["Unable to determine"],
       risks: ["Unable to determine"]
     };

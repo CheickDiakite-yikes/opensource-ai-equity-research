@@ -17,22 +17,6 @@ export const SensitivityAnalysis: React.FC<SensitivityAnalysisProps> = ({
 }) => {
   if (!scenarioAnalysis) return null;
   
-  // Convert any probability value to a number for calculations
-  const getBullProbability = (): number => {
-    const prob = scenarioAnalysis.bullCase?.probability;
-    return typeof prob === 'number' ? prob : 25;
-  };
-  
-  const getBaseProbability = (): number => {
-    const prob = scenarioAnalysis.baseCase?.probability;
-    return typeof prob === 'number' ? prob : 50;
-  };
-  
-  const getBearProbability = (): number => {
-    const prob = scenarioAnalysis.bearCase?.probability;
-    return typeof prob === 'number' ? prob : 25;
-  };
-  
   return (
     <div className="space-y-3">
       {/* Bull Case */}
@@ -52,7 +36,7 @@ export const SensitivityAnalysis: React.FC<SensitivityAnalysisProps> = ({
           </div>
         </div>
         <Progress 
-          value={getBullProbability()} 
+          value={parseInt(scenarioAnalysis.bullCase?.probability || "25") || 25} 
           className="h-2 bg-gray-100" 
           indicatorClassName="bg-green-600" 
         />
@@ -86,7 +70,7 @@ export const SensitivityAnalysis: React.FC<SensitivityAnalysisProps> = ({
           </div>
         </div>
         <Progress 
-          value={getBaseProbability()} 
+          value={parseInt(scenarioAnalysis.baseCase?.probability || "50") || 50} 
           className="h-2 bg-gray-100" 
           indicatorClassName="bg-blue-600" 
         />
@@ -120,7 +104,7 @@ export const SensitivityAnalysis: React.FC<SensitivityAnalysisProps> = ({
           </div>
         </div>
         <Progress 
-          value={getBearProbability()} 
+          value={parseInt(scenarioAnalysis.bearCase?.probability || "25") || 25} 
           className="h-2 bg-gray-100" 
           indicatorClassName="bg-red-600" 
         />
