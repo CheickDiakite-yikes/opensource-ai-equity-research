@@ -37,15 +37,17 @@ serve(async (req) => {
     const reqData = await req.json().catch(() => ({}));
     console.log("Request data:", JSON.stringify(reqData));
     
-    // Extract parameters with defaults
+    // Extract parameters with defaults (following the Python example format)
     const category = reqData.category || "general";
     const limit = reqData.limit || 6;
     const minId = reqData.minId || 0;
 
-    console.log(`Fetching market news with category: ${category}, limit: ${limit}, minId: ${minId}`);
+    console.log(`Fetching general news with category: ${category}, limit: ${limit}, minId: ${minId}`);
     
-    // Build Finnhub API URL for market news
+    // Build Finnhub API URL for general news - using the correct general_news endpoint
     const url = `${FINNHUB_API_BASE}/news?category=${category}&minId=${minId}&token=${FINNHUB_API_KEY}`;
+    
+    console.log(`Calling Finnhub API: ${url.replace(FINNHUB_API_KEY, "API_KEY_HIDDEN")}`);
     
     // Fetch data from Finnhub
     const response = await fetch(url);
@@ -58,6 +60,8 @@ serve(async (req) => {
     
     // Parse response data
     const newsData = await response.json();
+    
+    console.log(`Received ${Array.isArray(newsData) ? newsData.length : 0} news items from Finnhub`);
     
     // Validate and process the response data
     if (!Array.isArray(newsData)) {
@@ -75,11 +79,31 @@ serve(async (req) => {
           validUrl = `https://${validUrl}`;
         }
         
+        // Validate image URL as well
+        let validImageUrl = article.image;
+        if (validImageUrl && !validImageUrl.startsWith('http')) {
+          validImageUrl = `https://${validImageUrl}`;
+        }
+        
         return {
           ...article,
-          url: validUrl
+          url: validUrl,
+          image: validImageUrl
         };
+      })
+      .filter(article => {
+        // Filter out items with invalid URLs
+        return article.url && 
+              (article.url.startsWith('http://') || article.url.startsWith('https://')) &&
+              article.url !== 'http://' && 
+              article.url !== 'https://';
       });
+    
+    if (processedNews.length > 0) {
+      console.log("Sample news item:", JSON.stringify(processedNews[0], null, 2));
+    } else {
+      console.warn("No valid news items found after processing");
+    }
     
     console.log(`Returning ${processedNews.length} news articles`);
     

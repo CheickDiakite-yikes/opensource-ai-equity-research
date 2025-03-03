@@ -30,10 +30,12 @@ export const fetchMarketNews = async (limit: number = 6, category: string = 'gen
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJucGN5Z3JyeGVlcXBoZGp1ZXNoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDA1MTA3MTIsImV4cCI6MjA1NjA4NjcxMn0.MP1Q_KRdViDCLJdYr_Z_i1_vAMMZgEv3_yX9MGIN0lc'
       },
       body: JSON.stringify({ 
         category,
-        limit
+        limit,
+        minId: 0
       }),
     });
     
