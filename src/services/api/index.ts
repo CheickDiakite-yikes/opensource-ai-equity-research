@@ -19,7 +19,8 @@ import {
   generateResearchReport,
   generateStockPrediction,
   analyzeGrowthInsights,
-  fetchCustomDCF
+  fetchCustomDCF,
+  fetchAIDCFAssumptions
 } from './analysisService';
 
 /**
@@ -64,5 +65,6 @@ export {
   generateResearchReport,
   generateStockPrediction,
   analyzeGrowthInsights,
-  fetchCustomDCF
+  fetchCustomDCF,
+  fetchAIDCFAssumptions
 } from './analysisService';
