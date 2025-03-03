@@ -1,6 +1,7 @@
 
 import React from "react";
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/components/ui/card";
+import { Loader2 } from "lucide-react";
 
 interface Projection {
   year: string;
@@ -11,9 +12,13 @@ interface Projection {
 
 interface ProjectedCashFlowsTableProps {
   projections: Projection[];
+  isLoading?: boolean;
 }
 
-const ProjectedCashFlowsTable: React.FC<ProjectedCashFlowsTableProps> = ({ projections }) => {
+const ProjectedCashFlowsTable: React.FC<ProjectedCashFlowsTableProps> = ({ 
+  projections,
+  isLoading = false
+}) => {
   return (
     <Card>
       <CardHeader>
@@ -21,28 +26,34 @@ const ProjectedCashFlowsTable: React.FC<ProjectedCashFlowsTableProps> = ({ proje
         <CardDescription className="text-xs text-muted-foreground">All figures in millions (USD)</CardDescription>
       </CardHeader>
       <CardContent>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b">
-                <th className="text-left font-medium py-2">Period</th>
-                <th className="text-right font-medium py-2">Revenue</th>
-                <th className="text-right font-medium py-2">EBIT</th>
-                <th className="text-right font-medium py-2">Free Cash Flow</th>
-              </tr>
-            </thead>
-            <tbody>
-              {projections.map((proj, i) => (
-                <tr key={i} className="border-b last:border-0">
-                  <td className="py-2">{proj.year}</td>
-                  <td className="text-right py-2">${(proj.revenue / 1000000).toFixed(2)}</td>
-                  <td className="text-right py-2">${(proj.ebit / 1000000).toFixed(2)}</td>
-                  <td className="text-right py-2">${(proj.fcf / 1000000).toFixed(2)}</td>
+        {isLoading ? (
+          <div className="flex justify-center items-center h-40">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b">
+                  <th className="text-left font-medium py-2">Period</th>
+                  <th className="text-right font-medium py-2">Revenue</th>
+                  <th className="text-right font-medium py-2">EBIT</th>
+                  <th className="text-right font-medium py-2">Free Cash Flow</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {projections.map((proj, i) => (
+                  <tr key={i} className="border-b last:border-0">
+                    <td className="py-2">{proj.year}</td>
+                    <td className="text-right py-2">${(proj.revenue / 1000000).toFixed(2)}</td>
+                    <td className="text-right py-2">${(proj.ebit / 1000000).toFixed(2)}</td>
+                    <td className="text-right py-2">${(proj.fcf / 1000000).toFixed(2)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </CardContent>
     </Card>
   );

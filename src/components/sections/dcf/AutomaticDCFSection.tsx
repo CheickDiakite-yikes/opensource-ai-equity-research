@@ -1,10 +1,13 @@
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/components/ui/card";
 import { formatCurrency, formatPercentage } from "@/lib/utils";
 import DCFValuationSummary from "./DCFValuationSummary";
 import ProjectedCashFlowsTable from "./ProjectedCashFlowsTable";
 import SensitivityAnalysisTable from "./SensitivityAnalysisTable";
+import { useCustomDCF } from "@/hooks/useCustomDCF";
+import { Loader2 } from "lucide-react";
+import { toast } from "@/components/ui/use-toast";
 
 interface AutomaticDCFSectionProps {
   financials: any[];
@@ -12,7 +15,51 @@ interface AutomaticDCFSectionProps {
 }
 
 const AutomaticDCFSection: React.FC<AutomaticDCFSectionProps> = ({ financials, symbol }) => {
-  // In a real app, this would be calculated using actual DCF model
+  const { calculateCustomDCF, customDCFResult, isCalculating, error } = useCustomDCF(symbol);
+  const [hasAttemptedFetch, setHasAttemptedFetch] = useState(false);
+
+  // Get the current price from financials or use a fallback
+  const currentPrice = financials[0]?.price || 100;
+
+  useEffect(() => {
+    // Only fetch DCF data if we have a valid symbol and haven't tried already
+    if (symbol && !hasAttemptedFetch && !customDCFResult) {
+      fetchDCFData();
+    }
+  }, [symbol]);
+
+  const fetchDCFData = async () => {
+    setHasAttemptedFetch(true);
+    
+    try {
+      // Prepare default parameters for the company based on financial data
+      // In a real implementation, your AI would determine better parameters
+      const params = {
+        revenueGrowthPct: 0.08, // 8% revenue growth
+        ebitdaPct: 0.32, // 32% EBITDA margin
+        depreciationAndAmortizationPct: 0.03, // 3% depreciation & amortization
+        taxRate: 0.21, // 21% tax rate
+        longTermGrowthRate: 3, // 3% terminal growth rate
+        riskFreeRate: 4, // 4% risk-free rate
+        marketRiskPremium: 5, // 5% market risk premium
+        beta: financials[0]?.beta || 1.2, // Company's beta or default
+      };
+      
+      await calculateCustomDCF(params);
+    } catch (err) {
+      console.error("Error fetching DCF data:", err);
+      toast({
+        title: "Error",
+        description: "Failed to load DCF data. Using estimated values instead.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // If we're calculating or have an error, use mock data
+  const useMockData = isCalculating || error || !customDCFResult;
+
+  // Mock DCF data as fallback
   const mockDCFData = {
     intrinsicValue: financials[0]?.revenue ? (financials[0].netIncome * 15) : 0,
     assumptions: {
@@ -39,11 +86,31 @@ const AutomaticDCFSection: React.FC<AutomaticDCFSectionProps> = ({ financials, s
     }
   };
 
-  // Make sure we have a valid current price and DCF value
-  const currentPrice = financials[0]?.price || 100;
-  const dcfValue = Math.max(0, mockDCFData.intrinsicValue); // Ensure non-negative value
+  // If we have real DCF data, use it. Otherwise fall back to mock data
+  const dcfData = useMockData ? mockDCFData : {
+    intrinsicValue: customDCFResult.equityValuePerShare,
+    assumptions: {
+      growthRate: `${(customDCFResult.revenuePercentage || 0).toFixed(1)}% (first 5 years), ${customDCFResult.longTermGrowthRate}% (terminal)`,
+      discountRate: `${customDCFResult.wacc.toFixed(2)}%`,
+      terminalMultiple: "DCF Model",
+      taxRate: `${customDCFResult.taxRate.toFixed(1)}%`
+    },
+    projections: [0, 1, 2, 3, 4].map(index => {
+      const yearData = customDCFResult.projectedData?.[index] || {};
+      return {
+        year: `Year ${index + 1}`,
+        revenue: yearData.revenue || 0,
+        ebit: yearData.ebit || 0,
+        fcf: yearData.freeCashFlow || 0
+      };
+    }),
+    sensitivity: mockDCFData.sensitivity // We'll keep using mock sensitivity data for now
+  };
+
+  // Calculate upside percentage based on intrinsic value vs current price
+  const dcfValue = Math.max(0, dcfData.intrinsicValue); // Ensure non-negative value
   
-  // Calculate upside percentage - this is (intrinsic value / current price - 1) * 100
+  // Calculate upside percentage - (intrinsic value / current price - 1) * 100
   let upside = 0;
   if (currentPrice > 0 && dcfValue > 0) {
     upside = ((dcfValue / currentPrice) - 1) * 100;
@@ -51,19 +118,31 @@ const AutomaticDCFSection: React.FC<AutomaticDCFSectionProps> = ({ financials, s
 
   return (
     <div className="space-y-6">
+      {isCalculating && (
+        <div className="flex justify-center items-center py-4">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <span className="ml-2">Calculating DCF valuation...</span>
+        </div>
+      )}
+      
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <DCFValuationSummary 
-          dcfValue={dcfValue} 
-          upside={upside} 
-          assumptions={mockDCFData.assumptions} 
+          dcfValue={dcfValue}
+          upside={upside}
+          assumptions={dcfData.assumptions}
+          isLoading={isCalculating}
         />
-        <ProjectedCashFlowsTable projections={mockDCFData.projections} />
+        <ProjectedCashFlowsTable 
+          projections={dcfData.projections}
+          isLoading={isCalculating}
+        />
       </div>
       
       <SensitivityAnalysisTable 
-        headers={mockDCFData.sensitivity.headers} 
-        rows={mockDCFData.sensitivity.rows} 
-        currentPrice={currentPrice} 
+        headers={dcfData.sensitivity.headers}
+        rows={dcfData.sensitivity.rows}
+        currentPrice={currentPrice}
+        isLoading={isCalculating}
       />
     </div>
   );

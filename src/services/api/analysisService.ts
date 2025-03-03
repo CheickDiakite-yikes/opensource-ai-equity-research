@@ -120,7 +120,7 @@ export const fetchCustomDCF = async (
     
     // Use retry logic for DCF calculation
     const data = await withRetry(() => 
-      invokeSupabaseFunction<CustomDCFResult[]>('get-stock-data', {
+      invokeSupabaseFunction<CustomDCFResult>('get-stock-data', {
         symbol,
         endpoint: 'custom-levered-dcf',
         params
@@ -129,12 +129,14 @@ export const fetchCustomDCF = async (
       1000 // shorter initial delay
     );
     
-    if (!data || !Array.isArray(data) || data.length === 0) {
-      console.error("Failed to generate custom DCF or empty result");
+    if (!data) {
+      console.error("Failed to generate custom DCF");
       return null;
     }
     
-    return data[0];
+    // Transform the API response if needed
+    // For now, we'll just return the data directly
+    return data;
   } catch (error) {
     console.error("Error generating custom DCF:", error);
     return null;
