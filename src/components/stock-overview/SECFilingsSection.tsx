@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -56,6 +56,26 @@ const SECFilingsSection = ({ secFilings, isLoading, symbol, companyName }: SECFi
     }
   };
 
+  // Filter and sort SEC filings to show only the last 2 10-Ks and last 8 10-Qs
+  const filteredFilings = useMemo(() => {
+    if (!secFilings || secFilings.length === 0) return [];
+
+    // Separate 10-K and 10-Q filings
+    const annualReports = secFilings
+      .filter(filing => filing.form === "10-K")
+      .sort((a, b) => new Date(b.filingDate).getTime() - new Date(a.filingDate).getTime())
+      .slice(0, 2);
+
+    const quarterlyReports = secFilings
+      .filter(filing => filing.form === "10-Q")
+      .sort((a, b) => new Date(b.filingDate).getTime() - new Date(a.filingDate).getTime())
+      .slice(0, 8);
+
+    // Combine and sort by filing date (newest first)
+    return [...annualReports, ...quarterlyReports]
+      .sort((a, b) => new Date(b.filingDate).getTime() - new Date(a.filingDate).getTime());
+  }, [secFilings]);
+
   return (
     <Card>
       <CardHeader>
@@ -67,7 +87,7 @@ const SECFilingsSection = ({ secFilings, isLoading, symbol, companyName }: SECFi
       <CardContent>
         {isLoading ? (
           <Skeleton className="h-64 w-full" />
-        ) : secFilings.length > 0 ? (
+        ) : filteredFilings.length > 0 ? (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
@@ -79,7 +99,7 @@ const SECFilingsSection = ({ secFilings, isLoading, symbol, companyName }: SECFi
                 </tr>
               </thead>
               <tbody>
-                {secFilings.map((filing, index) => (
+                {filteredFilings.map((filing, index) => (
                   <tr key={filing.id || index} className="border-b last:border-0">
                     <td className="py-3">{filing.type || filing.form}</td>
                     <td className="py-3">{new Date(filing.reportDate).toLocaleDateString()}</td>
@@ -88,11 +108,11 @@ const SECFilingsSection = ({ secFilings, isLoading, symbol, companyName }: SECFi
                       <Button 
                         variant="ghost" 
                         size="sm" 
-                        className="gap-1 text-primary"
+                        className="text-primary hover:text-primary-foreground hover:bg-primary"
                         onClick={() => handleDownload(filing)}
                         disabled={downloadingIds.has(filing.id || filing.filingNumber)}
                       >
-                        <Download className="h-3.5 w-3.5" />
+                        <Download className="h-4 w-4 mr-1" />
                         <span>{downloadingIds.has(filing.id || filing.filingNumber) ? 'Downloading...' : 'Download'}</span>
                       </Button>
                     </td>
