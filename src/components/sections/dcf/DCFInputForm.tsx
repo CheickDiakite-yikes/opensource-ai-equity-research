@@ -25,47 +25,55 @@ const DCFInputForm: React.FC<DCFInputFormProps> = ({
         <h3 className="text-sm font-medium">Growth & Profitability</h3>
         
         <div className="space-y-2">
-          <label className="text-sm">Revenue Growth (%)</label>
+          <label className="text-sm">Revenue Growth (decimal)</label>
           <Input 
             name="revenueGrowth" 
             value={customParams.revenueGrowth} 
             onChange={onInputChange}
             type="number"
-            step="0.1"
+            step="0.01"
+            placeholder="0.1094"
           />
+          <p className="text-xs text-muted-foreground">Example: 0.1094 = 10.94%</p>
         </div>
         
         <div className="space-y-2">
-          <label className="text-sm">EBITDA Margin (%)</label>
+          <label className="text-sm">EBITDA Margin (decimal)</label>
           <Input 
             name="ebitdaMargin" 
             value={customParams.ebitdaMargin} 
             onChange={onInputChange}
             type="number"
-            step="0.1"
+            step="0.01"
+            placeholder="0.3127"
           />
+          <p className="text-xs text-muted-foreground">Example: 0.3127 = 31.27%</p>
         </div>
         
         <div className="space-y-2">
-          <label className="text-sm">CapEx (% of Revenue)</label>
+          <label className="text-sm">CapEx (decimal of Revenue)</label>
           <Input 
             name="capexPercent" 
             value={customParams.capexPercent} 
             onChange={onInputChange}
             type="number"
-            step="0.1"
+            step="0.001"
+            placeholder="0.0306"
           />
+          <p className="text-xs text-muted-foreground">Example: 0.0306 = 3.06%</p>
         </div>
         
         <div className="space-y-2">
-          <label className="text-sm">Tax Rate (%)</label>
+          <label className="text-sm">Tax Rate (decimal)</label>
           <Input 
             name="taxRate" 
             value={customParams.taxRate} 
             onChange={onInputChange}
             type="number"
-            step="0.1"
+            step="0.01"
+            placeholder="0.2409"
           />
+          <p className="text-xs text-muted-foreground">Example: 0.2409 = 24.09%</p>
         </div>
       </div>
       
@@ -73,14 +81,16 @@ const DCFInputForm: React.FC<DCFInputFormProps> = ({
         <h3 className="text-sm font-medium">Discount & Valuation</h3>
         
         <div className="space-y-2">
-          <label className="text-sm">Long-Term Growth Rate (%)</label>
+          <label className="text-sm">Long-Term Growth Rate (decimal)</label>
           <Input 
             name="longTermGrowthRate" 
             value={customParams.longTermGrowthRate} 
             onChange={onInputChange}
             type="number"
-            step="0.1"
+            step="0.01"
+            placeholder="0.04"
           />
+          <p className="text-xs text-muted-foreground">Example: 0.04 = 4%</p>
         </div>
         
         <div className="space-y-2">
@@ -91,40 +101,47 @@ const DCFInputForm: React.FC<DCFInputFormProps> = ({
             onChange={onInputChange}
             type="number"
             step="0.01"
+            placeholder="1.244"
           />
         </div>
         
         <div className="space-y-2">
-          <label className="text-sm">Risk-Free Rate (%)</label>
+          <label className="text-sm">Risk-Free Rate (decimal)</label>
           <Input 
             name="riskFreeRate" 
             value={customParams.riskFreeRate} 
             onChange={onInputChange}
             type="number"
-            step="0.1"
+            step="0.001"
+            placeholder="0.0364"
           />
+          <p className="text-xs text-muted-foreground">Example: 0.0364 = 3.64%</p>
         </div>
         
         <div className="space-y-2">
-          <label className="text-sm">Market Risk Premium (%)</label>
+          <label className="text-sm">Market Risk Premium (decimal)</label>
           <Input 
             name="marketRiskPremium" 
             value={customParams.marketRiskPremium} 
             onChange={onInputChange}
             type="number"
-            step="0.1"
+            step="0.001"
+            placeholder="0.0472"
           />
+          <p className="text-xs text-muted-foreground">Example: 0.0472 = 4.72%</p>
         </div>
         
         <div className="space-y-2">
-          <label className="text-sm">Cost of Debt (%)</label>
+          <label className="text-sm">Cost of Debt (decimal)</label>
           <Input 
             name="costOfDebt" 
             value={customParams.costOfDebt} 
             onChange={onInputChange}
             type="number"
-            step="0.1"
+            step="0.001"
+            placeholder="0.0364"
           />
+          <p className="text-xs text-muted-foreground">Example: 0.0364 = 3.64%</p>
         </div>
       </div>
       

@@ -10,21 +10,21 @@ interface DCFTabContentProps {
   symbol: string;
 }
 
-const DCFTabContent: React.FC<DCFTabContentProps> = ({ financials, symbol }) => {
+const DCFTabContentProps: React.FC<DCFTabContentProps> = ({ financials, symbol }) => {
   const [activeTab, setActiveTab] = useState<string>("automatic");
   
-  // Custom DCF inputs state
+  // Custom DCF inputs state - using decimal values now instead of percentages
   const [customParams, setCustomParams] = useState({
-    revenueGrowth: "10.94",
-    ebitdaMargin: "31.27",
-    capexPercent: "3.06", 
-    taxRate: "24.09",
-    longTermGrowthRate: "4.0",
-    costOfEquity: "9.51",
-    costOfDebt: "3.64",
+    revenueGrowth: "0.1094",
+    ebitdaMargin: "0.3127",
+    capexPercent: "0.0306", 
+    taxRate: "0.2409",
+    longTermGrowthRate: "0.04",
+    costOfEquity: "0.0951",
+    costOfDebt: "0.0364",
     beta: "1.244",
-    marketRiskPremium: "4.72",
-    riskFreeRate: "3.64"
+    marketRiskPremium: "0.0472",
+    riskFreeRate: "0.0364"
   });
   
   // Custom DCF calculation hook
@@ -92,4 +92,4 @@ const DCFTabContent: React.FC<DCFTabContentProps> = ({ financials, symbol }) => 
   );
 };
 
-export default DCFTabContent;
+export default DCFTabContentProps;

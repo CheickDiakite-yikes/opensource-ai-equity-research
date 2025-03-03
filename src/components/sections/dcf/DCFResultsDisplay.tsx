@@ -25,7 +25,7 @@ const DCFResultsDisplay: React.FC<DCFResultsDisplayProps> = ({
         className="p-6 rounded-lg bg-muted/30 border border-border"
       >
         <div className="mb-6">
-          <div className="text-sm text-muted-foreground">Intrinsic Value Per Share</div>
+          <div className="text-sm text-muted-foreground">Equity Value Per Share</div>
           <div className="text-4xl font-bold">
             {formatCurrency(customDCFResult.equityValuePerShare)}
           </div>
