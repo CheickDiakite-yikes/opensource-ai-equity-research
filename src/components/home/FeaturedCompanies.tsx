@@ -158,8 +158,8 @@ const FeaturedCompanies: React.FC<FeaturedCompaniesProps> = ({
   onSelectSymbol 
 }) => {
   return (
-    <div className="relative py-12">
-      <div className="container mx-auto max-w-7xl">
+    <div className="relative py-12 w-full px-4 md:px-8 lg:px-12">
+      <div className="mx-auto w-full max-w-[1400px]">
         <motion.div 
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -192,7 +192,7 @@ const FeaturedCompanies: React.FC<FeaturedCompaniesProps> = ({
             Explore trending stocks and access in-depth financial analysis with just one click.
           </p>
           
-          <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 w-full">
             {featuredSymbols.map((company) => (
               <CompanyCard 
                 key={company.symbol}
