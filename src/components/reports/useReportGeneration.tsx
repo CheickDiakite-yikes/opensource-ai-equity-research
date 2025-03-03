@@ -8,11 +8,11 @@ import {
 
 import type { 
   ReportRequest,
-  ResearchReport,
-  StockQuote,
-  StockPrediction,
   NewsArticle,
+  StockQuote,
 } from "@/types";
+import { ResearchReport } from "@/types/ai-analysis/reportTypes";
+import { StockPrediction } from "@/types/ai-analysis/predictionTypes";
 
 import type { ReportData } from "./useResearchReportData";
 

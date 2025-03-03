@@ -1,4 +1,5 @@
-import { AIDCFSuggestion, CustomDCFParams, CustomDCFResult } from "@/types/aiAnalysisTypes";
+
+import { AIDCFSuggestion, CustomDCFParams, CustomDCFResult } from "@/types/ai-analysis/dcfTypes";
 
 // Convert AI assumptions to CustomDCFParams
 export const convertAssumptionsToParams = (

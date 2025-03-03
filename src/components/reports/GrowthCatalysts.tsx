@@ -6,7 +6,7 @@ import {
   Clock,
   CalendarRange
 } from "lucide-react";
-import { ResearchReport } from "@/types";
+import { ResearchReport } from "@/types/ai-analysis/reportTypes";
 
 interface GrowthCatalystsProps {
   catalysts: ResearchReport["catalysts"];

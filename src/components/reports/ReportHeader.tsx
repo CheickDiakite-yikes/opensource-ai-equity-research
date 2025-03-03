@@ -3,7 +3,7 @@ import React from "react";
 import { Button } from "@/components/ui/button";
 import { FileDown, Tag } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { ResearchReport, RatingDetails } from "@/types";
+import { RatingDetails } from "@/types/ai-analysis/reportTypes";
 
 // Update the interface to match the props being passed
 export interface ReportHeaderProps {

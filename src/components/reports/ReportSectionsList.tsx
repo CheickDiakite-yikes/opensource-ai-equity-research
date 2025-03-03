@@ -1,3 +1,4 @@
+
 import React from "react";
 import { 
   ChevronRight, 
@@ -11,7 +12,7 @@ import {
   Leaf,
   Star
 } from "lucide-react";
-import { ResearchReport } from "@/types";
+import { ResearchReport } from "@/types/ai-analysis/reportTypes";
 import { SensitivityAnalysis } from "./SensitivityAnalysis";
 import { GrowthCatalysts } from "./GrowthCatalysts";
 

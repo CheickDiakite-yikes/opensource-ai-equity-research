@@ -2,7 +2,8 @@
 import React from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { FileText, TrendingUp, Info, Download, ArrowUp, ArrowDown } from "lucide-react";
-import { ResearchReport, StockPrediction } from "@/types";
+import { ResearchReport } from "@/types/ai-analysis/reportTypes";
+import { StockPrediction } from "@/types/ai-analysis/predictionTypes";
 import ResearchReportDisplay from "./ResearchReportDisplay";
 import PricePredictionDisplay from "./PricePredictionDisplay";
 import { cn } from "@/lib/utils";

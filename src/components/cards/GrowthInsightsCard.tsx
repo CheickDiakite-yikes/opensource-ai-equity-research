@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Card, CardHeader, CardContent, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -7,13 +6,7 @@ import { Lightbulb, TrendingUp, AlertTriangle, LineChart, Clock, Loader2 } from 
 import { analyzeGrowthInsights } from "@/services/api/analysisService";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/components/ui/use-toast";
-
-interface GrowthInsight {
-  type: "positive" | "negative" | "neutral";
-  source: "earnings" | "filing" | "analysis";
-  sourceDate: string;
-  content: string;
-}
+import { GrowthInsight } from "@/types/ai-analysis/predictionTypes";
 
 interface GrowthInsightsCardProps {
   symbol: string;

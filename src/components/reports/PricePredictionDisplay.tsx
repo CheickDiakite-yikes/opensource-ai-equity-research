@@ -1,6 +1,6 @@
 
 import React from "react";
-import { StockPrediction } from "@/types";
+import { StockPrediction } from "@/types/ai-analysis/predictionTypes";
 import { Check, Info, AlertTriangle } from "lucide-react";
 
 interface PricePredictionDisplayProps {
