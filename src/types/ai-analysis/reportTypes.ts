@@ -32,6 +32,11 @@ export interface ReportSection {
   content: string;
 }
 
+export interface RatingDetails {
+  ratingScale: string;
+  ratingJustification?: string;
+}
+
 export interface ResearchReport {
   id?: string;
   symbol: string;
@@ -41,10 +46,7 @@ export interface ResearchReport {
   targetPrice: string;
   summary: string;
   sections: ReportSection[];
-  ratingDetails?: {
-    ratingScale: string;
-    ratingJustification?: string;
-  };
+  ratingDetails?: RatingDetails;
   scenarioAnalysis?: {
     bullCase: {
       price: string;
