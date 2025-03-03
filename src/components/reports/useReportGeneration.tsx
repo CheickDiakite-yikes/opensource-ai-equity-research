@@ -12,7 +12,6 @@ import type {
   StockQuote,
   StockPrediction,
   NewsArticle,
-  ChartSection
 } from "@/types";
 
 import type { ReportData } from "./useResearchReportData";
@@ -37,30 +36,6 @@ export const useReportGeneration = (symbol: string, data: ReportData) => {
       
       setIsGenerating(true);
       
-      // Determine chart sections based on report type
-      const chartSections: ChartSection[] = [];
-      
-      // For all report types, include financial charts
-      chartSections.push(
-        { type: 'revenue-income', title: 'Revenue and Income Trends' },
-        { type: 'assets-liabilities', title: 'Assets and Liabilities' }
-      );
-      
-      // For comprehensive and financial reports, add more detailed charts
-      if (reportType === 'comprehensive' || reportType === 'financial') {
-        chartSections.push(
-          { type: 'profitability', title: 'Profitability Metrics' },
-          { type: 'cash-flow', title: 'Cash Flow Analysis' }
-        );
-      }
-      
-      // For comprehensive and growth-focused reports
-      if (reportType === 'comprehensive' || reportType === 'growth') {
-        chartSections.push(
-          { type: 'growth', title: 'Growth Trends' }
-        );
-      }
-      
       const reportRequest: ReportRequest = {
         symbol,
         companyName: data.profile.companyName,
@@ -78,26 +53,13 @@ export const useReportGeneration = (symbol: string, data: ReportData) => {
         peers: data.peers
       };
       
-      // Add report type to help the AI generate appropriate content
-      const requestWithType = {
-        ...reportRequest,
-        reportType,
-        includeCharts: chartSections.map(c => c.type)
-      };
-      
-      const generatedReport = await generateResearchReport(requestWithType);
+      const generatedReport = await generateResearchReport(reportRequest);
       
       if (!generatedReport) {
         throw new Error("Failed to generate report");
       }
       
-      // Add chart sections to the generated report
-      const reportWithCharts = {
-        ...generatedReport,
-        chartSections
-      };
-      
-      setReport(reportWithCharts);
+      setReport(generatedReport);
       
       toast({
         title: "Report Generated",
