@@ -1,4 +1,3 @@
-
 import type { 
   StockQuote,
   IncomeStatement,
@@ -31,6 +30,11 @@ export interface ReportSection {
   content: string;
 }
 
+export interface ChartSection {
+  type: 'revenue-income' | 'assets-liabilities' | 'profitability' | 'cash-flow' | 'growth';
+  title: string;
+}
+
 export interface ResearchReport {
   symbol: string;
   companyName: string;
@@ -38,7 +42,16 @@ export interface ResearchReport {
   recommendation: string;
   targetPrice: string;
   summary: string;
+  investmentThesis: string;
+  businessOverview: string;
+  industryAnalysis: string;
+  financialAnalysis: string;
+  growthProspects: string;
+  valuation: string;
+  riskFactors: string;
+  esgConsiderations: string;
   sections: ReportSection[];
+  chartSections: ChartSection[];
 }
 
 export interface StockPrediction {
