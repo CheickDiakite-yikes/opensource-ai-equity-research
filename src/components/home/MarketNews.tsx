@@ -1,11 +1,10 @@
-
 import React from "react";
 import { motion } from "framer-motion";
 import { Newspaper, ExternalLink, Calendar, ImageOff, Building } from "lucide-react";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardImage } from "@/components/ui/card";
 import SectionHeader from "./SectionHeader";
 import { MarketNewsArticle } from "@/services/api/marketData/newsService";
-import { format } from "date-fns";
+import { format, parseISO } from "date-fns";
 import { 
   Tooltip,
   TooltipContent,
@@ -54,73 +53,26 @@ const MarketNews: React.FC<MarketNewsProps> = ({
   
   function formatDate(dateString: string) {
     try {
-      const date = new Date(dateString);
+      const date = parseISO(dateString);
       return format(date, 'MMM d, yyyy');
     } catch (error) {
+      console.error("Error parsing date:", dateString, error);
       return dateString.split(' ')[0]; // Fallback to just the date part
     }
   }
 
-  function handleImageError(e: React.SyntheticEvent<HTMLImageElement>) {
-    console.log("Image failed to load, using placeholder");
-    e.currentTarget.onerror = null;
-    
-    // If this is a company news item with a ticker, try to show company logo
-    const ticker = e.currentTarget.getAttribute('data-ticker');
-    if (ticker) {
-      displayCompanyLogo(e.currentTarget, ticker);
-    } else {
-      // Fallback to generic placeholder
-      e.currentTarget.src = '/placeholder.svg';
-      e.currentTarget.classList.add('object-contain', 'bg-muted/30', 'p-4');
-      e.currentTarget.classList.remove('object-cover');
-    }
-  }
-
-  async function displayCompanyLogo(imgElement: HTMLImageElement, ticker: string) {
-    try {
-      console.log("Attempting to fetch logo for ticker:", ticker);
-      // Extract the first ticker if multiple are present (comma-separated)
-      const primaryTicker = ticker.split(',')[0].trim();
-      
-      // Clean up ticker format - remove exchange prefix if present
-      const cleanTicker = primaryTicker.includes(':') 
-        ? primaryTicker.split(':')[1] 
-        : primaryTicker;
-        
-      const logoUrl = await fetchCompanyLogo(cleanTicker);
-      
-      if (logoUrl) {
-        imgElement.src = logoUrl;
-        imgElement.classList.add('object-contain', 'bg-white', 'p-2');
-        imgElement.classList.remove('object-cover');
-      } else {
-        // Use a company icon as fallback
-        imgElement.src = '/placeholder.svg';
-        const iconContainer = document.createElement('div');
-        iconContainer.className = 'absolute inset-0 flex items-center justify-center';
-        iconContainer.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="text-muted-foreground/50"><rect width="16" height="20" x="4" y="2" rx="2" ry="2"/><path d="M9 22v-4h6v4"/><path d="M8 6h.01"/><path d="M16 6h.01"/><path d="M12 6h.01"/><path d="M8 10h.01"/><path d="M16 10h.01"/><path d="M12 10h.01"/><path d="M8 14h.01"/><path d="M16 14h.01"/><path d="M12 14h.01"/></svg>';
-        imgElement.parentNode?.appendChild(iconContainer);
-      }
-    } catch (error) {
-      console.error("Error fetching company logo:", error);
-      imgElement.src = '/placeholder.svg';
-      imgElement.classList.add('object-contain', 'bg-muted/30', 'p-4');
-      imgElement.classList.remove('object-cover');
-    }
-  }
-
-  // Function to determine if an image URL is valid
-  function getImageUrl(imageUrl: string | undefined, tickers?: string): string {
+  function getImageUrl(imageUrl: string | undefined, symbol?: string): string {
     if (!imageUrl) return '/placeholder.svg';
     
-    // Check if the URL seems valid (has https and common image extensions)
     const isValidUrl = imageUrl.startsWith('http') && 
       (imageUrl.endsWith('.jpg') || 
        imageUrl.endsWith('.jpeg') || 
        imageUrl.endsWith('.png') || 
        imageUrl.endsWith('.webp') ||
-       imageUrl.endsWith('.gif'));
+       imageUrl.endsWith('.gif') ||
+       imageUrl.includes('.jpg') || 
+       imageUrl.includes('.png') ||
+       imageUrl.includes('.jpeg'));
     
     if (!isValidUrl) {
       console.log("Invalid image URL detected:", imageUrl);
@@ -130,14 +82,10 @@ const MarketNews: React.FC<MarketNewsProps> = ({
     return imageUrl;
   }
 
-  // Pre-process news data to load company logos for items with tickers
   React.useEffect(() => {
     newsData.forEach(article => {
-      if (article.tickers) {
-        // Preload company logos for articles with tickers
-        const ticker = article.tickers.split(',')[0].trim();
-        const cleanTicker = ticker.includes(':') ? ticker.split(':')[1] : ticker;
-        fetchCompanyLogo(cleanTicker).catch(console.error);
+      if (article.symbol) {
+        fetchCompanyLogo(article.symbol).catch(console.error);
       }
     });
   }, [newsData]);
@@ -159,7 +107,7 @@ const MarketNews: React.FC<MarketNewsProps> = ({
           
           <div className="grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
             {newsData.map((article, index) => {
-              const imageUrl = getImageUrl(article.image, article.tickers);
+              const imageUrl = getImageUrl(article.image, article.symbol);
               
               return (
                 <Card 
@@ -167,35 +115,34 @@ const MarketNews: React.FC<MarketNewsProps> = ({
                   className="bg-card/70 backdrop-blur-sm border border-muted/50 overflow-hidden shadow-md hover-card-highlight transition-all duration-300 hover:shadow-lg group"
                 >
                   <CardContent className="p-0">
-                    <div className="relative h-48 overflow-hidden bg-muted/30">
-                      <img 
-                        src={imageUrl}
-                        alt={article.title} 
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                        onError={handleImageError}
-                        crossOrigin="anonymous"
-                        data-ticker={article.tickers}
-                      />
-                      {(imageUrl === '/placeholder.svg' && !article.tickers) && (
-                        <div className="absolute inset-0 flex items-center justify-center">
-                          <ImageOff className="h-10 w-10 text-muted-foreground/50" />
-                        </div>
-                      )}
-                      {(imageUrl === '/placeholder.svg' && article.tickers) && (
-                        <div className="absolute inset-0 flex items-center justify-center">
-                          <Building className="h-10 w-10 text-muted-foreground/50" />
-                        </div>
-                      )}
-                      {article.tickers && (
-                        <div className="absolute top-3 right-3 bg-black/60 backdrop-blur-sm text-white text-xs px-2 py-1 rounded">
-                          {article.tickers.replace(/,/g, ' · ')}
-                        </div>
-                      )}
-                    </div>
+                    <CardImage
+                      src={imageUrl}
+                      alt={article.title}
+                      aspectRatio="video"
+                      className="group-hover:scale-105 transition-transform duration-500"
+                      fallback={
+                        article.symbol ? 
+                          <CompanyLogoFallback symbol={article.symbol} /> : 
+                          <div className="flex items-center justify-center h-full">
+                            <ImageOff className="h-10 w-10 text-muted-foreground/50" />
+                          </div>
+                      }
+                    />
+                    {article.symbol && (
+                      <div className="absolute top-3 right-3 bg-black/60 backdrop-blur-sm text-white text-xs px-2 py-1 rounded">
+                        {article.symbol}
+                      </div>
+                    )}
+                    
                     <div className="p-5 space-y-3">
-                      <div className="flex items-center text-xs text-muted-foreground">
-                        <Calendar className="h-3 w-3 mr-1" />
-                        <span>{formatDate(article.date)}</span>
+                      <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
+                        <div className="flex items-center">
+                          <Calendar className="h-3 w-3 mr-1" />
+                          <span>{formatDate(article.publishedDate)}</span>
+                        </div>
+                        {article.publisher && (
+                          <span className="font-medium">{article.publisher}</span>
+                        )}
                       </div>
                       <TooltipProvider>
                         <Tooltip>
@@ -210,15 +157,15 @@ const MarketNews: React.FC<MarketNewsProps> = ({
                         </Tooltip>
                       </TooltipProvider>
                       <p className="text-sm text-muted-foreground line-clamp-2">
-                        {article.content}
+                        {article.text}
                       </p>
                       <a 
-                        href={article.link} 
+                        href={article.url} 
                         target="_blank" 
                         rel="noopener noreferrer"
                         className="flex items-center text-xs font-medium text-primary hover:text-primary/80 transition-colors mt-2 pt-2 border-t border-muted"
                       >
-                        Read full article <ExternalLink className="h-3 w-3 ml-1" />
+                        Read on {article.site} <ExternalLink className="h-3 w-3 ml-1" />
                       </a>
                     </div>
                   </CardContent>
@@ -228,6 +175,39 @@ const MarketNews: React.FC<MarketNewsProps> = ({
           </div>
         </motion.div>
       </div>
+    </div>
+  );
+};
+
+const CompanyLogoFallback: React.FC<{ symbol: string }> = ({ symbol }) => {
+  const [logoUrl, setLogoUrl] = React.useState<string | null>(null);
+  
+  React.useEffect(() => {
+    const getCompanyLogo = async () => {
+      try {
+        const url = await fetchCompanyLogo(symbol);
+        setLogoUrl(url);
+      } catch (error) {
+        console.error("Error fetching logo:", error);
+        setLogoUrl(null);
+      }
+    };
+    
+    getCompanyLogo();
+  }, [symbol]);
+  
+  if (logoUrl) {
+    return (
+      <div className="flex items-center justify-center h-full bg-white">
+        <img src={logoUrl} alt={symbol} className="max-h-20 max-w-[80%] object-contain" />
+      </div>
+    );
+  }
+  
+  return (
+    <div className="flex items-center justify-center h-full">
+      <Building className="h-12 w-12 text-muted-foreground/50" />
+      <span className="ml-2 text-xl font-bold text-muted-foreground/70">{symbol}</span>
     </div>
   );
 };
