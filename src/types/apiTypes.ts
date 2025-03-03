@@ -36,7 +36,7 @@ export interface StockProfile {
   isActivelyTrading: boolean;
   isAdr: boolean;
   isFund: boolean;
-  rating: string; // Added rating field for stock grade
+  rating: string; // Analyst rating like "Overweight", "Maintain", etc.
 }
 
 export interface StockQuote {
