@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import Header from "@/components/layout/Header";
 import LandingView from "@/components/home/LandingView";
@@ -18,6 +19,7 @@ const Index = () => {
     { symbol: "TSLA", name: "Tesla Inc." }
   ]);
 
+  // Load recent searches from localStorage on component mount
   useEffect(() => {
     const savedSearches = localStorage.getItem('recentSearches');
     if (savedSearches) {
@@ -32,10 +34,11 @@ const Index = () => {
     setIsLoading(true);
     setSearchedSymbol(symbolUpperCase);
     
+    // Update recent searches
     const updatedSearches = [
       symbolUpperCase,
       ...recentSearches.filter(s => s !== symbolUpperCase)
-    ].slice(0, 5);
+    ].slice(0, 5); // Keep only the 5 most recent
     
     setRecentSearches(updatedSearches);
     localStorage.setItem('recentSearches', JSON.stringify(updatedSearches));
@@ -66,6 +69,7 @@ const Index = () => {
     setSymbol(sym);
     setSearchedSymbol(sym);
     
+    // Update recent searches
     const updatedSearches = [
       sym,
       ...recentSearches.filter(s => s !== sym)
@@ -89,7 +93,7 @@ const Index = () => {
         handleKeyDown={handleKeyDown}
       />
 
-      <main className="container mx-auto px-6">
+      <main className="container mx-auto p-6">
         {!searchedSymbol ? (
           <LandingView 
             recentSearches={recentSearches}

@@ -1,6 +1,6 @@
 
 import React from "react";
-import { Star, TrendingUp, TrendingDown } from "lucide-react";
+import { Star, Sparkles, Rocket } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { motion } from "framer-motion";
 
@@ -10,19 +10,21 @@ interface FeaturedCompaniesProps {
 }
 
 const itemAnimation = {
-  hidden: { opacity: 0, y: 20 },
+  hidden: { opacity: 0, scale: 0.8, rotate: Math.random() * 10 - 5 },
   show: { 
     opacity: 1, 
-    y: 0,
+    scale: 1,
+    rotate: 0,
     transition: {
       type: "spring",
       stiffness: 100,
-      damping: 15
+      damping: 10
     }
   },
   hover: { 
-    scale: 1.05,
-    transition: { duration: 0.2 }
+    scale: 1.05, 
+    rotate: Math.random() * 4 - 2,
+    transition: { duration: 0.3 }
   }
 };
 
@@ -30,52 +32,55 @@ const FeaturedCompanies: React.FC<FeaturedCompaniesProps> = ({
   featuredSymbols, 
   onSelectSymbol 
 }) => {
-  // Generate random trend indicators for demo purposes
-  const getTrendIndicator = (index: number) => {
-    // Make some positive and some negative to show variety
-    const isPositive = [0, 2, 4, 5].includes(index);
-    const value = (Math.random() * 5).toFixed(2);
-    
-    return {
-      isPositive,
-      value: isPositive ? `+${value}%` : `-${value}%`,
-      className: isPositive ? "text-green-400" : "text-red-400"
-    };
+  // Random trend indicators for demo purposes
+  const getTrendIndicator = () => {
+    return Math.random() > 0.5 ? 
+      { icon: <Sparkles className="h-4 w-4 text-yellow-400" />, value: `+${(Math.random() * 5).toFixed(2)}%` } :
+      { icon: <Rocket className="h-4 w-4 text-blue-500" />, value: `-${(Math.random() * 5).toFixed(2)}%` };
   };
 
   return (
-    <div className="relative my-16">
-      {/* Yellow curved background */}
+    <div className="relative">
+      {/* Animated stars in the background */}
+      {[...Array(20)].map((_, i) => (
+        <motion.div
+          key={`star-${i}`}
+          className="absolute rounded-full bg-white"
+          style={{
+            width: Math.random() * 3 + 1,
+            height: Math.random() * 3 + 1,
+            left: `${Math.random() * 100}%`,
+            top: `${Math.random() * 100}%`,
+            opacity: Math.random() * 0.7 + 0.3
+          }}
+          animate={{
+            opacity: [0.3, 1, 0.3],
+            scale: [1, 1.5, 1]
+          }}
+          transition={{
+            duration: Math.random() * 3 + 2,
+            repeat: Infinity,
+            delay: Math.random() * 5
+          }}
+        />
+      ))}
+      
       <motion.div 
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        transition={{ duration: 0.8 }}
-        className="absolute inset-0 -z-10 -mx-6 sm:-mx-12 md:-mx-24 -my-8 overflow-hidden"
-      >
-        <svg className="w-full h-full" viewBox="0 0 1200 300" preserveAspectRatio="none">
-          <path 
-            d="M0,100 C300,20 900,20 1200,100 L1200,300 L0,300 Z" 
-            fill="#FFF200"
-          />
-        </svg>
-      </motion.div>
-      
-      <motion.div 
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
         className="mb-12 pt-8 relative z-10"
       >
         <div className="flex items-center gap-2 mb-8">
           <Star className="h-6 w-6 text-yellow-400" />
-          <h2 className="text-2xl font-bold text-slate-800">
+          <h2 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-600">
             Featured Companies
           </h2>
         </div>
         
-        <div className="grid gap-4 sm:gap-6 grid-cols-2 sm:grid-cols-3 lg:grid-cols-6">
+        <div className="grid gap-8 grid-cols-2 sm:grid-cols-3 lg:grid-cols-6">
           {featuredSymbols.map((company, index) => {
-            const trend = getTrendIndicator(index);
+            const trend = getTrendIndicator();
             
             return (
               <motion.div
@@ -84,30 +89,67 @@ const FeaturedCompanies: React.FC<FeaturedCompaniesProps> = ({
                 initial="hidden"
                 animate="show"
                 whileHover="hover"
+                transition={{ duration: 0.5, delay: index * 0.1 }}
                 className="relative"
               >
+                {/* Comet/asteroid tail effect */}
+                <motion.div 
+                  className="absolute inset-0 bg-gradient-to-r from-transparent via-blue-400/10 to-purple-400/20 rounded-lg -z-10"
+                  animate={{
+                    x: ['-100%', '100%'],
+                    opacity: [0, 0.3, 0]
+                  }}
+                  transition={{
+                    duration: 3,
+                    repeat: Infinity,
+                    repeatType: 'loop',
+                    delay: index * 0.5,
+                    ease: 'linear'
+                  }}
+                />
+                
                 <Card 
-                  className="cursor-pointer overflow-hidden bg-slate-900 text-white border-0 shadow-lg"
+                  className="featured-card cursor-pointer overflow-hidden bg-gradient-to-b from-slate-900/90 to-slate-800/90 text-white border border-blue-500/30 backdrop-blur-sm hover:shadow-lg hover:shadow-blue-500/20"
                   onClick={() => onSelectSymbol(company.symbol)}
                 >
+                  <div className="h-1 bg-gradient-to-r from-blue-500 to-purple-500" />
                   <CardContent className="p-5 text-center">
-                    <div className="font-bold text-xl mb-1 text-white">
+                    <div className="font-bold text-xl mb-1 bg-clip-text text-transparent bg-gradient-to-r from-blue-300 to-purple-300">
                       {company.symbol}
                     </div>
-                    <div className="text-sm text-slate-300 mb-3 truncate">
+                    <div className="text-sm text-blue-100/80 mb-3 truncate">
                       {company.name}
                     </div>
-                    <div className="flex items-center justify-center gap-1 text-sm font-medium">
-                      {trend.isPositive ? 
-                        <TrendingUp className="h-4 w-4 text-green-400" /> : 
-                        <TrendingDown className="h-4 w-4 text-red-400" />
-                      }
-                      <span className={trend.className}>
+                    <div className="flex items-center justify-center gap-1 text-sm">
+                      {trend.icon}
+                      <span className={trend.value.includes('+') ? 'text-green-400' : 'text-red-400'}>
                         {trend.value}
                       </span>
                     </div>
                   </CardContent>
                 </Card>
+                
+                {/* Orbiting small stars */}
+                {[...Array(3)].map((_, i) => (
+                  <motion.div
+                    key={`orbit-${company.symbol}-${i}`}
+                    className="absolute w-1 h-1 bg-white rounded-full"
+                    style={{ 
+                      top: '50%',
+                      left: '50%',
+                      boxShadow: '0 0 4px 1px rgba(255, 255, 255, 0.6)'
+                    }}
+                    animate={{
+                      x: Math.cos(i * (2 * Math.PI / 3)) * 50,
+                      y: Math.sin(i * (2 * Math.PI / 3)) * 50
+                    }}
+                    transition={{
+                      duration: 3 + i,
+                      repeat: Infinity,
+                      ease: "linear"
+                    }}
+                  />
+                ))}
               </motion.div>
             );
           })}
