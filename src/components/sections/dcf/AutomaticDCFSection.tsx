@@ -57,10 +57,10 @@ const AutomaticDCFSection: React.FC<AutomaticDCFSectionProps> = ({ financials, s
       return {
         symbol,
         // Growth parameters (as decimals)
-        revenueGrowthPct: 0.1094,
+        revenueGrowthPct: 0.0850,
         ebitdaPct: 0.3127,
         capitalExpenditurePct: 0.0306,
-        taxRate: 0.2409,
+        taxRate: 0.21,
         
         // Working capital parameters (as decimals)
         depreciationAndAmortizationPct: 0.0345,
@@ -73,7 +73,7 @@ const AutomaticDCFSection: React.FC<AutomaticDCFSectionProps> = ({ financials, s
         sellingGeneralAndAdministrativeExpensesPct: 0.0662,
         
         // Rate parameters (as decimals for calculation)
-        longTermGrowthRate: 0.04, // 4%
+        longTermGrowthRate: 0.03, // 3%
         costOfEquity: 0.0951, // 9.51%
         costOfDebt: 0.0364, // 3.64%
         marketRiskPremium: 0.0472, // 4.72%

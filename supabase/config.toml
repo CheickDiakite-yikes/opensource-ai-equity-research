@@ -1,10 +1,10 @@
 
-project_id = "equity-research"
+project_id = "rnpcygrrxeeqphdjuesh"
 
 [api]
 enabled = true
 port = 54321
-schemas = ["public", "storage", "graphql_public", "app"]
+schemas = ["public", "storage", "graphql_public"]
 extra_search_path = ["public", "extensions"]
 max_rows = 1000
 
@@ -13,35 +13,23 @@ port = 54322
 shadow_port = 54320
 major_version = 15
 
-[db.pooler]
-enabled = false
-port = 54329
-pool_mode = "transaction"
-default_pool_size = 20
-max_client_conn = 100
-
-[realtime]
-enabled = true
-
 [studio]
 enabled = true
 port = 54323
-api_url = "http://localhost"
+api_url = "http://127.0.0.1:54321"
 
 [inbucket]
 enabled = true
 port = 54324
-smtp_port = 54325
-pop3_port = 54326
 
 [storage]
 enabled = true
-file_size_limit = 104857600
+file_size_limit = "50MiB"
 
 [auth]
 enabled = true
-site_url = "https://equity-ai-researcher.lovable.dev"
-additional_redirect_urls = ["https://localhost:3000", "http://localhost:5173"]
+site_url = "http://127.0.0.1:3000"
+additional_redirect_urls = ["https://localhost:3000"]
 jwt_expiry = 3600
 enable_refresh_token_rotation = true
 refresh_token_reuse_interval = 10
@@ -50,17 +38,21 @@ enable_signup = true
 [auth.email]
 enable_signup = true
 double_confirm_changes = true
-enable_confirmations = true
-
-[auth.external.google]
-enabled = false
-client_id = ""
-secret = ""
+enable_confirmations = false
 
 [auth.external.github]
 enabled = false
 client_id = ""
 secret = ""
+redirect_uri = ""
+url = ""
+
+[auth.external.google]
+enabled = false
+client_id = ""
+secret = ""
+redirect_uri = ""
+url = ""
 
 [analytics]
 enabled = false
@@ -68,21 +60,32 @@ port = 54327
 vector_port = 54328
 backend = "postgres"
 
-# Edge Functions
-[functions.get-stock-data]
-
-[functions.get-custom-dcf]
-
-[functions.generate-research-report]
-
-[functions.analyze-growth-insights]
-
-[functions.predict-stock-price]
-
-[functions.cache-company-documents]
-
-[functions.generate-transcript-highlights]
-
-[functions.get-finnhub-news]
+[experimental]
+functions_path = "supabase/functions"
 
 [functions.generate-dcf-assumptions]
+verify_jwt = false
+
+[functions.get-custom-dcf]
+verify_jwt = false
+
+[functions.generate-research-report]
+verify_jwt = false
+
+[functions.predict-stock-price]
+verify_jwt = false
+
+[functions.analyze-growth-insights]
+verify_jwt = false
+
+[functions.cache-company-documents]
+verify_jwt = false
+
+[functions.get-finnhub-news]
+verify_jwt = false
+
+[functions.get-stock-data]
+verify_jwt = false
+
+[functions.generate-transcript-highlights]
+verify_jwt = false

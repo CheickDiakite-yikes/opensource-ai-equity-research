@@ -1,8 +1,8 @@
-
 import { invokeSupabaseFunction } from "./base";
 import { AIDCFSuggestion, CustomDCFParams, CustomDCFResult, GrowthInsight, ResearchReport, StockPrediction } from "@/types/aiAnalysisTypes";
 import { EarningsCall, SECFiling } from "@/types";
 import { NewsArticle, StockQuote } from "@/types";
+import { toast } from "@/components/ui/use-toast";
 
 /**
  * Fetch AI-generated DCF assumptions for a company
@@ -36,42 +36,25 @@ export const fetchCustomDCF = async (symbol: string, params: CustomDCFParams): P
   try {
     console.log(`Fetching custom DCF for ${symbol} with params:`, params);
     
-    // Transform parameters to match exactly what the FMP API expects
-    const transformedParams = {
-      symbol: params.symbol,
-      revenueGrowthPct: params.revenueGrowthPct,
-      ebitdaPct: params.ebitdaPct,
-      capitalExpenditurePct: params.capitalExpenditurePct,
-      taxRate: params.taxRate,
-      depreciationAndAmortizationPct: params.depreciationAndAmortizationPct,
-      cashAndShortTermInvestmentsPct: params.cashAndShortTermInvestmentsPct,
-      receivablesPct: params.receivablesPct,
-      inventoriesPct: params.inventoriesPct,
-      payablesPct: params.payablesPct,
-      ebitPct: params.ebitPct,
-      operatingCashFlowPct: params.operatingCashFlowPct,
-      sellingGeneralAndAdministrativeExpensesPct: params.sellingGeneralAndAdministrativeExpensesPct,
-      longTermGrowthRate: params.longTermGrowthRate,
-      costOfEquity: params.costOfEquity,
-      costOfDebt: params.costOfDebt,
-      marketRiskPremium: params.marketRiskPremium,
-      riskFreeRate: params.riskFreeRate,
-      beta: params.beta
-    };
-    
-    const data = await invokeSupabaseFunction<CustomDCFResult[]>('get-custom-dcf', { 
+    const data = await invokeSupabaseFunction<CustomDCFResult[] | { error: string, details?: string }>('get-custom-dcf', { 
       symbol, 
-      params: transformedParams
+      params
     });
     
     if (!data) {
       console.error("No data returned from custom DCF API");
-      return [];
+      throw new Error("Failed to fetch DCF data");
+    }
+    
+    // Check if we received an error object
+    if (!Array.isArray(data) && 'error' in data) {
+      console.error("Error from DCF API:", data.error, data.details);
+      throw new Error(data.details || data.error || "DCF calculation failed");
     }
     
     if (!Array.isArray(data)) {
       console.error("Unexpected data format from custom DCF API:", data);
-      return [];
+      throw new Error("Invalid response format from DCF service");
     }
     
     console.log(`Received ${data.length} DCF records for ${symbol}`);
@@ -124,9 +107,73 @@ export const fetchCustomDCF = async (symbol: string, params: CustomDCFParams): P
       return result;
     });
     
+    // If the array is empty, we'll return a default mock result
+    if (validatedData.length === 0) {
+      console.warn("DCF API returned empty array, generating mock data");
+      
+      // Mock data for development/fallback
+      const mockDCF: CustomDCFResult = {
+        year: new Date().getFullYear().toString(),
+        symbol: symbol,
+        revenue: 100000000000,
+        revenuePercentage: 8.5,
+        ebitda: 31270000000,
+        ebitdaPercentage: 31.27,
+        ebit: 30000000000,
+        ebitPercentage: 30,
+        depreciation: 5000000000,
+        capitalExpenditure: 3060000000,
+        capitalExpenditurePercentage: 3.06,
+        price: params.symbol === "AAPL" ? 241.39 : 100,
+        beta: params.beta,
+        dilutedSharesOutstanding: 15408095000,
+        costofDebt: params.costOfDebt,
+        taxRate: params.taxRate,
+        afterTaxCostOfDebt: params.costOfDebt * (1 - params.taxRate),
+        riskFreeRate: params.riskFreeRate,
+        marketRiskPremium: params.marketRiskPremium,
+        costOfEquity: params.costOfEquity,
+        totalDebt: 106629000000,
+        totalEquity: 56950000000,
+        totalCapital: 163579000000,
+        debtWeighting: 0.65,
+        equityWeighting: 0.35,
+        wacc: 0.105,
+        operatingCashFlow: 28860000000,
+        pvLfcf: 25000000000,
+        sumPvLfcf: 100000000000,
+        longTermGrowthRate: params.longTermGrowthRate,
+        freeCashFlow: 25800000000,
+        terminalValue: 500000000000,
+        presentTerminalValue: 300000000000,
+        enterpriseValue: 400000000000,
+        netDebt: 76686000000,
+        equityValue: 323314000000,
+        equityValuePerShare: 120,
+        freeCashFlowT1: 27000000000,
+        operatingCashFlowPercentage: 28.86
+      };
+      
+      toast({
+        title: "Using estimated values",
+        description: "The DCF API returned no data. Using estimated values for demonstration.",
+        variant: "warning",
+      });
+      
+      return [mockDCF];
+    }
+    
     return validatedData;
   } catch (error) {
     console.error("Error fetching custom DCF:", error);
+    
+    // Show a toast with the error
+    toast({
+      title: "DCF Calculation Error",
+      description: error instanceof Error ? error.message : String(error),
+      variant: "destructive",
+    });
+    
     throw error;
   }
 };

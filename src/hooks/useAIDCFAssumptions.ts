@@ -55,23 +55,23 @@ export const useAIDCFAssumptions = (symbol: string) => {
   const validateAssumptions = (data: AIDCFSuggestion): AIDCFSuggestion => {
     // Default assumptions to use if values are missing or invalid
     const defaultAssumptions = {
-      revenueGrowthPct: 0.1094,
-      ebitdaMarginPct: 0.3127,
-      capitalExpenditurePct: 0.0306,
-      taxRatePct: 0.2409,
-      depreciationAndAmortizationPct: 0.0345,
-      cashAndShortTermInvestmentsPct: 0.2344,
-      receivablesPct: 0.1533,
-      inventoriesPct: 0.0155,
-      payablesPct: 0.1614,
-      ebitPct: 0.2781,
-      operatingCashFlowPct: 0.2886,
-      sellingGeneralAndAdministrativeExpensesPct: 0.0662,
-      longTermGrowthRatePct: 0.04,
-      costOfEquityPct: 0.0951,
-      costOfDebtPct: 0.0364,
-      marketRiskPremiumPct: 0.0472,
-      riskFreeRatePct: 0.0364,
+      revenueGrowthPct: 0.0850,       // 8.5%
+      ebitdaMarginPct: 0.3127,        // 31.27%
+      capitalExpenditurePct: 0.0306,  // 3.06%
+      taxRatePct: 0.21,               // 21%
+      depreciationAndAmortizationPct: 0.0345,  // 3.45%
+      cashAndShortTermInvestmentsPct: 0.2344,  // 23.44%
+      receivablesPct: 0.1533,         // 15.33%
+      inventoriesPct: 0.0155,         // 1.55%
+      payablesPct: 0.1614,            // 16.14%
+      ebitPct: 0.2781,                // 27.81%
+      operatingCashFlowPct: 0.2886,   // 28.86%
+      sellingGeneralAndAdministrativeExpensesPct: 0.0662, // 6.62%
+      longTermGrowthRatePct: 0.03,    // 3%
+      costOfEquityPct: 0.0951,        // 9.51%
+      costOfDebtPct: 0.0364,          // 3.64%
+      marketRiskPremiumPct: 0.0472,   // 4.72%
+      riskFreeRatePct: 0.0364,        // 3.64%
       beta: 1.244,
     };
 
