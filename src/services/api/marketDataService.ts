@@ -1,3 +1,4 @@
+
 import { invokeSupabaseFunction } from "./base";
 import { HistoricalPriceData, NewsArticle, CompanyPeer } from "@/types";
 
@@ -172,7 +173,7 @@ const getFallbackMarketNews = (): MarketNewsArticle[] => {
   return [
     {
       title: "Merck Shares Plunge 8% as Weak Guidance Overshadows Strong Revenue Growth",
-      date: "2025-02-04 09:33:00",
+      date: "2025-03-01 09:33:00",
       content: "Merck & Co (NYSE:MRK) saw its stock sink over 8% in pre-market today after delivering mixed fourth-quarter results and disappointing 2025 guidance.",
       tickers: "NYSE:MRK",
       image: "https://cdn.financialmodellingprep.com/images/fmp-1738679603793.jpg",
@@ -182,7 +183,7 @@ const getFallbackMarketNews = (): MarketNewsArticle[] => {
     },
     {
       title: "Tesla Sales in China Surge 18.3% in January Despite Overall Market Decline",
-      date: "2025-02-04 08:45:00",
+      date: "2025-03-01 08:45:00",
       content: "Tesla (NASDAQ:TSLA) delivered 71,447 vehicles in China during January, representing an 18.3% increase year-over-year despite the broader EV market seeing declining sales.",
       tickers: "NASDAQ:TSLA",
       image: "https://cdn.financialmodellingprep.com/images/fmp-1738642859103.jpg",
@@ -192,7 +193,7 @@ const getFallbackMarketNews = (): MarketNewsArticle[] => {
     },
     {
       title: "Amazon Beats Q4 Expectations on Strong Cloud Growth, Shares Rise 5%",
-      date: "2025-02-03 16:30:00",
+      date: "2025-02-28 16:30:00",
       content: "Amazon (NASDAQ:AMZN) reported Q4 earnings that exceeded Wall Street expectations, with AWS revenue growing 23% year-over-year to $25.4 billion.",
       tickers: "NASDAQ:AMZN",
       image: "https://cdn.financialmodellingprep.com/images/fmp-1738592034567.jpg",
@@ -202,7 +203,7 @@ const getFallbackMarketNews = (): MarketNewsArticle[] => {
     },
     {
       title: "Fed's Powell Signals No Rush to Cut Rates, Markets Retreat",
-      date: "2025-02-03 14:15:00",
+      date: "2025-03-01 14:15:00",
       content: "Federal Reserve Chair Jerome Powell indicated that the central bank is unlikely to begin cutting interest rates until inflation shows more consistent signs of approaching the 2% target.",
       tickers: "",
       image: "https://cdn.financialmodellingprep.com/images/fmp-1738583657890.jpg",
@@ -212,7 +213,7 @@ const getFallbackMarketNews = (): MarketNewsArticle[] => {
     },
     {
       title: "Microsoft Launches New AI-Powered Productivity Suite, Challenging Google",
-      date: "2025-02-02 10:20:00",
+      date: "2025-03-02 10:20:00",
       content: "Microsoft (NASDAQ:MSFT) unveiled its next-generation AI-enhanced productivity tools, directly competing with Google's Workspace and raising the stakes in the enterprise software market.",
       tickers: "NASDAQ:MSFT,NASDAQ:GOOGL",
       image: "https://cdn.financialmodellingprep.com/images/fmp-1738497623456.jpg",
@@ -222,7 +223,7 @@ const getFallbackMarketNews = (): MarketNewsArticle[] => {
     },
     {
       title: "Oil Prices Drop 3% as OPEC+ Considers Increasing Production",
-      date: "2025-02-02 09:05:00",
+      date: "2025-03-02 09:05:00",
       content: "Crude oil prices fell more than 3% after reports emerged that OPEC+ members are discussing a potential increase in production quotas starting in April.",
       tickers: "NYSEARCA:USO,NYSEARCA:BNO",
       image: "https://cdn.financialmodellingprep.com/images/fmp-1738493087612.jpg",

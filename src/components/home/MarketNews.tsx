@@ -1,11 +1,12 @@
 
 import React from "react";
 import { motion } from "framer-motion";
-import { Newspaper, ExternalLink, Calendar } from "lucide-react";
+import { Newspaper, ExternalLink, Calendar, ImageOff } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import SectionHeader from "./SectionHeader";
 import { MarketNewsArticle } from "@/services/api/marketDataService";
 import { format } from "date-fns";
+import { Tooltip } from "@/components/ui/tooltip";
 
 interface MarketNewsProps {
   newsData: MarketNewsArticle[];
@@ -53,6 +54,13 @@ const MarketNews: React.FC<MarketNewsProps> = ({
       return dateString.split(' ')[0]; // Fallback to just the date part
     }
   }
+
+  function handleImageError(e: React.SyntheticEvent<HTMLImageElement>) {
+    e.currentTarget.onerror = null;
+    e.currentTarget.src = '/placeholder.svg';
+    e.currentTarget.classList.add('object-contain', 'bg-muted/30', 'p-4');
+    e.currentTarget.classList.remove('object-cover');
+  }
   
   return (
     <div className="relative py-8 bg-gradient-to-b from-muted/20 to-background">
@@ -76,12 +84,18 @@ const MarketNews: React.FC<MarketNewsProps> = ({
                 className="bg-card/70 backdrop-blur-sm border border-muted/50 overflow-hidden shadow-md hover-card-highlight transition-all duration-300 hover:shadow-lg group"
               >
                 <CardContent className="p-0">
-                  <div className="relative h-48 overflow-hidden">
+                  <div className="relative h-48 overflow-hidden bg-muted/30">
                     <img 
-                      src={article.image} 
+                      src={article.image || '/placeholder.svg'} 
                       alt={article.title} 
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                      onError={handleImageError}
                     />
+                    {article.image === undefined && (
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <ImageOff className="h-10 w-10 text-muted-foreground/50" />
+                      </div>
+                    )}
                     {article.tickers && (
                       <div className="absolute top-3 right-3 bg-black/60 backdrop-blur-sm text-white text-xs px-2 py-1 rounded">
                         {article.tickers.replace(/,/g, ' · ')}
@@ -93,9 +107,16 @@ const MarketNews: React.FC<MarketNewsProps> = ({
                       <Calendar className="h-3 w-3 mr-1" />
                       <span>{formatDate(article.date)}</span>
                     </div>
-                    <h3 className="text-base font-semibold line-clamp-2 group-hover:text-primary transition-colors">
-                      {article.title}
-                    </h3>
+                    <Tooltip>
+                      <Tooltip.Trigger asChild>
+                        <h3 className="text-base font-semibold line-clamp-2 group-hover:text-primary transition-colors">
+                          {article.title}
+                        </h3>
+                      </Tooltip.Trigger>
+                      <Tooltip.Content>
+                        <p className="max-w-xs">{article.title}</p>
+                      </Tooltip.Content>
+                    </Tooltip>
                     <p className="text-sm text-muted-foreground line-clamp-2">
                       {article.content}
                     </p>
