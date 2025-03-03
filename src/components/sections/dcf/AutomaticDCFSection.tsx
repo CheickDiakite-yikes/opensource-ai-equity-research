@@ -109,12 +109,6 @@ const AutomaticDCFSection: React.FC<AutomaticDCFSectionProps> = ({ financials, s
 
   // Calculate upside percentage based on intrinsic value vs current price
   const dcfValue = Math.max(0, dcfData.intrinsicValue); // Ensure non-negative value
-  
-  // Calculate upside percentage - (intrinsic value / current price - 1) * 100
-  let upside = 0;
-  if (currentPrice > 0 && dcfValue > 0) {
-    upside = ((dcfValue / currentPrice) - 1) * 100;
-  }
 
   return (
     <div className="space-y-6">
@@ -128,7 +122,7 @@ const AutomaticDCFSection: React.FC<AutomaticDCFSectionProps> = ({ financials, s
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <DCFValuationSummary 
           dcfValue={dcfValue}
-          upside={upside}
+          currentPrice={currentPrice}
           assumptions={dcfData.assumptions}
           isLoading={isCalculating}
         />

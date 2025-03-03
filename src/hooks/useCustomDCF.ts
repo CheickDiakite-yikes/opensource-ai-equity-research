@@ -19,33 +19,25 @@ export const useCustomDCF = (symbol: string) => {
       
       const result = await fetchCustomDCF(symbol, paramsWithSymbol);
       
-      if (result) {
+      if (result && Array.isArray(result) && result.length > 0) {
         // For the projected data, we'll use the first 5 years from the result
-        // This assumes that the API returns an array of yearly data
         const yearly: YearlyDCFData[] = [];
         
-        // If we have an array result, we can use it to populate yearly data
-        if (Array.isArray(result) && result.length > 0) {
-          // Use the first 5 items (or fewer if less are available)
-          const yearsToUse = result.slice(0, 5);
-          
-          yearly.push(...yearsToUse.map(year => ({
-            year: year.year,
-            revenue: year.revenue || 0,
-            ebit: year.ebit || 0,
-            ebitda: year.ebitda || 0,
-            freeCashFlow: year.freeCashFlow || 0,
-            operatingCashFlow: year.operatingCashFlow || 0,
-            capitalExpenditure: year.capitalExpenditure || 0
-          })));
-          
-          // Use the first item in the array as our DCF result
-          setCustomDCFResult(result[0]);
-        } else {
-          // If result is not an array, use it directly as our DCF result
-          setCustomDCFResult(result as CustomDCFResult);
-        }
+        // Use the first 5 items (or fewer if less are available)
+        const yearsToUse = result.slice(0, 5);
         
+        yearly.push(...yearsToUse.map(year => ({
+          year: year.year,
+          revenue: year.revenue || 0,
+          ebit: year.ebit || 0,
+          ebitda: year.ebitda || 0,
+          freeCashFlow: year.freeCashFlow || 0,
+          operatingCashFlow: year.operatingCashFlow || 0,
+          capitalExpenditure: year.capitalExpenditure || 0
+        })));
+        
+        // Use the first item in the array as our DCF result
+        setCustomDCFResult(result[0]);
         setProjectedData(yearly);
       } else {
         setError("Failed to calculate DCF. Please try again.");

@@ -13,6 +13,9 @@ const DCFResultsDisplay: React.FC<DCFResultsDisplayProps> = ({
   customDCFResult, 
   currentPrice 
 }) => {
+  // Calculate upside percentage - (intrinsic value / current price - 1) * 100
+  const upside = currentPrice > 0 ? ((customDCFResult.equityValuePerShare / currentPrice) - 1) * 100 : 0;
+  
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -35,7 +38,7 @@ const DCFResultsDisplay: React.FC<DCFResultsDisplayProps> = ({
               ? 'text-green-700' 
               : 'text-red-700'
           }`}>
-            {((customDCFResult.equityValuePerShare / currentPrice - 1) * 100).toFixed(1)}% {customDCFResult.equityValuePerShare > currentPrice ? 'Upside' : 'Downside'}
+            {Math.abs(upside).toFixed(2)}% {customDCFResult.equityValuePerShare > currentPrice ? 'Upside' : 'Downside'}
           </div>
         </motion.div>
         

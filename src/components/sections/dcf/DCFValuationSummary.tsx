@@ -1,12 +1,12 @@
 
 import React from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { formatCurrency } from "@/utils/financialDataUtils";
+import { formatCurrency, formatLargeNumber } from "@/lib/utils";
 import { ArrowUp, ArrowDown, Loader2 } from "lucide-react";
 
 interface DCFValuationSummaryProps {
   dcfValue: number;
-  upside: number;
+  currentPrice: number;
   assumptions: {
     growthRate: string;
     discountRate: string;
@@ -18,11 +18,14 @@ interface DCFValuationSummaryProps {
 
 const DCFValuationSummary: React.FC<DCFValuationSummaryProps> = ({ 
   dcfValue, 
-  upside, 
+  currentPrice,
   assumptions,
   isLoading = false
 }) => {
-  // Format upside percentage with 2 decimal places and ensure it's positive for display
+  // Calculate upside percentage - (intrinsic value / current price - 1) * 100
+  const upside = currentPrice > 0 ? ((dcfValue / currentPrice) - 1) * 100 : 0;
+  
+  // Format upside percentage with 2 decimal places
   const formattedUpside = Math.abs(upside).toFixed(2);
   const isPositive = upside >= 0;
   
