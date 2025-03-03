@@ -109,7 +109,12 @@ async function cacheTranscripts(symbol: string): Promise<boolean> {
     
     // Prepare transcripts for database insertion
     const transcriptsToInsert = transcripts
-      .filter(t => !existingKeys.has(`${t.quarter || t.period}-${t.year}`))
+      .filter(t => {
+        // Ensure we have the quarter field (might be in period)
+        const quarter = t.quarter || t.period;
+        if (!quarter || !t.year) return false;
+        return !existingKeys.has(`${quarter}-${t.year}`);
+      })
       .map(t => ({
         symbol: t.symbol,
         quarter: t.quarter || t.period,

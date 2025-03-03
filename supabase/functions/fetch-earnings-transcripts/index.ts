@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import { corsHeaders } from "../_shared/cors.ts";
 
@@ -57,9 +58,18 @@ serve(async (req) => {
       console.log(`First transcript sample: ${JSON.stringify(data[0]).substring(0, 200)}...`);
     }
     
+    // Normalize the data to ensure consistent quarter field
+    const normalizedData = Array.isArray(data) ? data.map(item => {
+      // Make sure we have a consistent "quarter" field
+      if (!item.quarter && item.period) {
+        item.quarter = item.period;
+      }
+      return item;
+    }) : data;
+    
     // Return the data
     return new Response(
-      JSON.stringify(data),
+      JSON.stringify(normalizedData),
       { headers: { "Content-Type": "application/json", ...corsHeaders } }
     );
   } catch (error) {
