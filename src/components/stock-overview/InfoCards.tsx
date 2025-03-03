@@ -1,8 +1,8 @@
-
 import { Card, CardContent } from "@/components/ui/card";
 import { StockProfile, StockQuote } from "@/types";
 import { formatLargeNumber, formatCurrency } from "@/lib/utils";
 import { Briefcase, TrendingUp, Globe } from "lucide-react";
+import StockRatingIndicator from "./StockRatingIndicator";
 
 interface InfoCardsProps {
   profile: StockProfile;
@@ -42,7 +42,7 @@ const InfoCards = ({ profile, quote, rating }: InfoCardsProps) => {
             </div>
             <div>
               <p className="text-muted-foreground">Stock Grade</p>
-              <p className="font-medium">{rating || profile.rating || 'N/A'}</p>
+              <StockRatingIndicator rating={rating || profile.rating} />
             </div>
           </div>
         </CardContent>
