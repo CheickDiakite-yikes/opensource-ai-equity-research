@@ -32,7 +32,9 @@ export interface ReportSection {
   content: string;
 }
 
+// Updated ResearchReport interface to align with the one in index.ts
 export interface ResearchReport {
+  id?: string;
   symbol: string;
   companyName: string;
   date: string;
@@ -40,11 +42,11 @@ export interface ResearchReport {
   targetPrice: string;
   summary: string;
   sections: ReportSection[];
-  ratingDetails: {
+  ratingDetails?: {
     ratingScale: string;
-    ratingJustification: string;
+    ratingJustification?: string;
   };
-  scenarioAnalysis: {
+  scenarioAnalysis?: {
     bullCase: {
       price: string;
       probability: string;
@@ -61,7 +63,7 @@ export interface ResearchReport {
       drivers: string[];
     };
   };
-  catalysts: {
+  catalysts?: {
     positive: string[];
     negative: string[];
     timeline?: {

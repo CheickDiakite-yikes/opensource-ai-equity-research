@@ -69,6 +69,7 @@ export const useReportGeneration = (symbol: string, data: ReportData) => {
       // Ensure required sections are present with defaults if needed
       const enhancedReport: ResearchReport = {
         ...generatedReport,
+        summary: generatedReport.summary || "Summary not available", // Ensure summary exists
         ratingDetails: generatedReport.ratingDetails || {
           ratingScale: "Buy / Hold / Sell",
           ratingJustification: "Based on fundamental and technical analysis."

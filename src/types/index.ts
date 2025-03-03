@@ -12,32 +12,46 @@ export interface RatingDetails {
   ratingJustification?: string;
 }
 
-// Update ResearchReport interface to include ratingDetails
+// Updated ResearchReport interface to resolve type errors
 export interface ResearchReport {
-  id: string;
+  id?: string;  // Making id optional to fix the mismatch with aiAnalysisTypes
   companyName: string;
   symbol: string;
   date: string;
   recommendation: string;
   targetPrice: string;
+  summary: string; // Added summary field
   sections: Array<{
     title: string;
     content: string;
   }>;
+  // Updated scenarioAnalysis structure to match what's used in the components
   scenarioAnalysis?: {
-    scenarios: Array<{
-      name: string;
-      description: string;
-      impact: string;
+    bullCase: {
+      price: string;
       probability: string;
-    }>
+      drivers: string[];
+    };
+    baseCase: {
+      price: string;
+      probability: string;
+      drivers: string[];
+    };
+    bearCase: {
+      price: string;
+      probability: string;
+      drivers: string[];
+    };
   };
-  catalysts?: Array<{
-    name: string;
-    type: 'positive' | 'negative';
-    description: string;
-    timeframe?: string;
-    impact?: string;
-  }>;
+  // Updated catalysts structure to match what's used in the components
+  catalysts?: {
+    positive: string[];
+    negative: string[];
+    timeline?: {
+      shortTerm: string[];
+      mediumTerm: string[];
+      longTerm: string[];
+    };
+  };
   ratingDetails?: RatingDetails;
 }

@@ -28,15 +28,15 @@ export const SensitivityAnalysis: React.FC<SensitivityAnalysisProps> = ({
           </div>
           <div className="flex items-center gap-2">
             <span className="text-green-600 font-semibold">
-              {scenarioAnalysis.bullCase.price}
+              {scenarioAnalysis.bullCase?.price || "N/A"}
             </span>
             <span className="text-xs text-muted-foreground">
-              ({scenarioAnalysis.bullCase.probability} probability)
+              ({scenarioAnalysis.bullCase?.probability || "N/A"} probability)
             </span>
           </div>
         </div>
         <Progress 
-          value={parseInt(scenarioAnalysis.bullCase.probability) || 25} 
+          value={parseInt(scenarioAnalysis.bullCase?.probability || "25") || 25} 
           className="h-2 bg-gray-100" 
           indicatorClassName="bg-green-600" 
         />
@@ -45,7 +45,7 @@ export const SensitivityAnalysis: React.FC<SensitivityAnalysisProps> = ({
           <div className="mt-2 p-3 bg-green-50 rounded-md">
             <p className="text-sm font-medium text-green-800 mb-1">Key Drivers:</p>
             <ul className="text-sm list-disc pl-5 text-green-700 space-y-1">
-              {scenarioAnalysis.bullCase.drivers.map((driver, idx) => (
+              {scenarioAnalysis.bullCase?.drivers?.map((driver, idx) => (
                 <li key={idx}>{driver}</li>
               ))}
             </ul>
@@ -62,15 +62,15 @@ export const SensitivityAnalysis: React.FC<SensitivityAnalysisProps> = ({
           </div>
           <div className="flex items-center gap-2">
             <span className="text-blue-600 font-semibold">
-              {scenarioAnalysis.baseCase.price}
+              {scenarioAnalysis.baseCase?.price || "N/A"}
             </span>
             <span className="text-xs text-muted-foreground">
-              ({scenarioAnalysis.baseCase.probability} probability)
+              ({scenarioAnalysis.baseCase?.probability || "N/A"} probability)
             </span>
           </div>
         </div>
         <Progress 
-          value={parseInt(scenarioAnalysis.baseCase.probability) || 50} 
+          value={parseInt(scenarioAnalysis.baseCase?.probability || "50") || 50} 
           className="h-2 bg-gray-100" 
           indicatorClassName="bg-blue-600" 
         />
@@ -79,7 +79,7 @@ export const SensitivityAnalysis: React.FC<SensitivityAnalysisProps> = ({
           <div className="mt-2 p-3 bg-blue-50 rounded-md">
             <p className="text-sm font-medium text-blue-800 mb-1">Key Drivers:</p>
             <ul className="text-sm list-disc pl-5 text-blue-700 space-y-1">
-              {scenarioAnalysis.baseCase.drivers.map((driver, idx) => (
+              {scenarioAnalysis.baseCase?.drivers?.map((driver, idx) => (
                 <li key={idx}>{driver}</li>
               ))}
             </ul>
@@ -96,15 +96,15 @@ export const SensitivityAnalysis: React.FC<SensitivityAnalysisProps> = ({
           </div>
           <div className="flex items-center gap-2">
             <span className="text-red-600 font-semibold">
-              {scenarioAnalysis.bearCase.price}
+              {scenarioAnalysis.bearCase?.price || "N/A"}
             </span>
             <span className="text-xs text-muted-foreground">
-              ({scenarioAnalysis.bearCase.probability} probability)
+              ({scenarioAnalysis.bearCase?.probability || "N/A"} probability)
             </span>
           </div>
         </div>
         <Progress 
-          value={parseInt(scenarioAnalysis.bearCase.probability) || 25} 
+          value={parseInt(scenarioAnalysis.bearCase?.probability || "25") || 25} 
           className="h-2 bg-gray-100" 
           indicatorClassName="bg-red-600" 
         />
@@ -113,7 +113,7 @@ export const SensitivityAnalysis: React.FC<SensitivityAnalysisProps> = ({
           <div className="mt-2 p-3 bg-red-50 rounded-md">
             <p className="text-sm font-medium text-red-800 mb-1">Key Drivers:</p>
             <ul className="text-sm list-disc pl-5 text-red-700 space-y-1">
-              {scenarioAnalysis.bearCase.drivers.map((driver, idx) => (
+              {scenarioAnalysis.bearCase?.drivers?.map((driver, idx) => (
                 <li key={idx}>{driver}</li>
               ))}
             </ul>

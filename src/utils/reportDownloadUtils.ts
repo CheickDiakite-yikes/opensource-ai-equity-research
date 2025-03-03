@@ -18,7 +18,7 @@ export const downloadReportAsHTML = (report: ResearchReport) => {
   
   content += `<div class="summary">
     <h2>Executive Summary</h2>
-    <p>${report.summary}</p>
+    <p>${report.summary || "No summary available"}</p>
   </div>`;
   
   // Add scenarios if they exist
@@ -26,19 +26,19 @@ export const downloadReportAsHTML = (report: ResearchReport) => {
     content += `<div class="scenario-analysis">
       <h2>Scenario Analysis</h2>
       <div class="scenario bull">
-        <h3>Bull Case: ${report.scenarioAnalysis.bullCase.price}</h3>
-        <p>Probability: ${report.scenarioAnalysis.bullCase.probability}</p>
-        <ul>${report.scenarioAnalysis.bullCase.drivers.map(d => `<li>${d}</li>`).join('')}</ul>
+        <h3>Bull Case: ${report.scenarioAnalysis.bullCase?.price || "N/A"}</h3>
+        <p>Probability: ${report.scenarioAnalysis.bullCase?.probability || "N/A"}</p>
+        <ul>${report.scenarioAnalysis.bullCase?.drivers?.map(d => `<li>${d}</li>`).join('') || ''}</ul>
       </div>
       <div class="scenario base">
-        <h3>Base Case: ${report.scenarioAnalysis.baseCase.price}</h3>
-        <p>Probability: ${report.scenarioAnalysis.baseCase.probability}</p>
-        <ul>${report.scenarioAnalysis.baseCase.drivers.map(d => `<li>${d}</li>`).join('')}</ul>
+        <h3>Base Case: ${report.scenarioAnalysis.baseCase?.price || "N/A"}</h3>
+        <p>Probability: ${report.scenarioAnalysis.baseCase?.probability || "N/A"}</p>
+        <ul>${report.scenarioAnalysis.baseCase?.drivers?.map(d => `<li>${d}</li>`).join('') || ''}</ul>
       </div>
       <div class="scenario bear">
-        <h3>Bear Case: ${report.scenarioAnalysis.bearCase.price}</h3>
-        <p>Probability: ${report.scenarioAnalysis.bearCase.probability}</p>
-        <ul>${report.scenarioAnalysis.bearCase.drivers.map(d => `<li>${d}</li>`).join('')}</ul>
+        <h3>Bear Case: ${report.scenarioAnalysis.bearCase?.price || "N/A"}</h3>
+        <p>Probability: ${report.scenarioAnalysis.bearCase?.probability || "N/A"}</p>
+        <ul>${report.scenarioAnalysis.bearCase?.drivers?.map(d => `<li>${d}</li>`).join('') || ''}</ul>
       </div>
     </div>`;
   }
@@ -49,11 +49,11 @@ export const downloadReportAsHTML = (report: ResearchReport) => {
       <h2>Growth Catalysts & Inhibitors</h2>
       <div class="positive">
         <h3>Positive Catalysts</h3>
-        <ul>${report.catalysts.positive.map(c => `<li>${c}</li>`).join('')}</ul>
+        <ul>${report.catalysts.positive?.map(c => `<li>${c}</li>`).join('') || ''}</ul>
       </div>
       <div class="negative">
         <h3>Negative Catalysts</h3>
-        <ul>${report.catalysts.negative.map(c => `<li>${c}</li>`).join('')}</ul>
+        <ul>${report.catalysts.negative?.map(c => `<li>${c}</li>`).join('') || ''}</ul>
       </div>
     </div>`;
   }
@@ -63,7 +63,7 @@ export const downloadReportAsHTML = (report: ResearchReport) => {
     content += `<div class="rating-details">
       <h2>Rating Details</h2>
       <p><strong>Rating Scale:</strong> ${report.ratingDetails.ratingScale}</p>
-      <p><strong>Justification:</strong> ${report.ratingDetails.ratingJustification}</p>
+      <p><strong>Justification:</strong> ${report.ratingDetails.ratingJustification || "Not provided"}</p>
     </div>`;
   }
   
