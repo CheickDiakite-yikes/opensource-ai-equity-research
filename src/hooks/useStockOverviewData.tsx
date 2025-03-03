@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { StockProfile, StockQuote, EarningsCall, SECFiling } from "@/types";
 import { 
   fetchStockProfile, 
@@ -22,175 +22,184 @@ export const useStockOverviewData = (symbol: string) => {
   const [rating, setRating] = useState<string | null>(null);
 
   // Load main company data
-  useEffect(() => {
-    const loadData = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        
-        const [profileData, quoteData, ratingData] = await Promise.all([
-          fetchStockProfile(symbol),
-          fetchStockQuote(symbol),
-          fetchStockRating(symbol)
-        ]);
-        
-        if (!profileData || !quoteData) {
-          throw new Error("Failed to fetch data for " + symbol);
-        }
-        
-        setProfile(profileData);
-        setQuote(quoteData);
-        setRating(ratingData?.rating || null);
-      } catch (err) {
-        console.error("Error loading stock overview data:", err);
-        setError(err.message);
-      } finally {
-        setLoading(false);
+  const loadData = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const [profileData, quoteData, ratingData] = await Promise.all([
+        fetchStockProfile(symbol),
+        fetchStockQuote(symbol),
+        fetchStockRating(symbol).catch(err => {
+          console.warn("Error fetching rating data:", err);
+          return null;
+        })
+      ]);
+      
+      if (!profileData || !quoteData) {
+        throw new Error(`Failed to fetch data for ${symbol}`);
       }
-    };
-
-    if (symbol) {
-      loadData();
+      
+      setProfile(profileData);
+      setQuote(quoteData);
+      setRating(ratingData?.rating || null);
+    } catch (err) {
+      console.error("Error loading stock overview data:", err);
+      setError(err.message);
+    } finally {
+      setLoading(false);
     }
   }, [symbol]);
 
   // Load document data (earnings transcripts and SEC filings)
-  useEffect(() => {
-    const loadDocuments = async () => {
-      try {
-        setDocumentsLoading(true);
-        
-        const [earningsData, filingsData] = await Promise.all([
-          fetchEarningsTranscripts(symbol),
-          fetchSECFilings(symbol)
-        ]);
-        
-        if (earningsData && earningsData.length > 0) {
-          const processedCalls = await Promise.all(
-            earningsData.slice(0, 3).map(async (call) => {
-              if (call.content && !call.highlights) {
-                try {
-                  const highlights = await generateTranscriptHighlights(call.content, {
-                    symbol: call.symbol,
-                    quarter: call.quarter,
-                    year: call.year,
-                    date: call.date
-                  });
-                  return { ...call, highlights };
-                } catch (e) {
-                  console.error("Error generating highlights:", e);
-                  return call;
-                }
+  const loadDocuments = useCallback(async () => {
+    try {
+      setDocumentsLoading(true);
+      
+      const [earningsData, filingsData] = await Promise.all([
+        fetchEarningsTranscripts(symbol),
+        fetchSECFilings(symbol)
+      ]);
+      
+      if (earningsData && earningsData.length > 0) {
+        const processedCalls = await Promise.all(
+          earningsData.slice(0, 3).map(async (call) => {
+            if (call.content && !call.highlights) {
+              try {
+                const highlights = await generateTranscriptHighlights(call.content, {
+                  symbol: call.symbol,
+                  quarter: call.quarter,
+                  year: call.year,
+                  date: call.date
+                });
+                return { ...call, highlights };
+              } catch (e) {
+                console.error("Error generating highlights:", e);
+                return call;
               }
-              return call;
-            })
-          );
-          
-          setEarningsCalls(processedCalls);
-        } else {
-          // Fallback data if no real data is available
-          setEarningsCalls([
-            {
-              symbol,
-              date: "2023-10-25",
-              quarter: "Q3",
-              year: "2023",
-              content: "",
-              url: `https://financialmodelingprep.com/api/v4/earning_call_transcript/${symbol}`,
-              highlights: [
-                "Revenue increased 23% year over year to $34.15B",
-                "Daily active users increased 5% year over year to 2.09B",
-                "Operating margin was 40%, compared to 20% in the prior year"
-              ]
-            },
-            {
-              symbol,
-              date: "2023-07-26",
-              quarter: "Q2",
-              year: "2023",
-              content: "",
-              url: `https://financialmodelingprep.com/api/v4/earning_call_transcript/${symbol}`,
-              highlights: [
-                "Revenue increased 11% year over year to $32.0B",
-                "Net income was $7.79B",
-                "Announced a $40B increase in share repurchase authorization"
-              ]
             }
-          ]);
-        }
+            return call;
+          })
+        );
         
-        if (filingsData && filingsData.length > 0) {
-          setSecFilings(filingsData);
-        } else {
-          setSecFilings([
-            {
-              symbol,
-              type: "10-K (Annual Report)",
-              filingDate: "2023-02-02",
-              reportDate: "2022-12-31",
-              cik: "0000000000",
-              form: "10-K",
-              url: `https://www.sec.gov/edgar/search/#/entityName=${symbol}`,
-              filingNumber: "000-00000"
-            },
-            {
-              symbol,
-              type: "10-Q (Quarterly Report)",
-              filingDate: "2023-10-26",
-              reportDate: "2023-09-30",
-              cik: "0000000000",
-              form: "10-Q",
-              url: `https://www.sec.gov/edgar/search/#/entityName=${symbol}`,
-              filingNumber: "000-00000"
-            },
-            {
-              symbol,
-              type: "10-Q (Quarterly Report)",
-              filingDate: "2023-07-27",
-              reportDate: "2023-06-30",
-              cik: "0000000000",
-              form: "10-Q",
-              url: `https://www.sec.gov/edgar/search/#/entityName=${symbol}`,
-              filingNumber: "000-00000"
-            },
-            {
-              symbol,
-              type: "10-Q (Quarterly Report)",
-              filingDate: "2023-04-27",
-              reportDate: "2023-03-31",
-              cik: "0000000000",
-              form: "10-Q",
-              url: `https://www.sec.gov/edgar/search/#/entityName=${symbol}`,
-              filingNumber: "000-00000"
-            },
-            {
-              symbol,
-              type: "8-K (Current Report)",
-              filingDate: "2023-10-25",
-              reportDate: "2023-10-25",
-              cik: "0000000000",
-              form: "8-K",
-              url: `https://www.sec.gov/edgar/search/#/entityName=${symbol}`,
-              filingNumber: "000-00000"
-            }
-          ]);
-        }
-      } catch (err) {
-        console.error("Error loading document data:", err);
-        toast({
-          title: "Warning",
-          description: "Could not load all document data. Some information may be unavailable.",
-          variant: "destructive",
-        });
-      } finally {
-        setDocumentsLoading(false);
+        setEarningsCalls(processedCalls);
+      } else {
+        // Fallback data if no real data is available
+        setEarningsCalls([
+          {
+            symbol,
+            date: "2023-10-25",
+            quarter: "Q3",
+            year: "2023",
+            content: "",
+            url: `https://financialmodelingprep.com/api/v4/earning_call_transcript/${symbol}`,
+            highlights: [
+              "Revenue increased 23% year over year to $34.15B",
+              "Daily active users increased 5% year over year to 2.09B",
+              "Operating margin was 40%, compared to 20% in the prior year"
+            ]
+          },
+          {
+            symbol,
+            date: "2023-07-26",
+            quarter: "Q2",
+            year: "2023",
+            content: "",
+            url: `https://financialmodelingprep.com/api/v4/earning_call_transcript/${symbol}`,
+            highlights: [
+              "Revenue increased 11% year over year to $32.0B",
+              "Net income was $7.79B",
+              "Announced a $40B increase in share repurchase authorization"
+            ]
+          }
+        ]);
       }
-    };
+      
+      if (filingsData && filingsData.length > 0) {
+        setSecFilings(filingsData);
+      } else {
+        setSecFilings([
+          {
+            symbol,
+            type: "10-K (Annual Report)",
+            filingDate: "2023-02-02",
+            reportDate: "2022-12-31",
+            cik: "0000000000",
+            form: "10-K",
+            url: `https://www.sec.gov/edgar/search/#/entityName=${symbol}`,
+            filingNumber: "000-00000"
+          },
+          {
+            symbol,
+            type: "10-Q (Quarterly Report)",
+            filingDate: "2023-10-26",
+            reportDate: "2023-09-30",
+            cik: "0000000000",
+            form: "10-Q",
+            url: `https://www.sec.gov/edgar/search/#/entityName=${symbol}`,
+            filingNumber: "000-00000"
+          },
+          {
+            symbol,
+            type: "10-Q (Quarterly Report)",
+            filingDate: "2023-07-27",
+            reportDate: "2023-06-30",
+            cik: "0000000000",
+            form: "10-Q",
+            url: `https://www.sec.gov/edgar/search/#/entityName=${symbol}`,
+            filingNumber: "000-00000"
+          },
+          {
+            symbol,
+            type: "10-Q (Quarterly Report)",
+            filingDate: "2023-04-27",
+            reportDate: "2023-03-31",
+            cik: "0000000000",
+            form: "10-Q",
+            url: `https://www.sec.gov/edgar/search/#/entityName=${symbol}`,
+            filingNumber: "000-00000"
+          },
+          {
+            symbol,
+            type: "8-K (Current Report)",
+            filingDate: "2023-10-25",
+            reportDate: "2023-10-25",
+            cik: "0000000000",
+            form: "8-K",
+            url: `https://www.sec.gov/edgar/search/#/entityName=${symbol}`,
+            filingNumber: "000-00000"
+          }
+        ]);
+      }
+    } catch (err) {
+      console.error("Error loading document data:", err);
+      toast({
+        title: "Warning",
+        description: "Could not load all document data. Some information may be unavailable.",
+        variant: "destructive",
+      });
+    } finally {
+      setDocumentsLoading(false);
+    }
+  }, [symbol]);
 
+  // Refetch all data
+  const refetch = useCallback(() => {
+    loadData();
+    loadDocuments();
+  }, [loadData, loadDocuments]);
+
+  useEffect(() => {
+    if (symbol) {
+      loadData();
+    }
+  }, [symbol, loadData]);
+
+  useEffect(() => {
     if (symbol) {
       loadDocuments();
     }
-  }, [symbol]);
+  }, [symbol, loadDocuments]);
 
   return {
     profile,
@@ -200,6 +209,7 @@ export const useStockOverviewData = (symbol: string) => {
     loading,
     documentsLoading,
     error,
-    rating
+    rating,
+    refetch
   };
 };

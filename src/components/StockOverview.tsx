@@ -17,7 +17,8 @@ const StockOverview = ({ symbol }: StockOverviewProps) => {
     loading,
     documentsLoading,
     error,
-    rating
+    rating,
+    refetch
   } = useStockOverviewData(symbol);
 
   if (loading) {
@@ -25,7 +26,7 @@ const StockOverview = ({ symbol }: StockOverviewProps) => {
   }
 
   if (error || !profile || !quote) {
-    return <ErrorDisplay errorMessage={error} />;
+    return <ErrorDisplay errorMessage={error} onRetry={refetch} />;
   }
 
   return (

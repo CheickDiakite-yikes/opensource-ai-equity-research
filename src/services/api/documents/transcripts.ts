@@ -1,3 +1,4 @@
+
 import { invokeSupabaseFunction, withRetry } from "../base";
 import { EarningsCall } from "@/types";
 import { supabase } from "@/integrations/supabase/client";
@@ -42,7 +43,7 @@ export const fetchEarningsTranscripts = async (symbol: string): Promise<Earnings
     // Otherwise, get from API with retry logic
     console.log(`Fetching transcripts from API for ${symbol}`);
     const data = await withRetry(() => 
-      invokeSupabaseFunction<EarningsCall[]>('fetch-earnings-transcripts', { 
+      invokeSupabaseFunction<any[]>('fetch-earnings-transcripts', { 
         symbol,
         limit: 5
       })
