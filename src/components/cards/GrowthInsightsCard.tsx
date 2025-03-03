@@ -3,13 +3,14 @@ import React, { useState, useEffect } from "react";
 import { Card, CardHeader, CardContent, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { EarningsCall, SECFiling } from "@/types";
-import { Lightbulb, TrendingUp, AlertTriangle, LineChart, Clock } from "lucide-react";
+import { Lightbulb, TrendingUp, AlertTriangle, LineChart, Clock, Loader2 } from "lucide-react";
 import { analyzeGrowthInsights } from "@/services/api/analysisService";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useToast } from "@/components/ui/use-toast";
 
 interface GrowthInsight {
   type: "positive" | "negative" | "neutral";
-  source: "earnings" | "filing";
+  source: "earnings" | "filing" | "analysis";
   sourceDate: string;
   content: string;
 }
@@ -28,11 +29,12 @@ const GrowthInsightsCard: React.FC<GrowthInsightsCardProps> = ({
   const [insights, setInsights] = useState<GrowthInsight[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { toast } = useToast();
 
   useEffect(() => {
     const fetchInsights = async () => {
-      if (!transcripts.length && !filings.length) {
-        setError("No transcripts or filings available for analysis");
+      if (!symbol) {
+        setError("No ticker symbol provided");
         return;
       }
 
@@ -41,10 +43,24 @@ const GrowthInsightsCard: React.FC<GrowthInsightsCardProps> = ({
         setError(null);
         
         // Get the most recent transcript and filing
-        const recentTranscripts = transcripts.slice(0, 2);
-        const recentFilings = filings
-          .filter(filing => filing.form === "10-Q" || filing.form === "10-K")
-          .slice(0, 2);
+        const recentTranscripts = transcripts && transcripts.length > 0 
+          ? transcripts.slice(0, 2) 
+          : [];
+          
+        const recentFilings = filings && filings.length > 0
+          ? filings
+              .filter(filing => filing.form === "10-Q" || filing.form === "10-K")
+              .slice(0, 2)
+          : [];
+        
+        // Only proceed if we have data to analyze
+        if (recentTranscripts.length === 0 && recentFilings.length === 0) {
+          setError("No transcripts or SEC filings available for analysis");
+          setIsLoading(false);
+          return;
+        }
+        
+        console.log(`Analyzing growth insights for ${symbol} with ${recentTranscripts.length} transcripts and ${recentFilings.length} filings`);
         
         const result = await analyzeGrowthInsights(
           symbol, 
@@ -52,23 +68,30 @@ const GrowthInsightsCard: React.FC<GrowthInsightsCardProps> = ({
           recentFilings
         );
         
-        if (result) {
+        if (result && Array.isArray(result)) {
           setInsights(result);
+          console.log("Growth insights:", result);
         } else {
+          console.warn("Invalid growth insights response:", result);
           setError("Failed to generate growth insights");
         }
       } catch (err) {
         console.error("Error analyzing growth insights:", err);
         setError("An error occurred while analyzing growth data");
+        toast({
+          title: "Analysis Failed",
+          description: "Unable to generate growth insights. Please try again later.",
+          variant: "destructive",
+        });
       } finally {
         setIsLoading(false);
       }
     };
 
-    if (symbol && (transcripts.length > 0 || filings.length > 0)) {
+    if (symbol) {
       fetchInsights();
     }
-  }, [symbol, transcripts, filings]);
+  }, [symbol, transcripts, filings, toast]);
 
   const renderIcon = (type: string) => {
     switch (type) {
@@ -77,9 +100,8 @@ const GrowthInsightsCard: React.FC<GrowthInsightsCardProps> = ({
       case "negative":
         return <AlertTriangle className="h-5 w-5 text-red-500" />;
       case "neutral":
-        return <LineChart className="h-5 w-5 text-blue-500" />;
       default:
-        return <Lightbulb className="h-5 w-5 text-yellow-500" />;
+        return <LineChart className="h-5 w-5 text-blue-500" />;
     }
   };
 
@@ -87,7 +109,12 @@ const GrowthInsightsCard: React.FC<GrowthInsightsCardProps> = ({
     return (
       <div className="inline-flex items-center rounded-full bg-secondary px-2 py-1 text-xs">
         <Clock className="mr-1 h-3 w-3" />
-        {source === "earnings" ? "Earnings Call" : "SEC Filing"} ({date})
+        {source === "earnings" 
+          ? "Earnings Call" 
+          : source === "filing" 
+            ? "SEC Filing" 
+            : "Analysis"} 
+        {date && ` (${date})`}
       </div>
     );
   };
@@ -103,6 +130,10 @@ const GrowthInsightsCard: React.FC<GrowthInsightsCardProps> = ({
       <CardContent>
         {isLoading ? (
           <div className="space-y-4">
+            <div className="flex items-center gap-2 mb-2">
+              <Loader2 className="h-4 w-4 animate-spin text-primary" />
+              <p className="text-sm text-muted-foreground">Analyzing growth data...</p>
+            </div>
             <Skeleton className="h-4 w-full" />
             <Skeleton className="h-20 w-full" />
             <Skeleton className="h-20 w-full" />

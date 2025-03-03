@@ -1,274 +1,278 @@
 
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { corsHeaders } from "../_shared/cors.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.48.0";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.36.0";
 
-const openai_key = Deno.env.get('OPENAI_API_KEY');
+const supabaseUrl = Deno.env.get("SUPABASE_URL") || "";
+const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY") || "";
+const supabase = createClient(supabaseUrl, supabaseAnonKey);
+const openAIApiKey = Deno.env.get("OPENAI_API_KEY") || "";
 
-interface GrowthInsight {
-  type: "positive" | "negative" | "neutral";
-  source: "earnings" | "filing";
-  sourceDate: string;
-  content: string;
-}
-
-serve(async (req) => {
-  // Handle CORS preflight requests
-  if (req.method === 'OPTIONS') {
+Deno.serve(async (req) => {
+  // Handle CORS
+  if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
     const { symbol, transcripts, filings } = await req.json();
-    
+
     if (!symbol) {
       return new Response(
-        JSON.stringify({ error: 'Symbol is required' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        JSON.stringify({ error: "Symbol is required" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
-    
-    // Get transcript and filing texts to analyze
-    const transcriptTexts = transcripts
-      .slice(0, 2)
-      .map((t: any) => ({
-        date: t.date,
-        quarter: t.quarter,
-        year: t.year,
-        text: t.content?.substring(0, 15000) || "", // Limit text size
-      }));
-    
-    const filingTexts = filings
-      .filter((f: any) => f.form === "10-Q" || f.form === "10-K")
-      .slice(0, 2)
-      .map((f: any) => ({
-        date: f.filingDate || f.reportDate,
-        form: f.form,
-        url: f.url
-      }));
-    
-    // If we don't have texts to analyze, get filings from the API
-    if (filingTexts.length > 0 && !filingTexts[0].text) {
-      // Create a Supabase client
-      const supabaseUrl = Deno.env.get('SUPABASE_URL') || '';
-      const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
-      
-      if (supabaseUrl && supabaseServiceKey) {
-        const supabase = createClient(supabaseUrl, supabaseServiceKey);
-        
-        // Get filing texts from the database if available
-        for (const filing of filingTexts) {
-          const { data, error } = await supabase
-            .from('sec_filing_extracts')
-            .select('extract_text')
-            .eq('symbol', symbol)
-            .eq('filing_url', filing.url)
-            .maybeSingle();
-          
-          if (data && data.extract_text) {
-            filing.text = data.extract_text.substring(0, 15000); // Limit text size
-          }
-        }
-      }
-    }
-    
-    // If we have no transcript content, exit early
-    if (
-      (transcriptTexts.length === 0 || transcriptTexts.every((t: any) => !t.text)) && 
-      (filingTexts.length === 0 || filingTexts.every((f: any) => !f.text))
-    ) {
-      console.log("No transcript or filing content available to analyze");
-      
-      // Create placeholder insights if we at least have some metadata
-      const insights: GrowthInsight[] = [];
-      
-      if (transcriptTexts.length > 0) {
-        insights.push({
-          type: "neutral",
-          source: "earnings",
-          sourceDate: transcriptTexts[0].date,
-          content: "Earnings transcript available, but detailed content could not be analyzed. Check the full transcript for growth discussions."
-        });
-      }
-      
-      if (filingTexts.length > 0) {
-        insights.push({
-          type: "neutral",
-          source: "filing",
-          sourceDate: filingTexts[0].date,
-          content: `${filingTexts[0].form} filing available, but detailed content could not be analyzed. Review the full filing for forward-looking statements.`
-        });
-      }
-      
+
+    // Check if we have data to analyze
+    if ((!transcripts || transcripts.length === 0) && (!filings || filings.length === 0)) {
+      console.log(`No transcripts or filings for ${symbol}`);
       return new Response(
-        JSON.stringify(insights),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        JSON.stringify([]),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
+
+    console.log(`Analyzing growth insights for ${symbol} with ${transcripts?.length || 0} transcripts and ${filings?.length || 0} filings`);
+
+    // Prepare the prompt with transcript and filing data
+    const formattedData = formatDataForPrompt(symbol, transcripts, filings);
+
+    // Make OpenAI API call
+    const insights = await analyzeWithOpenAI(formattedData);
     
-    // Prepare the insights context
-    let insightsContext = `Analyze the following earnings call transcripts and SEC filings for ${symbol} to extract insights about the company's growth prospects:`;
+    return new Response(
+      JSON.stringify(insights),
+      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  } catch (error) {
+    console.error("Error in analyze-growth-insights function:", error);
+    return new Response(
+      JSON.stringify({ error: error.message }),
+      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  }
+});
+
+// Format transcript and filing data for the OpenAI prompt
+function formatDataForPrompt(symbol: string, transcripts: any[], filings: any[]) {
+  let prompt = `Company: ${symbol}\n\n`;
+
+  // Add transcript data
+  if (transcripts && transcripts.length > 0) {
+    prompt += "### EARNINGS CALL TRANSCRIPTS ###\n\n";
     
-    if (transcriptTexts.length > 0 && transcriptTexts[0].text) {
-      insightsContext += `\n\nEARNINGS CALL TRANSCRIPT (${transcriptTexts[0].quarter} ${transcriptTexts[0].year} - ${transcriptTexts[0].date}):\n${transcriptTexts[0].text}`;
+    // Take only the most recent 2 transcripts for analysis
+    const recentTranscripts = transcripts.slice(0, 2);
+    
+    recentTranscripts.forEach((transcript, index) => {
+      prompt += `TRANSCRIPT ${index + 1} (${transcript.date || "Unknown Date"}):\n`;
+      
+      // For brevity, we'll focus on sections likely to contain growth information
+      // These are usually in opening remarks, Q&A about guidance, and closing statements
+      const content = transcript.content || "";
+      
+      // Extract manageable portions of the transcript
+      const truncatedContent = extractRelevantContent(content, 8000);
+      prompt += truncatedContent + "\n\n";
+    });
+  }
+
+  // Add filing data - focus on recent 10-Q or 10-K filings
+  if (filings && filings.length > 0) {
+    prompt += "### SEC FILINGS ###\n\n";
+    
+    // Filter for 10-Q and 10-K filings and take the most recent ones
+    const relevantFilings = filings
+      .filter(filing => filing.form === "10-Q" || filing.form === "10-K")
+      .slice(0, 2);
+    
+    relevantFilings.forEach((filing, index) => {
+      prompt += `FILING ${index + 1} (${filing.form}, ${filing.filing_date || "Unknown Date"}):\n`;
+      
+      // Extract relevant sections from filings
+      const content = filing.content || "";
+      const relevantContent = extractRelevantSections(content, filing.form);
+      prompt += relevantContent + "\n\n";
+    });
+  }
+
+  return prompt;
+}
+
+// Extract relevant content from transcripts
+function extractRelevantContent(content: string, maxLength: number) {
+  if (!content) return "No content available";
+  
+  // Look for sections that typically discuss growth prospects
+  const sections = [
+    "opening remarks",
+    "prepared remarks",
+    "guidance",
+    "outlook",
+    "future growth",
+    "growth strategy",
+    "forward-looking",
+    "fiscal year",
+    "next quarter",
+    "expansion",
+    "revenue growth",
+    "question and answer"
+  ];
+  
+  // Try to find and extract these sections
+  let relevantContent = "";
+  sections.forEach(section => {
+    const regex = new RegExp(`((?:.*?\\b${section}\\b.*?)(?:\\n|$).{0,1000})`, "i");
+    const match = content.match(regex);
+    if (match && match[0]) {
+      relevantContent += match[0] + "\n\n";
     }
-    
-    if (filingTexts.length > 0 && filingTexts[0].text) {
-      insightsContext += `\n\nSEC FILING (${filingTexts[0].form} - ${filingTexts[0].date}):\n${filingTexts[0].text}`;
+  });
+  
+  // If no sections found, just take the beginning of the transcript
+  if (!relevantContent) {
+    relevantContent = content.substring(0, maxLength);
+  }
+  
+  // Ensure we don't exceed max length
+  if (relevantContent.length > maxLength) {
+    relevantContent = relevantContent.substring(0, maxLength) + "...";
+  }
+  
+  return relevantContent;
+}
+
+// Extract relevant sections from SEC filings
+function extractRelevantSections(content: string, form: string) {
+  if (!content) return "No content available";
+  
+  // Sections to look for in filings
+  const sections = [
+    "Management's Discussion and Analysis",
+    "Risk Factors",
+    "Business Outlook",
+    "Forward-Looking Statements",
+    "Results of Operations",
+    "Liquidity and Capital Resources"
+  ];
+  
+  let relevantContent = "";
+  sections.forEach(section => {
+    const regex = new RegExp(`(${section}.*?)(?:Item\\s\\d|$)`, "is");
+    const match = content.match(regex);
+    if (match && match[0]) {
+      let extractedText = match[0].trim();
+      // Limit size of each section
+      if (extractedText.length > 2000) {
+        extractedText = extractedText.substring(0, 2000) + "...";
+      }
+      relevantContent += `** ${section} **\n${extractedText}\n\n`;
     }
-    
-    // Prepare the prompt for analysis
-    const prompt = `
-      You are a financial analyst specializing in growth analysis. 
-      
-      Please extract 3-6 key insights regarding growth prospects for ${symbol} based on the provided texts.
-      
-      Focus on:
-      1. Growth projections mentioned by management
-      2. Challenges or risks to future growth
-      3. New products, services, or markets that could drive growth
-      4. Analyst questions about growth and management responses
-      5. Changes in growth strategy
-      
-      For each insight, classify it as:
-      - "positive" (indicates better than expected growth prospects)
-      - "negative" (indicates challenges or risks to growth)
-      - "neutral" (informational but without clear positive/negative impact)
-      
-      Also indicate the source ("earnings" for earnings call or "filing" for SEC filing).
-      
-      Format your response as a JSON array of objects with the following structure:
-      [
-        {
-          "type": "positive|negative|neutral",
-          "source": "earnings|filing",
-          "sourceDate": "YYYY-MM-DD",
-          "content": "Clear, concise insight about growth (1-2 sentences)"
-        },
-        ...
-      ]
-      
-      Use direct quotes when possible and focus on the most significant insights. If the material doesn't contain sufficient information about growth, provide at least 2 general insights about what the documents do mention regarding the company's future.
-    `;
-    
-    // If we don't have OpenAI key, return mock data
-    if (!openai_key) {
-      console.warn("No OpenAI API key provided, returning mock insights");
-      
-      const mockDate = transcriptTexts.length > 0 ? transcriptTexts[0].date : 
-                      filingTexts.length > 0 ? filingTexts[0].date : 
-                      new Date().toISOString().split('T')[0];
-      
-      const insights: GrowthInsight[] = [
-        {
-          type: "positive",
-          source: "earnings",
-          sourceDate: mockDate,
-          content: "Management expressed confidence in continued revenue growth, projecting a 15-20% increase for the next fiscal year."
-        },
-        {
-          type: "negative",
-          source: "filing",
-          sourceDate: mockDate,
-          content: "The company identified supply chain constraints as a potential risk factor that could impact production capacity and growth targets."
-        },
-        {
-          type: "neutral",
-          source: "earnings",
-          sourceDate: mockDate,
-          content: "The company plans to expand into three new international markets in the coming year, though impact on revenue is expected to be minimal initially."
-        }
-      ];
-      
-      return new Response(
-        JSON.stringify(insights),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-    
-    // Call OpenAI API for analysis
+  });
+  
+  // If no sections found, extract a portion of the document
+  if (!relevantContent) {
+    relevantContent = content.substring(0, 6000) + "...";
+  }
+  
+  // Limit total size
+  if (relevantContent.length > 10000) {
+    relevantContent = relevantContent.substring(0, 10000) + "...";
+  }
+  
+  return relevantContent;
+}
+
+// Call OpenAI API to analyze the data
+async function analyzeWithOpenAI(prompt: string) {
+  const systemPrompt = `You are a financial analyst specialized in growth analysis. 
+Your task is to analyze earnings call transcripts and SEC filings to identify insights about a company's growth prospects.
+Focus on forward-looking statements, management's guidance, growth strategies, and any risks or challenges mentioned.
+
+For each insight you find:
+1. Determine if it's positive, negative, or neutral for the company's growth prospects
+2. Note if it came from an earnings call transcript or SEC filing
+3. Include the approximate date of the source
+4. Provide a brief description of the insight
+
+Format each insight as a JSON object with these properties:
+- type: "positive", "negative", or "neutral"
+- source: "earnings" or "filing"
+- sourceDate: date in format "YYYY-MM-DD" or quarter (e.g., "Q2 2023")
+- content: brief description of the insight (1-2 sentences)
+
+Return an array of 3-5 of the most significant growth insights.`;
+
+  try {
     const response = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: {
-        "Authorization": `Bearer ${openai_key}`,
-        "Content-Type": "application/json"
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${openAIApiKey}`
       },
       body: JSON.stringify({
         model: "gpt-4o-mini",
         messages: [
-          {
-            role: "system",
-            content: "You are a financial analyst assistant that extracts growth insights from financial documents."
-          },
-          {
-            role: "user",
-            content: insightsContext + "\n\n" + prompt
-          }
+          { role: "system", content: systemPrompt },
+          { role: "user", content: prompt }
         ],
-        temperature: 0.2,
-        max_tokens: 1500
+        temperature: 0.3,
+        max_tokens: 1000
       })
     });
+
+    const responseData = await response.json();
     
-    const result = await response.json();
-    
-    if (!result.choices || !result.choices[0]) {
-      throw new Error("Invalid response from OpenAI API");
+    if (!response.ok) {
+      console.error("OpenAI API error:", responseData);
+      throw new Error(`OpenAI API error: ${responseData.error?.message || "Unknown error"}`);
     }
+
+    const content = responseData.choices?.[0]?.message?.content;
     
-    let insights;
-    
+    if (!content) {
+      throw new Error("No content in OpenAI response");
+    }
+
     try {
-      // Try to parse JSON from the response
-      const content = result.choices[0].message.content;
-      insights = JSON.parse(content);
+      // Try to parse the JSON array from the content
+      let insights;
       
-      // Validate that insights is an array
-      if (!Array.isArray(insights)) {
-        throw new Error("Response is not an array");
+      // First try to parse directly if the response is already JSON
+      try {
+        insights = JSON.parse(content);
+      } catch (e) {
+        // If direct parsing fails, try to extract JSON from the text
+        const jsonMatch = content.match(/\[\s*\{.*\}\s*\]/s);
+        if (jsonMatch) {
+          insights = JSON.parse(jsonMatch[0]);
+        } else {
+          throw new Error("Could not extract JSON from response");
+        }
       }
       
-      // Validate each insight has required fields
-      insights = insights.map((insight) => ({
-        type: ["positive", "negative", "neutral"].includes(insight.type) ? insight.type : "neutral",
-        source: ["earnings", "filing"].includes(insight.source) ? insight.source : "earnings",
-        sourceDate: insight.sourceDate || (insight.source === "earnings" ? transcriptTexts[0]?.date : filingTexts[0]?.date),
-        content: insight.content || "No detailed information available."
-      }));
-    } catch (error) {
-      console.error("Error parsing OpenAI response:", error);
+      // Validate the parsed insights
+      if (!Array.isArray(insights)) {
+        throw new Error("Parsed result is not an array");
+      }
       
-      // Create fallback insights
-      const sourceDateEarnings = transcriptTexts.length > 0 ? transcriptTexts[0].date : new Date().toISOString().split('T')[0];
-      const sourceDateFilings = filingTexts.length > 0 ? filingTexts[0].date : new Date().toISOString().split('T')[0];
+      return insights;
+    } catch (parseError) {
+      console.error("Error parsing OpenAI response:", parseError);
+      console.log("Raw response:", content);
       
-      insights = [
+      // If parsing fails, create a structured fallback
+      return [
         {
           type: "neutral",
-          source: "earnings",
-          sourceDate: sourceDateEarnings,
-          content: "Earnings transcript was analyzed, but the system couldn't extract specific growth insights. Please review the full transcript for details."
-        },
-        {
-          type: "neutral",
-          source: "filing",
-          sourceDate: sourceDateFilings,
-          content: "SEC filing was analyzed, but the system couldn't extract specific growth insights. Review the full filing for forward-looking statements."
+          source: "analysis",
+          sourceDate: new Date().toISOString().split("T")[0],
+          content: "Our AI system was unable to parse the growth insights. This may be due to insufficient data in the transcripts or filings."
         }
       ];
     }
-    
-    // Return the insights
-    return new Response(
-      JSON.stringify(insights),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
   } catch (error) {
-    console.error("Error in analyze-growth-insights function:", error);
-    
-    return new Response(
-      JSON.stringify({ error: error.message }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
+    console.error("Error calling OpenAI:", error);
+    throw new Error(`OpenAI analysis failed: ${error.message}`);
   }
-});
+}

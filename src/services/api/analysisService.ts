@@ -151,7 +151,7 @@ export const analyzeGrowthInsights = async (
 ): Promise<any[] | null> => {
   try {
     // Check if we have data to analyze
-    if (!transcripts.length && !filings.length) {
+    if ((!transcripts || transcripts.length === 0) && (!filings || filings.length === 0)) {
       console.warn(`No transcripts or filings available for ${symbol}`);
       return [];
     }
@@ -165,8 +165,8 @@ export const analyzeGrowthInsights = async (
         transcripts,
         filings
       }),
-      1,
-      1500
+      2,  // Try up to 2 times
+      1500 // Wait 1.5 seconds between retries
     );
     
     if (!data) {
@@ -177,6 +177,11 @@ export const analyzeGrowthInsights = async (
     return data;
   } catch (error) {
     console.error("Error analyzing growth insights:", error);
+    toast({
+      title: "Analysis Failed",
+      description: "Could not analyze growth data. Please try again later.",
+      variant: "destructive",
+    });
     return null;
   }
 };

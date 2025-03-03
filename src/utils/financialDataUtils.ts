@@ -1,4 +1,3 @@
-
 import type { IncomeStatement, BalanceSheet, KeyRatio, CashFlowStatement } from "@/types";
 import { formatCurrency } from "@/lib/utils";
 
@@ -148,4 +147,18 @@ export const formatFinancialValue = (value: number): string => {
   } else {
     return `$${value.toFixed(2)}`;
   }
+};
+
+/**
+ * Format currency values for display
+ * This function needs to be exported to fix the TypeScript errors
+ */
+export const formatCurrency = (value: number, decimals = 2): string => {
+  if (isNaN(value)) return "$0.00";
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+    minimumFractionDigits: decimals,
+    maximumFractionDigits: decimals
+  }).format(value);
 };
