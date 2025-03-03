@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.10.0";
 import { corsHeaders } from "../_shared/cors.ts";
@@ -110,19 +109,17 @@ async function cacheTranscripts(symbol: string): Promise<boolean> {
     // Prepare transcripts for database insertion
     const transcriptsToInsert = transcripts
       .filter(t => {
-        // Ensure we have the quarter field (might be in period)
-        const quarter = t.quarter || t.period;
-        if (!quarter || !t.year) return false;
-        return !existingKeys.has(`${quarter}-${t.year}`);
+        if (!t.quarter || !t.year) return false;
+        return !existingKeys.has(`${t.quarter}-${t.year}`);
       })
       .map(t => ({
         symbol: t.symbol,
-        quarter: t.quarter || t.period,
+        quarter: t.quarter,
         year: t.year,
         date: t.date,
         content: t.content || "",
-        title: `${t.symbol} ${t.quarter || t.period} ${t.year} Earnings Call`,
-        url: `https://financialmodelingprep.com/api/v3/earning_call_transcript/${t.symbol}/${t.quarter || t.period}/${t.year}`
+        title: `${t.symbol} ${t.quarter} ${t.year} Earnings Call`,
+        url: `https://financialmodelingprep.com/api/v3/earning_call_transcript/${t.symbol}/${t.quarter}/${t.year}`
       }));
     
     if (transcriptsToInsert.length === 0) {

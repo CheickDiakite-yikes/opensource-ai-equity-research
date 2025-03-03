@@ -1,4 +1,3 @@
-
 import { invokeSupabaseFunction, withRetry } from "../base";
 import { EarningsCall } from "@/types";
 import { supabase } from "@/integrations/supabase/client";
@@ -43,7 +42,7 @@ export const fetchEarningsTranscripts = async (symbol: string): Promise<Earnings
     // Otherwise, get from API with retry logic
     console.log(`Fetching transcripts from API for ${symbol}`);
     const data = await withRetry(() => 
-      invokeSupabaseFunction<any[]>('fetch-earnings-transcripts', { 
+      invokeSupabaseFunction<EarningsCall[]>('fetch-earnings-transcripts', { 
         symbol,
         limit: 5
       })
@@ -52,12 +51,12 @@ export const fetchEarningsTranscripts = async (symbol: string): Promise<Earnings
     // Format the response to match our EarningsCall type
     const formattedData = data.map(transcript => ({
       symbol: transcript.symbol,
-      quarter: transcript.quarter || (transcript as any).period, // Handle different API response formats
+      quarter: transcript.quarter,
       year: transcript.year,
       date: transcript.date,
       content: transcript.content || "",
-      title: `${symbol} ${transcript.quarter || (transcript as any).period} ${transcript.year} Earnings Call`,
-      url: `https://financialmodelingprep.com/api/v3/earning_call_transcript/${symbol}/${transcript.quarter || (transcript as any).period}/${transcript.year}`,
+      title: `${symbol} ${transcript.quarter} ${transcript.year} Earnings Call`,
+      url: `https://financialmodelingprep.com/api/v3/earning_call_transcript/${symbol}/${transcript.quarter}/${transcript.year}`,
       highlights: []
     }));
     
