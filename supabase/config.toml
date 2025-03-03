@@ -68,38 +68,21 @@ port = 54327
 vector_port = 54328
 backend = "postgres"
 
-[experimental]
-trace = {enabled = false}
+# Edge Functions
+[functions.get-stock-data]
 
-[ai]
-enabled = false
+[functions.get-custom-dcf]
 
-[local.migrations]
-auto_migration_enabled = true
+[functions.generate-research-report]
 
-[[functions]]
-name = "get-stock-data"
+[functions.analyze-growth-insights]
 
-[[functions]]
-name = "get-custom-dcf"
+[functions.predict-stock-price]
 
-[[functions]]
-name = "generate-research-report"
+[functions.cache-company-documents]
 
-[[functions]]
-name = "analyze-growth-insights"
+[functions.generate-transcript-highlights]
 
-[[functions]]
-name = "predict-stock-price"
+[functions.get-finnhub-news]
 
-[[functions]]
-name = "cache-company-documents"
-
-[[functions]]
-name = "generate-transcript-highlights"
-
-[[functions]]
-name = "get-finnhub-news"
-
-[[functions]]
-name = "generate-dcf-assumptions"
+[functions.generate-dcf-assumptions]
