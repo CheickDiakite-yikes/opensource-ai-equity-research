@@ -9,6 +9,7 @@ import { Separator } from "@/components/ui/separator";
 interface DCFInputFormProps {
   customParams: Record<string, string>;
   onInputChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onSelectChange: (name: string, value: string) => void;
   isCalculating: boolean;
   onCalculate: () => void;
 }
@@ -49,6 +50,7 @@ const InputField = ({
 const DCFInputForm: React.FC<DCFInputFormProps> = ({
   customParams,
   onInputChange,
+  onSelectChange,
   isCalculating,
   onCalculate
 }) => {
