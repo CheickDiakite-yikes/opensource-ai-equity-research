@@ -57,6 +57,7 @@ export type Database = {
           filing_number: string | null
           form: string
           id: number
+          last_accessed: string | null
           report_date: string | null
           symbol: string
           type: string
@@ -70,6 +71,7 @@ export type Database = {
           filing_number?: string | null
           form: string
           id?: number
+          last_accessed?: string | null
           report_date?: string | null
           symbol: string
           type: string
@@ -83,6 +85,7 @@ export type Database = {
           filing_number?: string | null
           form?: string
           id?: number
+          last_accessed?: string | null
           report_date?: string | null
           symbol?: string
           type?: string

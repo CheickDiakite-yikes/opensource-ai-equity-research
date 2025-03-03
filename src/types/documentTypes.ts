@@ -1,4 +1,5 @@
 
+
 // Earnings and SEC Filing Types
 export interface EarningsCall {
   symbol: string;
@@ -21,3 +22,4 @@ export interface SECFiling {
   url: string;
   filingNumber: string;
 }
+
