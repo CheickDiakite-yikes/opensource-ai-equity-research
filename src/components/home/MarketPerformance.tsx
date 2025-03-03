@@ -3,7 +3,6 @@ import React from "react";
 import { motion } from "framer-motion";
 import { TrendingUp, TrendingDown, LineChart } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import SectionHeader from "./SectionHeader";
 
 interface MarketIndex {
@@ -92,12 +91,14 @@ const MarketPerformance: React.FC<MarketPerformanceProps> = ({
                         key={index.symbol} 
                         className="flex justify-between items-center py-3 border-b border-border/30 last:border-0 group hover:bg-muted/20 rounded px-1 transition-colors"
                       >
-                        <div className="text-sm font-medium text-foreground/90">{index.name}</div>
-                        <div className="text-sm font-medium text-foreground/90">
+                        <div className="text-sm font-medium text-foreground/90 w-[40%] truncate" title={index.name}>
+                          {index.name}
+                        </div>
+                        <div className="text-sm font-medium text-foreground/90 w-[30%] text-right">
                           {Number(index.price).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         </div>
                         <div 
-                          className={`flex items-center text-xs font-semibold px-2 py-1 rounded-md ${
+                          className={`flex items-center text-xs font-semibold px-2 py-1 rounded-md w-[25%] justify-end ${
                             index.changePercent >= 0 
                               ? 'text-emerald-700 bg-emerald-50 dark:text-emerald-400 dark:bg-emerald-950/40' 
                               : 'text-red-700 bg-red-50 dark:text-red-400 dark:bg-red-950/40'
@@ -116,12 +117,6 @@ const MarketPerformance: React.FC<MarketPerformanceProps> = ({
                 </CardContent>
               </Card>
             ))}
-          </div>
-          
-          <div className="mt-8 text-center">
-            <Button variant="outline" className="text-sm">
-              View All Markets
-            </Button>
           </div>
         </motion.div>
       </div>
