@@ -6,7 +6,12 @@ import { Card, CardContent } from "@/components/ui/card";
 import SectionHeader from "./SectionHeader";
 import { MarketNewsArticle } from "@/services/api/marketDataService";
 import { format } from "date-fns";
-import { Tooltip } from "@/components/ui/tooltip";
+import { 
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger
+} from "@/components/ui/tooltip";
 
 interface MarketNewsProps {
   newsData: MarketNewsArticle[];
@@ -107,16 +112,18 @@ const MarketNews: React.FC<MarketNewsProps> = ({
                       <Calendar className="h-3 w-3 mr-1" />
                       <span>{formatDate(article.date)}</span>
                     </div>
-                    <Tooltip>
-                      <Tooltip.Trigger asChild>
-                        <h3 className="text-base font-semibold line-clamp-2 group-hover:text-primary transition-colors">
-                          {article.title}
-                        </h3>
-                      </Tooltip.Trigger>
-                      <Tooltip.Content>
-                        <p className="max-w-xs">{article.title}</p>
-                      </Tooltip.Content>
-                    </Tooltip>
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <h3 className="text-base font-semibold line-clamp-2 group-hover:text-primary transition-colors">
+                            {article.title}
+                          </h3>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p className="max-w-xs">{article.title}</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
                     <p className="text-sm text-muted-foreground line-clamp-2">
                       {article.content}
                     </p>
