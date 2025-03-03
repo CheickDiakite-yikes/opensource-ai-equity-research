@@ -63,6 +63,7 @@ export const downloadReportAsHTML = (report: ResearchReport) => {
     content += `<div class="rating-details">
       <h2>Rating Details</h2>
       <p><strong>Rating Scale:</strong> ${report.ratingDetails.ratingScale}</p>
+      <p><strong>Recommendation:</strong> ${report.recommendation}</p>
       <p><strong>Justification:</strong> ${report.ratingDetails.ratingJustification || "Not provided"}</p>
     </div>`;
   }

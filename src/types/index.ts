@@ -12,20 +12,19 @@ export interface RatingDetails {
   ratingJustification?: string;
 }
 
-// Updated ResearchReport interface to resolve type errors
+// Updated ResearchReport interface to match aiAnalysisTypes
 export interface ResearchReport {
-  id?: string;  // Making id optional to fix the mismatch with aiAnalysisTypes
+  id?: string;
   companyName: string;
   symbol: string;
   date: string;
   recommendation: string;
   targetPrice: string;
-  summary: string; // Added summary field
+  summary: string;
   sections: Array<{
     title: string;
     content: string;
   }>;
-  // Updated scenarioAnalysis structure to match what's used in the components
   scenarioAnalysis?: {
     bullCase: {
       price: string;
@@ -43,7 +42,6 @@ export interface ResearchReport {
       drivers: string[];
     };
   };
-  // Updated catalysts structure to match what's used in the components
   catalysts?: {
     positive: string[];
     negative: string[];
