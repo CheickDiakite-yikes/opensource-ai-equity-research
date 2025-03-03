@@ -1,11 +1,11 @@
 
-import React from "react";
+import React, { useState } from "react";
 import { ResearchReport } from "@/types";
-import ReportHeader from "./ReportHeader";
-import ReportSectionsList from "./ReportSectionsList";
-import SensitivityAnalysis from "./SensitivityAnalysis";
-import GrowthCatalysts from "./GrowthCatalysts";
-import DisclaimerSection from "./DisclaimerSection";
+import { ReportHeader } from "./ReportHeader";
+import { ReportSectionsList } from "./ReportSectionsList";
+import { SensitivityAnalysis } from "./SensitivityAnalysis";
+import { GrowthCatalysts } from "./GrowthCatalysts";
+import { DisclaimerSection } from "./DisclaimerSection";
 import { downloadReportAsHTML } from "@/utils/reportDownloadUtils";
 import { Button } from "@/components/ui/button";
 import { Download } from "lucide-react";
@@ -15,6 +15,12 @@ interface ResearchReportDisplayProps {
 }
 
 const ResearchReportDisplay: React.FC<ResearchReportDisplayProps> = ({ report }) => {
+  const [expandedScenarios, setExpandedScenarios] = useState<string | null>(null);
+  
+  const toggleScenario = (scenario: string) => {
+    setExpandedScenarios(prev => prev === scenario ? null : scenario);
+  };
+  
   const handleDownload = () => {
     downloadReportAsHTML(report);
   };
@@ -31,7 +37,7 @@ const ResearchReportDisplay: React.FC<ResearchReportDisplayProps> = ({ report })
     <div className="space-y-6">
       {hasPlaceholders && (
         <div className="bg-yellow-50 border border-yellow-200 p-4 rounded-md text-sm text-yellow-800">
-          <p>Note: This report may contain some placeholder text. This will be replaced with actual data in production.</p>
+          <p>Note: Some content in this report may contain placeholder text. This is for preview purposes only.</p>
         </div>
       )}
       
@@ -64,15 +70,11 @@ const ResearchReportDisplay: React.FC<ResearchReportDisplayProps> = ({ report })
         </div>
       )}
       
-      <ReportSectionsList sections={report.sections} />
-      
-      {report.scenarioAnalysis && (
-        <SensitivityAnalysis scenarioAnalysis={report.scenarioAnalysis} />
-      )}
-      
-      {report.catalysts && (
-        <GrowthCatalysts catalysts={report.catalysts} />
-      )}
+      <ReportSectionsList 
+        report={report} 
+        expandedScenarios={expandedScenarios} 
+        toggleScenario={toggleScenario} 
+      />
       
       <DisclaimerSection />
     </div>

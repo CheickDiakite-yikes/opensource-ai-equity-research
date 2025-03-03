@@ -56,7 +56,7 @@ export const useReportGeneration = (symbol: string, data: ReportData) => {
       
       toast({
         title: "Generating Report",
-        description: "Creating a detailed report with real data analysis, rating, scenarios, and catalysts...",
+        description: "Creating a detailed AI-powered research report based on real financial data...",
       });
       
       const generatedReport = await generateResearchReport(reportRequest);
@@ -65,48 +65,14 @@ export const useReportGeneration = (symbol: string, data: ReportData) => {
         throw new Error("Failed to generate report");
       }
       
-      // Create a properly structured report with all required sections
-      const enhancedReport: ResearchReport = {
-        ...generatedReport,
-        id: generatedReport.id || `report-${symbol}-${Date.now()}`,
-        summary: generatedReport.summary || `Summary of financial analysis for ${data.profile?.companyName || symbol}`,
-        scenarioAnalysis: generatedReport.scenarioAnalysis || {
-          bullCase: {
-            price: (parseFloat(generatedReport.targetPrice.replace(/[$,]/g, '')) * 1.2).toFixed(2),
-            probability: "25",
-            drivers: ["Strong market conditions", "New product success", "Higher than expected margins"]
-          },
-          baseCase: {
-            price: generatedReport.targetPrice,
-            probability: "50",
-            drivers: ["Expected market conditions", "Steady product adoption", "Stable margins"]
-          },
-          bearCase: {
-            price: (parseFloat(generatedReport.targetPrice.replace(/[$,]/g, '')) * 0.8).toFixed(2),
-            probability: "25",
-            drivers: ["Weak market conditions", "Lower than expected adoption", "Margin pressure"]
-          }
-        },
-        catalysts: generatedReport.catalysts || {
-          positive: ["Strong product pipeline", "Expanding market share", "Growth in services revenue"],
-          negative: ["Increasing competition", "Supply chain challenges", "Regulatory headwinds"],
-          timeline: generatedReport.catalysts?.timeline || {
-            shortTerm: ["Quarterly earnings", "New product launches"],
-            mediumTerm: ["Expansion into new markets", "Technology advancements"],
-            longTerm: ["Industry shifts", "Strategic acquisitions"]
-          }
-        },
-        ratingDetails: generatedReport.ratingDetails || {
-          ratingScale: "Buy / Hold / Sell",
-          ratingJustification: `Based on our analysis of ${symbol}'s financial performance, market position, and growth prospects.`
-        }
-      };
+      // Log the sections we received to help with debugging
+      console.log("Report sections received:", generatedReport.sections.map(s => s.title));
       
-      setReport(enhancedReport);
+      setReport(generatedReport);
       
       toast({
         title: "Report Generated",
-        description: "Research report has been successfully generated with detailed financial analysis.",
+        description: `Research report for ${data.profile.companyName} successfully generated with AI analysis of financial data.`,
       });
     } catch (err) {
       console.error("Error generating report:", err);
@@ -142,6 +108,11 @@ export const useReportGeneration = (symbol: string, data: ReportData) => {
         filings: data.filings?.slice(0, 5) || []
       };
       
+      toast({
+        title: "Generating Prediction",
+        description: "Analyzing financial data and market trends to predict future prices...",
+      });
+      
       const prediction = await generateStockPrediction(
         symbol,
         data.quote,
@@ -157,7 +128,7 @@ export const useReportGeneration = (symbol: string, data: ReportData) => {
       
       toast({
         title: "Prediction Generated",
-        description: "Price prediction has been successfully generated.",
+        description: "Price prediction has been successfully generated based on AI analysis.",
       });
     } catch (err) {
       console.error("Error generating prediction:", err);
