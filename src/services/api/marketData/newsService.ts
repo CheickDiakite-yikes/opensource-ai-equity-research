@@ -20,11 +20,11 @@ export interface MarketNewsArticle {
 }
 
 /**
- * Fetch market news from Finnhub API
+ * Fetch market news from Finnhub API (press releases endpoint)
  */
-export const fetchMarketNews = async (limit: number = 6): Promise<MarketNewsArticle[]> => {
+export const fetchMarketNews = async (limit: number = 6, symbol: string = 'AAPL'): Promise<MarketNewsArticle[]> => {
   try {
-    console.log("Fetching market news from Finnhub API...");
+    console.log(`Fetching market news press releases for symbol: ${symbol}, limit: ${limit}`);
     
     const response = await fetch('https://rnpcygrrxeeqphdjuesh.supabase.co/functions/v1/get-finnhub-news', {
       method: 'POST',
@@ -32,7 +32,7 @@ export const fetchMarketNews = async (limit: number = 6): Promise<MarketNewsArti
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({ 
-        category: 'general',
+        symbol,
         limit
       }),
     });
@@ -57,15 +57,19 @@ export const fetchMarketNews = async (limit: number = 6): Promise<MarketNewsArti
           // Validate URL before mapping
           if (!item.url || (!item.url.startsWith('http://') && !item.url.startsWith('https://'))) {
             console.warn("Article with invalid URL:", item);
+            // Fix URL if possible
+            if (item.url && !item.url.startsWith('http')) {
+              item.url = `https://${item.url}`;
+            }
           }
           
           return {
             ...item,
-            // Add compatibility fields for existing components
-            publishedDate: new Date(item.datetime * 1000).toISOString().split('T')[0],
-            title: item.headline,
-            text: item.summary,
-            site: item.source
+            // Add compatibility fields for existing components if not already present
+            publishedDate: item.publishedDate || new Date(item.datetime * 1000).toISOString().split('T')[0],
+            title: item.title || item.headline,
+            text: item.text || item.summary,
+            site: item.site || item.source
           };
         })
         .filter((item: any) => {

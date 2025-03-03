@@ -2,135 +2,115 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
 const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
-};
-
-// Type for Finnhub news response
-interface FinnhubNewsItem {
-  category: string;
-  datetime: number;
-  headline: string;
-  id: number;
-  image: string;
-  related: string;
-  source: string;
-  summary: string;
-  url: string;
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
 serve(async (req) => {
   // Handle CORS preflight requests
-  if (req.method === "OPTIONS") {
+  if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const { category = "general", limit = 6 } = await req.json();
-    
-    // Get the API key from environment variable
-    const FINNHUB_API_KEY = Deno.env.get("FINNHUB_API_KEY");
+    // Get API key from environment variables
+    const FINNHUB_API_KEY = Deno.env.get('FINNHUB_API_KEY');
     
     if (!FINNHUB_API_KEY) {
-      console.error("FINNHUB_API_KEY environment variable is not set");
+      console.error('FINNHUB_API_KEY not found in environment variables');
       return new Response(
-        JSON.stringify({ error: "API key not configured" }),
-        {
-          status: 500,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        }
+        JSON.stringify({ error: 'API key configuration error' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    console.log(`Fetching news for category: ${category}, limit: ${limit}`);
+    // Parse the request body
+    const requestData = await req.json();
+    const { limit = 6, symbol = 'AAPL' } = requestData;
     
-    // Fetch news from Finnhub API
-    const response = await fetch(
-      `https://finnhub.io/api/v1/news?category=${category}&token=${FINNHUB_API_KEY}`
-    );
-
+    console.log(`Fetching press releases for symbol: ${symbol}, limit: ${limit}`);
+    
+    // Construct URL for press releases endpoint
+    const url = `https://finnhub.io/api/v1/press-releases?symbol=${symbol}&token=${FINNHUB_API_KEY}`;
+    console.log(`Request URL: ${url.replace(FINNHUB_API_KEY, 'REDACTED')}`);
+    
+    // Fetch data from Finnhub
+    const response = await fetch(url);
+    
     if (!response.ok) {
       const errorText = await response.text();
-      console.error(`Finnhub API error: ${response.status} - ${errorText}`);
+      console.error(`Finnhub API error (${response.status}): ${errorText}`);
       return new Response(
-        JSON.stringify({ 
-          error: "Failed to fetch news from Finnhub API", 
-          details: errorText
-        }),
-        {
-          status: response.status,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        }
+        JSON.stringify({ error: `Failed to fetch press releases: ${response.statusText}` }),
+        { status: response.status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
-
-    // Parse the response
-    const news: FinnhubNewsItem[] = await response.json();
-    console.log(`Retrieved ${news.length} news items`);
     
-    // Log a sample item if available to debug URL issues
-    if (news.length > 0) {
-      console.log("Sample news item:", {
-        headline: news[0].headline,
-        url: news[0].url,
-        image: news[0].image
-      });
+    // Parse response data
+    const data = await response.json();
+    console.log('Finnhub API response structure:', Object.keys(data));
+    
+    if (!data.majorDevelopment || !Array.isArray(data.majorDevelopment)) {
+      console.warn('Unexpected response format from Finnhub API', data);
+      return new Response(
+        JSON.stringify({ error: 'Unexpected response format from Finnhub API' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
     
-    // Helper function to validate and normalize URLs
-    const validateUrl = (url: string): string => {
-      if (!url) return "";
-      
-      try {
-        // Check if URL is absolute
-        if (!url.startsWith('http://') && !url.startsWith('https://')) {
-          url = 'https://' + url;
-        }
-        
-        // Validate URL by trying to create a URL object
-        new URL(url);
-        return url;
-      } catch (e) {
-        console.warn(`Invalid URL: ${url}`, e);
-        return "";
-      }
-    };
-    
-    // Validate and ensure each news item has a valid URL
-    const validatedNews = news
+    // Map and clean the data
+    const pressReleases = data.majorDevelopment
       .slice(0, limit)
       .map(item => {
-        // Make sure URL is absolute and properly formatted
-        if (item.url) {
-          const validatedUrl = validateUrl(item.url);
-          item.url = validatedUrl;
-          
-          // Log URLs for debugging purposes
-          console.log(`Processed URL: ${item.headline} -> ${item.url}`);
+        // Validate URL
+        let url = item.url || '';
+        // Ensure URL has proper http/https prefix
+        if (url && !url.startsWith('http://') && !url.startsWith('https://')) {
+          url = `https://${url}`;
         }
         
-        // Also validate image URL
-        if (item.image) {
-          item.image = validateUrl(item.image);
-        }
-        
-        return item;
+        return {
+          category: 'press-release',
+          datetime: new Date(item.datetime).getTime() / 1000, // Convert to Unix timestamp
+          headline: item.headline,
+          id: Math.floor(Math.random() * 1000000), // Generate a random ID
+          image: '', // Press releases don't typically include images
+          related: item.symbol,
+          source: 'Finnhub Press Release',
+          summary: item.description,
+          url: url,
+          publishedDate: item.datetime,
+          title: item.headline,
+          text: item.description,
+          site: 'Finnhub',
+          symbol: item.symbol
+        };
       })
-      .filter(item => item.url); // Filter out items without valid URLs
-
-    // Return the news items
-    return new Response(JSON.stringify(validatedNews), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+      .filter(item => {
+        // Filter out items with invalid/empty URLs
+        if (!item.url || item.url === 'https://') {
+          console.warn('Filtered out press release with invalid URL:', item.headline);
+          return false;
+        }
+        return true;
+      });
+    
+    console.log(`Returning ${pressReleases.length} press releases`);
+    if (pressReleases.length > 0) {
+      console.log('Sample press release:', pressReleases[0]);
+    }
+    
+    // Return the mapped data
+    return new Response(
+      JSON.stringify(pressReleases),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+    
   } catch (error) {
-    console.error("Error in get-finnhub-news function:", error);
+    console.error('Error in get-finnhub-news function:', error);
     return new Response(
       JSON.stringify({ error: error.message }),
-      {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      }
+      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
 });
