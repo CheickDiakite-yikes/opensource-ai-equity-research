@@ -15,6 +15,10 @@ import {
   fetchSECFilings, 
   triggerDocumentCaching 
 } from './documentsService';
+import {
+  generateResearchReport,
+  generateStockPrediction
+} from './analysisService';
 
 /**
  * Get all financial data for a symbol
@@ -52,3 +56,9 @@ export const getAllFinancialData = async (symbol: string) => {
     secFilings
   };
 };
+
+// Re-export the analysis functions
+export {
+  generateResearchReport,
+  generateStockPrediction
+} from './analysisService';
