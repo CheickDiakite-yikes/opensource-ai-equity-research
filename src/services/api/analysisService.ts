@@ -27,7 +27,54 @@ export const fetchCustomDCF = async (symbol: string, params: CustomDCFParams): P
     }
     
     console.log(`Received ${data.length} DCF records for ${symbol}`);
-    return data;
+    
+    // Make sure all required fields are present
+    const validatedData = data.map(item => {
+      // Ensure all required fields are present, defaulting to 0 if missing
+      return {
+        year: item.year || new Date().getFullYear().toString(),
+        symbol: item.symbol || symbol,
+        revenue: item.revenue || 0,
+        revenuePercentage: item.revenuePercentage || 0,
+        ebitda: item.ebitda || 0,
+        ebitdaPercentage: item.ebitdaPercentage || 0,
+        ebit: item.ebit || 0,
+        ebitPercentage: item.ebitPercentage || 0,
+        depreciation: item.depreciation || 0,
+        capitalExpenditure: item.capitalExpenditure || 0,
+        capitalExpenditurePercentage: item.capitalExpenditurePercentage || 0,
+        price: item.price || 0,
+        beta: item.beta || 0,
+        dilutedSharesOutstanding: item.dilutedSharesOutstanding || 0,
+        costofDebt: item.costofDebt || 0,
+        taxRate: item.taxRate || 0,
+        afterTaxCostOfDebt: item.afterTaxCostOfDebt || 0,
+        riskFreeRate: item.riskFreeRate || 0,
+        marketRiskPremium: item.marketRiskPremium || 0,
+        costOfEquity: item.costOfEquity || 0,
+        totalDebt: item.totalDebt || 0,
+        totalEquity: item.totalEquity || 0,
+        totalCapital: item.totalCapital || 0,
+        debtWeighting: item.debtWeighting || 0,
+        equityWeighting: item.equityWeighting || 0,
+        wacc: item.wacc || 0,
+        operatingCashFlow: item.operatingCashFlow || 0,
+        pvLfcf: item.pvLfcf || 0,
+        sumPvLfcf: item.sumPvLfcf || 0,
+        longTermGrowthRate: item.longTermGrowthRate || 0,
+        freeCashFlow: item.freeCashFlow || 0,
+        terminalValue: item.terminalValue || 0,
+        presentTerminalValue: item.presentTerminalValue || 0,
+        enterpriseValue: item.enterpriseValue || 0,
+        netDebt: item.netDebt || 0,
+        equityValue: item.equityValue || 0,
+        equityValuePerShare: item.equityValuePerShare || 0,
+        freeCashFlowT1: item.freeCashFlowT1 || 0,
+        operatingCashFlowPercentage: item.operatingCashFlowPercentage || 0
+      } as CustomDCFResult;
+    });
+    
+    return validatedData;
   } catch (error) {
     console.error("Error fetching custom DCF:", error);
     throw error;

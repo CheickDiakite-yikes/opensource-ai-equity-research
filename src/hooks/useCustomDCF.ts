@@ -17,29 +17,29 @@ export const useCustomDCF = (symbol: string) => {
       // Add the symbol to the params if not already included
       const paramsWithSymbol = { ...params, symbol };
       
+      console.log("Sending DCF calculation request with parameters:", paramsWithSymbol);
+      
       const result = await fetchCustomDCF(symbol, paramsWithSymbol);
       
       if (result && Array.isArray(result) && result.length > 0) {
         console.log("Received custom DCF results:", result);
         
-        // For the projected data, we'll use the first 5 years from the result
-        const yearly: YearlyDCFData[] = [];
+        // The API returns an array, but we'll use the first item as our primary result
+        const dcfResult = result[0];
         
-        // Use the first 5 items (or fewer if less are available)
-        const yearsToUse = result.slice(0, 5);
+        // For the projected data, we'll use the actual API response
+        // Since it already contains the details we need
+        const yearly: YearlyDCFData[] = result.map(item => ({
+          year: item.year,
+          revenue: item.revenue || 0,
+          ebit: item.ebit || 0,
+          ebitda: item.ebitda || 0,
+          freeCashFlow: item.freeCashFlow || 0,
+          operatingCashFlow: item.operatingCashFlow || 0,
+          capitalExpenditure: item.capitalExpenditure || 0
+        }));
         
-        yearly.push(...yearsToUse.map(year => ({
-          year: year.year,
-          revenue: year.revenue || 0,
-          ebit: year.ebit || 0,
-          ebitda: year.ebitda || 0,
-          freeCashFlow: year.freeCashFlow || 0,
-          operatingCashFlow: year.operatingCashFlow || 0,
-          capitalExpenditure: year.capitalExpenditure || 0
-        })));
-        
-        // Use the first item in the array as our DCF result
-        setCustomDCFResult(result[0]);
+        setCustomDCFResult(dcfResult);
         setProjectedData(yearly);
       } else {
         console.error("Invalid or empty result from custom DCF:", result);

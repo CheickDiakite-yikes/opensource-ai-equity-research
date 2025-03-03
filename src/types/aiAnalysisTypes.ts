@@ -123,6 +123,7 @@ export interface YearlyDCFData {
   capitalExpenditure: number;
 }
 
+// Updated to match the exact structure from the FMP API response
 export interface CustomDCFResult {
   year: string;
   symbol: string;

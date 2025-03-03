@@ -18,45 +18,59 @@ const DCFResultsDisplay: React.FC<DCFResultsDisplayProps> = ({
   
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 gap-4">
         <motion.div 
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.3 }}
-          className={`p-5 rounded-lg ${
-            (customDCFResult.equityValuePerShare > currentPrice) 
-              ? 'bg-green-50 border border-green-100' 
-              : 'bg-red-50 border border-red-100'
-          }`}
+          className="p-6 rounded-lg bg-muted/30 border border-border"
         >
-          <div className="text-sm text-muted-foreground">Intrinsic Value Per Share</div>
-          <div className="text-3xl font-bold mb-1">
-            {formatCurrency(customDCFResult.equityValuePerShare)}
+          <div className="mb-4">
+            <div className="text-sm text-muted-foreground">Intrinsic Value Per Share</div>
+            <div className="text-4xl font-bold">
+              {formatCurrency(customDCFResult.equityValuePerShare)}
+            </div>
+            <div className={`text-sm font-medium ${
+              (upside > 0) 
+                ? 'text-green-600' 
+                : 'text-red-600'
+            }`}>
+              {Math.abs(upside).toFixed(2)}% {upside > 0 ? 'Upside' : 'Downside'}
+            </div>
           </div>
-          <div className={`text-sm font-medium ${
-            (customDCFResult.equityValuePerShare > currentPrice) 
-              ? 'text-green-700' 
-              : 'text-red-700'
-          }`}>
-            {Math.abs(upside).toFixed(2)}% {customDCFResult.equityValuePerShare > currentPrice ? 'Upside' : 'Downside'}
+          
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+            <div>
+              <div className="text-sm text-muted-foreground">Current Price:</div>
+              <div className="font-medium">{formatCurrency(currentPrice)}</div>
+            </div>
+            
+            <div>
+              <div className="text-sm text-muted-foreground">WACC:</div>
+              <div className="font-medium">{formatPercentage(customDCFResult.wacc)}</div>
+            </div>
+            
+            <div>
+              <div className="text-sm text-muted-foreground">Enterprise Value:</div>
+              <div className="font-medium">{formatLargeNumber(customDCFResult.enterpriseValue)}</div>
+            </div>
+            
+            <div>
+              <div className="text-sm text-muted-foreground">Equity Value:</div>
+              <div className="font-medium">{formatLargeNumber(customDCFResult.equityValue)}</div>
+            </div>
+            
+            <div>
+              <div className="text-sm text-muted-foreground">Growth Rate:</div>
+              <div className="font-medium">{formatPercentage(customDCFResult.revenuePercentage)}</div>
+            </div>
+            
+            <div>
+              <div className="text-sm text-muted-foreground">Long Term Growth:</div>
+              <div className="font-medium">{formatPercentage(customDCFResult.longTermGrowthRate)}</div>
+            </div>
           </div>
         </motion.div>
-        
-        <div className="bg-muted/30 p-5 rounded-lg border border-border/50">
-          <div className="grid grid-cols-2 gap-y-2 text-sm">
-            <div className="text-muted-foreground">Current Price:</div>
-            <div className="font-medium">{formatCurrency(currentPrice)}</div>
-            
-            <div className="text-muted-foreground">WACC:</div>
-            <div>{formatPercentage(customDCFResult.wacc)}</div>
-            
-            <div className="text-muted-foreground">Enterprise Value:</div>
-            <div>{formatLargeNumber(customDCFResult.enterpriseValue)}</div>
-            
-            <div className="text-muted-foreground">Equity Value:</div>
-            <div>{formatLargeNumber(customDCFResult.equityValue)}</div>
-          </div>
-        </div>
       </div>
       
       <div className="space-y-3">
