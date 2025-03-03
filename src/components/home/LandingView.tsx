@@ -7,7 +7,7 @@ import FeatureCards from "./FeatureCards";
 import RecentSearches from "./RecentSearches";
 import HowToUse from "./HowToUse";
 import MarketPerformance from "./MarketPerformance";
-import MarketNews from "./marketNews/MarketNews";
+import MarketNews from "./marketNews/index";
 import { fetchMarketIndices, fetchMarketNews } from "@/services/api/marketDataService";
 import { toast } from "sonner";
 
