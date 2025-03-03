@@ -11,7 +11,7 @@ export interface ReportHeaderProps {
   symbol: string;
   date: string;
   recommendation: string;
-  targetPrice: string;
+  targetPrice: number;
   ratingDetails?: {
     ratingScale: string;
     ratingJustification?: string;
@@ -60,7 +60,7 @@ export const ReportHeader: React.FC<ReportHeaderProps> = ({
         </div>
         <div className="p-3 border rounded-lg flex-1">
           <span className="text-xs text-muted-foreground block mb-1">Price Target</span>
-          <span className="text-xl font-semibold">{targetPrice}</span>
+          <span className="text-xl font-semibold">${targetPrice.toFixed(2)}</span>
         </div>
         
         {/* Rating Details if available */}

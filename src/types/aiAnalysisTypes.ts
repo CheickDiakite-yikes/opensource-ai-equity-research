@@ -132,26 +132,26 @@ export interface ResearchReport {
   sections: ResearchReportSection[];
   disclaimer: string;
   analysts?: string[];
-  date?: string;
-  recommendation?: string;
+  date: string;
+  recommendation: string;
   ratingDetails?: {
     ratingScale: string;
     ratingJustification?: string;
   };
   scenarioAnalysis?: {
     bullCase: {
-      price: string;
-      probability: string;
+      price: number;
+      probability: number;
       drivers: string[];
     };
     baseCase: {
-      price: string;
-      probability: string;
+      price: number;
+      probability: number;
       drivers: string[];
     };
     bearCase: {
-      price: string;
-      probability: string;
+      price: number;
+      probability: number;
       drivers: string[];
     };
   };
