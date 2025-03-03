@@ -29,20 +29,6 @@ export interface ReportRequest {
 export interface ReportSection {
   title: string;
   content: string;
-  charts?: ReportChart[];
-  tables?: ReportTable[];
-}
-
-export interface ReportChart {
-  type: 'revenue-income' | 'assets-liabilities' | 'profitability' | 'cash-flow' | 'growth';
-  title: string;
-  data: any[];
-}
-
-export interface ReportTable {
-  type: 'financial' | 'valuation' | 'ratio';
-  title: string;
-  data: any[];
 }
 
 export interface ResearchReport {
@@ -53,14 +39,6 @@ export interface ResearchReport {
   targetPrice: string;
   summary: string;
   sections: ReportSection[];
-  financialCharts?: {
-    revenueIncome?: any[];
-    assetsLiabilities?: any[];
-    profitability?: any[];
-    cashFlow?: any[];
-    revenueGrowth?: any[];
-    epsGrowth?: any[];
-  };
 }
 
 export interface StockPrediction {

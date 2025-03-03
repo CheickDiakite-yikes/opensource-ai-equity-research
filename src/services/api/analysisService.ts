@@ -23,22 +23,7 @@ export const generateResearchReport = async (reportRequest: ReportRequest): Prom
     
     // Use retry logic for AI report generation
     const data = await withRetry(() => 
-      invokeSupabaseFunction<ResearchReport>('generate-research-report', { 
-        reportRequest,
-        reportType: 'comprehensive', // Can be modified to support different report types
-        includeSections: [
-          'executive_summary',
-          'business_overview',
-          'industry_analysis',
-          'financial_analysis',
-          'growth_prospects',
-          'valuation',
-          'risk_factors',
-          'esg_considerations',
-          'investment_thesis',
-          'recommendation'
-        ]
-      }),
+      invokeSupabaseFunction<ResearchReport>('generate-research-report', { reportRequest }),
       2, // fewer retries for this expensive operation
       2000 // longer initial delay
     );
@@ -199,45 +184,6 @@ export const analyzeGrowthInsights = async (
       description: "Could not analyze growth data. Please try again later.",
       variant: "destructive",
     });
-    return null;
-  }
-};
-
-/**
- * Generate competitive analysis for peer companies
- */
-export const generateCompetitiveAnalysis = async (
-  symbol: string,
-  peers: string[],
-  financialData: any
-): Promise<any | null> => {
-  try {
-    if (!peers || peers.length === 0) {
-      console.warn(`No peers available for ${symbol}`);
-      return null;
-    }
-
-    console.log(`Generating competitive analysis for ${symbol} with ${peers.length} peers`);
-    
-    // Use retry logic for analysis
-    const data = await withRetry(() => 
-      invokeSupabaseFunction<any>('analyze-competition', { 
-        symbol,
-        peers,
-        financialData
-      }),
-      1,  // Limit retries for this operation
-      1500 // Wait 1.5 seconds between retries
-    );
-    
-    if (!data) {
-      console.error("Failed to generate competitive analysis");
-      return null;
-    }
-    
-    return data;
-  } catch (error) {
-    console.error("Error generating competitive analysis:", error);
     return null;
   }
 };

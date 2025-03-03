@@ -3,13 +3,8 @@ import React from "react";
 import { Button } from "@/components/ui/button";
 import { ResearchReport } from "@/types";
 import { generateReportHTML } from "@/lib/utils";
-import { Download, AlertTriangle, ArrowRight, BarChart, LineChart, PieChart } from "lucide-react";
+import { Download, AlertTriangle, ArrowRight } from "lucide-react";
 import { toast } from "@/components/ui/use-toast";
-import RevenueIncomeChart from "@/components/charts/RevenueIncomeChart";
-import AssetsLiabilitiesChart from "@/components/charts/AssetsLiabilitiesChart";
-import ProfitabilityChart from "@/components/charts/ProfitabilityChart";
-import CashFlowChart from "@/components/charts/CashFlowChart";
-import GrowthChart from "@/components/charts/GrowthChart";
 
 interface ResearchReportDisplayProps {
   report: ResearchReport;
@@ -57,21 +52,8 @@ const ResearchReportDisplay: React.FC<ResearchReportDisplayProps> = ({ report })
     });
   };
 
-  // Extract financial data for charts if available
-  const { financialCharts } = report;
-  
-  // Helper to determine if we have chart data
-  const hasChartData = financialCharts && (
-    financialCharts.revenueIncome?.length > 0 || 
-    financialCharts.assetsLiabilities?.length > 0 || 
-    financialCharts.profitability?.length > 0 || 
-    financialCharts.cashFlow?.length > 0 ||
-    financialCharts.revenueGrowth?.length > 0 ||
-    financialCharts.epsGrowth?.length > 0
-  );
-
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div className="flex justify-between items-start">
         <div>
           <h2 className="text-xl font-bold">{report.companyName} ({report.symbol})</h2>
@@ -94,69 +76,11 @@ const ResearchReportDisplay: React.FC<ResearchReportDisplayProps> = ({ report })
         </div>
       </div>
       
-      <div className="border rounded-lg p-4 bg-card">
+      <div className="border rounded-lg p-4">
         <h3 className="text-lg font-medium mb-2">Executive Summary</h3>
         <p className="text-sm leading-relaxed">{report.summary}</p>
       </div>
-
-      {/* Financial Charts Section */}
-      {hasChartData && (
-        <div className="border rounded-lg overflow-hidden">
-          <div className="bg-muted p-3">
-            <h3 className="font-medium flex items-center gap-2">
-              <BarChart className="h-4 w-4" />
-              Financial Charts
-            </h3>
-          </div>
-          <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-6">
-            {financialCharts?.revenueIncome && financialCharts.revenueIncome.length > 0 && (
-              <div>
-                <RevenueIncomeChart data={financialCharts.revenueIncome} />
-              </div>
-            )}
-            
-            {financialCharts?.assetsLiabilities && financialCharts.assetsLiabilities.length > 0 && (
-              <div>
-                <AssetsLiabilitiesChart data={financialCharts.assetsLiabilities} />
-              </div>
-            )}
-            
-            {financialCharts?.profitability && financialCharts.profitability.length > 0 && (
-              <div>
-                <ProfitabilityChart data={financialCharts.profitability} />
-              </div>
-            )}
-            
-            {financialCharts?.cashFlow && financialCharts.cashFlow.length > 0 && (
-              <div>
-                <CashFlowChart data={financialCharts.cashFlow} />
-              </div>
-            )}
-
-            {financialCharts?.revenueGrowth && financialCharts.revenueGrowth.length > 0 && (
-              <div>
-                <GrowthChart 
-                  data={financialCharts.revenueGrowth} 
-                  title="Revenue Growth (%)"
-                  color="#3b82f6" 
-                />
-              </div>
-            )}
-            
-            {financialCharts?.epsGrowth && financialCharts.epsGrowth.length > 0 && (
-              <div>
-                <GrowthChart 
-                  data={financialCharts.epsGrowth} 
-                  title="EPS Growth (%)"
-                  color="#10b981" 
-                />
-              </div>
-            )}
-          </div>
-        </div>
-      )}
       
-      {/* Report Sections */}
       <div className="border rounded-lg overflow-hidden">
         <div className="bg-muted p-3">
           <h3 className="font-medium">Report Sections</h3>
@@ -173,45 +97,6 @@ const ResearchReportDisplay: React.FC<ResearchReportDisplayProps> = ({ report })
                   className="text-sm text-muted-foreground prose-sm max-w-none"
                   dangerouslySetInnerHTML={{ __html: section.content.replace(/\n/g, '<br>') }}
                 />
-                
-                {/* Display section charts if any */}
-                {section.charts && section.charts.length > 0 && (
-                  <div className="mt-4 pt-4 border-t grid grid-cols-1 gap-6">
-                    {section.charts.map((chart, chartIndex) => (
-                      <div key={`chart-${index}-${chartIndex}`} className="border rounded-lg p-4">
-                        <h5 className="font-medium mb-4 flex items-center gap-2">
-                          <LineChart className="h-4 w-4" />
-                          {chart.title}
-                        </h5>
-                        <div className="h-80">
-                          {/* Render the appropriate chart based on chart type */}
-                          {chart.type === 'revenue-income' && <RevenueIncomeChart data={chart.data} />}
-                          {chart.type === 'assets-liabilities' && <AssetsLiabilitiesChart data={chart.data} />}
-                          {chart.type === 'profitability' && <ProfitabilityChart data={chart.data} />}
-                          {chart.type === 'cash-flow' && <CashFlowChart data={chart.data} />}
-                          {chart.type === 'growth' && <GrowthChart data={chart.data} title={chart.title} color="#3b82f6" />}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-                
-                {/* Display section tables if any */}
-                {section.tables && section.tables.length > 0 && (
-                  <div className="mt-4 pt-4 border-t">
-                    {section.tables.map((table, tableIndex) => (
-                      <div key={`table-${index}-${tableIndex}`} className="border rounded-lg p-4 mt-4">
-                        <h5 className="font-medium mb-4">{table.title}</h5>
-                        {/* Table rendering would go here */}
-                        <div className="overflow-x-auto">
-                          <table className="min-w-full divide-y divide-gray-200">
-                            {/* Table content would be rendered here based on table.data */}
-                          </table>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
               </div>
             </details>
           ))}
