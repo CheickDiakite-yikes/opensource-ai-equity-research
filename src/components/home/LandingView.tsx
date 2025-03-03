@@ -37,11 +37,11 @@ const LandingView: React.FC<LandingViewProps> = ({
       className="space-y-12 my-12"
     >
       <HeroSection />
+      <FeatureCards />
       <FeaturedCompanies 
         featuredSymbols={featuredSymbols} 
         onSelectSymbol={onSelectSymbol} 
       />
-      <FeatureCards />
       <RecentSearches 
         recentSearches={recentSearches} 
         onSelectSymbol={onSelectSymbol} 
