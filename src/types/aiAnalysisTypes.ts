@@ -89,6 +89,14 @@ export interface StockPrediction {
   risks: string[];
 }
 
+// Added GrowthInsight interface that was missing
+export interface GrowthInsight {
+  type: "positive" | "negative" | "neutral";
+  source: "earnings" | "filing" | "analysis";
+  sourceDate: string;
+  content: string;
+}
+
 // Custom DCF Analysis Types
 export interface CustomDCFParams {
   symbol: string;
