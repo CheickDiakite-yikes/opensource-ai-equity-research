@@ -10,7 +10,11 @@ export * from './documentsService';
 import { fetchStockProfile, fetchStockQuote } from './profileService';
 import { fetchIncomeStatements, fetchBalanceSheets, fetchCashFlowStatements, fetchKeyRatios } from './financialService';
 import { fetchHistoricalPrices, fetchCompanyNews, fetchCompanyPeers } from './marketDataService';
-import { fetchEarningsTranscripts, fetchSECFilings, triggerDocumentCaching } from './documentsService';
+import { 
+  fetchEarningsTranscripts, 
+  fetchSECFilings, 
+  triggerDocumentCaching 
+} from './documentsService';
 
 /**
  * Get all financial data for a symbol
