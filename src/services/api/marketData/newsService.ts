@@ -1,3 +1,4 @@
+
 import { invokeSupabaseFunction } from "../base";
 
 /**
@@ -30,9 +31,10 @@ export const fetchMarketNews = async (limit: number = 6): Promise<MarketNewsArti
       }
       
       // Map the response to match our MarketNewsArticle interface
+      // Ensure dates are in a consistent format
       return result.map((item: any) => ({
         symbol: item.symbol,
-        publishedDate: item.publishedDate,
+        publishedDate: item.publishedDate ? item.publishedDate : new Date().toISOString().split('T').join(' ').split('.')[0],
         title: item.title,
         image: item.image,
         site: item.site,
@@ -54,6 +56,7 @@ export const fetchMarketNews = async (limit: number = 6): Promise<MarketNewsArti
  * Fallback mock data for market news
  */
 const getFallbackMarketNews = (): MarketNewsArticle[] => {
+  // Update the mock data with consistent date formats
   return [
     {
       symbol: "MRK",

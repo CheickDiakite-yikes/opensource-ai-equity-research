@@ -53,11 +53,23 @@ const MarketNews: React.FC<MarketNewsProps> = ({
   
   function formatDate(dateString: string) {
     try {
-      const date = parseISO(dateString);
+      let date;
+      
+      if (dateString.includes(' ')) {
+        date = new Date(dateString.replace(' ', 'T'));
+      } else {
+        date = parseISO(dateString);
+      }
+      
+      if (isNaN(date.getTime())) {
+        console.error("Invalid date:", dateString);
+        return dateString.split(' ')[0];
+      }
+      
       return format(date, 'MMM d, yyyy');
     } catch (error) {
       console.error("Error parsing date:", dateString, error);
-      return dateString.split(' ')[0]; // Fallback to just the date part
+      return dateString.split(' ')[0];
     }
   }
 
