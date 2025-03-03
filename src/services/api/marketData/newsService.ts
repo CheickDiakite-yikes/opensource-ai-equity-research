@@ -2,11 +2,11 @@
 import { invokeSupabaseFunction } from "../base";
 
 /**
- * Market News Article type based on FMP Stock News Feed API
+ * Market News Article type based on FMP Press Releases API
  */
 export interface MarketNewsArticle {
   symbol?: string;
-  publishedDate: string;  // "2025-02-03 23:53:40"
+  publishedDate: string;  // "2025-02-03 23:32:00"
   title: string;
   image: string;
   site: string;
@@ -16,12 +16,12 @@ export interface MarketNewsArticle {
 }
 
 /**
- * Fetch market news from FMP API using the stock-latest endpoint
+ * Fetch market news from FMP API using the press-releases-latest endpoint
  */
 export const fetchMarketNews = async (limit: number = 6): Promise<MarketNewsArticle[]> => {
   try {
     const result = await invokeSupabaseFunction<any>('get-stock-data', { 
-      endpoint: 'stock-latest',  // Using the new endpoint from documentation
+      endpoint: 'press-releases-latest',
       limit
     });
     
@@ -31,16 +31,15 @@ export const fetchMarketNews = async (limit: number = 6): Promise<MarketNewsArti
       }
       
       // Map the response to match our MarketNewsArticle interface
-      // Ensure dates are in a consistent format
       return result.map((item: any) => ({
-        symbol: item.symbol,
-        publishedDate: item.publishedDate ? item.publishedDate : new Date().toISOString().split('T').join(' ').split('.')[0],
-        title: item.title,
-        image: item.image,
-        site: item.site,
-        text: item.text,
-        url: item.url,
-        publisher: item.publisher
+        symbol: item.symbol || null,
+        publishedDate: item.publishedDate || new Date().toISOString().split('T').join(' ').split('.')[0],
+        title: item.title || "No title available",
+        image: item.image || "",
+        site: item.site || "",
+        text: item.text || "No description available",
+        url: item.url || "#",
+        publisher: item.publisher || item.site
       }));
     }
     
@@ -56,67 +55,66 @@ export const fetchMarketNews = async (limit: number = 6): Promise<MarketNewsArti
  * Fallback mock data for market news
  */
 const getFallbackMarketNews = (): MarketNewsArticle[] => {
-  // Update the mock data with consistent date formats
   return [
     {
-      symbol: "MRK",
+      symbol: "LNW",
+      publishedDate: "2025-02-03 23:32:00",
+      title: "Rosen Law Firm Encourages Light & Wonder, Inc. Investors to Inquire About Securities",
+      text: "NEW YORK, Feb. 3, 2025 /PRNewsWire/ -- Why: Rosen Law Firm, a global investor rights law firm, announces an investigation of potential securities claims on behalf of shareholders of Light & Wonder, Inc.",
+      image: "https://images.financialmodellingprep.com/news-images/default-news.jpg",
+      url: "https://www.prnewswire.com/news-releases/rosen-law-firm-encourages-light--wonder-inc-investors-to-inquire-about-securities",
+      site: "prnewswire.com",
+      publisher: "PRNewsWire"
+    },
+    {
+      symbol: "AAPL",
       publishedDate: "2025-03-01 09:33:00",
-      title: "Merck Shares Plunge 8% as Weak Guidance Overshadows Strong Revenue Growth",
-      text: "Merck & Co (NYSE:MRK) saw its stock sink over 8% in pre-market today after delivering mixed fourth-quarter results and disappointing 2025 guidance.",
-      image: "https://images.unsplash.com/photo-1563986768494-4dee2763ff3f?q=80&w=1000",
-      url: "https://financialmodellingprep.com/market-news/fmp-merck-shares-plunge-8-as-weak-guidance-overshadows-strong-revenue-growth",
+      title: "Apple Announces New iPhone Features Coming in Next Update",
+      text: "Cupertino, CA - Apple Inc. today announced several new features that will be added to iPhones in the next iOS update, including enhanced privacy controls and improved battery management.",
+      image: "https://images.financialmodellingprep.com/news-images/default-news.jpg",
+      url: "https://financialmodellingprep.com/market-news/fmp-apple-announces-features",
       site: "Financial Modeling Prep",
-      publisher: "Seeking Alpha"
+      publisher: "Business Wire"
     },
     {
-      symbol: "TSLA",
+      symbol: "MSFT",
       publishedDate: "2025-03-01 08:45:00",
-      title: "Tesla Sales in China Surge 18.3% in January Despite Overall Market Decline",
-      text: "Tesla (NASDAQ:TSLA) delivered 71,447 vehicles in China during January, representing an 18.3% increase year-over-year despite the broader EV market seeing declining sales.",
-      image: "https://images.unsplash.com/photo-1617788138017-80ad40651399?q=80&w=1000",
-      url: "https://financialmodellingprep.com/market-news/fmp-tesla-sales-in-china-surge",
+      title: "Microsoft Cloud Revenue Surges in Latest Quarter",
+      text: "Redmond, WA - Microsoft Corporation reported that its cloud services revenue increased by 35% in the most recent fiscal quarter, driven by strong demand for Azure and Microsoft 365.",
+      image: "https://images.financialmodellingprep.com/news-images/default-news.jpg",
+      url: "https://financialmodellingprep.com/market-news/fmp-microsoft-cloud-revenue",
       site: "Financial Modeling Prep",
-      publisher: "CleanTechnica"
+      publisher: "Market News"
     },
     {
-      symbol: "AMZN",
+      symbol: "GOOGL",
       publishedDate: "2025-02-28 16:30:00",
-      title: "Amazon Beats Q4 Expectations on Strong Cloud Growth, Shares Rise 5%",
-      text: "Amazon (NASDAQ:AMZN) reported Q4 earnings that exceeded Wall Street expectations, with AWS revenue growing 23% year-over-year to $25.4 billion.",
-      image: "https://images.unsplash.com/photo-1523474253046-8cd2748b5fd2?q=80&w=1000",
-      url: "https://financialmodellingprep.com/market-news/fmp-amazon-beats-q4-expectations",
+      title: "Google Announces New AI-Powered Search Features",
+      text: "Mountain View, CA - Google unveiled several new AI-powered features for its search engine, aimed at providing more relevant and contextualized results for complex queries.",
+      image: "https://images.financialmodellingprep.com/news-images/default-news.jpg",
+      url: "https://financialmodellingprep.com/market-news/fmp-google-announces-ai-search",
       site: "Financial Modeling Prep",
-      publisher: "MarketWatch"
+      publisher: "Tech Today"
     },
     {
       symbol: null,
       publishedDate: "2025-03-01 14:15:00",
-      title: "Fed's Powell Signals No Rush to Cut Rates, Markets Retreat",
-      text: "Federal Reserve Chair Jerome Powell indicated that the central bank is unlikely to begin cutting interest rates until inflation shows more consistent signs of approaching the 2% target.",
-      image: "https://images.unsplash.com/photo-1611324806102-776e8c1f0dfa?q=80&w=1000",
-      url: "https://financialmodellingprep.com/market-news/fmp-fed-powell-signals-no-rate-cuts",
+      title: "Fed's Powell Signals Continued Caution on Interest Rates",
+      text: "Washington, DC - Federal Reserve Chair Jerome Powell indicated that the central bank will maintain a cautious approach to interest rate changes, citing ongoing economic uncertainties.",
+      image: "https://images.financialmodellingprep.com/news-images/default-news.jpg",
+      url: "https://financialmodellingprep.com/market-news/fmp-fed-powell-signals-caution",
       site: "Financial Modeling Prep",
       publisher: "Reuters"
     },
     {
-      symbol: "MSFT",
+      symbol: "TSLA",
       publishedDate: "2025-03-02 10:20:00",
-      title: "Microsoft Launches New AI-Powered Productivity Suite, Challenging Google",
-      text: "Microsoft (NASDAQ:MSFT) unveiled its next-generation AI-enhanced productivity tools, directly competing with Google's Workspace and raising the stakes in the enterprise software market.",
-      image: "https://images.unsplash.com/photo-1633419461553-6db182f462e5?q=80&w=1000",
-      url: "https://financialmodellingprep.com/market-news/fmp-microsoft-launches-ai-productivity-suite",
+      title: "Tesla Opens New Gigafactory in Asia",
+      text: "Shanghai - Tesla Inc. officially opened its newest Gigafactory in Asia, which is expected to significantly boost the company's production capacity for electric vehicles in the region.",
+      image: "https://images.financialmodellingprep.com/news-images/default-news.jpg",
+      url: "https://financialmodellingprep.com/market-news/fmp-tesla-opens-gigafactory",
       site: "Financial Modeling Prep",
-      publisher: "Bloomberg"
-    },
-    {
-      symbol: "OIL",
-      publishedDate: "2025-03-02 09:05:00",
-      title: "Oil Prices Drop 3% as OPEC+ Considers Increasing Production",
-      text: "Crude oil prices fell more than 3% after reports emerged that OPEC+ members are discussing a potential increase in production quotas starting in April.",
-      image: "https://images.unsplash.com/photo-1518291315662-e7b5d7608e22?q=80&w=1000",
-      url: "https://financialmodellingprep.com/market-news/fmp-oil-prices-drop-on-opec-news",
-      site: "Financial Modeling Prep",
-      publisher: "OilPrice.com"
+      publisher: "Auto News"
     }
   ];
 };
