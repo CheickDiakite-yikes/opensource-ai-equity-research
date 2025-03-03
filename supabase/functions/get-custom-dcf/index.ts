@@ -2,20 +2,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { corsHeaders } from "../_shared/cors.ts";
 
-interface CustomDCFParams {
-  symbol: string;
-  revenueGrowthPct: number;
-  ebitdaPct: number;
-  capitalExpenditurePct: number;
-  taxRate: number;
-  longTermGrowthRate: number;
-  costOfEquity: number;
-  costOfDebt: number;
-  beta: number;
-  marketRiskPremium: number;
-  riskFreeRate: number;
-}
-
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
@@ -35,7 +21,7 @@ serve(async (req) => {
       );
     }
 
-    // Construct the FMP API URL for custom DCF
+    // Get API key from environment variables
     const apiKey = Deno.env.get("FMP_API_KEY");
     
     if (!apiKey) {
@@ -49,25 +35,30 @@ serve(async (req) => {
     }
 
     // Construct query parameters for the custom DCF
+    // Based on the Python example, using the stable/custom-levered-discounted-cash-flow endpoint
     const queryParams = new URLSearchParams({
       apikey: apiKey,
       symbol: symbol,
-      // Add the custom parameters from the request
-      revenueGrowthPct: params.revenueGrowthPct.toString(),
-      ebitdaPct: params.ebitdaPct.toString(), 
-      capitalExpenditurePct: params.capitalExpenditurePct.toString(),
-      taxRate: params.taxRate.toString(),
-      longTermGrowthRate: params.longTermGrowthRate.toString(),
-      costOfEquity: params.costOfEquity.toString(),
-      costOfDebt: params.costOfDebt.toString(),
-      beta: params.beta.toString(),
-      marketRiskPremium: params.marketRiskPremium.toString(),
-      riskFreeRate: params.riskFreeRate.toString()
     });
 
-    const url = `https://financialmodelingprep.com/api/v4/advanced_levered_discounted_cash_flow?${queryParams}`;
+    // Add custom parameters if provided
+    if (params) {
+      if (params.revenueGrowthPct !== undefined) queryParams.append('revenueGrowthPct', params.revenueGrowthPct.toString());
+      if (params.ebitdaPct !== undefined) queryParams.append('ebitdaPct', params.ebitdaPct.toString());
+      if (params.capitalExpenditurePct !== undefined) queryParams.append('capitalExpenditurePct', params.capitalExpenditurePct.toString());
+      if (params.taxRate !== undefined) queryParams.append('taxRate', params.taxRate.toString());
+      if (params.longTermGrowthRate !== undefined) queryParams.append('longTermGrowthRate', params.longTermGrowthRate.toString());
+      if (params.costOfEquity !== undefined) queryParams.append('costOfEquity', params.costOfEquity.toString());
+      if (params.costOfDebt !== undefined) queryParams.append('costOfDebt', params.costOfDebt.toString());
+      if (params.beta !== undefined) queryParams.append('beta', params.beta.toString());
+      if (params.marketRiskPremium !== undefined) queryParams.append('marketRiskPremium', params.marketRiskPremium.toString());
+      if (params.riskFreeRate !== undefined) queryParams.append('riskFreeRate', params.riskFreeRate.toString());
+    }
+
+    // Use the correct URL format from the Python example
+    const url = `https://financialmodelingprep.com/stable/custom-levered-discounted-cash-flow?${queryParams}`;
     
-    console.log(`Fetching custom DCF for ${symbol} from: ${url}`);
+    console.log(`Fetching custom DCF for ${symbol} from: ${url.replace(apiKey, "API_KEY_HIDDEN")}`);
     
     const response = await fetch(url);
     
@@ -88,6 +79,15 @@ serve(async (req) => {
     }
     
     const data = await response.json();
+    console.log(`Received data from FMP API. Response type: ${typeof data}`);
+    if (Array.isArray(data)) {
+      console.log(`Received array with ${data.length} items`);
+      if (data.length > 0) {
+        console.log("Sample item structure:", Object.keys(data[0]).join(", "));
+      }
+    } else {
+      console.log("Received non-array data:", typeof data);
+    }
     
     return new Response(
       JSON.stringify(data),

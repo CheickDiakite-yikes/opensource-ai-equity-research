@@ -20,6 +20,8 @@ export const useCustomDCF = (symbol: string) => {
       const result = await fetchCustomDCF(symbol, paramsWithSymbol);
       
       if (result && Array.isArray(result) && result.length > 0) {
+        console.log("Received custom DCF results:", result);
+        
         // For the projected data, we'll use the first 5 years from the result
         const yearly: YearlyDCFData[] = [];
         
@@ -40,7 +42,8 @@ export const useCustomDCF = (symbol: string) => {
         setCustomDCFResult(result[0]);
         setProjectedData(yearly);
       } else {
-        setError("Failed to calculate DCF. Please try again.");
+        console.error("Invalid or empty result from custom DCF:", result);
+        setError("Failed to calculate DCF. Please check the parameters and try again.");
       }
     } catch (err) {
       console.error("Error calculating custom DCF:", err);
