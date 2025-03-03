@@ -71,11 +71,27 @@ export interface CustomDCFParams {
   riskFreeRate: number;
 }
 
+// Yearly projection data from DCF model
+export interface YearlyDCFData {
+  year: string;
+  revenue: number;
+  ebit: number;
+  ebitda: number;
+  freeCashFlow: number;
+  operatingCashFlow: number;
+  capitalExpenditure: number;
+}
+
 export interface CustomDCFResult {
   year: string;
   symbol: string;
   revenue: number;
   revenuePercentage: number;
+  ebitda: number;
+  ebitdaPercentage: number;
+  ebit: number;
+  ebitPercentage: number;
+  depreciation: number;
   capitalExpenditure: number;
   capitalExpenditurePercentage: number;
   price: number;

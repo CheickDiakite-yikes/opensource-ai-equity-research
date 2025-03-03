@@ -1,37 +1,52 @@
 
 import { useState } from "react";
-import { CustomDCFParams, CustomDCFResult } from "@/types/aiAnalysisTypes";
+import { CustomDCFParams, CustomDCFResult, YearlyDCFData } from "@/types/aiAnalysisTypes";
 import { fetchCustomDCF } from "@/services/api/analysisService";
 
 export const useCustomDCF = (symbol: string) => {
   const [isCalculating, setIsCalculating] = useState(false);
   const [customDCFResult, setCustomDCFResult] = useState<CustomDCFResult | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [projectedData, setProjectedData] = useState<YearlyDCFData[]>([]);
 
   const calculateCustomDCF = async (params: CustomDCFParams) => {
     try {
       setIsCalculating(true);
       setError(null);
       
-      // Add the symbol to the params
-      const result = await fetchCustomDCF(symbol, params);
+      // Add the symbol to the params if not already included
+      const paramsWithSymbol = { ...params, symbol };
+      
+      const result = await fetchCustomDCF(symbol, paramsWithSymbol);
       
       if (result) {
-        // Transform the API response into the format we need
-        const transformedResult = {
-          ...result,
-          // The API returns yearly projections, which we can use for charts
-          projectedData: result.yearlyData?.slice(0, 5) || [],
-          // Set any additional properties needed by our UI
-          year: new Date().getFullYear(),
-          equityValuePerShare: result.equityValuePerShare || 0,
-          wacc: result.wacc || 10.5,
-          taxRate: result.taxRate || 21,
-          revenuePercentage: result.revenuePercentage || 5,
-          longTermGrowthRate: result.longTermGrowthRate || 3
-        };
+        // For the projected data, we'll use the first 5 years from the result
+        // This assumes that the API returns an array of yearly data
+        const yearly: YearlyDCFData[] = [];
         
-        setCustomDCFResult(transformedResult);
+        // If we have an array result, we can use it to populate yearly data
+        if (Array.isArray(result) && result.length > 0) {
+          // Use the first 5 items (or fewer if less are available)
+          const yearsToUse = result.slice(0, 5);
+          
+          yearly.push(...yearsToUse.map(year => ({
+            year: year.year,
+            revenue: year.revenue || 0,
+            ebit: year.ebit || 0,
+            ebitda: year.ebitda || 0,
+            freeCashFlow: year.freeCashFlow || 0,
+            operatingCashFlow: year.operatingCashFlow || 0,
+            capitalExpenditure: year.capitalExpenditure || 0
+          })));
+          
+          // Use the first item in the array as our DCF result
+          setCustomDCFResult(result[0]);
+        } else {
+          // If result is not an array, use it directly as our DCF result
+          setCustomDCFResult(result as CustomDCFResult);
+        }
+        
+        setProjectedData(yearly);
       } else {
         setError("Failed to calculate DCF. Please try again.");
       }
@@ -46,6 +61,7 @@ export const useCustomDCF = (symbol: string) => {
   return {
     calculateCustomDCF,
     customDCFResult,
+    projectedData,
     isCalculating,
     error
   };

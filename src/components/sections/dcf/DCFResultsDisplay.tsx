@@ -2,7 +2,7 @@
 import React from "react";
 import { formatCurrency, formatLargeNumber, formatPercentage } from "@/lib/utils";
 import { motion } from "framer-motion";
-import { CustomDCFResult } from "@/types";
+import { CustomDCFResult } from "@/types/aiAnalysisTypes";
 
 interface DCFResultsDisplayProps {
   customDCFResult: CustomDCFResult;
@@ -65,7 +65,7 @@ const DCFResultsDisplay: React.FC<DCFResultsDisplayProps> = ({
           </div>
           <div className="bg-muted/30 p-3 rounded border border-border/50">
             <div className="text-xs text-muted-foreground mb-1">PV of FCF</div>
-            <div className="text-sm font-medium">{formatLargeNumber(customDCFResult.sumPvUfcf)}</div>
+            <div className="text-sm font-medium">{formatLargeNumber(customDCFResult.sumPvLfcf)}</div>
           </div>
           <div className="bg-muted/30 p-3 rounded border border-border/50">
             <div className="text-xs text-muted-foreground mb-1">Terminal FCF</div>

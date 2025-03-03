@@ -15,7 +15,7 @@ interface AutomaticDCFSectionProps {
 }
 
 const AutomaticDCFSection: React.FC<AutomaticDCFSectionProps> = ({ financials, symbol }) => {
-  const { calculateCustomDCF, customDCFResult, isCalculating, error } = useCustomDCF(symbol);
+  const { calculateCustomDCF, customDCFResult, projectedData, isCalculating, error } = useCustomDCF(symbol);
   const [hasAttemptedFetch, setHasAttemptedFetch] = useState(false);
 
   // Get the current price from financials or use a fallback
@@ -35,11 +35,14 @@ const AutomaticDCFSection: React.FC<AutomaticDCFSectionProps> = ({ financials, s
       // Prepare default parameters for the company based on financial data
       // In a real implementation, your AI would determine better parameters
       const params = {
-        revenueGrowthPct: 0.08, // 8% revenue growth
-        ebitdaPct: 0.32, // 32% EBITDA margin
-        depreciationAndAmortizationPct: 0.03, // 3% depreciation & amortization
-        taxRate: 0.21, // 21% tax rate
+        symbol,
+        revenueGrowthPct: 8, // 8% revenue growth
+        ebitdaPct: 32, // 32% EBITDA margin
+        capitalExpenditurePct: 3, // 3% capex relative to revenue
+        taxRate: 21, // 21% tax rate
         longTermGrowthRate: 3, // 3% terminal growth rate
+        costOfEquity: 9.5, // 9.5% cost of equity
+        costOfDebt: 4, // 4% cost of debt
         riskFreeRate: 4, // 4% risk-free rate
         marketRiskPremium: 5, // 5% market risk premium
         beta: financials[0]?.beta || 1.2, // Company's beta or default
@@ -95,15 +98,12 @@ const AutomaticDCFSection: React.FC<AutomaticDCFSectionProps> = ({ financials, s
       terminalMultiple: "DCF Model",
       taxRate: `${customDCFResult.taxRate.toFixed(1)}%`
     },
-    projections: [0, 1, 2, 3, 4].map(index => {
-      const yearData = customDCFResult.projectedData?.[index] || {};
-      return {
-        year: `Year ${index + 1}`,
-        revenue: yearData.revenue || 0,
-        ebit: yearData.ebit || 0,
-        fcf: yearData.freeCashFlow || 0
-      };
-    }),
+    projections: projectedData.map((yearData, index) => ({
+      year: `Year ${index + 1}`,
+      revenue: yearData.revenue || 0,
+      ebit: yearData.ebit || 0,
+      fcf: yearData.freeCashFlow || 0
+    })),
     sensitivity: mockDCFData.sensitivity // We'll keep using mock sensitivity data for now
   };
 
