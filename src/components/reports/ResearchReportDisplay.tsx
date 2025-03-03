@@ -1,45 +1,79 @@
 
-import React, { useState } from "react";
+import React from "react";
 import { ResearchReport } from "@/types";
-import { ReportHeader } from "./ReportHeader";
-import { ReportSectionsList } from "./ReportSectionsList";
-import { DisclaimerSection } from "./DisclaimerSection";
+import ReportHeader from "./ReportHeader";
+import ReportSectionsList from "./ReportSectionsList";
+import SensitivityAnalysis from "./SensitivityAnalysis";
+import GrowthCatalysts from "./GrowthCatalysts";
+import DisclaimerSection from "./DisclaimerSection";
+import { downloadReportAsHTML } from "@/utils/reportDownloadUtils";
+import { Button } from "@/components/ui/button";
+import { Download } from "lucide-react";
 
 interface ResearchReportDisplayProps {
   report: ResearchReport;
 }
 
 const ResearchReportDisplay: React.FC<ResearchReportDisplayProps> = ({ report }) => {
-  const [expandedScenarios, setExpandedScenarios] = useState<string | null>(null);
-  
-  // Toggle expanded scenario
-  const toggleScenario = (scenario: string) => {
-    if (expandedScenarios === scenario) {
-      setExpandedScenarios(null);
-    } else {
-      setExpandedScenarios(scenario);
-    }
+  const handleDownload = () => {
+    downloadReportAsHTML(report);
   };
+  
+  // Check if there are any placeholders in the report content
+  const checkForPlaceholders = () => {
+    const reportString = JSON.stringify(report);
+    return reportString.includes('[') && reportString.includes(']');
+  };
+  
+  const hasPlaceholders = checkForPlaceholders();
 
   return (
-    <div className="space-y-4">
-      {/* Report Header with title, date, recommendation, etc. */}
-      <ReportHeader report={report} />
+    <div className="space-y-6">
+      {hasPlaceholders && (
+        <div className="bg-yellow-50 border border-yellow-200 p-4 rounded-md text-sm text-yellow-800">
+          <p>Note: This report may contain some placeholder text. This will be replaced with actual data in production.</p>
+        </div>
+      )}
       
-      {/* Executive Summary */}
-      <div className="border rounded-lg p-4">
-        <h3 className="text-lg font-medium mb-2">Executive Summary</h3>
-        <p className="text-sm leading-relaxed">{report.summary}</p>
+      <div className="flex justify-between items-center">
+        <h2 className="text-2xl font-bold">Research Report</h2>
+        <Button 
+          variant="outline" 
+          size="sm" 
+          onClick={handleDownload}
+          className="flex items-center gap-1"
+        >
+          <Download className="h-4 w-4" />
+          <span>Download</span>
+        </Button>
       </div>
       
-      {/* Report Sections in collapsible format */}
-      <ReportSectionsList 
-        report={report} 
-        expandedScenarios={expandedScenarios} 
-        toggleScenario={toggleScenario} 
+      <ReportHeader
+        companyName={report.companyName}
+        symbol={report.symbol}
+        date={report.date}
+        recommendation={report.recommendation}
+        targetPrice={report.targetPrice}
+        ratingDetails={report.ratingDetails}
       />
       
-      {/* Disclaimer */}
+      {report.summary && (
+        <div className="bg-muted/40 p-4 rounded-lg border border-border/60">
+          <h3 className="font-semibold mb-2">Executive Summary</h3>
+          <p className="text-sm text-muted-foreground">{report.summary}</p>
+        </div>
+      )}
+      
+      <ReportSectionsList sections={report.sections} />
+      
+      {report.scenarioAnalysis && (
+        <SensitivityAnalysis scenarioAnalysis={report.scenarioAnalysis} />
+      )}
+      
+      {report.catalysts && (
+        <GrowthCatalysts catalysts={report.catalysts} />
+      )}
+      
       <DisclaimerSection />
     </div>
   );
