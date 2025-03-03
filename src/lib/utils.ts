@@ -32,6 +32,7 @@ export function formatLargeNumber(value: number): string {
   return formatCurrency(value);
 }
 
+// Improved function for financial tables to format in billions/millions with thousands separators
 export function formatFinancialTableValue(value: number, scale: 'millions' | 'billions' | 'thousands' = 'millions'): string {
   if (value === 0) return "$0.00";
   
@@ -57,6 +58,7 @@ export function formatFinancialTableValue(value: number, scale: 'millions' | 'bi
   return formatter.format(scaledValue);
 }
 
+// Format ratios and multiples with "x" suffix
 export function formatMultiple(value: number): string {
   return `${value.toFixed(2)}x`;
 }
@@ -127,28 +129,7 @@ export function debounce<F extends (...args: any[]) => any>(
   };
 }
 
-export async function verifyUrlAccessibility(url: string): Promise<boolean> {
-  if (!url || !url.startsWith('http')) {
-    return false;
-  }
-  
-  try {
-    // Use fetch with HEAD method to check if resource exists without downloading it
-    const response = await fetch(url, { 
-      method: 'HEAD',
-      mode: 'no-cors', // This is necessary for cross-origin requests
-      cache: 'no-cache'
-    });
-    
-    // For no-cors mode, we can't access response status
-    // But if no error was thrown, the request was sent successfully
-    return true;
-  } catch (error) {
-    console.error(`Failed to verify URL: ${url}`, error);
-    return false;
-  }
-}
-
+// Formatting date for display
 export function formatDate(dateString: string): string {
   if (!dateString) return '';
   
@@ -162,6 +143,7 @@ export function formatDate(dateString: string): string {
   });
 }
 
+// Generate HTML for reports
 export function generateReportHTML(title: string, content: string): string {
   return `
     <!DOCTYPE html>

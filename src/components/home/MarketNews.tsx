@@ -1,7 +1,7 @@
 
-import React, { useState, useEffect } from "react";
+import React from "react";
 import { motion } from "framer-motion";
-import { Newspaper, ExternalLink, Calendar, ImageOff, Building, AlertCircle } from "lucide-react";
+import { Newspaper, ExternalLink, Calendar, ImageOff, Building } from "lucide-react";
 import { Card, CardContent, CardImage } from "@/components/ui/card";
 import SectionHeader from "./SectionHeader";
 import { MarketNewsArticle } from "@/services/api/marketData/newsService";
@@ -13,7 +13,6 @@ import {
   TooltipTrigger
 } from "@/components/ui/tooltip";
 import { fetchCompanyLogo } from "@/services/api/marketData";
-import { toast } from "sonner";
 
 interface MarketNewsProps {
   newsData: MarketNewsArticle[];
@@ -24,30 +23,6 @@ const MarketNews: React.FC<MarketNewsProps> = ({
   newsData,
   isLoading = false 
 }) => {
-  const [verifiedNews, setVerifiedNews] = useState<MarketNewsArticle[]>([]);
-  
-  useEffect(() => {
-    // Filter out news articles with unverified URLs
-    const verified = newsData.filter(article => article.verified !== false);
-    
-    // If too many URLs are invalid, show a notification
-    if (newsData.length > 0 && verified.length < newsData.length / 2) {
-      toast.warning(
-        "Some news links may be unavailable", 
-        { description: "We're showing only the verified news articles" }
-      );
-    }
-    
-    setVerifiedNews(verified.length > 0 ? verified : newsData);
-    
-    // Preload company logos
-    verified.forEach(article => {
-      if (article.symbol) {
-        fetchCompanyLogo(article.symbol).catch(console.error);
-      }
-    });
-  }, [newsData]);
-  
   if (isLoading) {
     return (
       <div className="relative py-8">
@@ -120,15 +95,14 @@ const MarketNews: React.FC<MarketNewsProps> = ({
     
     return imageUrl;
   }
-  
-  const handleClickExternalLink = (article: MarketNewsArticle, e: React.MouseEvent) => {
-    if (!article.verified) {
-      e.preventDefault();
-      toast.error("This link appears to be unavailable", {
-        description: "The article link couldn't be verified. Try again later."
-      });
-    }
-  };
+
+  React.useEffect(() => {
+    newsData.forEach(article => {
+      if (article.symbol) {
+        fetchCompanyLogo(article.symbol).catch(console.error);
+      }
+    });
+  }, [newsData]);
   
   return (
     <div className="relative py-8 bg-gradient-to-b from-muted/20 to-background">
@@ -146,13 +120,13 @@ const MarketNews: React.FC<MarketNewsProps> = ({
           />
           
           <div className="grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
-            {verifiedNews.map((article, index) => {
+            {newsData.map((article, index) => {
               const imageUrl = getImageUrl(article.image, article.symbol);
               
               return (
                 <Card 
                   key={index} 
-                  className={`bg-card/70 backdrop-blur-sm border border-muted/50 overflow-hidden shadow-md hover-card-highlight transition-all duration-300 hover:shadow-lg group ${!article.verified ? 'opacity-70' : ''}`}
+                  className="bg-card/70 backdrop-blur-sm border border-muted/50 overflow-hidden shadow-md hover-card-highlight transition-all duration-300 hover:shadow-lg group"
                 >
                   <CardContent className="p-0">
                     <CardImage
@@ -203,15 +177,9 @@ const MarketNews: React.FC<MarketNewsProps> = ({
                         href={article.url} 
                         target="_blank" 
                         rel="noopener noreferrer"
-                        className={`flex items-center text-xs font-medium ${article.verified ? 'text-primary hover:text-primary/80' : 'text-muted-foreground cursor-not-allowed'} transition-colors mt-2 pt-2 border-t border-muted`}
-                        onClick={(e) => handleClickExternalLink(article, e)}
+                        className="flex items-center text-xs font-medium text-primary hover:text-primary/80 transition-colors mt-2 pt-2 border-t border-muted"
                       >
-                        Read on {article.site} 
-                        {article.verified ? (
-                          <ExternalLink className="h-3 w-3 ml-1" />
-                        ) : (
-                          <AlertCircle className="h-3 w-3 ml-1 text-amber-500" />
-                        )}
+                        Read on {article.site} <ExternalLink className="h-3 w-3 ml-1" />
                       </a>
                     </div>
                   </CardContent>
