@@ -12,7 +12,7 @@ const Index = () => {
   const [recentSearches, setRecentSearches] = useState<string[]>([]);
   const [featuredSymbols] = useState<{symbol: string, name: string}[]>([
     { symbol: "AAPL", name: "Apple Inc." },
-    { symbol: "MSFT", name: "Microsoft Corp." },
+    { symbol: "MSFT", name: "Microsoft Corporation" },
     { symbol: "AMZN", name: "Amazon.com Inc." },
     { symbol: "GOOG", name: "Alphabet Inc." },
     { symbol: "META", name: "Meta Platforms Inc." },
