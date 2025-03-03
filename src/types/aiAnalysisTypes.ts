@@ -1,4 +1,3 @@
-
 import type { 
   StockQuote,
   IncomeStatement,
@@ -100,16 +99,32 @@ export interface GrowthInsight {
 // Custom DCF Analysis Types
 export interface CustomDCFParams {
   symbol: string;
+  
+  // Growth parameters
   revenueGrowthPct: number;
   ebitdaPct: number;
   capitalExpenditurePct: number;
   taxRate: number;
+  
+  // Working capital parameters
+  depreciationAndAmortizationPct: number;
+  cashAndShortTermInvestmentsPct: number;
+  receivablesPct: number;
+  inventoriesPct: number;
+  payablesPct: number;
+  ebitPct: number;
+  operatingCashFlowPct: number;
+  sellingGeneralAndAdministrativeExpensesPct: number;
+  
+  // Rate parameters
   longTermGrowthRate: number;
   costOfEquity: number;
   costOfDebt: number;
-  beta: number;
   marketRiskPremium: number;
   riskFreeRate: number;
+  
+  // Other
+  beta: number;
 }
 
 // Yearly projection data from DCF model
