@@ -1,6 +1,6 @@
 
 import { invokeSupabaseFunction } from "../base";
-import { GrowthInsight } from "@/types/aiAnalysisTypes";
+import { GrowthInsight } from "@/types/ai-analysis/predictionTypes";
 import { EarningsCall, SECFiling } from "@/types";
 
 /**

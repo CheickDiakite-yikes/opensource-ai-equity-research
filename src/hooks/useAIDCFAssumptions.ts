@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from "react";
 import { fetchAIDCFAssumptions } from "@/services/api/analysisService";
-import { AIDCFSuggestion } from "@/types/aiAnalysisTypes";
+import { AIDCFSuggestion } from "@/types/ai-analysis/dcfTypes";
 import { toast } from "@/components/ui/use-toast";
 
 export const useAIDCFAssumptions = (symbol: string) => {

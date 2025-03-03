@@ -1,6 +1,7 @@
 
 import { invokeSupabaseFunction } from "../base";
-import { ResearchReport, StockPrediction } from "@/types/aiAnalysisTypes";
+import { ResearchReport } from "@/types/ai-analysis/reportTypes";
+import { StockPrediction } from "@/types/ai-analysis/predictionTypes";
 import { NewsArticle, StockQuote } from "@/types";
 
 /**

@@ -1,6 +1,6 @@
 
 import { invokeSupabaseFunction } from "../base";
-import { AIDCFSuggestion, CustomDCFParams, CustomDCFResult } from "@/types/aiAnalysisTypes";
+import { AIDCFSuggestion, CustomDCFParams, CustomDCFResult } from "@/types/ai-analysis/dcfTypes";
 import { toast } from "@/components/ui/use-toast";
 
 /**

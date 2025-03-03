@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { CustomDCFParams, CustomDCFResult, YearlyDCFData } from "@/types/aiAnalysisTypes";
+import { CustomDCFParams, CustomDCFResult, YearlyDCFData } from "@/types/ai-analysis/dcfTypes";
 import { fetchCustomDCF } from "@/services/api/analysisService";
 
 export const useCustomDCF = (symbol: string) => {
