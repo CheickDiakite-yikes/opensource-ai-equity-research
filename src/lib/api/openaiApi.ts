@@ -210,7 +210,33 @@ function parseResearchReport(reportText: string, symbol: string, companyName: st
     recommendation: "",
     targetPrice: "",
     summary: "",
-    sections: []
+    sections: [],
+    // Add the required properties based on the updated ResearchReport type
+    ratingDetails: {
+      ratingScale: "Buy / Hold / Sell",
+      ratingJustification: "Based on fundamental and technical analysis."
+    },
+    scenarioAnalysis: {
+      bullCase: {
+        price: "N/A",
+        probability: "25",
+        drivers: ["Positive market conditions"]
+      },
+      baseCase: {
+        price: "N/A",
+        probability: "50",
+        drivers: ["Expected market conditions"]
+      },
+      bearCase: {
+        price: "N/A",
+        probability: "25",
+        drivers: ["Negative market conditions"]
+      }
+    },
+    catalysts: {
+      positive: ["Company growth potential"],
+      negative: ["Market risks"]
+    }
   };
 
   // Extract recommendation (BUY, HOLD, SELL)
@@ -271,6 +297,11 @@ function parseResearchReport(reportText: string, symbol: string, companyName: st
   
   if (!report.summary && report.sections.length > 0) {
     report.summary = report.sections[0].content;
+  }
+  
+  // Update the base case target price if we have a valid target price
+  if (report.targetPrice && report.targetPrice !== 'See report for details') {
+    report.scenarioAnalysis.baseCase.price = report.targetPrice;
   }
 
   return report;
