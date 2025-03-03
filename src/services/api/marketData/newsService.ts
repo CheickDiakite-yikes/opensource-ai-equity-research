@@ -36,9 +36,17 @@ export const fetchMarketNews = async (limit: number = 6): Promise<MarketNewsArti
       const filteredNews = result
         .filter((item: any) => {
           const source = (item.site || '').toLowerCase();
+          const publisher = (item.publisher || '').toLowerCase();
+          
+          // Check both site and publisher fields for FMP-related terms
           return !source.includes('fmp') && 
                  !source.includes('financialmodellingprep') &&
-                 !source.includes('financial modeling prep');
+                 !source.includes('financial modeling prep') &&
+                 !source.includes('financialmodelingprep') &&
+                 !publisher.includes('fmp') &&
+                 !publisher.includes('financial') &&
+                 !publisher.includes('modeling') &&
+                 !publisher.includes('prep');
         })
         .map((item: any) => ({
           symbol: item.symbol || null,
@@ -54,10 +62,11 @@ export const fetchMarketNews = async (limit: number = 6): Promise<MarketNewsArti
         .slice(0, limit); // Limit to requested number of items
       
       if (filteredNews.length > 0) {
+        console.log("Filtered news items count:", filteredNews.length);
         return filteredNews;
       }
       
-      console.warn("Falling back to mock market news data");
+      console.warn("No suitable news articles found after filtering. Falling back to mock market news data");
       return getFallbackMarketNews();
     }
     
@@ -88,6 +97,7 @@ const ensureValidUrl = (url: string): string => {
  * Fallback mock data for market news
  */
 const getFallbackMarketNews = (): MarketNewsArticle[] => {
+  // Replace all FMP sources in the mock data with more reliable sources
   return [
     {
       symbol: "LNW",
@@ -105,8 +115,8 @@ const getFallbackMarketNews = (): MarketNewsArticle[] => {
       title: "Apple Announces New iPhone Features Coming in Next Update",
       text: "Cupertino, CA - Apple Inc. today announced several new features that will be added to iPhones in the next iOS update, including enhanced privacy controls and improved battery management.",
       image: "https://images.financialmodellingprep.com/news-images/default-news.jpg",
-      url: "https://financialmodellingprep.com/market-news/fmp-apple-announces-features",
-      site: "Financial Modeling Prep",
+      url: "https://www.businesswire.com/news/home/20250301005001/en/Apple-Announces-New-iPhone-Features",
+      site: "businesswire.com",
       publisher: "Business Wire"
     },
     {
@@ -115,9 +125,9 @@ const getFallbackMarketNews = (): MarketNewsArticle[] => {
       title: "Microsoft Cloud Revenue Surges in Latest Quarter",
       text: "Redmond, WA - Microsoft Corporation reported that its cloud services revenue increased by 35% in the most recent fiscal quarter, driven by strong demand for Azure and Microsoft 365.",
       image: "https://images.financialmodellingprep.com/news-images/default-news.jpg",
-      url: "https://financialmodellingprep.com/market-news/fmp-microsoft-cloud-revenue",
-      site: "Financial Modeling Prep",
-      publisher: "Market News"
+      url: "https://www.reuters.com/business/microsoft-cloud-revenue-surges-2025-03-01/",
+      site: "reuters.com",
+      publisher: "Reuters"
     },
     {
       symbol: "GOOGL",
@@ -125,9 +135,9 @@ const getFallbackMarketNews = (): MarketNewsArticle[] => {
       title: "Google Announces New AI-Powered Search Features",
       text: "Mountain View, CA - Google unveiled several new AI-powered features for its search engine, aimed at providing more relevant and contextualized results for complex queries.",
       image: "https://images.financialmodellingprep.com/news-images/default-news.jpg",
-      url: "https://financialmodellingprep.com/market-news/fmp-google-announces-ai-search",
-      site: "Financial Modeling Prep",
-      publisher: "Tech Today"
+      url: "https://www.techcrunch.com/2025/02/28/google-announces-new-ai-search-features/",
+      site: "techcrunch.com",
+      publisher: "TechCrunch"
     },
     {
       symbol: null,
@@ -135,9 +145,9 @@ const getFallbackMarketNews = (): MarketNewsArticle[] => {
       title: "Fed's Powell Signals Continued Caution on Interest Rates",
       text: "Washington, DC - Federal Reserve Chair Jerome Powell indicated that the central bank will maintain a cautious approach to interest rate changes, citing ongoing economic uncertainties.",
       image: "https://images.financialmodellingprep.com/news-images/default-news.jpg",
-      url: "https://financialmodellingprep.com/market-news/fmp-fed-powell-signals-caution",
-      site: "Financial Modeling Prep",
-      publisher: "Reuters"
+      url: "https://www.wsj.com/articles/feds-powell-signals-continued-caution-on-interest-rates-2025-03-01/",
+      site: "wsj.com",
+      publisher: "Wall Street Journal"
     },
     {
       symbol: "TSLA",
@@ -145,9 +155,9 @@ const getFallbackMarketNews = (): MarketNewsArticle[] => {
       title: "Tesla Opens New Gigafactory in Asia",
       text: "Shanghai - Tesla Inc. officially opened its newest Gigafactory in Asia, which is expected to significantly boost the company's production capacity for electric vehicles in the region.",
       image: "https://images.financialmodellingprep.com/news-images/default-news.jpg",
-      url: "https://financialmodellingprep.com/market-news/fmp-tesla-opens-gigafactory",
-      site: "Financial Modeling Prep",
-      publisher: "Auto News"
+      url: "https://www.bloomberg.com/news/articles/2025-03-02/tesla-opens-new-gigafactory-in-asia",
+      site: "bloomberg.com",
+      publisher: "Bloomberg"
     }
   ];
 };
