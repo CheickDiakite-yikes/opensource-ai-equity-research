@@ -57,7 +57,7 @@ async function fetchAndCacheEarningsTranscripts(symbol: string): Promise<any[]> 
   try {
     // Fetch earnings call transcripts from FMP API
     const response = await fetch(
-      `https://financialmodelingprep.com/api/v4/earning_call_transcript/${symbol}?apikey=${FMP_API_KEY}`
+      `https://financialmodelingprep.com/api/v3/earning_call_transcript/${symbol}?apikey=${FMP_API_KEY}`
     );
     
     if (!response.ok) {
@@ -75,12 +75,15 @@ async function fetchAndCacheEarningsTranscripts(symbol: string): Promise<any[]> 
     const processedTranscripts = [];
     
     for (const transcript of transcripts.slice(0, 10)) { // Limit to 10 most recent
+      // Standardize quarter field (some APIs use period instead of quarter)
+      const quarter = transcript.quarter || transcript.period;
+      
       // Check if transcript already exists
       const { data: existingTranscript } = await supabase
         .from('earnings_transcripts')
         .select('id')
         .eq('symbol', symbol)
-        .eq('quarter', transcript.quarter)
+        .eq('quarter', quarter)
         .eq('year', transcript.year)
         .single();
       
@@ -90,12 +93,12 @@ async function fetchAndCacheEarningsTranscripts(symbol: string): Promise<any[]> 
           .from('earnings_transcripts')
           .insert({
             symbol: symbol,
-            quarter: transcript.quarter,
+            quarter: quarter,
             year: transcript.year,
             date: new Date(transcript.date).toISOString(),
-            title: transcript.title || `${symbol} ${transcript.quarter} ${transcript.year} Earnings Call`,
+            title: transcript.title || `${symbol} ${quarter} ${transcript.year} Earnings Call`,
             content: transcript.content,
-            url: transcript.url || `https://financialmodelingprep.com/api/v4/earning_call_transcript/${symbol}/${transcript.quarter}/${transcript.year}`
+            url: transcript.url || `https://financialmodelingprep.com/api/v3/earning_call_transcript/${symbol}/${quarter}/${transcript.year}`
           })
           .select();
         
@@ -110,7 +113,7 @@ async function fetchAndCacheEarningsTranscripts(symbol: string): Promise<any[]> 
               const highlights = await generateHighlightsInBackground(
                 transcript.content, 
                 symbol, 
-                transcript.quarter, 
+                quarter, 
                 transcript.year
               );
               

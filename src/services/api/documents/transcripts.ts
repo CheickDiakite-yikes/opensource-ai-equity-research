@@ -33,7 +33,7 @@ export const fetchEarningsTranscripts = async (symbol: string): Promise<Earnings
         date: transcript.date,
         content: transcript.content || "",
         title: transcript.title,
-        url: transcript.url || `https://financialmodelingprep.com/api/v4/earning_call_transcript/${symbol}/${transcript.quarter}/${transcript.year}`,
+        url: transcript.url || `https://financialmodelingprep.com/api/v3/earning_call_transcript/${symbol}/${transcript.quarter}/${transcript.year}`,
         highlights: Array.isArray(transcript.highlights) 
           ? transcript.highlights.map(item => String(item)) 
           : []
