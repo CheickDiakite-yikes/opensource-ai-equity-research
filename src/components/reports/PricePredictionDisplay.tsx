@@ -1,6 +1,6 @@
 
 import React from "react";
-import { StockPrediction } from "@/types";
+import { StockPrediction } from "@/types/aiAnalysisTypes";
 import { Check, Info, AlertTriangle } from "lucide-react";
 
 interface PricePredictionDisplayProps {
@@ -56,10 +56,10 @@ const PricePredictionDisplay: React.FC<PricePredictionDisplayProps> = ({ predict
             <div className="mt-1 h-2 w-full bg-gray-200 rounded-full overflow-hidden">
               <div 
                 className="h-full bg-primary" 
-                style={{ width: `${prediction.confidenceLevel}%` }}
+                style={{ width: `${prediction.confidence}%` }}
               ></div>
             </div>
-            <span className="text-xs mt-1 block">{prediction.confidenceLevel}%</span>
+            <span className="text-xs mt-1 block">{prediction.confidence}%</span>
           </div>
         </div>
         

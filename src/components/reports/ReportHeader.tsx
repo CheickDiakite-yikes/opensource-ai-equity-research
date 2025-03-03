@@ -3,7 +3,7 @@ import React from "react";
 import { Button } from "@/components/ui/button";
 import { FileDown, Tag } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { ResearchReport, RatingDetails } from "@/types";
+import { ResearchReport } from "@/types/aiAnalysisTypes";
 
 // Update the interface to match the props being passed
 export interface ReportHeaderProps {
@@ -12,7 +12,10 @@ export interface ReportHeaderProps {
   date: string;
   recommendation: string;
   targetPrice: string;
-  ratingDetails?: RatingDetails;
+  ratingDetails?: {
+    ratingScale: string;
+    ratingJustification?: string;
+  };
 }
 
 export const ReportHeader: React.FC<ReportHeaderProps> = ({ 

@@ -12,44 +12,5 @@ export interface RatingDetails {
   ratingJustification?: string;
 }
 
-// Updated ResearchReport interface to match aiAnalysisTypes
-export interface ResearchReport {
-  id?: string;
-  companyName: string;
-  symbol: string;
-  date: string;
-  recommendation: string;
-  targetPrice: string;
-  summary: string;
-  sections: Array<{
-    title: string;
-    content: string;
-  }>;
-  scenarioAnalysis?: {
-    bullCase: {
-      price: string;
-      probability: string;
-      drivers: string[];
-    };
-    baseCase: {
-      price: string;
-      probability: string;
-      drivers: string[];
-    };
-    bearCase: {
-      price: string;
-      probability: string;
-      drivers: string[];
-    };
-  };
-  catalysts?: {
-    positive: string[];
-    negative: string[];
-    timeline?: {
-      shortTerm: string[];
-      mediumTerm: string[];
-      longTerm: string[];
-    };
-  };
-  ratingDetails?: RatingDetails;
-}
+// Use the ResearchReport interface from aiAnalysisTypes.ts
+export type { ResearchReport } from './aiAnalysisTypes';

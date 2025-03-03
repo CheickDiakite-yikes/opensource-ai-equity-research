@@ -1,3 +1,4 @@
+
 import { IncomeStatement, BalanceSheet, CashFlowStatement, KeyRatio } from ".";
 
 export interface CustomDCFParams {
@@ -94,6 +95,8 @@ export interface GrowthInsight {
   sourceDate?: string;
   impactDescription?: string;
   symbol?: string;
+  type: 'positive' | 'negative' | 'neutral';
+  content: string;
 }
 
 export interface ResearchReportRequest {
@@ -129,11 +132,48 @@ export interface ResearchReport {
   sections: ResearchReportSection[];
   disclaimer: string;
   analysts?: string[];
+  date?: string;
+  recommendation?: string;
+  ratingDetails?: {
+    ratingScale: string;
+    ratingJustification?: string;
+  };
+  scenarioAnalysis?: {
+    bullCase: {
+      price: string;
+      probability: string;
+      drivers: string[];
+    };
+    baseCase: {
+      price: string;
+      probability: string;
+      drivers: string[];
+    };
+    bearCase: {
+      price: string;
+      probability: string;
+      drivers: string[];
+    };
+  };
+  catalysts?: {
+    positive: string[];
+    negative: string[];
+    timeline?: {
+      shortTerm: string[];
+      mediumTerm: string[];
+      longTerm: string[];
+    };
+  };
 }
 
 export interface StockPrediction {
   symbol: string;
-  predictedPrice: number;
+  predictedPrice: {
+    oneMonth: number;
+    threeMonths: number;
+    sixMonths: number;
+    oneYear: number;
+  };
   currentPrice: number;
   percentageChange: number;
   timeframe: string;
@@ -146,6 +186,9 @@ export interface StockPrediction {
     signal: 'bullish' | 'bearish' | 'neutral';
   }[];
   sentimentScore: number;
+  sentimentAnalysis: string;
+  keyDrivers: string[];
+  risks: string[];
 }
 
 // Types for Financial Data Analysis
@@ -191,4 +234,23 @@ export interface RatioSummary {
     earningsGrowth: number[];
     dividendGrowth: number[];
   };
+}
+
+// Add ReportRequest interface needed by the API service
+export interface ReportRequest {
+  symbol: string;
+  companyName: string;
+  sector: string;
+  industry: string;
+  description: string;
+  stockData: any;
+  financials: {
+    income: any[];
+    balance: any[];
+    cashflow: any[];
+    ratios: any[];
+  };
+  news: any[];
+  peers: string[];
+  reportType: string;
 }
