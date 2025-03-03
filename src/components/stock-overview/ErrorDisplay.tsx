@@ -1,6 +1,6 @@
 
 import { Card } from "@/components/ui/card";
-import { AlertCircle } from "lucide-react";
+import { AlertCircle, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface ErrorDisplayProps {
@@ -29,15 +29,17 @@ const ErrorDisplay = ({ errorMessage, onRetry }: ErrorDisplayProps) => {
             <p className="font-medium mb-2">Possible solutions:</p>
             <ul className="list-disc list-inside space-y-1">
               <li>Check your internet connection</li>
-              <li>The API keys are set correctly in Supabase, this might be a temporary service issue</li>
-              <li>The third-party API may be unavailable or have rate limits</li>
+              <li>The third-party data provider might be experiencing temporary issues</li>
+              <li>The API might have rate limits or data restrictions for this symbol</li>
+              <li>Try searching for a different stock symbol</li>
             </ul>
           </div>
         )}
         
         {onRetry && (
-          <Button onClick={onRetry} className="mt-2">
-            Try Again
+          <Button onClick={onRetry} className="mt-2 flex items-center gap-2">
+            <RefreshCw className="h-4 w-4" />
+            <span>Try Again</span>
           </Button>
         )}
       </div>

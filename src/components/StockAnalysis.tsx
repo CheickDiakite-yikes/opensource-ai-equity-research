@@ -18,6 +18,7 @@ import GrowthTabContent from "@/components/sections/GrowthTabContent";
 import DCFTabContent from "@/components/sections/DCFTabContent";
 import { prepareFinancialData, prepareRatioData } from "@/utils/financialDataUtils";
 import { useResearchReportData } from "@/components/reports/useResearchReportData";
+import ErrorDisplay from "@/components/reports/ErrorDisplay";
 
 interface StockAnalysisProps {
   symbol: string;
@@ -38,12 +39,10 @@ const StockAnalysis = ({ symbol }: StockAnalysisProps) => {
 
   if (error || !hasFinancialData) {
     return (
-      <Card className="p-6">
-        <div className="text-center py-8">
-          <h3 className="text-lg font-medium text-red-600 mb-2">Error Loading Financial Data</h3>
-          <p className="text-muted-foreground">{error || `No financial data available for ${symbol}`}</p>
-        </div>
-      </Card>
+      <ErrorDisplay 
+        error={error || `No financial data available for ${symbol}`} 
+        onRetry={() => window.location.reload()} 
+      />
     );
   }
 

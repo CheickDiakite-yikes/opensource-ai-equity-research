@@ -7,7 +7,8 @@ import {
   fetchEarningsTranscripts, 
   fetchSECFilings,
   generateTranscriptHighlights,
-  fetchStockRating
+  fetchStockRating,
+  withRetry
 } from "@/services/api";
 import { toast } from "@/components/ui/use-toast";
 
@@ -27,9 +28,10 @@ export const useStockOverviewData = (symbol: string) => {
       setLoading(true);
       setError(null);
       
+      // Use retry mechanism for core data
       const [profileData, quoteData, ratingData] = await Promise.all([
-        fetchStockProfile(symbol),
-        fetchStockQuote(symbol),
+        withRetry(() => fetchStockProfile(symbol), 2),
+        withRetry(() => fetchStockQuote(symbol), 2),
         fetchStockRating(symbol).catch(err => {
           console.warn("Error fetching rating data:", err);
           return null;
@@ -37,15 +39,22 @@ export const useStockOverviewData = (symbol: string) => {
       ]);
       
       if (!profileData || !quoteData) {
-        throw new Error(`Failed to fetch data for ${symbol}`);
+        throw new Error(`Could not fetch core data for ${symbol}. Please check if this symbol exists or try again later.`);
       }
       
       setProfile(profileData);
       setQuote(quoteData);
       setRating(ratingData?.rating || null);
-    } catch (err) {
+    } catch (err: any) {
       console.error("Error loading stock overview data:", err);
-      setError(err.message);
+      setError(err.message || `Failed to load data for ${symbol}`);
+      
+      // Show a helpful toast message
+      toast({
+        title: "Error Loading Data",
+        description: `Could not load data for ${symbol}. ${err.message || "Please try again later."}`,
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
     }
@@ -57,8 +66,14 @@ export const useStockOverviewData = (symbol: string) => {
       setDocumentsLoading(true);
       
       const [earningsData, filingsData] = await Promise.all([
-        fetchEarningsTranscripts(symbol),
-        fetchSECFilings(symbol)
+        fetchEarningsTranscripts(symbol).catch(err => {
+          console.warn("Error loading transcripts:", err);
+          return [];
+        }),
+        fetchSECFilings(symbol).catch(err => {
+          console.warn("Error loading SEC filings:", err);
+          return [];
+        })
       ]);
       
       if (earningsData && earningsData.length > 0) {
@@ -94,22 +109,9 @@ export const useStockOverviewData = (symbol: string) => {
             content: "",
             url: `https://financialmodelingprep.com/api/v4/earning_call_transcript/${symbol}`,
             highlights: [
-              "Revenue increased 23% year over year to $34.15B",
-              "Daily active users increased 5% year over year to 2.09B",
-              "Operating margin was 40%, compared to 20% in the prior year"
-            ]
-          },
-          {
-            symbol,
-            date: "2023-07-26",
-            quarter: "Q2",
-            year: "2023",
-            content: "",
-            url: `https://financialmodelingprep.com/api/v4/earning_call_transcript/${symbol}`,
-            highlights: [
-              "Revenue increased 11% year over year to $32.0B",
-              "Net income was $7.79B",
-              "Announced a $40B increase in share repurchase authorization"
+              "No transcript data available for this symbol",
+              "Check back later for updated information",
+              "You can also view other sections for available data"
             ]
           }
         ]);
@@ -118,54 +120,15 @@ export const useStockOverviewData = (symbol: string) => {
       if (filingsData && filingsData.length > 0) {
         setSecFilings(filingsData);
       } else {
+        // Fallback empty state for filings
         setSecFilings([
           {
             symbol,
-            type: "10-K (Annual Report)",
-            filingDate: "2023-02-02",
-            reportDate: "2022-12-31",
+            type: "No SEC filings data available",
+            filingDate: new Date().toISOString().split('T')[0],
+            reportDate: new Date().toISOString().split('T')[0],
             cik: "0000000000",
-            form: "10-K",
-            url: `https://www.sec.gov/edgar/search/#/entityName=${symbol}`,
-            filingNumber: "000-00000"
-          },
-          {
-            symbol,
-            type: "10-Q (Quarterly Report)",
-            filingDate: "2023-10-26",
-            reportDate: "2023-09-30",
-            cik: "0000000000",
-            form: "10-Q",
-            url: `https://www.sec.gov/edgar/search/#/entityName=${symbol}`,
-            filingNumber: "000-00000"
-          },
-          {
-            symbol,
-            type: "10-Q (Quarterly Report)",
-            filingDate: "2023-07-27",
-            reportDate: "2023-06-30",
-            cik: "0000000000",
-            form: "10-Q",
-            url: `https://www.sec.gov/edgar/search/#/entityName=${symbol}`,
-            filingNumber: "000-00000"
-          },
-          {
-            symbol,
-            type: "10-Q (Quarterly Report)",
-            filingDate: "2023-04-27",
-            reportDate: "2023-03-31",
-            cik: "0000000000",
-            form: "10-Q",
-            url: `https://www.sec.gov/edgar/search/#/entityName=${symbol}`,
-            filingNumber: "000-00000"
-          },
-          {
-            symbol,
-            type: "8-K (Current Report)",
-            filingDate: "2023-10-25",
-            reportDate: "2023-10-25",
-            cik: "0000000000",
-            form: "8-K",
+            form: "N/A",
             url: `https://www.sec.gov/edgar/search/#/entityName=${symbol}`,
             filingNumber: "000-00000"
           }
@@ -173,11 +136,7 @@ export const useStockOverviewData = (symbol: string) => {
       }
     } catch (err) {
       console.error("Error loading document data:", err);
-      toast({
-        title: "Warning",
-        description: "Could not load all document data. Some information may be unavailable.",
-        variant: "destructive",
-      });
+      // Document loading errors don't prevent the main view from loading
     } finally {
       setDocumentsLoading(false);
     }
@@ -196,10 +155,10 @@ export const useStockOverviewData = (symbol: string) => {
   }, [symbol, loadData]);
 
   useEffect(() => {
-    if (symbol) {
+    if (symbol && profile) {
       loadDocuments();
     }
-  }, [symbol, loadDocuments]);
+  }, [symbol, profile, loadDocuments]);
 
   return {
     profile,
