@@ -1,4 +1,3 @@
-
 import { invokeSupabaseFunction } from "./base";
 import { AIDCFSuggestion, CustomDCFParams, CustomDCFResult, GrowthInsight, ResearchReport, StockPrediction } from "@/types/aiAnalysisTypes";
 import { EarningsCall, SECFiling } from "@/types";
@@ -37,7 +36,7 @@ export const fetchCustomDCF = async (symbol: string, params: CustomDCFParams): P
   try {
     console.log(`Fetching custom DCF for ${symbol} with params:`, params);
     
-    const data = await invokeSupabaseFunction<CustomDCFResult[] | { error: string, details?: string }>('get-custom-dcf', { 
+    const data = await invokeSupabaseFunction<any[]>('get-custom-dcf', { 
       symbol, 
       params
     });
@@ -60,56 +59,51 @@ export const fetchCustomDCF = async (symbol: string, params: CustomDCFParams): P
     
     console.log(`Received ${data.length} DCF records for ${symbol}`);
     
-    // Make sure all required fields are present and correctly formatted
-    const validatedData = data.map(item => {
-      // Ensure all required fields are present, defaulting to 0 if missing
-      const result = {
-        year: item.year || new Date().getFullYear().toString(),
-        symbol: item.symbol || symbol,
-        revenue: item.revenue || 0,
-        revenuePercentage: item.revenuePercentage || 0,
-        ebitda: item.ebitda || 0,
-        ebitdaPercentage: item.ebitdaPercentage || 0,
-        ebit: item.ebit || 0,
-        ebitPercentage: item.ebitPercentage || 0,
-        depreciation: item.depreciation || 0,
-        capitalExpenditure: item.capitalExpenditure || 0,
-        capitalExpenditurePercentage: item.capitalExpenditurePercentage || 0,
-        price: item.price || 0,
-        beta: item.beta || 0,
-        dilutedSharesOutstanding: item.dilutedSharesOutstanding || 0,
-        costofDebt: item.costofDebt || 0,
-        taxRate: item.taxRate || 0,
-        afterTaxCostOfDebt: item.afterTaxCostOfDebt || 0,
-        riskFreeRate: item.riskFreeRate || 0,
-        marketRiskPremium: item.marketRiskPremium || 0,
-        costOfEquity: item.costOfEquity || 0,
-        totalDebt: item.totalDebt || 0,
-        totalEquity: item.totalEquity || 0,
-        totalCapital: item.totalCapital || 0,
-        debtWeighting: item.debtWeighting || 0,
-        equityWeighting: item.equityWeighting || 0,
-        wacc: item.wacc || 0,
-        operatingCashFlow: item.operatingCashFlow || 0,
-        pvLfcf: item.pvLfcf || 0,
-        sumPvLfcf: item.sumPvLfcf || 0,
-        longTermGrowthRate: item.longTermGrowthRate || 0,
-        freeCashFlow: item.freeCashFlow || 0,
-        terminalValue: item.terminalValue || 0,
-        presentTerminalValue: item.presentTerminalValue || 0,
-        enterpriseValue: item.enterpriseValue || 0,
-        netDebt: item.netDebt || 0,
-        equityValue: item.equityValue || 0,
-        equityValuePerShare: item.equityValuePerShare || 0,
-        freeCashFlowT1: item.freeCashFlowT1 || 0,
-        operatingCashFlowPercentage: item.operatingCashFlowPercentage || 0
-      } as CustomDCFResult;
-      
-      return result;
-    });
+    // Convert the FMP API response format to our application's expected format
+    const transformedData: CustomDCFResult[] = data.map(item => ({
+      year: String(new Date().getFullYear() + (item.year || 0)),
+      symbol: symbol,
+      revenue: item.revenue || 0,
+      revenuePercentage: item.revenueGrowth || 0,
+      ebitda: item.ebitda || 0,
+      ebitdaPercentage: item.ebitdaMargin || 0,
+      ebit: item.ebit || 0,
+      ebitPercentage: item.ebitMargin || 0,
+      depreciation: item.depreciationAndAmortization || 0,
+      capitalExpenditure: item.capex || 0,
+      capitalExpenditurePercentage: (item.capex / (item.revenue || 1)) * 100 || 0,
+      price: item.stockPrice || 0,
+      beta: item.beta || 0,
+      dilutedSharesOutstanding: item.sharesOutstanding || 0,
+      costofDebt: item.costOfDebt || 0,
+      taxRate: item.taxRate || 0,
+      afterTaxCostOfDebt: item.afterTaxCostOfDebt || 0,
+      riskFreeRate: item.riskFreeRate || 0,
+      marketRiskPremium: item.marketRiskPremium || 0,
+      costOfEquity: item.costOfEquity || 0,
+      totalDebt: item.totalDebt || 0,
+      totalEquity: item.totalEquity || 0,
+      totalCapital: item.totalCapital || 0,
+      debtWeighting: item.debtWeighting || 0,
+      equityWeighting: item.equityWeighting || 0,
+      wacc: item.wacc || 0,
+      operatingCashFlow: item.operatingCashFlow || 0,
+      pvLfcf: item.presentValueOfFCF || 0,
+      sumPvLfcf: item.sumPVFCF || 0,
+      longTermGrowthRate: item.perpetualGrowthRate || 0,
+      freeCashFlow: item.fcf || 0,
+      terminalValue: item.terminalValue || 0,
+      presentTerminalValue: item.presentValueOfTerminalValue || 0,
+      enterpriseValue: item.enterpriseValue || 0,
+      netDebt: item.netDebt || 0,
+      equityValue: item.equityValue || 0,
+      equityValuePerShare: item.dcf || 0,
+      freeCashFlowT1: item.fcfGrowthT1 || 0,
+      operatingCashFlowPercentage: (item.operatingCashFlow / (item.revenue || 1)) * 100 || 0
+    }));
     
     // If the array is empty, we'll return a default mock result
-    if (validatedData.length === 0) {
+    if (transformedData.length === 0) {
       console.warn("DCF API returned empty array, generating mock data");
       
       // Mock data for development/fallback
@@ -158,13 +152,13 @@ export const fetchCustomDCF = async (symbol: string, params: CustomDCFParams): P
       toast({
         title: "Using estimated values",
         description: "The DCF API returned no data. Using estimated values for demonstration.",
-        variant: "default", // Changed from "warning" to "default" to fix TypeScript error
+        variant: "default",
       });
       
       return [mockDCF];
     }
     
-    return validatedData;
+    return transformedData;
   } catch (error) {
     console.error("Error fetching custom DCF:", error);
     
