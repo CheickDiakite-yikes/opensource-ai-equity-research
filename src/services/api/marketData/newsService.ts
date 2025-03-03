@@ -1,4 +1,3 @@
-
 import { invokeSupabaseFunction } from "../base";
 
 /**
@@ -22,7 +21,7 @@ export const fetchMarketNews = async (limit: number = 6): Promise<MarketNewsArti
   try {
     const result = await invokeSupabaseFunction<any>('get-stock-data', { 
       endpoint: 'press-releases-latest',
-      limit
+      limit: limit * 2 // Fetch more items to account for filtered results
     });
     
     if (result && Array.isArray(result)) {
@@ -30,17 +29,32 @@ export const fetchMarketNews = async (limit: number = 6): Promise<MarketNewsArti
         console.log("Sample market news item:", result[0]);
       }
       
-      // Map the response to match our MarketNewsArticle interface
-      return result.map((item: any) => ({
-        symbol: item.symbol || null,
-        publishedDate: item.publishedDate || new Date().toISOString().split('T').join(' ').split('.')[0],
-        title: item.title || "No title available",
-        image: item.image || "",
-        site: item.site || "",
-        text: item.text || "No description available",
-        url: item.url || "#",
-        publisher: item.publisher || item.site
-      }));
+      // Filter out FMP sources and map the response
+      const filteredNews = result
+        .filter((item: any) => {
+          const source = (item.site || '').toLowerCase();
+          return !source.includes('fmp') && 
+                 !source.includes('financialmodellingprep') &&
+                 !source.includes('financial modeling prep');
+        })
+        .map((item: any) => ({
+          symbol: item.symbol || null,
+          publishedDate: item.publishedDate || new Date().toISOString().split('T').join(' ').split('.')[0],
+          title: item.title || "No title available",
+          image: item.image || "",
+          site: item.site || "",
+          text: item.text || "No description available",
+          url: item.url || "#",
+          publisher: item.publisher || item.site
+        }))
+        .slice(0, limit); // Limit to requested number of items
+      
+      if (filteredNews.length > 0) {
+        return filteredNews;
+      }
+      
+      console.warn("Falling back to mock market news data");
+      return getFallbackMarketNews();
     }
     
     console.warn("Falling back to mock market news data");
