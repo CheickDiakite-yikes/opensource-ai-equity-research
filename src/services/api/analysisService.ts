@@ -25,7 +25,7 @@ export const fetchAIDCFAssumptions = async (symbol: string, refreshCache = false
     return data;
   } catch (error) {
     console.error("Error fetching AI DCF assumptions:", error);
-    return null;
+    throw error;
   }
 };
 
@@ -36,9 +36,32 @@ export const fetchCustomDCF = async (symbol: string, params: CustomDCFParams): P
   try {
     console.log(`Fetching custom DCF for ${symbol} with params:`, params);
     
+    // Transform parameters to match exactly what the FMP API expects
+    const transformedParams = {
+      symbol: params.symbol,
+      revenueGrowthPct: params.revenueGrowthPct,
+      ebitdaPct: params.ebitdaPct,
+      capitalExpenditurePct: params.capitalExpenditurePct,
+      taxRate: params.taxRate,
+      depreciationAndAmortizationPct: params.depreciationAndAmortizationPct,
+      cashAndShortTermInvestmentsPct: params.cashAndShortTermInvestmentsPct,
+      receivablesPct: params.receivablesPct,
+      inventoriesPct: params.inventoriesPct,
+      payablesPct: params.payablesPct,
+      ebitPct: params.ebitPct,
+      operatingCashFlowPct: params.operatingCashFlowPct,
+      sellingGeneralAndAdministrativeExpensesPct: params.sellingGeneralAndAdministrativeExpensesPct,
+      longTermGrowthRate: params.longTermGrowthRate,
+      costOfEquity: params.costOfEquity,
+      costOfDebt: params.costOfDebt,
+      marketRiskPremium: params.marketRiskPremium,
+      riskFreeRate: params.riskFreeRate,
+      beta: params.beta
+    };
+    
     const data = await invokeSupabaseFunction<CustomDCFResult[]>('get-custom-dcf', { 
       symbol, 
-      params 
+      params: transformedParams
     });
     
     if (!data) {

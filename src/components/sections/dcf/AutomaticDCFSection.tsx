@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from "react";
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/components/ui/card";
 import { formatCurrency, formatPercentage } from "@/lib/utils";
@@ -6,7 +7,7 @@ import ProjectedCashFlowsTable from "./ProjectedCashFlowsTable";
 import SensitivityAnalysisTable from "./SensitivityAnalysisTable";
 import { useCustomDCF } from "@/hooks/useCustomDCF";
 import { useAIDCFAssumptions } from "@/hooks/useAIDCFAssumptions";
-import { Loader2, RotateCw } from "lucide-react";
+import { Loader2, RotateCw, AlertTriangle } from "lucide-react";
 import { toast } from "@/components/ui/use-toast";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -19,19 +20,35 @@ interface AutomaticDCFSectionProps {
 }
 
 const AutomaticDCFSection: React.FC<AutomaticDCFSectionProps> = ({ financials, symbol }) => {
-  const { calculateCustomDCF, customDCFResult, projectedData, isCalculating, error } = useCustomDCF(symbol);
+  const { calculateCustomDCF, customDCFResult, projectedData, isCalculating, error: dcfError } = useCustomDCF(symbol);
   const { assumptions, isLoading: isLoadingAssumptions, error: assumptionsError, refreshAssumptions } = useAIDCFAssumptions(symbol);
   const [hasAttemptedFetch, setHasAttemptedFetch] = useState(false);
+  const [errors, setErrors] = useState<string[]>([]);
 
   // Get the current price from financials or use a fallback
   const currentPrice = financials[0]?.price || 100;
 
   // When assumptions change or on initial load, fetch DCF data
   useEffect(() => {
-    if (symbol && !hasAttemptedFetch && assumptions && !customDCFResult) {
+    if (symbol && !hasAttemptedFetch && assumptions) {
       calculateDCFWithAIAssumptions();
     }
   }, [symbol, assumptions]);
+
+  // Collect and display errors
+  useEffect(() => {
+    const newErrors = [];
+    
+    if (assumptionsError) {
+      newErrors.push(`AI Assumptions Error: ${assumptionsError}`);
+    }
+    
+    if (dcfError) {
+      newErrors.push(`DCF Calculation Error: ${dcfError}`);
+    }
+    
+    setErrors(newErrors);
+  }, [assumptionsError, dcfError]);
 
   // Convert AI assumptions to CustomDCFParams for the API
   const convertAssumptionsToParams = (): CustomDCFParams => {
@@ -125,9 +142,11 @@ const AutomaticDCFSection: React.FC<AutomaticDCFSectionProps> = ({ financials, s
       await refreshAssumptions();
       
       // If assumptions refreshed successfully, recalculate DCF
-      if (assumptions) {
-        calculateDCFWithAIAssumptions();
-      }
+      setTimeout(() => {
+        if (assumptions) {
+          calculateDCFWithAIAssumptions();
+        }
+      }, 500);
     } catch (err) {
       console.error("Error refreshing assumptions:", err);
       toast({
@@ -139,11 +158,11 @@ const AutomaticDCFSection: React.FC<AutomaticDCFSectionProps> = ({ financials, s
   };
 
   // If we're calculating or have an error, use mock data
-  const useMockData = isCalculating || error || !customDCFResult;
+  const useMockData = isCalculating || (dcfError && !customDCFResult) || !customDCFResult;
 
   // Mock DCF data as fallback
   const mockDCFData = {
-    intrinsicValue: financials[0]?.revenue ? (financials[0].netIncome * 15) : 0,
+    intrinsicValue: financials[0]?.price ? (financials[0].price * 1.2) : 100,
     assumptions: {
       growthRate: "8.5% (first 5 years), 3% (terminal)",
       discountRate: "10.5%",
@@ -152,9 +171,9 @@ const AutomaticDCFSection: React.FC<AutomaticDCFSectionProps> = ({ financials, s
     },
     projections: [1, 2, 3, 4, 5].map(year => ({
       year: `Year ${year}`,
-      revenue: financials[0]?.revenue ? (financials[0].revenue * Math.pow(1.085, year)) : 0,
-      ebit: financials[0]?.operatingIncome ? (financials[0].operatingIncome * Math.pow(1.09, year)) : 0,
-      fcf: financials[0]?.netIncome ? (financials[0].netIncome * 0.8 * Math.pow(1.075, year)) : 0
+      revenue: financials[0]?.revenue ? (financials[0].revenue * Math.pow(1.085, year)) : 10000 * Math.pow(1.085, year),
+      ebit: financials[0]?.operatingIncome ? (financials[0].operatingIncome * Math.pow(1.09, year)) : 2000 * Math.pow(1.09, year),
+      fcf: financials[0]?.netIncome ? (financials[0].netIncome * 0.8 * Math.pow(1.075, year)) : 1500 * Math.pow(1.075, year)
     })),
     sensitivity: {
       headers: ["", "9.5%", "10.0%", "10.5%", "11.0%", "11.5%"],
@@ -173,9 +192,9 @@ const AutomaticDCFSection: React.FC<AutomaticDCFSectionProps> = ({ financials, s
     intrinsicValue: customDCFResult.equityValuePerShare,
     assumptions: {
       growthRate: `${(assumptions?.assumptions.revenueGrowthPct * 100 || 0).toFixed(1)}% (first 5 years), ${(assumptions?.assumptions.longTermGrowthRatePct * 100 || 0).toFixed(1)}% (terminal)`,
-      discountRate: `${customDCFResult.wacc.toFixed(2)}%`,
+      discountRate: `${(customDCFResult.wacc * 100).toFixed(2)}%`,
       terminalMultiple: "DCF Model",
-      taxRate: `${customDCFResult.taxRate.toFixed(1)}%`
+      taxRate: `${(customDCFResult.taxRate * 100).toFixed(1)}%`
     },
     projections: projectedData.map((yearData, index) => ({
       year: `Year ${index + 1}`,
@@ -198,6 +217,21 @@ const AutomaticDCFSection: React.FC<AutomaticDCFSectionProps> = ({ financials, s
             {isLoadingAssumptions ? "Loading AI-powered DCF assumptions..." : "Calculating DCF valuation..."}
           </span>
         </div>
+      )}
+      
+      {errors.length > 0 && (
+        <Alert variant="destructive" className="mb-4">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertTitle>Error Calculating DCF</AlertTitle>
+          <AlertDescription>
+            <ul className="list-disc pl-4 mt-2 space-y-1">
+              {errors.map((error, i) => (
+                <li key={i}>{error}</li>
+              ))}
+            </ul>
+            <p className="mt-2">Using estimated values for the DCF calculation.</p>
+          </AlertDescription>
+        </Alert>
       )}
       
       {assumptions && !isLoadingAssumptions && (
