@@ -1,4 +1,3 @@
-
 import { invokeSupabaseFunction } from "./base";
 import { CustomDCFParams, CustomDCFResult, GrowthInsight, ResearchReport, StockPrediction } from "@/types/aiAnalysisTypes";
 import { EarningsCall, SECFiling } from "@/types";
@@ -28,10 +27,10 @@ export const fetchCustomDCF = async (symbol: string, params: CustomDCFParams): P
     
     console.log(`Received ${data.length} DCF records for ${symbol}`);
     
-    // Make sure all required fields are present
+    // Make sure all required fields are present and correctly formatted
     const validatedData = data.map(item => {
       // Ensure all required fields are present, defaulting to 0 if missing
-      return {
+      const result = {
         year: item.year || new Date().getFullYear().toString(),
         symbol: item.symbol || symbol,
         revenue: item.revenue || 0,
@@ -72,6 +71,8 @@ export const fetchCustomDCF = async (symbol: string, params: CustomDCFParams): P
         freeCashFlowT1: item.freeCashFlowT1 || 0,
         operatingCashFlowPercentage: item.operatingCashFlowPercentage || 0
       } as CustomDCFResult;
+      
+      return result;
     });
     
     return validatedData;

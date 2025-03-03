@@ -52,4 +52,9 @@ export interface ResearchReport {
     };
   };
   ratingDetails?: RatingDetails;
+  reportDate?: string;
+  rating?: string;
+  currentPrice?: string;
+  upside?: string;
+  disclaimer?: string;
 }

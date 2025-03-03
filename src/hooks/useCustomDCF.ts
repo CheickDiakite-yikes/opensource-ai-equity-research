@@ -25,10 +25,11 @@ export const useCustomDCF = (symbol: string) => {
         console.log("Received custom DCF results:", result);
         
         // The API returns an array, but we'll use the first item as our primary result
+        // Usually the first item is the furthest future projection
         const dcfResult = result[0];
         
-        // For the projected data, we'll use the actual API response
-        // Since it already contains the details we need
+        // For the projected data, we'll use all items in the result array
+        // since they represent yearly projections
         const yearly: YearlyDCFData[] = result.map(item => ({
           year: item.year,
           revenue: item.revenue || 0,

@@ -56,16 +56,20 @@ const DCFTabContent: React.FC<DCFTabContentProps> = ({ financials, symbol }) => 
     setCustomParams(prev => ({ ...prev, [name]: value }));
   };
   
+  const handleSelectChange = (name: string, value: string) => {
+    setCustomParams(prev => ({ ...prev, [name]: value }));
+  };
+  
   const handleCalculateCustomDCF = () => {
     calculateCustomDCF({
       symbol,
-      // Growth parameters (as decimals - no conversion needed)
+      // Growth parameters - convert percentages to proper decimal format where needed
       revenueGrowthPct: parseFloat(customParams.revenueGrowth),
       ebitdaPct: parseFloat(customParams.ebitdaMargin),
       capitalExpenditurePct: parseFloat(customParams.capexPercent),
       taxRate: parseFloat(customParams.taxRate),
       
-      // Working capital parameters (as decimals - no conversion needed)
+      // Working capital parameters
       depreciationAndAmortizationPct: parseFloat(customParams.depreciationAndAmortizationPercent),
       cashAndShortTermInvestmentsPct: parseFloat(customParams.cashAndShortTermInvestmentsPercent),
       receivablesPct: parseFloat(customParams.receivablesPercent),
@@ -75,12 +79,12 @@ const DCFTabContent: React.FC<DCFTabContentProps> = ({ financials, symbol }) => 
       operatingCashFlowPct: parseFloat(customParams.operatingCashFlowPercent),
       sellingGeneralAndAdministrativeExpensesPct: parseFloat(customParams.sellingGeneralAndAdministrativeExpensesPercent),
       
-      // Rate parameters - convert from percentage to decimal
-      longTermGrowthRate: parseFloat(customParams.longTermGrowthRate) / 100,
-      costOfEquity: parseFloat(customParams.costOfEquity) / 100,
-      costOfDebt: parseFloat(customParams.costOfDebt) / 100,
-      marketRiskPremium: parseFloat(customParams.marketRiskPremium) / 100,
-      riskFreeRate: parseFloat(customParams.riskFreeRate) / 100,
+      // Rate parameters - these are already in proper format for the API
+      longTermGrowthRate: parseFloat(customParams.longTermGrowthRate) / 100, // Convert from percentage to decimal
+      costOfEquity: parseFloat(customParams.costOfEquity) / 100, // Convert from percentage to decimal
+      costOfDebt: parseFloat(customParams.costOfDebt) / 100, // Convert from percentage to decimal
+      marketRiskPremium: parseFloat(customParams.marketRiskPremium) / 100, // Convert from percentage to decimal
+      riskFreeRate: parseFloat(customParams.riskFreeRate) / 100, // Convert from percentage to decimal
       
       // Other
       beta: parseFloat(customParams.beta),
@@ -108,6 +112,7 @@ const DCFTabContent: React.FC<DCFTabContentProps> = ({ financials, symbol }) => 
             error={error}
             customParams={customParams}
             onInputChange={handleInputChange}
+            onSelectChange={handleSelectChange}
             onCalculate={handleCalculateCustomDCF}
           />
         </TabsContent>
