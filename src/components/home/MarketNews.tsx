@@ -1,3 +1,4 @@
+
 import React from "react";
 import { motion } from "framer-motion";
 import { Newspaper } from "lucide-react";
@@ -5,6 +6,7 @@ import SectionHeader from "./SectionHeader";
 import { MarketNewsArticle } from "@/services/api/marketData/newsService";
 import NewsCard from "./marketNews/NewsCard";
 import { Card, CardContent } from "@/components/ui/card";
+import { formatDate } from "@/lib/utils"; // Import formatDate from utils
 
 interface MarketNewsProps {
   newsData: MarketNewsArticle[];
