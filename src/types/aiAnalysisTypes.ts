@@ -1,4 +1,3 @@
-
 import type { 
   StockQuote,
   IncomeStatement,
@@ -24,6 +23,7 @@ export interface ReportRequest {
   };
   news: NewsArticle[];
   peers: string[];
+  reportType?: string; // Add the report type parameter
 }
 
 export interface ReportSection {
@@ -39,6 +39,36 @@ export interface ResearchReport {
   targetPrice: string;
   summary: string;
   sections: ReportSection[];
+  ratingDetails?: {
+    ratingScale: string;
+    ratingJustification: string;
+  };
+  scenarioAnalysis?: {
+    bullCase: {
+      price: string;
+      probability: string;
+      drivers: string[];
+    };
+    baseCase: {
+      price: string;
+      probability: string;
+      drivers: string[];
+    };
+    bearCase: {
+      price: string;
+      probability: string;
+      drivers: string[];
+    };
+  };
+  catalysts?: {
+    positive: string[];
+    negative: string[];
+    timeline?: {
+      shortTerm: string[];
+      mediumTerm: string[];
+      longTerm: string[];
+    };
+  };
 }
 
 export interface StockPrediction {

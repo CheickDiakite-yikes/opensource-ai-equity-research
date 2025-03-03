@@ -50,7 +50,8 @@ export const useReportGeneration = (symbol: string, data: ReportData) => {
           ratios: data.ratios
         },
         news: data.news,
-        peers: data.peers
+        peers: data.peers,
+        reportType: reportType // Pass the report type to guide AI generation
       };
       
       const generatedReport = await generateResearchReport(reportRequest);

@@ -19,7 +19,7 @@ export const generateResearchReport = async (reportRequest: ReportRequest): Prom
       return null;
     }
     
-    console.log(`Generating research report for ${reportRequest.symbol}`);
+    console.log(`Generating ${reportRequest.reportType || 'comprehensive'} research report for ${reportRequest.symbol}`);
     
     // Use retry logic for AI report generation
     const data = await withRetry(() => 

@@ -1,16 +1,21 @@
 
-import React from "react";
+import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { ResearchReport } from "@/types";
 import { generateReportHTML } from "@/lib/utils";
-import { Download, AlertTriangle, ArrowRight } from "lucide-react";
+import { Download, AlertTriangle, ArrowRight, TrendingUp, TrendingDown, Target, Activity, Lightbulb, Shield, BarChart3 } from "lucide-react";
 import { toast } from "@/components/ui/use-toast";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
 
 interface ResearchReportDisplayProps {
   report: ResearchReport;
 }
 
 const ResearchReportDisplay: React.FC<ResearchReportDisplayProps> = ({ report }) => {
+  const [expandedScenarios, setExpandedScenarios] = useState<string | null>(null);
+  
   const downloadAsHTML = () => {
     if (!report) return;
     
@@ -26,6 +31,53 @@ const ResearchReportDisplay: React.FC<ResearchReportDisplayProps> = ({ report })
       <p>${report.summary}</p>
     </div>`;
     
+    // Add scenarios if they exist
+    if (report.scenarioAnalysis) {
+      content += `<div class="scenario-analysis">
+        <h2>Scenario Analysis</h2>
+        <div class="scenario bull">
+          <h3>Bull Case: ${report.scenarioAnalysis.bullCase.price}</h3>
+          <p>Probability: ${report.scenarioAnalysis.bullCase.probability}</p>
+          <ul>${report.scenarioAnalysis.bullCase.drivers.map(d => `<li>${d}</li>`).join('')}</ul>
+        </div>
+        <div class="scenario base">
+          <h3>Base Case: ${report.scenarioAnalysis.baseCase.price}</h3>
+          <p>Probability: ${report.scenarioAnalysis.baseCase.probability}</p>
+          <ul>${report.scenarioAnalysis.baseCase.drivers.map(d => `<li>${d}</li>`).join('')}</ul>
+        </div>
+        <div class="scenario bear">
+          <h3>Bear Case: ${report.scenarioAnalysis.bearCase.price}</h3>
+          <p>Probability: ${report.scenarioAnalysis.bearCase.probability}</p>
+          <ul>${report.scenarioAnalysis.bearCase.drivers.map(d => `<li>${d}</li>`).join('')}</ul>
+        </div>
+      </div>`;
+    }
+    
+    // Add catalysts if they exist
+    if (report.catalysts) {
+      content += `<div class="catalysts">
+        <h2>Growth Catalysts & Inhibitors</h2>
+        <div class="positive">
+          <h3>Positive Catalysts</h3>
+          <ul>${report.catalysts.positive.map(c => `<li>${c}</li>`).join('')}</ul>
+        </div>
+        <div class="negative">
+          <h3>Negative Catalysts</h3>
+          <ul>${report.catalysts.negative.map(c => `<li>${c}</li>`).join('')}</ul>
+        </div>
+      </div>`;
+    }
+    
+    // Add rating details if they exist
+    if (report.ratingDetails) {
+      content += `<div class="rating-details">
+        <h2>Rating Details</h2>
+        <p><strong>Rating Scale:</strong> ${report.ratingDetails.ratingScale}</p>
+        <p><strong>Justification:</strong> ${report.ratingDetails.ratingJustification}</p>
+      </div>`;
+    }
+    
+    // Add all the standard sections
     report.sections.forEach(section => {
       content += `<div class="section">
         <h2>${section.title}</h2>
@@ -52,6 +104,28 @@ const ResearchReportDisplay: React.FC<ResearchReportDisplayProps> = ({ report })
     });
   };
 
+  // Function to determine badge color based on recommendation
+  const getRecommendationColor = (recommendation: string) => {
+    const rec = recommendation.toLowerCase();
+    if (rec.includes('buy') || rec.includes('strong') || rec.includes('outperform')) {
+      return "bg-green-100 text-green-800";
+    } else if (rec.includes('hold') || rec.includes('neutral')) {
+      return "bg-yellow-100 text-yellow-800";
+    } else if (rec.includes('sell') || rec.includes('underperform')) {
+      return "bg-red-100 text-red-800";
+    }
+    return "bg-blue-100 text-blue-800";
+  };
+
+  // Toggle expanded scenario
+  const toggleScenario = (scenario: string) => {
+    if (expandedScenarios === scenario) {
+      setExpandedScenarios(null);
+    } else {
+      setExpandedScenarios(scenario);
+    }
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-start">
@@ -65,16 +139,241 @@ const ResearchReportDisplay: React.FC<ResearchReportDisplayProps> = ({ report })
         </Button>
       </div>
       
-      <div className="flex space-x-4">
-        <div className="p-3 border rounded-lg">
+      <div className="flex flex-wrap gap-4">
+        <div className="p-3 border rounded-lg flex-1">
           <span className="text-xs text-muted-foreground block mb-1">Recommendation</span>
-          <span className="text-xl font-semibold">{report.recommendation}</span>
+          <Badge 
+            className={`${getRecommendationColor(report.recommendation)} px-2.5 py-1 font-semibold`}
+            variant="outline"
+          >
+            {report.recommendation}
+          </Badge>
         </div>
-        <div className="p-3 border rounded-lg">
+        <div className="p-3 border rounded-lg flex-1">
           <span className="text-xs text-muted-foreground block mb-1">Price Target</span>
           <span className="text-xl font-semibold">{report.targetPrice}</span>
         </div>
+        
+        {/* Rating Details if available */}
+        {report.ratingDetails && (
+          <div className="p-3 border rounded-lg flex-1">
+            <span className="text-xs text-muted-foreground block mb-1">Rating Scale</span>
+            <span className="text-sm font-medium">{report.ratingDetails.ratingScale}</span>
+          </div>
+        )}
       </div>
+      
+      {/* Scenario Analysis Section */}
+      {report.scenarioAnalysis && (
+        <Card className="overflow-hidden">
+          <CardContent className="p-4">
+            <div className="mb-3">
+              <h3 className="text-lg font-medium flex items-center">
+                <Target className="h-5 w-5 mr-2 text-primary" />
+                Sensitivity Analysis
+              </h3>
+              <p className="text-sm text-muted-foreground">
+                Price target scenarios based on different market conditions and outcomes
+              </p>
+            </div>
+            
+            <div className="space-y-3 mt-4">
+              {/* Bull Case */}
+              <div 
+                className="cursor-pointer" 
+                onClick={() => toggleScenario('bull')}
+              >
+                <div className="flex justify-between items-center mb-1">
+                  <div className="flex items-center">
+                    <TrendingUp className="h-4 w-4 text-green-600 mr-2" />
+                    <span className="font-medium">Bull Case</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-green-600 font-semibold">
+                      {report.scenarioAnalysis.bullCase.price}
+                    </span>
+                    <span className="text-xs text-muted-foreground">
+                      ({report.scenarioAnalysis.bullCase.probability} probability)
+                    </span>
+                  </div>
+                </div>
+                <Progress 
+                  value={parseInt(report.scenarioAnalysis.bullCase.probability) || 25} 
+                  className="h-2 bg-gray-100" 
+                  indicatorClassName="bg-green-600" 
+                />
+                
+                {expandedScenarios === 'bull' && (
+                  <div className="mt-2 p-3 bg-green-50 rounded-md">
+                    <p className="text-sm font-medium text-green-800 mb-1">Key Drivers:</p>
+                    <ul className="text-sm list-disc pl-5 text-green-700 space-y-1">
+                      {report.scenarioAnalysis.bullCase.drivers.map((driver, idx) => (
+                        <li key={idx}>{driver}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
+              
+              {/* Base Case */}
+              <div 
+                className="cursor-pointer" 
+                onClick={() => toggleScenario('base')}
+              >
+                <div className="flex justify-between items-center mb-1">
+                  <div className="flex items-center">
+                    <Activity className="h-4 w-4 text-blue-600 mr-2" />
+                    <span className="font-medium">Base Case</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-blue-600 font-semibold">
+                      {report.scenarioAnalysis.baseCase.price}
+                    </span>
+                    <span className="text-xs text-muted-foreground">
+                      ({report.scenarioAnalysis.baseCase.probability} probability)
+                    </span>
+                  </div>
+                </div>
+                <Progress 
+                  value={parseInt(report.scenarioAnalysis.baseCase.probability) || 50} 
+                  className="h-2 bg-gray-100" 
+                  indicatorClassName="bg-blue-600" 
+                />
+                
+                {expandedScenarios === 'base' && (
+                  <div className="mt-2 p-3 bg-blue-50 rounded-md">
+                    <p className="text-sm font-medium text-blue-800 mb-1">Key Drivers:</p>
+                    <ul className="text-sm list-disc pl-5 text-blue-700 space-y-1">
+                      {report.scenarioAnalysis.baseCase.drivers.map((driver, idx) => (
+                        <li key={idx}>{driver}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
+              
+              {/* Bear Case */}
+              <div 
+                className="cursor-pointer" 
+                onClick={() => toggleScenario('bear')}
+              >
+                <div className="flex justify-between items-center mb-1">
+                  <div className="flex items-center">
+                    <TrendingDown className="h-4 w-4 text-red-600 mr-2" />
+                    <span className="font-medium">Bear Case</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-red-600 font-semibold">
+                      {report.scenarioAnalysis.bearCase.price}
+                    </span>
+                    <span className="text-xs text-muted-foreground">
+                      ({report.scenarioAnalysis.bearCase.probability} probability)
+                    </span>
+                  </div>
+                </div>
+                <Progress 
+                  value={parseInt(report.scenarioAnalysis.bearCase.probability) || 25} 
+                  className="h-2 bg-gray-100" 
+                  indicatorClassName="bg-red-600" 
+                />
+                
+                {expandedScenarios === 'bear' && (
+                  <div className="mt-2 p-3 bg-red-50 rounded-md">
+                    <p className="text-sm font-medium text-red-800 mb-1">Key Drivers:</p>
+                    <ul className="text-sm list-disc pl-5 text-red-700 space-y-1">
+                      {report.scenarioAnalysis.bearCase.drivers.map((driver, idx) => (
+                        <li key={idx}>{driver}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+      
+      {/* Growth Catalysts Section */}
+      {report.catalysts && (
+        <Card className="overflow-hidden">
+          <CardContent className="p-4">
+            <div className="mb-3">
+              <h3 className="text-lg font-medium flex items-center">
+                <Lightbulb className="h-5 w-5 mr-2 text-primary" />
+                Growth Catalysts & Inhibitors
+              </h3>
+              <p className="text-sm text-muted-foreground">
+                Factors that could accelerate or hinder company growth
+              </p>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+              {/* Positive Catalysts */}
+              <div className="p-3 bg-green-50 rounded-lg">
+                <h4 className="font-medium text-green-800 mb-2 flex items-center">
+                  <TrendingUp className="h-4 w-4 mr-1.5" />
+                  Positive Catalysts
+                </h4>
+                <ul className="space-y-2">
+                  {report.catalysts.positive.map((catalyst, index) => (
+                    <li key={index} className="text-sm text-green-700 pl-2 border-l-2 border-green-300">
+                      {catalyst}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+              
+              {/* Negative Catalysts */}
+              <div className="p-3 bg-red-50 rounded-lg">
+                <h4 className="font-medium text-red-800 mb-2 flex items-center">
+                  <TrendingDown className="h-4 w-4 mr-1.5" />
+                  Growth Inhibitors
+                </h4>
+                <ul className="space-y-2">
+                  {report.catalysts.negative.map((catalyst, index) => (
+                    <li key={index} className="text-sm text-red-700 pl-2 border-l-2 border-red-300">
+                      {catalyst}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+            
+            {/* Timeline if available */}
+            {report.catalysts.timeline && (
+              <div className="mt-4 border-t pt-3">
+                <h4 className="font-medium mb-2">Catalyst Timeline</h4>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  <div className="p-2 bg-gray-50 rounded">
+                    <span className="text-xs font-medium text-gray-600 block mb-1">Short Term</span>
+                    <ul className="text-sm list-disc pl-5 space-y-1">
+                      {report.catalysts.timeline.shortTerm.map((item, idx) => (
+                        <li key={idx}>{item}</li>
+                      ))}
+                    </ul>
+                  </div>
+                  <div className="p-2 bg-gray-50 rounded">
+                    <span className="text-xs font-medium text-gray-600 block mb-1">Medium Term</span>
+                    <ul className="text-sm list-disc pl-5 space-y-1">
+                      {report.catalysts.timeline.mediumTerm.map((item, idx) => (
+                        <li key={idx}>{item}</li>
+                      ))}
+                    </ul>
+                  </div>
+                  <div className="p-2 bg-gray-50 rounded">
+                    <span className="text-xs font-medium text-gray-600 block mb-1">Long Term</span>
+                    <ul className="text-sm list-disc pl-5 space-y-1">
+                      {report.catalysts.timeline.longTerm.map((item, idx) => (
+                        <li key={idx}>{item}</li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
       
       <div className="border rounded-lg p-4">
         <h3 className="text-lg font-medium mb-2">Executive Summary</h3>
