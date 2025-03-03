@@ -1,4 +1,3 @@
-
 import { invokeSupabaseFunction } from "./base";
 import { HistoricalPriceData, NewsArticle, CompanyPeer } from "@/types";
 
@@ -76,8 +75,6 @@ interface MarketRegion {
  */
 export const fetchMarketIndices = async (): Promise<MarketRegion[]> => {
   try {
-    // We'll use our Supabase function to proxy the request to FMP
-    // In a real implementation, this would be fetching from the actual FMP API
     const result = await invokeSupabaseFunction<any>('get-stock-data', { 
       endpoint: 'market-indices' 
     });
@@ -86,12 +83,10 @@ export const fetchMarketIndices = async (): Promise<MarketRegion[]> => {
       return result as MarketRegion[];
     }
     
-    // If the API call fails, fall back to our mock data
     console.warn("Falling back to mock market indices data");
     return getFallbackMarketIndices();
   } catch (error) {
     console.error("Error fetching market indices:", error);
-    // Return mock data in case of error
     return getFallbackMarketIndices();
   }
 };
@@ -130,6 +125,110 @@ const getFallbackMarketIndices = (): MarketRegion[] => {
         { symbol: "^KS11", name: "KOSPI", price: 2532.78, change: -88.93, changePercent: -3.39 },
         { symbol: "^BSESN", name: "BSE SENSEX", price: 73289.91, change: 95.21, changePercent: 0.13 }
       ]
+    }
+  ];
+};
+
+/**
+ * Market News Article type
+ */
+export interface MarketNewsArticle {
+  title: string;
+  date: string;
+  content: string;
+  tickers?: string;
+  image: string;
+  link: string;
+  author: string;
+  site: string;
+}
+
+/**
+ * Fetch market news from FMP API
+ */
+export const fetchMarketNews = async (limit: number = 6): Promise<MarketNewsArticle[]> => {
+  try {
+    const result = await invokeSupabaseFunction<any>('get-stock-data', { 
+      endpoint: 'market-news',
+      limit
+    });
+    
+    if (result && Array.isArray(result)) {
+      return result as MarketNewsArticle[];
+    }
+    
+    console.warn("Falling back to mock market news data");
+    return getFallbackMarketNews();
+  } catch (error) {
+    console.error("Error fetching market news:", error);
+    return getFallbackMarketNews();
+  }
+};
+
+/**
+ * Fallback mock data for market news
+ */
+const getFallbackMarketNews = (): MarketNewsArticle[] => {
+  return [
+    {
+      title: "Merck Shares Plunge 8% as Weak Guidance Overshadows Strong Revenue Growth",
+      date: "2025-02-04 09:33:00",
+      content: "Merck & Co (NYSE:MRK) saw its stock sink over 8% in pre-market today after delivering mixed fourth-quarter results and disappointing 2025 guidance.",
+      tickers: "NYSE:MRK",
+      image: "https://cdn.financialmodellingprep.com/images/fmp-1738679603793.jpg",
+      link: "https://financialmodellingprep.com/market-news/fmp-merck-shares-plunge-8-as-weak-guidance-overshadows-strong-revenue-growth",
+      author: "Davit Kirakosyan",
+      site: "Financial Modeling Prep"
+    },
+    {
+      title: "Tesla Sales in China Surge 18.3% in January Despite Overall Market Decline",
+      date: "2025-02-04 08:45:00",
+      content: "Tesla (NASDAQ:TSLA) delivered 71,447 vehicles in China during January, representing an 18.3% increase year-over-year despite the broader EV market seeing declining sales.",
+      tickers: "NASDAQ:TSLA",
+      image: "https://cdn.financialmodellingprep.com/images/fmp-1738642859103.jpg",
+      link: "https://financialmodellingprep.com/market-news/fmp-tesla-sales-in-china-surge",
+      author: "Sarah Johnson",
+      site: "Financial Modeling Prep"
+    },
+    {
+      title: "Amazon Beats Q4 Expectations on Strong Cloud Growth, Shares Rise 5%",
+      date: "2025-02-03 16:30:00",
+      content: "Amazon (NASDAQ:AMZN) reported Q4 earnings that exceeded Wall Street expectations, with AWS revenue growing 23% year-over-year to $25.4 billion.",
+      tickers: "NASDAQ:AMZN",
+      image: "https://cdn.financialmodellingprep.com/images/fmp-1738592034567.jpg",
+      link: "https://financialmodellingprep.com/market-news/fmp-amazon-beats-q4-expectations",
+      author: "Michael Chen",
+      site: "Financial Modeling Prep"
+    },
+    {
+      title: "Fed's Powell Signals No Rush to Cut Rates, Markets Retreat",
+      date: "2025-02-03 14:15:00",
+      content: "Federal Reserve Chair Jerome Powell indicated that the central bank is unlikely to begin cutting interest rates until inflation shows more consistent signs of approaching the 2% target.",
+      tickers: "",
+      image: "https://cdn.financialmodellingprep.com/images/fmp-1738583657890.jpg",
+      link: "https://financialmodellingprep.com/market-news/fmp-fed-powell-signals-no-rate-cuts",
+      author: "Emily Rodriguez",
+      site: "Financial Modeling Prep"
+    },
+    {
+      title: "Microsoft Launches New AI-Powered Productivity Suite, Challenging Google",
+      date: "2025-02-02 10:20:00",
+      content: "Microsoft (NASDAQ:MSFT) unveiled its next-generation AI-enhanced productivity tools, directly competing with Google's Workspace and raising the stakes in the enterprise software market.",
+      tickers: "NASDAQ:MSFT,NASDAQ:GOOGL",
+      image: "https://cdn.financialmodellingprep.com/images/fmp-1738497623456.jpg",
+      link: "https://financialmodellingprep.com/market-news/fmp-microsoft-launches-ai-productivity-suite",
+      author: "Thomas Wilson",
+      site: "Financial Modeling Prep"
+    },
+    {
+      title: "Oil Prices Drop 3% as OPEC+ Considers Increasing Production",
+      date: "2025-02-02 09:05:00",
+      content: "Crude oil prices fell more than 3% after reports emerged that OPEC+ members are discussing a potential increase in production quotas starting in April.",
+      tickers: "NYSEARCA:USO,NYSEARCA:BNO",
+      image: "https://cdn.financialmodellingprep.com/images/fmp-1738493087612.jpg",
+      link: "https://financialmodellingprep.com/market-news/fmp-oil-prices-drop-on-opec-news",
+      author: "James Peterson",
+      site: "Financial Modeling Prep"
     }
   ];
 };

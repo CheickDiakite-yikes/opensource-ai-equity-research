@@ -7,7 +7,8 @@ import FeatureCards from "./FeatureCards";
 import RecentSearches from "./RecentSearches";
 import HowToUse from "./HowToUse";
 import MarketPerformance from "./MarketPerformance";
-import { fetchMarketIndices } from "@/services/api/marketDataService";
+import MarketNews from "./MarketNews";
+import { fetchMarketIndices, fetchMarketNews } from "@/services/api/marketDataService";
 import { toast } from "sonner";
 
 interface LandingViewProps {
@@ -33,12 +34,14 @@ const LandingView: React.FC<LandingViewProps> = ({
   onSelectSymbol 
 }) => {
   const [marketData, setMarketData] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [marketNews, setMarketNews] = useState([]);
+  const [isLoadingMarkets, setIsLoadingMarkets] = useState(true);
+  const [isLoadingNews, setIsLoadingNews] = useState(true);
 
   useEffect(() => {
     const getMarketData = async () => {
       try {
-        setIsLoading(true);
+        setIsLoadingMarkets(true);
         const data = await fetchMarketIndices();
         setMarketData(data);
         console.log("Market data loaded:", data);
@@ -46,11 +49,26 @@ const LandingView: React.FC<LandingViewProps> = ({
         console.error("Failed to fetch market data:", error);
         toast.error("Unable to load market data. Please try again later.");
       } finally {
-        setIsLoading(false);
+        setIsLoadingMarkets(false);
+      }
+    };
+
+    const getMarketNews = async () => {
+      try {
+        setIsLoadingNews(true);
+        const news = await fetchMarketNews(6); // Fetch 6 news articles
+        setMarketNews(news);
+        console.log("Market news loaded:", news);
+      } catch (error) {
+        console.error("Failed to fetch market news:", error);
+        toast.error("Unable to load market news. Please try again later.");
+      } finally {
+        setIsLoadingNews(false);
       }
     };
 
     getMarketData();
+    getMarketNews();
   }, []);
 
   return (
@@ -68,7 +86,11 @@ const LandingView: React.FC<LandingViewProps> = ({
       />
       <MarketPerformance 
         marketData={marketData} 
-        isLoading={isLoading} 
+        isLoading={isLoadingMarkets} 
+      />
+      <MarketNews 
+        newsData={marketNews} 
+        isLoading={isLoadingNews} 
       />
       <RecentSearches 
         recentSearches={recentSearches} 
