@@ -1,3 +1,4 @@
+
 import { invokeSupabaseFunction } from "./base";
 import { AIDCFSuggestion, CustomDCFParams, CustomDCFResult, GrowthInsight, ResearchReport, StockPrediction } from "@/types/aiAnalysisTypes";
 import { EarningsCall, SECFiling } from "@/types";
@@ -157,7 +158,7 @@ export const fetchCustomDCF = async (symbol: string, params: CustomDCFParams): P
       toast({
         title: "Using estimated values",
         description: "The DCF API returned no data. Using estimated values for demonstration.",
-        variant: "warning",
+        variant: "default", // Changed from "warning" to "default" to fix TypeScript error
       });
       
       return [mockDCF];

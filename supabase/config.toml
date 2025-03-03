@@ -60,9 +60,6 @@ port = 54327
 vector_port = 54328
 backend = "postgres"
 
-[experimental]
-functions_path = "supabase/functions"
-
 [functions.generate-dcf-assumptions]
 verify_jwt = false
 
