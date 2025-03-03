@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Star, TrendingUp, TrendingDown, ExternalLink, DollarSign } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
@@ -36,26 +35,22 @@ interface CompanyCardProps {
 }
 
 const CompanyCard = ({ company, onSelect }: CompanyCardProps) => {
-  // Fetch stock data for this symbol
   const { data: quote } = useQuery({
     queryKey: ['stockQuote', company.symbol],
     queryFn: () => fetchStockQuote(company.symbol),
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 
-  // Fetch rating data for this symbol
   const { data: ratingData } = useQuery({
     queryKey: ['stockRating', company.symbol],
     queryFn: () => fetchStockRating(company.symbol),
     staleTime: 15 * 60 * 1000, // 15 minutes
   });
 
-  // Generate a pseudo-predicted price (for demo purposes)
   const predictedPrice = quote?.price 
     ? (quote.price * (1 + (Math.sin(company.symbol.charCodeAt(0)) * 0.25))).toFixed(2)
     : null;
 
-  // Random trend indicators for demo purposes
   const getTrendIndicator = (symbol: string) => {
     if (!quote) return null;
     
@@ -159,7 +154,7 @@ const FeaturedCompanies: React.FC<FeaturedCompaniesProps> = ({
 }) => {
   return (
     <div className="relative py-12">
-      <div className="container mx-auto max-w-7xl">
+      <div className="container mx-auto px-4 sm:px-6 md:px-0 max-w-[1400px]">
         <motion.div 
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -192,7 +187,7 @@ const FeaturedCompanies: React.FC<FeaturedCompaniesProps> = ({
             Explore trending stocks and access in-depth financial analysis with just one click.
           </p>
           
-          <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 w-full">
             {featuredSymbols.map((company) => (
               <CompanyCard 
                 key={company.symbol}
