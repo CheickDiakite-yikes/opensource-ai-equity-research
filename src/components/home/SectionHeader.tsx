@@ -6,14 +6,15 @@ import { motion } from "framer-motion";
 interface SectionHeaderProps {
   title: string;
   description: string;
+  icon?: React.ReactNode; // Add the icon prop as optional
 }
 
-const SectionHeader: React.FC<SectionHeaderProps> = ({ title, description }) => {
+const SectionHeader: React.FC<SectionHeaderProps> = ({ title, description, icon }) => {
   return (
     <>
       <div className="flex items-center gap-3 mb-6">
         <div className="relative">
-          <Star className="h-7 w-7 text-blue-500" />
+          {icon ? icon : <Star className="h-7 w-7 text-blue-500" />}
           <motion.div
             className="absolute inset-0 bg-blue-500/30 rounded-full blur-md"
             animate={{ 
