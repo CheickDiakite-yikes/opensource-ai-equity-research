@@ -9,34 +9,11 @@ import {
   TooltipTrigger
 } from "@/components/ui/tooltip";
 import { MarketNewsArticle } from "@/services/api/marketData/newsService";
-import { format, parseISO } from "date-fns";
+import { formatDate } from "@/lib/utils"; // Import from utils instead of defining locally
 
 interface NewsCardProps {
   article: MarketNewsArticle;
 }
-
-// Helper function to format dates
-const formatDate = (dateString: string) => {
-  try {
-    let date;
-    
-    if (dateString.includes(' ')) {
-      date = new Date(dateString.replace(' ', 'T'));
-    } else {
-      date = parseISO(dateString);
-    }
-    
-    if (isNaN(date.getTime())) {
-      console.error("Invalid date:", dateString);
-      return dateString.split(' ')[0];
-    }
-    
-    return format(date, 'MMM d, yyyy');
-  } catch (error) {
-    console.error("Error parsing date:", dateString, error);
-    return dateString.split(' ')[0];
-  }
-};
 
 const NewsCard: React.FC<NewsCardProps> = ({ article }) => {
   return (
