@@ -39,9 +39,15 @@ const AutomaticDCFSection: React.FC<AutomaticDCFSectionProps> = ({ financials, s
     }
   };
 
+  // Make sure we have a valid current price and DCF value
   const currentPrice = financials[0]?.price || 100;
-  const dcfValue = mockDCFData.intrinsicValue;
-  const upside = ((dcfValue / currentPrice) - 1) * 100;
+  const dcfValue = Math.max(0, mockDCFData.intrinsicValue); // Ensure non-negative value
+  
+  // Calculate upside percentage - this is (intrinsic value / current price - 1) * 100
+  let upside = 0;
+  if (currentPrice > 0 && dcfValue > 0) {
+    upside = ((dcfValue / currentPrice) - 1) * 100;
+  }
 
   return (
     <div className="space-y-6">

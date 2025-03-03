@@ -1,7 +1,8 @@
 
 import React from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { formatCurrency } from "@/lib/utils";
+import { formatCurrency } from "@/utils/financialDataUtils";
+import { ArrowUp, ArrowDown } from "lucide-react";
 
 interface DCFValuationSummaryProps {
   dcfValue: number;
@@ -19,6 +20,10 @@ const DCFValuationSummary: React.FC<DCFValuationSummaryProps> = ({
   upside, 
   assumptions 
 }) => {
+  // Format upside percentage with 2 decimal places and ensure it's positive for display
+  const formattedUpside = Math.abs(upside).toFixed(2);
+  const isPositive = upside >= 0;
+  
   return (
     <Card>
       <CardHeader>
@@ -31,9 +36,18 @@ const DCFValuationSummary: React.FC<DCFValuationSummaryProps> = ({
               <div className="text-sm text-muted-foreground mb-1">Intrinsic Value</div>
               <div className="text-2xl font-bold">{formatCurrency(dcfValue)}</div>
             </div>
-            <div className={`p-4 rounded-lg ${upside >= 0 ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}>
-              <div className="text-sm opacity-80 mb-1">Potential Upside</div>
-              <div className="text-2xl font-bold">{upside.toFixed(1)}%</div>
+            <div className={`p-4 rounded-lg ${isPositive ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}>
+              <div className="text-sm opacity-80 mb-1">
+                {isPositive ? 'Potential Upside' : 'Potential Downside'}
+              </div>
+              <div className="text-2xl font-bold flex items-center">
+                {isPositive ? (
+                  <ArrowUp className="h-5 w-5 mr-1 text-green-700" />
+                ) : (
+                  <ArrowDown className="h-5 w-5 mr-1 text-red-700" />
+                )}
+                <span>{formattedUpside}%</span>
+              </div>
             </div>
           </div>
           
