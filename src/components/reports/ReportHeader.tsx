@@ -1,7 +1,7 @@
 
 import React from "react";
 import { Button } from "@/components/ui/button";
-import { Download } from "lucide-react";
+import { FileDown, Tag } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { ResearchReport } from "@/types";
 import { downloadReportAsHTML } from "@/utils/reportDownloadUtils";
@@ -36,7 +36,7 @@ export const ReportHeader: React.FC<ReportHeaderProps> = ({ report }) => {
           <p className="text-sm text-muted-foreground">Report Date: {report.date}</p>
         </div>
         <Button variant="outline" size="sm" onClick={handleDownload}>
-          <Download className="h-4 w-4 mr-1.5" />
+          <FileDown className="h-4 w-4 mr-1.5" />
           Download Report
         </Button>
       </div>
