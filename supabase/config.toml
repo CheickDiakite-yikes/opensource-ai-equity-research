@@ -87,3 +87,5 @@ verify_jwt = false
 [functions.generate-transcript-highlights]
 verify_jwt = false
 
+[functions.fetch-earnings-transcripts]
+verify_jwt = false

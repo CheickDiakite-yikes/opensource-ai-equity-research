@@ -43,21 +43,57 @@ export const fetchEarningsTranscripts = async (symbol: string): Promise<Earnings
     // Otherwise, get from API with retry logic
     console.log(`Fetching transcripts from API for ${symbol}`);
     const data = await withRetry(() => 
-      invokeSupabaseFunction<EarningsCall[]>('get-stock-data', { 
-        symbol, 
-        endpoint: 'earning-transcripts' 
+      invokeSupabaseFunction<EarningsCall[]>('fetch-earnings-transcripts', { 
+        symbol,
+        limit: 5
       })
     );
+    
+    // Format the response to match our EarningsCall type
+    const formattedData = data.map(transcript => ({
+      symbol: transcript.symbol,
+      quarter: transcript.quarter || transcript.period,
+      year: transcript.year,
+      date: transcript.date,
+      content: transcript.content || "",
+      title: `${symbol} ${transcript.quarter || transcript.period} ${transcript.year} Earnings Call`,
+      url: `https://financialmodelingprep.com/api/v3/earning_call_transcript/${symbol}/${transcript.quarter || transcript.period}/${transcript.year}`,
+      highlights: []
+    }));
     
     // Trigger background caching process
     triggerDocumentCaching(symbol, 'transcripts');
     
-    if (!data || !Array.isArray(data)) {
-      console.warn(`No transcript data returned for ${symbol}`);
-      return [];
+    // For the first two transcripts, generate highlights immediately
+    if (formattedData.length > 0) {
+      const transcriptsWithHighlights = await Promise.all(
+        formattedData.slice(0, 2).map(async (call) => {
+          if (call.content && call.content.length > 100) {
+            try {
+              const highlights = await generateTranscriptHighlights(call.content, {
+                symbol: call.symbol,
+                quarter: call.quarter,
+                year: call.year,
+                date: call.date
+              });
+              return { ...call, highlights };
+            } catch (e) {
+              console.error("Error generating highlights:", e);
+              return call;
+            }
+          }
+          return call;
+        })
+      );
+      
+      // Return the first 2 transcripts with highlights, plus any additional ones without highlights
+      return [
+        ...transcriptsWithHighlights,
+        ...formattedData.slice(2)
+      ];
     }
     
-    return data;
+    return formattedData;
   } catch (error) {
     console.error("Error fetching earnings transcripts:", error);
     return [];
@@ -126,20 +162,20 @@ export const downloadEarningsTranscript = async (symbol: string, quarter: string
       return data.content;
     }
     
-    // If not in database, try to fetch from API directly
+    // If not in database, fetch directly from our edge function
     console.log(`Transcript not in database, fetching from API for ${symbol} ${quarter} ${year}`);
     
-    // Try to fetch it directly from the API
     const response = await withRetry(() => 
-      invokeSupabaseFunction<{content: string}>('get-stock-data', { 
+      invokeSupabaseFunction<any[]>('fetch-earnings-transcripts', { 
         symbol, 
-        endpoint: 'transcript-content',
         quarter,
         year
       })
     );
     
-    if (response && response.content) {
+    if (response && response.length > 0 && response[0].content) {
+      const content = response[0].content;
+      
       // Store it in the database for future use
       try {
         await supabase
@@ -148,14 +184,14 @@ export const downloadEarningsTranscript = async (symbol: string, quarter: string
             symbol,
             quarter,
             year,
-            date: new Date().toISOString().split('T')[0],
-            content: response.content
+            date: response[0].date,
+            content
           });
       } catch (err) {
         console.error("Error caching transcript:", err);
       }
         
-      return response.content;
+      return content;
     }
     
     return null;

@@ -1,267 +1,216 @@
 
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.0";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.10.0";
 import { corsHeaders } from "../_shared/cors.ts";
 
-const FMP_API_KEY = Deno.env.get("FMP_API_KEY") || "";
-const SUPABASE_URL = Deno.env.get("SUPABASE_URL") || "";
-const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
+// Initialize Supabase client
+const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
+const supabaseServiceRole = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
+const supabase = createClient(supabaseUrl, supabaseServiceRole);
 
-const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+// Environment variables
+const FMP_API_KEY = Deno.env.get("FMP_API_KEY") || "";
 
 serve(async (req) => {
-  // Handle CORS preflight requests
+  // Handle CORS
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
-  
+
   try {
-    const { symbol, documentType } = await req.json();
-
+    const { symbol, docType } = await req.json();
+    
     if (!symbol) {
-      return new Response(JSON.stringify({ error: "Symbol is required" }), { 
-        status: 400, 
-        headers: { "Content-Type": "application/json", ...corsHeaders } 
-      });
-    }
-
-    let result = {};
-    
-    // Cache both document types by default if none specified
-    if (!documentType || documentType === "transcripts") {
-      const transcripts = await fetchAndCacheEarningsTranscripts(symbol);
-      result.transcripts = { cached: transcripts.length };
+      return new Response(
+        JSON.stringify({ error: "Symbol is required" }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 400 }
+      );
     }
     
-    if (!documentType || documentType === "filings") {
-      const filings = await fetchAndCacheSECFilings(symbol);
-      result.filings = { cached: filings.length };
+    if (!docType || !["transcripts", "filings", "all"].includes(docType)) {
+      return new Response(
+        JSON.stringify({ error: "Valid docType is required (transcripts, filings, or all)" }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 400 }
+      );
     }
     
-    return new Response(JSON.stringify(result), { 
-      headers: { "Content-Type": "application/json", ...corsHeaders } 
-    });
+    console.log(`Processing document caching for ${symbol}, type: ${docType}`);
+    
+    // Flag to track if we've made any updates
+    let updatedData = false;
+    
+    // Handle transcripts caching
+    if (docType === "transcripts" || docType === "all") {
+      updatedData = await cacheTranscripts(symbol) || updatedData;
+    }
+    
+    // Handle SEC filings caching
+    if (docType === "filings" || docType === "all") {
+      updatedData = await cacheFilings(symbol) || updatedData;
+    }
+    
+    return new Response(
+      JSON.stringify({ 
+        success: true, 
+        message: updatedData ? `${docType} data for ${symbol} cached successfully` : `No new ${docType} data found for ${symbol}` 
+      }),
+      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+    
   } catch (error) {
-    console.error("Error caching company documents:", error);
-    return new Response(JSON.stringify({ error: error.message }), { 
-      status: 500, 
-      headers: { "Content-Type": "application/json", ...corsHeaders } 
-    });
+    console.error("Error caching documents:", error);
+    
+    return new Response(
+      JSON.stringify({ error: `Failed to cache documents: ${error.message}` }),
+      { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 500 }
+    );
   }
 });
 
 /**
- * Fetch and cache earnings call transcripts for a company
+ * Cache earnings call transcripts for a symbol
  */
-async function fetchAndCacheEarningsTranscripts(symbol: string): Promise<any[]> {
+async function cacheTranscripts(symbol: string): Promise<boolean> {
   try {
-    // Fetch earnings call transcripts from FMP API
-    const response = await fetch(
-      `https://financialmodelingprep.com/api/v3/earning_call_transcript/${symbol}?apikey=${FMP_API_KEY}`
-    );
+    // Use our new dedicated edge function
+    const url = `${Deno.env.get("SUPABASE_URL")}/functions/v1/fetch-earnings-transcripts`;
+    const response = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${Deno.env.get("SUPABASE_ANON_KEY")}`
+      },
+      body: JSON.stringify({ symbol, limit: 10 })
+    });
     
     if (!response.ok) {
-      throw new Error(`FMP API error: ${response.status} ${response.statusText}`);
+      console.error(`Error fetching transcripts: ${response.status} ${response.statusText}`);
+      return false;
     }
     
     const transcripts = await response.json();
     
     if (!Array.isArray(transcripts) || transcripts.length === 0) {
       console.log(`No transcripts found for ${symbol}`);
-      return [];
+      return false;
     }
     
-    // Process and store each transcript
-    const processedTranscripts = [];
+    console.log(`Found ${transcripts.length} transcripts for ${symbol}`);
     
-    for (const transcript of transcripts.slice(0, 10)) { // Limit to 10 most recent
-      // Standardize quarter field (some APIs use period instead of quarter)
-      const quarter = transcript.quarter || transcript.period;
-      
-      // Check if transcript already exists
-      const { data: existingTranscript } = await supabase
-        .from('earnings_transcripts')
-        .select('id')
-        .eq('symbol', symbol)
-        .eq('quarter', quarter)
-        .eq('year', transcript.year)
-        .single();
-      
-      if (!existingTranscript) {
-        // Insert new transcript
-        const { data, error } = await supabase
-          .from('earnings_transcripts')
-          .insert({
-            symbol: symbol,
-            quarter: quarter,
-            year: transcript.year,
-            date: new Date(transcript.date).toISOString(),
-            title: transcript.title || `${symbol} ${quarter} ${transcript.year} Earnings Call`,
-            content: transcript.content,
-            url: transcript.url || `https://financialmodelingprep.com/api/v3/earning_call_transcript/${symbol}/${quarter}/${transcript.year}`
-          })
-          .select();
-        
-        if (error) {
-          console.error(`Error storing transcript for ${symbol}:`, error);
-        } else {
-          processedTranscripts.push(data[0]);
-          
-          // Generate highlights asynchronously if content is available
-          if (transcript.content) {
-            try {
-              const highlights = await generateHighlightsInBackground(
-                transcript.content, 
-                symbol, 
-                quarter, 
-                transcript.year
-              );
-              
-              // Update the transcript with highlights
-              await supabase
-                .from('earnings_transcripts')
-                .update({ highlights })
-                .eq('id', data[0].id);
-            } catch (highlightError) {
-              console.error(`Error generating highlights for ${symbol}:`, highlightError);
-            }
-          }
-        }
-      } else {
-        // Transcript already exists, no need to insert
-        processedTranscripts.push(existingTranscript);
-      }
-    }
+    // Get existing transcripts to avoid duplicates
+    const { data: existingTranscripts } = await supabase
+      .from('earnings_transcripts')
+      .select('quarter, year')
+      .eq('symbol', symbol);
     
-    return processedTranscripts;
-  } catch (error) {
-    console.error(`Error fetching transcripts for ${symbol}:`, error);
-    return [];
-  }
-}
-
-/**
- * Generate highlights from transcript text in a background task
- */
-async function generateHighlightsInBackground(
-  content: string, 
-  symbol: string, 
-  quarter: string, 
-  year: string
-): Promise<string[]> {
-  try {
-    // Call our own function to generate highlights
-    const response = await fetch(`${SUPABASE_URL}/functions/v1/generate-transcript-highlights`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`
-      },
-      body: JSON.stringify({
-        transcriptText: content,
-        symbol,
-        quarter,
-        year
-      })
-    });
-    
-    if (!response.ok) {
-      throw new Error(`Highlight generation failed: ${response.status} ${response.statusText}`);
-    }
-    
-    const data = await response.json();
-    return data.highlights || [];
-  } catch (error) {
-    console.error(`Error generating highlights in background:`, error);
-    return [];
-  }
-}
-
-/**
- * Fetch and cache SEC filings for a company
- */
-async function fetchAndCacheSECFilings(symbol: string): Promise<any[]> {
-  try {
-    // Fetch SEC filings from FMP API
-    const response = await fetch(
-      `https://financialmodelingprep.com/api/v3/sec_filings/${symbol}?apikey=${FMP_API_KEY}`
+    const existingKeys = new Set(
+      (existingTranscripts || []).map(t => `${t.quarter}-${t.year}`)
     );
     
+    // Prepare transcripts for database insertion
+    const transcriptsToInsert = transcripts
+      .filter(t => !existingKeys.has(`${t.quarter || t.period}-${t.year}`))
+      .map(t => ({
+        symbol: t.symbol,
+        quarter: t.quarter || t.period,
+        year: t.year,
+        date: t.date,
+        content: t.content || "",
+        title: `${t.symbol} ${t.quarter || t.period} ${t.year} Earnings Call`,
+        url: `https://financialmodelingprep.com/api/v3/earning_call_transcript/${t.symbol}/${t.quarter || t.period}/${t.year}`
+      }));
+    
+    if (transcriptsToInsert.length === 0) {
+      console.log(`No new transcripts to cache for ${symbol}`);
+      return false;
+    }
+    
+    // Insert new transcripts
+    const { error } = await supabase
+      .from('earnings_transcripts')
+      .upsert(transcriptsToInsert);
+    
+    if (error) {
+      console.error(`Error caching transcripts: ${error.message}`);
+      return false;
+    }
+    
+    console.log(`Cached ${transcriptsToInsert.length} transcripts for ${symbol}`);
+    return true;
+    
+  } catch (error) {
+    console.error(`Error in cacheTranscripts for ${symbol}:`, error);
+    return false;
+  }
+}
+
+/**
+ * Cache SEC filings for a symbol
+ */
+async function cacheFilings(symbol: string): Promise<boolean> {
+  try {
+    // Fetch SEC filings from FMP API
+    const apiUrl = `https://financialmodelingprep.com/api/v3/sec_filings/${symbol}?apikey=${FMP_API_KEY}`;
+    const response = await fetch(apiUrl);
+    
     if (!response.ok) {
-      throw new Error(`FMP API error: ${response.status} ${response.statusText}`);
+      console.error(`Error fetching SEC filings: ${response.status} ${response.statusText}`);
+      return false;
     }
     
     const filings = await response.json();
     
     if (!Array.isArray(filings) || filings.length === 0) {
       console.log(`No SEC filings found for ${symbol}`);
-      return [];
+      return false;
     }
     
-    // Process and store each filing
-    const processedFilings = [];
+    console.log(`Found ${filings.length} SEC filings for ${symbol}`);
     
-    for (const filing of filings.slice(0, 20)) { // Limit to 20 most recent
-      // Check if filing already exists
-      const { data: existingFiling } = await supabase
-        .from('sec_filings')
-        .select('id')
-        .eq('symbol', symbol)
-        .eq('form', filing.form)
-        .eq('filing_date', new Date(filing.fillingDate).toISOString().split('T')[0])
-        .single();
-      
-      if (!existingFiling) {
-        // Format the filing type to be more user-friendly
-        const type = formatFilingType(filing.form);
-        
-        // Insert new filing
-        const { data, error } = await supabase
-          .from('sec_filings')
-          .insert({
-            symbol: symbol,
-            type: type,
-            form: filing.form,
-            filing_date: new Date(filing.fillingDate).toISOString(),
-            report_date: filing.acceptedDate ? new Date(filing.acceptedDate).toISOString() : null,
-            cik: filing.cik || "",
-            url: filing.finalLink || "",
-            filing_number: filing.filingNumber || ""
-          })
-          .select();
-        
-        if (error) {
-          console.error(`Error storing SEC filing for ${symbol}:`, error);
-        } else {
-          processedFilings.push(data[0]);
-        }
-      } else {
-        // Filing already exists, no need to insert
-        processedFilings.push(existingFiling);
-      }
+    // Get existing filings to avoid duplicates
+    const { data: existingFilings } = await supabase
+      .from('sec_filings')
+      .select('filingNumber')
+      .eq('symbol', symbol);
+    
+    const existingFilingNumbers = new Set(
+      (existingFilings || []).map(f => f.filingNumber)
+    );
+    
+    // Prepare filings for database insertion
+    const filingsToInsert = filings
+      .filter(f => !existingFilingNumbers.has(f.filingNumber))
+      .map(f => ({
+        symbol: f.symbol,
+        type: `${f.form} (${f.form === "10-K" ? "Annual Report" : f.form === "10-Q" ? "Quarterly Report" : "Filing"})`,
+        filingDate: f.fillingDate || f.filingDate,
+        reportDate: f.acceptanceDate || f.acceptedDate || f.fillingDate || f.filingDate,
+        cik: f.cik,
+        form: f.form,
+        url: f.finalLink || `https://www.sec.gov/Archives/edgar/data/${f.cik}/${f.filingNumber.replace(/-/g, "")}.txt`,
+        filingNumber: f.filingNumber
+      }));
+    
+    if (filingsToInsert.length === 0) {
+      console.log(`No new SEC filings to cache for ${symbol}`);
+      return false;
     }
     
-    return processedFilings;
+    // Insert new filings
+    const { error } = await supabase
+      .from('sec_filings')
+      .upsert(filingsToInsert);
+    
+    if (error) {
+      console.error(`Error caching SEC filings: ${error.message}`);
+      return false;
+    }
+    
+    console.log(`Cached ${filingsToInsert.length} SEC filings for ${symbol}`);
+    return true;
+    
   } catch (error) {
-    console.error(`Error fetching SEC filings for ${symbol}:`, error);
-    return [];
+    console.error(`Error in cacheFilings for ${symbol}:`, error);
+    return false;
   }
-}
-
-/**
- * Format SEC filing type to be more user-friendly
- */
-function formatFilingType(form: string): string {
-  const filingTypes: Record<string, string> = {
-    "10-K": "10-K (Annual Report)",
-    "10-Q": "10-Q (Quarterly Report)",
-    "8-K": "8-K (Current Report)",
-    "DEF 14A": "DEF 14A (Proxy Statement)",
-    "S-1": "S-1 (Registration Statement)",
-    "S-3": "S-3 (Registration Statement)",
-    "S-4": "S-4 (Registration Statement)",
-    "SC 13G": "SC 13G (Beneficial Ownership)"
-  };
-  
-  return filingTypes[form] || form;
 }
