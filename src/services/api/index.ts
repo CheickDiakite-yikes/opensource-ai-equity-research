@@ -5,6 +5,7 @@ export * from './financialService';
 export * from './marketDataService';
 export * from './analysisService';
 export * from './documentsService';
+export * from './base';  // Export base utilities including withRetry
 
 // Composite functions
 import { fetchStockProfile, fetchStockQuote } from './profileService';
