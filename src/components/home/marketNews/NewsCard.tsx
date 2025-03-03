@@ -38,6 +38,9 @@ const NewsCard: React.FC<NewsCardProps> = ({ article }) => {
   // Extract symbol from related field if available
   const symbol = article.symbol || (article.related && article.related.match(/[A-Z]+/) ? article.related.match(/[A-Z]+/)[0] : null);
   
+  // Ensure URL is properly formatted
+  const articleUrl = article.url || "#";
+  
   return (
     <Card className="bg-card/70 backdrop-blur-sm border border-muted/50 overflow-hidden shadow-md hover-card-highlight transition-all duration-300 hover:shadow-lg group">
       <CardContent className="p-0">
@@ -97,10 +100,17 @@ const NewsCard: React.FC<NewsCardProps> = ({ article }) => {
           </p>
           
           <a 
-            href={article.url} 
+            href={articleUrl} 
             target="_blank" 
             rel="noopener noreferrer"
             className="flex items-center text-xs font-medium text-primary hover:text-primary/80 transition-colors mt-2 pt-2 border-t border-muted"
+            onClick={(e) => {
+              // Prevent navigation if URL is invalid or '#'
+              if (!articleUrl || articleUrl === '#') {
+                e.preventDefault();
+                console.warn('News article has no valid URL:', article);
+              }
+            }}
           >
             Read on {siteName} <ExternalLink className="h-3 w-3 ml-1" />
           </a>

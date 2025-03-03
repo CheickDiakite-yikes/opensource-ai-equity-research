@@ -1,85 +1,102 @@
 
-import { serve } from 'https://deno.land/std@0.177.0/http/server.ts'
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
-// CORS headers for browser requests
 const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-}
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers":
+    "authorization, x-client-info, apikey, content-type",
+};
 
-// Get Finnhub API key from environment variables
-const FINNHUB_API_KEY = Deno.env.get('FINNHUB_API_KEY') || 'ctphls1r01qqsrsarga0ctphls1r01qqsrsargag';
+// Type for Finnhub news response
+interface FinnhubNewsItem {
+  category: string;
+  datetime: number;
+  headline: string;
+  id: number;
+  image: string;
+  related: string;
+  source: string;
+  summary: string;
+  url: string;
+}
 
 serve(async (req) => {
   // Handle CORS preflight requests
-  if (req.method === 'OPTIONS') {
+  if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    // Parse the request body
-    const { category = 'general', minId = 0, limit = 6 } = await req.json();
+    const { category = "general", limit = 6 } = await req.json();
     
-    console.log(`Fetching news articles from Finnhub with category: ${category}, minId: ${minId}, limit: ${limit}`);
+    // Get the API key from environment variable
+    const FINNHUB_API_KEY = Deno.env.get("FINNHUB_API_KEY");
     
-    // Validate the category (must be one of: general, forex, crypto, merger)
-    const validCategories = ['general', 'forex', 'crypto', 'merger'];
-    if (!validCategories.includes(category)) {
+    if (!FINNHUB_API_KEY) {
+      console.error("FINNHUB_API_KEY environment variable is not set");
       return new Response(
-        JSON.stringify({ 
-          error: `Invalid category. Must be one of: ${validCategories.join(', ')}` 
-        }),
-        { 
-          status: 400,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        JSON.stringify({ error: "API key not configured" }),
+        {
+          status: 500,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
         }
       );
     }
+
+    console.log(`Fetching news for category: ${category}, limit: ${limit}`);
     
-    // Build the Finnhub API URL with the parameters
-    const url = `https://finnhub.io/api/v1/news?category=${category}${minId ? `&minId=${minId}` : ''}&token=${FINNHUB_API_KEY}`;
-    
-    console.log(`Calling Finnhub API: ${url.replace(FINNHUB_API_KEY, 'API_KEY_HIDDEN')}`);
-    
-    // Fetch data from Finnhub
-    const response = await fetch(url);
-    
+    // Fetch news from Finnhub API
+    const response = await fetch(
+      `https://finnhub.io/api/v1/news?category=${category}&token=${FINNHUB_API_KEY}`
+    );
+
     if (!response.ok) {
       const errorText = await response.text();
-      console.error(`Finnhub API error (${response.status}): ${errorText}`);
-      throw new Error(`Finnhub API returned ${response.status}: ${response.statusText}`);
+      console.error(`Finnhub API error: ${response.status} - ${errorText}`);
+      return new Response(
+        JSON.stringify({ 
+          error: "Failed to fetch news from Finnhub API", 
+          details: errorText
+        }),
+        {
+          status: response.status,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
+      );
     }
-    
+
     // Parse the response
-    const data = await response.json();
+    const news: FinnhubNewsItem[] = await response.json();
+    console.log(`Retrieved ${news.length} news items`);
     
-    // Validate that the response is an array
-    if (!Array.isArray(data)) {
-      console.error('Unexpected response format from Finnhub:', data);
-      throw new Error('Unexpected response format from Finnhub API');
+    // Log a sample item if available to debug URL issues
+    if (news.length > 0) {
+      console.log("Sample news item URL:", news[0].url);
     }
     
-    // Limit the number of results and return
-    const limitedData = data.slice(0, limit);
-    
-    console.log(`Successfully fetched ${limitedData.length} news articles`);
-    console.log('Sample article:', limitedData.length > 0 ? JSON.stringify(limitedData[0]) : 'No articles');
-    
-    return new Response(
-      JSON.stringify(limitedData),
-      { 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      }
-    );
+    // Validate and ensure each news item has a valid URL
+    const validatedNews = news
+      .slice(0, limit)
+      .map(item => {
+        // Make sure URL is absolute and properly formatted
+        if (item.url && !item.url.startsWith('http')) {
+          item.url = `https://${item.url}`;
+        }
+        return item;
+      });
+
+    // Return the news items
+    return new Response(JSON.stringify(validatedNews), {
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   } catch (error) {
-    console.error('Error in get-finnhub-news function:', error);
-    
+    console.error("Error in get-finnhub-news function:", error);
     return new Response(
-      JSON.stringify({ error: error.message || 'Unknown error occurred' }),
-      { 
+      JSON.stringify({ error: error.message }),
+      {
         status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
       }
     );
   }
-})
+});
