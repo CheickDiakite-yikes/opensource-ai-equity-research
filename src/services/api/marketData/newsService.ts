@@ -2,75 +2,71 @@
 import { invokeSupabaseFunction } from "../base";
 
 /**
- * Market News Article type based on FMP Press Releases API
+ * Market News Article type based on Finnhub API response
  */
 export interface MarketNewsArticle {
-  symbol?: string;
-  publishedDate: string;  // "2025-02-03 23:32:00"
-  title: string;
+  category: string;
+  datetime: number;
+  headline: string;
+  id: number;
   image: string;
-  site: string;
-  text: string;
+  related: string;
+  source: string;
+  summary: string;
   url: string;
-  publisher?: string;
+  publishedDate?: string; // Added for compatibility with existing components
+  title?: string; // Added for compatibility with existing components
+  text?: string; // Added for compatibility with existing components
+  site?: string; // Added for compatibility with existing components
+  symbol?: string; // Added for compatibility with existing components
 }
 
 /**
- * Fetch market news from FMP API using the press-releases-latest endpoint
+ * Fetch market news from Finnhub API
  */
 export const fetchMarketNews = async (limit: number = 6): Promise<MarketNewsArticle[]> => {
   try {
-    // Directly access the financialmodelingprep API endpoint for better URL handling
-    const result = await invokeSupabaseFunction<any>('get-stock-data', { 
-      endpoint: 'press-releases-latest',
-      limit: limit * 2, // Fetch more items to account for filtered results
-      includeFullUrls: true // Signal to include complete URLs
+    const response = await fetch('https://rnpcygrrxeeqphdjuesh.supabase.co/functions/v1/get-finnhub-news', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ 
+        category: 'general',
+        limit
+      }),
     });
+    
+    if (!response.ok) {
+      throw new Error(`Failed to fetch market news: ${response.statusText}`);
+    }
+    
+    const result = await response.json();
     
     if (result && Array.isArray(result)) {
       if (result.length > 0) {
         console.log("Sample market news item:", result[0]);
       }
       
-      // Filter out FMP sources and map the response
-      const filteredNews = result
-        .filter((item: any) => {
-          const source = (item.site || '').toLowerCase();
-          const publisher = (item.publisher || '').toLowerCase();
-          
-          // Check both site and publisher fields for FMP-related terms
-          return !source.includes('fmp') && 
-                 !source.includes('financialmodellingprep') &&
-                 !source.includes('financial modeling prep') &&
-                 !source.includes('financialmodelingprep') &&
-                 !publisher.includes('fmp') &&
-                 !publisher.includes('financial') &&
-                 !publisher.includes('modeling') &&
-                 !publisher.includes('prep');
-        })
+      // Map the Finnhub response to our MarketNewsArticle format
+      const mappedNews = result
+        .slice(0, limit)
         .map((item: any) => ({
-          symbol: item.symbol || null,
-          publishedDate: item.publishedDate || new Date().toISOString().split('T').join(' ').split('.')[0],
-          title: item.title || "No title available",
-          image: item.image || "",
-          site: item.site || "",
-          text: item.text || "No description available",
-          // Ensure the URL is complete and valid
-          url: ensureValidUrl(item.url),
-          publisher: item.publisher || item.site
-        }))
-        .slice(0, limit); // Limit to requested number of items
+          ...item,
+          // Add compatibility fields for existing components
+          publishedDate: new Date(item.datetime * 1000).toISOString().split('T').join(' ').split('.')[0],
+          title: item.headline,
+          text: item.summary,
+          site: item.source
+        }));
       
-      if (filteredNews.length > 0) {
-        console.log("Filtered news items count:", filteredNews.length);
-        return filteredNews;
+      if (mappedNews.length > 0) {
+        console.log("Mapped news items count:", mappedNews.length);
+        return mappedNews;
       }
-      
-      console.warn("No suitable news articles found after filtering. Falling back to mock market news data");
-      return getFallbackMarketNews();
     }
     
-    console.warn("Falling back to mock market news data");
+    console.warn("No news articles found. Falling back to mock market news data");
     return getFallbackMarketNews();
   } catch (error) {
     console.error("Error fetching market news:", error);
@@ -79,85 +75,104 @@ export const fetchMarketNews = async (limit: number = 6): Promise<MarketNewsArti
 };
 
 /**
- * Ensures that a URL is valid and complete
- */
-const ensureValidUrl = (url: string): string => {
-  if (!url) return "#";
-  
-  // Check if the URL already starts with http:// or https://
-  if (url.startsWith('http://') || url.startsWith('https://')) {
-    return url;
-  }
-  
-  // If it's a relative URL or missing the protocol, add https://
-  return `https://${url.startsWith('/') ? url.substring(1) : url}`;
-}
-
-/**
  * Fallback mock data for market news
  */
 const getFallbackMarketNews = (): MarketNewsArticle[] => {
-  // Replace all FMP sources in the mock data with more reliable sources
   return [
     {
-      symbol: "LNW",
+      category: "general",
+      datetime: 1675209600,
+      headline: "Rosen Law Firm Encourages Light & Wonder, Inc. Investors to Inquire About Securities",
+      id: 1001,
+      image: "https://image.cnbcfm.com/api/v1/image/106968945-1635784708411-gettyimages-1235308269-AFP_9PK6PY.jpeg",
+      related: "",
+      source: "CNBC",
+      summary: "NEW YORK - Rosen Law Firm, a global investor rights law firm, announces an investigation of potential securities claims on behalf of shareholders of Light & Wonder, Inc.",
+      url: "https://www.cnbc.com/2025/02/03/rosen-law-firm-encourages-light--wonder-inc-investors-to-inquire-about-securities",
       publishedDate: "2025-02-03 23:32:00",
       title: "Rosen Law Firm Encourages Light & Wonder, Inc. Investors to Inquire About Securities",
-      text: "NEW YORK, Feb. 3, 2025 /PRNewsWire/ -- Why: Rosen Law Firm, a global investor rights law firm, announces an investigation of potential securities claims on behalf of shareholders of Light & Wonder, Inc.",
-      image: "https://images.financialmodellingprep.com/news-images/default-news.jpg",
-      url: "https://www.prnewswire.com/news-releases/rosen-law-firm-encourages-light--wonder-inc-investors-to-inquire-about-securities",
-      site: "prnewswire.com",
-      publisher: "PRNewsWire"
+      text: "NEW YORK - Rosen Law Firm, a global investor rights law firm, announces an investigation of potential securities claims on behalf of shareholders of Light & Wonder, Inc.",
+      site: "CNBC",
+      symbol: "LNW"
     },
     {
-      symbol: "AAPL",
+      category: "business",
+      datetime: 1675296000,
+      headline: "Apple Announces New iPhone Features Coming in Next Update",
+      id: 1002,
+      image: "https://image.cnbcfm.com/api/v1/image/107207850-1678375948971-gettyimages-1247832347-porzycki-apple231.jpeg",
+      related: "AAPL",
+      source: "Business Wire",
+      summary: "Cupertino, CA - Apple Inc. today announced several new features that will be added to iPhones in the next iOS update, including enhanced privacy controls and improved battery management.",
+      url: "https://www.businesswire.com/news/home/20250301005001/en/Apple-Announces-New-iPhone-Features",
       publishedDate: "2025-03-01 09:33:00",
       title: "Apple Announces New iPhone Features Coming in Next Update",
       text: "Cupertino, CA - Apple Inc. today announced several new features that will be added to iPhones in the next iOS update, including enhanced privacy controls and improved battery management.",
-      image: "https://images.financialmodellingprep.com/news-images/default-news.jpg",
-      url: "https://www.businesswire.com/news/home/20250301005001/en/Apple-Announces-New-iPhone-Features",
-      site: "businesswire.com",
-      publisher: "Business Wire"
+      site: "Business Wire",
+      symbol: "AAPL"
     },
     {
-      symbol: "MSFT",
+      category: "technology",
+      datetime: 1675299600,
+      headline: "Microsoft Cloud Revenue Surges in Latest Quarter",
+      id: 1003,
+      image: "https://image.cnbcfm.com/api/v1/image/107206126-1678202164011-gettyimages-1247852397-MICROSOFT_EARNINGS.jpeg",
+      related: "MSFT",
+      source: "Reuters",
+      summary: "Redmond, WA - Microsoft Corporation reported that its cloud services revenue increased by 35% in the most recent fiscal quarter, driven by strong demand for Azure and Microsoft 365.",
+      url: "https://www.reuters.com/business/microsoft-cloud-revenue-surges-2025-03-01/",
       publishedDate: "2025-03-01 08:45:00",
       title: "Microsoft Cloud Revenue Surges in Latest Quarter",
       text: "Redmond, WA - Microsoft Corporation reported that its cloud services revenue increased by 35% in the most recent fiscal quarter, driven by strong demand for Azure and Microsoft 365.",
-      image: "https://images.financialmodellingprep.com/news-images/default-news.jpg",
-      url: "https://www.reuters.com/business/microsoft-cloud-revenue-surges-2025-03-01/",
-      site: "reuters.com",
-      publisher: "Reuters"
+      site: "Reuters",
+      symbol: "MSFT"
     },
     {
-      symbol: "GOOGL",
+      category: "technology",
+      datetime: 1675353600,
+      headline: "Google Announces New AI-Powered Search Features",
+      id: 1004,
+      image: "https://image.cnbcfm.com/api/v1/image/107240207-1683816242469-gettyimages-1258688601-AFP_33D87YA.jpeg",
+      related: "GOOGL",
+      source: "TechCrunch",
+      summary: "Mountain View, CA - Google unveiled several new AI-powered features for its search engine, aimed at providing more relevant and contextualized results for complex queries.",
+      url: "https://www.techcrunch.com/2025/02/28/google-announces-new-ai-search-features/",
       publishedDate: "2025-02-28 16:30:00",
       title: "Google Announces New AI-Powered Search Features",
       text: "Mountain View, CA - Google unveiled several new AI-powered features for its search engine, aimed at providing more relevant and contextualized results for complex queries.",
-      image: "https://images.financialmodellingprep.com/news-images/default-news.jpg",
-      url: "https://www.techcrunch.com/2025/02/28/google-announces-new-ai-search-features/",
-      site: "techcrunch.com",
-      publisher: "TechCrunch"
+      site: "TechCrunch",
+      symbol: "GOOGL"
     },
     {
-      symbol: null,
+      category: "business",
+      datetime: 1675425600,
+      headline: "Fed's Powell Signals Continued Caution on Interest Rates",
+      id: 1005,
+      image: "https://image.cnbcfm.com/api/v1/image/107226049-1682006362846-gettyimages-1251742429-FEDERAL_RESERVE.jpeg",
+      related: "",
+      source: "Wall Street Journal",
+      summary: "Washington, DC - Federal Reserve Chair Jerome Powell indicated that the central bank will maintain a cautious approach to interest rate changes, citing ongoing economic uncertainties.",
+      url: "https://www.wsj.com/articles/feds-powell-signals-continued-caution-on-interest-rates-2025-03-01/",
       publishedDate: "2025-03-01 14:15:00",
       title: "Fed's Powell Signals Continued Caution on Interest Rates",
       text: "Washington, DC - Federal Reserve Chair Jerome Powell indicated that the central bank will maintain a cautious approach to interest rate changes, citing ongoing economic uncertainties.",
-      image: "https://images.financialmodellingprep.com/news-images/default-news.jpg",
-      url: "https://www.wsj.com/articles/feds-powell-signals-continued-caution-on-interest-rates-2025-03-01/",
-      site: "wsj.com",
-      publisher: "Wall Street Journal"
+      site: "Wall Street Journal"
     },
     {
-      symbol: "TSLA",
+      category: "general",
+      datetime: 1675512000,
+      headline: "Tesla Opens New Gigafactory in Asia",
+      id: 1006,
+      image: "https://image.cnbcfm.com/api/v1/image/107215222-1679394492949-gettyimages-1248326384-AFP_33DQ3JY.jpeg",
+      related: "TSLA",
+      source: "Bloomberg",
+      summary: "Shanghai - Tesla Inc. officially opened its newest Gigafactory in Asia, which is expected to significantly boost the company's production capacity for electric vehicles in the region.",
+      url: "https://www.bloomberg.com/news/articles/2025-03-02/tesla-opens-new-gigafactory-in-asia",
       publishedDate: "2025-03-02 10:20:00",
       title: "Tesla Opens New Gigafactory in Asia",
       text: "Shanghai - Tesla Inc. officially opened its newest Gigafactory in Asia, which is expected to significantly boost the company's production capacity for electric vehicles in the region.",
-      image: "https://images.financialmodellingprep.com/news-images/default-news.jpg",
-      url: "https://www.bloomberg.com/news/articles/2025-03-02/tesla-opens-new-gigafactory-in-asia",
-      site: "bloomberg.com",
-      publisher: "Bloomberg"
+      site: "Bloomberg",
+      symbol: "TSLA"
     }
   ];
 };

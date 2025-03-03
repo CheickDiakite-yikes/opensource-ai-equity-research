@@ -16,15 +16,25 @@ interface NewsCardProps {
 }
 
 const NewsCard: React.FC<NewsCardProps> = ({ article }) => {
-  // Ensure the URL is valid before rendering
-  const validUrl = article.url && article.url !== "#" 
-    ? article.url 
-    : `https://www.google.com/search?q=${encodeURIComponent(article.title)}`;
+  // Format the date from Unix timestamp if available
+  const formattedDate = article.datetime 
+    ? formatDate(new Date(article.datetime * 1000).toISOString()) 
+    : article.publishedDate 
+      ? formatDate(article.publishedDate)
+      : "Unknown date";
   
-  const siteName = article.site 
-    ? article.site.replace(/^www\./, '').replace(/\.(com|org|net|io).*$/, '')
-    : "source";
-
+  // Use headline or title for display
+  const displayTitle = article.headline || article.title || "No title available";
+  
+  // Use summary or text for display
+  const displayText = article.summary || article.text || "No description available";
+  
+  // Use source or site for display
+  const source = article.source || article.site || "Unknown source";
+  
+  // Format source name for display
+  const siteName = source.replace(/^www\./, '').replace(/\.(com|org|net|io).*$/, '');
+  
   return (
     <Card className="bg-card/70 backdrop-blur-sm border border-muted/50 overflow-hidden shadow-md hover-card-highlight transition-all duration-300 hover:shadow-lg group">
       <CardContent className="p-0">
@@ -32,7 +42,7 @@ const NewsCard: React.FC<NewsCardProps> = ({ article }) => {
           {article.image ? (
             <img 
               src={article.image}
-              alt={article.title}
+              alt={displayTitle}
               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
               onError={(e) => {
                 e.currentTarget.src = '/placeholder.svg';
@@ -49,38 +59,42 @@ const NewsCard: React.FC<NewsCardProps> = ({ article }) => {
               {article.symbol}
             </div>
           )}
+          
+          {article.category && !article.symbol && (
+            <div className="absolute top-3 right-3 bg-black/60 backdrop-blur-sm text-white text-xs px-2 py-1 rounded capitalize">
+              {article.category}
+            </div>
+          )}
         </div>
         
         <div className="p-5 space-y-3">
           <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
             <div className="flex items-center">
               <Calendar className="h-3 w-3 mr-1" />
-              <span>{formatDate(article.publishedDate)}</span>
+              <span>{formattedDate}</span>
             </div>
-            {article.publisher && (
-              <span className="font-medium">{article.publisher}</span>
-            )}
+            <span className="font-medium">{source}</span>
           </div>
           
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
                 <h3 className="text-base font-semibold line-clamp-2 group-hover:text-primary transition-colors">
-                  {article.title}
+                  {displayTitle}
                 </h3>
               </TooltipTrigger>
               <TooltipContent>
-                <p className="max-w-xs">{article.title}</p>
+                <p className="max-w-xs">{displayTitle}</p>
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
           
           <p className="text-sm text-muted-foreground line-clamp-2">
-            {article.text}
+            {displayText}
           </p>
           
           <a 
-            href={validUrl} 
+            href={article.url} 
             target="_blank" 
             rel="noopener noreferrer"
             className="flex items-center text-xs font-medium text-primary hover:text-primary/80 transition-colors mt-2 pt-2 border-t border-muted"
