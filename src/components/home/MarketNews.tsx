@@ -1,7 +1,7 @@
 
 import React from "react";
 import { motion } from "framer-motion";
-import { Newspaper, ExternalLink, Calendar, ImageOff } from "lucide-react";
+import { Newspaper, ExternalLink, Calendar, ImageOff, Building } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import SectionHeader from "./SectionHeader";
 import { MarketNewsArticle } from "@/services/api/marketData/newsService";
@@ -12,6 +12,7 @@ import {
   TooltipProvider,
   TooltipTrigger
 } from "@/components/ui/tooltip";
+import { fetchCompanyLogo } from "@/services/api/marketData";
 
 interface MarketNewsProps {
   newsData: MarketNewsArticle[];
@@ -63,13 +64,54 @@ const MarketNews: React.FC<MarketNewsProps> = ({
   function handleImageError(e: React.SyntheticEvent<HTMLImageElement>) {
     console.log("Image failed to load, using placeholder");
     e.currentTarget.onerror = null;
-    e.currentTarget.src = '/placeholder.svg';
-    e.currentTarget.classList.add('object-contain', 'bg-muted/30', 'p-4');
-    e.currentTarget.classList.remove('object-cover');
+    
+    // If this is a company news item with a ticker, try to show company logo
+    const ticker = e.currentTarget.getAttribute('data-ticker');
+    if (ticker) {
+      displayCompanyLogo(e.currentTarget, ticker);
+    } else {
+      // Fallback to generic placeholder
+      e.currentTarget.src = '/placeholder.svg';
+      e.currentTarget.classList.add('object-contain', 'bg-muted/30', 'p-4');
+      e.currentTarget.classList.remove('object-cover');
+    }
+  }
+
+  async function displayCompanyLogo(imgElement: HTMLImageElement, ticker: string) {
+    try {
+      console.log("Attempting to fetch logo for ticker:", ticker);
+      // Extract the first ticker if multiple are present (comma-separated)
+      const primaryTicker = ticker.split(',')[0].trim();
+      
+      // Clean up ticker format - remove exchange prefix if present
+      const cleanTicker = primaryTicker.includes(':') 
+        ? primaryTicker.split(':')[1] 
+        : primaryTicker;
+        
+      const logoUrl = await fetchCompanyLogo(cleanTicker);
+      
+      if (logoUrl) {
+        imgElement.src = logoUrl;
+        imgElement.classList.add('object-contain', 'bg-white', 'p-2');
+        imgElement.classList.remove('object-cover');
+      } else {
+        // Use a company icon as fallback
+        imgElement.src = '/placeholder.svg';
+        const iconContainer = document.createElement('div');
+        iconContainer.className = 'absolute inset-0 flex items-center justify-center';
+        iconContainer.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="text-muted-foreground/50"><rect width="16" height="20" x="4" y="2" rx="2" ry="2"/><path d="M9 22v-4h6v4"/><path d="M8 6h.01"/><path d="M16 6h.01"/><path d="M12 6h.01"/><path d="M8 10h.01"/><path d="M16 10h.01"/><path d="M12 10h.01"/><path d="M8 14h.01"/><path d="M16 14h.01"/><path d="M12 14h.01"/></svg>';
+        imgElement.parentNode?.appendChild(iconContainer);
+      }
+    } catch (error) {
+      console.error("Error fetching company logo:", error);
+      imgElement.src = '/placeholder.svg';
+      imgElement.classList.add('object-contain', 'bg-muted/30', 'p-4');
+      imgElement.classList.remove('object-cover');
+    }
   }
 
   // Function to determine if an image URL is valid
-  function getImageUrl(imageUrl: string | undefined): string {
+  function getImageUrl(imageUrl: string | undefined, tickers?: string): string {
     if (!imageUrl) return '/placeholder.svg';
     
     // Check if the URL seems valid (has https and common image extensions)
@@ -87,6 +129,18 @@ const MarketNews: React.FC<MarketNewsProps> = ({
     
     return imageUrl;
   }
+
+  // Pre-process news data to load company logos for items with tickers
+  React.useEffect(() => {
+    newsData.forEach(article => {
+      if (article.tickers) {
+        // Preload company logos for articles with tickers
+        const ticker = article.tickers.split(',')[0].trim();
+        const cleanTicker = ticker.includes(':') ? ticker.split(':')[1] : ticker;
+        fetchCompanyLogo(cleanTicker).catch(console.error);
+      }
+    });
+  }, [newsData]);
   
   return (
     <div className="relative py-8 bg-gradient-to-b from-muted/20 to-background">
@@ -105,7 +159,7 @@ const MarketNews: React.FC<MarketNewsProps> = ({
           
           <div className="grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
             {newsData.map((article, index) => {
-              const imageUrl = getImageUrl(article.image);
+              const imageUrl = getImageUrl(article.image, article.tickers);
               
               return (
                 <Card 
@@ -120,10 +174,16 @@ const MarketNews: React.FC<MarketNewsProps> = ({
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                         onError={handleImageError}
                         crossOrigin="anonymous"
+                        data-ticker={article.tickers}
                       />
-                      {(imageUrl === '/placeholder.svg') && (
+                      {(imageUrl === '/placeholder.svg' && !article.tickers) && (
                         <div className="absolute inset-0 flex items-center justify-center">
                           <ImageOff className="h-10 w-10 text-muted-foreground/50" />
+                        </div>
+                      )}
+                      {(imageUrl === '/placeholder.svg' && article.tickers) && (
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          <Building className="h-10 w-10 text-muted-foreground/50" />
                         </div>
                       )}
                       {article.tickers && (
