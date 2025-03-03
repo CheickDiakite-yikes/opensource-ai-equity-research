@@ -13,18 +13,18 @@ interface DCFTabContentProps {
 const DCFTabContentProps: React.FC<DCFTabContentProps> = ({ financials, symbol }) => {
   const [activeTab, setActiveTab] = useState<string>("automatic");
   
-  // Custom DCF inputs state - using decimal values now instead of percentages
+  // Custom DCF inputs state - maintaining decimals for some and percentages for others
   const [customParams, setCustomParams] = useState({
     revenueGrowth: "0.1094",
     ebitdaMargin: "0.3127",
     capexPercent: "0.0306", 
     taxRate: "0.2409",
-    longTermGrowthRate: "0.04",
+    longTermGrowthRate: "4", // Now as whole number percentage
     costOfEquity: "0.0951",
-    costOfDebt: "0.0364",
+    costOfDebt: "3.64", // Now as whole number percentage
     beta: "1.244",
-    marketRiskPremium: "0.0472",
-    riskFreeRate: "0.0364"
+    marketRiskPremium: "4.72", // Now as whole number percentage
+    riskFreeRate: "3.64" // Now as whole number percentage
   });
   
   // Custom DCF calculation hook
@@ -47,18 +47,19 @@ const DCFTabContentProps: React.FC<DCFTabContentProps> = ({ financials, symbol }
   };
   
   const handleCalculateCustomDCF = () => {
+    // Convert percentage inputs back to decimals for API call
     calculateCustomDCF({
       symbol,
       revenueGrowthPct: parseFloat(customParams.revenueGrowth),
       ebitdaPct: parseFloat(customParams.ebitdaMargin),
       capitalExpenditurePct: parseFloat(customParams.capexPercent),
       taxRate: parseFloat(customParams.taxRate),
-      longTermGrowthRate: parseFloat(customParams.longTermGrowthRate),
+      longTermGrowthRate: parseFloat(customParams.longTermGrowthRate) / 100, // Convert from % to decimal
       costOfEquity: parseFloat(customParams.costOfEquity),
-      costOfDebt: parseFloat(customParams.costOfDebt),
+      costOfDebt: parseFloat(customParams.costOfDebt) / 100, // Convert from % to decimal
       beta: parseFloat(customParams.beta),
-      marketRiskPremium: parseFloat(customParams.marketRiskPremium),
-      riskFreeRate: parseFloat(customParams.riskFreeRate)
+      marketRiskPremium: parseFloat(customParams.marketRiskPremium) / 100, // Convert from % to decimal
+      riskFreeRate: parseFloat(customParams.riskFreeRate) / 100 // Convert from % to decimal
     });
   };
   
