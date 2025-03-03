@@ -32,7 +32,7 @@ export function formatLargeNumber(value: number): string {
   return formatCurrency(value);
 }
 
-// Improved function for financial tables to format in billions/millions
+// Improved function for financial tables to format in billions/millions with thousands separators
 export function formatFinancialTableValue(value: number, scale: 'millions' | 'billions' | 'thousands' = 'millions'): string {
   if (value === 0) return "$0.00";
   
@@ -47,8 +47,15 @@ export function formatFinancialTableValue(value: number, scale: 'millions' | 'bi
   // Convert to the specified scale
   const scaledValue = value / scaleFactor;
   
-  // Format with 2 decimal places
-  return `$${scaledValue.toFixed(2)}`;
+  // Format with 2 decimal places and thousands separators
+  const formatter = new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  });
+  
+  return formatter.format(scaledValue);
 }
 
 // Format ratios and multiples with "x" suffix
