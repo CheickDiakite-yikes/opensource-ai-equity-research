@@ -12,7 +12,7 @@ interface DCFTabContentProps {
 const DCFTabContent: React.FC<DCFTabContentProps> = ({ financials, symbol }) => {
   const [activeTab, setActiveTab] = useState<string>("automatic");
   
-  // Custom DCF inputs state
+  // Custom DCF inputs state - all parameters included and properly formatted
   const [customParams, setCustomParams] = useState({
     // Growth parameters (as decimals)
     revenueGrowth: "0.1094",
@@ -30,7 +30,7 @@ const DCFTabContent: React.FC<DCFTabContentProps> = ({ financials, symbol }) => 
     operatingCashFlowPercent: "0.2886",
     sellingGeneralAndAdministrativeExpensesPercent: "0.0662",
     
-    // Rate parameters (whole number percentages)
+    // Rate parameters (as whole numbers)
     longTermGrowthRate: "4",
     costOfEquity: "9.51",
     costOfDebt: "3.64",
@@ -56,20 +56,16 @@ const DCFTabContent: React.FC<DCFTabContentProps> = ({ financials, symbol }) => 
     setCustomParams(prev => ({ ...prev, [name]: value }));
   };
   
-  const handleSelectChange = (name: string, value: string) => {
-    setCustomParams(prev => ({ ...prev, [name]: value }));
-  };
-  
   const handleCalculateCustomDCF = () => {
     calculateCustomDCF({
       symbol,
-      // Growth parameters
+      // Growth parameters (as decimals - no conversion needed)
       revenueGrowthPct: parseFloat(customParams.revenueGrowth),
       ebitdaPct: parseFloat(customParams.ebitdaMargin),
       capitalExpenditurePct: parseFloat(customParams.capexPercent),
       taxRate: parseFloat(customParams.taxRate),
       
-      // Working capital parameters
+      // Working capital parameters (as decimals - no conversion needed)
       depreciationAndAmortizationPct: parseFloat(customParams.depreciationAndAmortizationPercent),
       cashAndShortTermInvestmentsPct: parseFloat(customParams.cashAndShortTermInvestmentsPercent),
       receivablesPct: parseFloat(customParams.receivablesPercent),
@@ -112,7 +108,6 @@ const DCFTabContent: React.FC<DCFTabContentProps> = ({ financials, symbol }) => 
             error={error}
             customParams={customParams}
             onInputChange={handleInputChange}
-            onSelectChange={handleSelectChange}
             onCalculate={handleCalculateCustomDCF}
           />
         </TabsContent>

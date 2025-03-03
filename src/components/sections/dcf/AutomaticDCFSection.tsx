@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/components/ui/card";
 import { formatCurrency, formatPercentage } from "@/lib/utils";
@@ -32,20 +31,34 @@ const AutomaticDCFSection: React.FC<AutomaticDCFSectionProps> = ({ financials, s
     setHasAttemptedFetch(true);
     
     try {
-      // Prepare default parameters for the company based on financial data
-      // In a real implementation, your AI would determine better parameters
+      // Default parameters (all provided in their correct format)
       const params = {
         symbol,
-        revenueGrowthPct: 8, // 8% revenue growth
-        ebitdaPct: 32, // 32% EBITDA margin
-        capitalExpenditurePct: 3, // 3% capex relative to revenue
-        taxRate: 21, // 21% tax rate
-        longTermGrowthRate: 3, // 3% terminal growth rate
-        costOfEquity: 9.5, // 9.5% cost of equity
-        costOfDebt: 4, // 4% cost of debt
-        riskFreeRate: 4, // 4% risk-free rate
-        marketRiskPremium: 5, // 5% market risk premium
-        beta: financials[0]?.beta || 1.2, // Company's beta or default
+        // Growth parameters (as decimals)
+        revenueGrowthPct: 0.1094,
+        ebitdaPct: 0.3127,
+        capitalExpenditurePct: 0.0306,
+        taxRate: 0.2409,
+        
+        // Working capital parameters (as decimals)
+        depreciationAndAmortizationPct: 0.0345,
+        cashAndShortTermInvestmentsPct: 0.2344,
+        receivablesPct: 0.1533,
+        inventoriesPct: 0.0155,
+        payablesPct: 0.1614,
+        ebitPct: 0.2781,
+        operatingCashFlowPct: 0.2886,
+        sellingGeneralAndAdministrativeExpensesPct: 0.0662,
+        
+        // Rate parameters (as decimals for calculation)
+        longTermGrowthRate: 0.04, // 4%
+        costOfEquity: 0.0951, // 9.51%
+        costOfDebt: 0.0364, // 3.64%
+        marketRiskPremium: 0.0472, // 4.72%
+        riskFreeRate: 0.0364, // 3.64%
+        
+        // Other
+        beta: financials[0]?.beta || 1.244,
       };
       
       await calculateCustomDCF(params);
