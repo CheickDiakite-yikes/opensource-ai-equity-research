@@ -16,7 +16,9 @@ const Index = () => {
     { symbol: "AMZN", name: "Amazon.com Inc." },
     { symbol: "GOOG", name: "Alphabet Inc." },
     { symbol: "META", name: "Meta Platforms Inc." },
-    { symbol: "TSLA", name: "Tesla Inc." }
+    { symbol: "TSLA", name: "Tesla Inc." },
+    { symbol: "NVDA", name: "NVIDIA Corporation" },
+    { symbol: "JPM", name: "JPMorgan Chase & Co." }
   ]);
 
   // Load recent searches from localStorage on component mount
