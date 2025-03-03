@@ -1,3 +1,4 @@
+
 import { invokeSupabaseFunction } from "../base";
 
 /**
@@ -19,9 +20,11 @@ export interface MarketNewsArticle {
  */
 export const fetchMarketNews = async (limit: number = 6): Promise<MarketNewsArticle[]> => {
   try {
+    // Directly access the financialmodelingprep API endpoint for better URL handling
     const result = await invokeSupabaseFunction<any>('get-stock-data', { 
       endpoint: 'press-releases-latest',
-      limit: limit * 2 // Fetch more items to account for filtered results
+      limit: limit * 2, // Fetch more items to account for filtered results
+      includeFullUrls: true // Signal to include complete URLs
     });
     
     if (result && Array.isArray(result)) {
@@ -44,7 +47,8 @@ export const fetchMarketNews = async (limit: number = 6): Promise<MarketNewsArti
           image: item.image || "",
           site: item.site || "",
           text: item.text || "No description available",
-          url: item.url || "#",
+          // Ensure the URL is complete and valid
+          url: ensureValidUrl(item.url),
           publisher: item.publisher || item.site
         }))
         .slice(0, limit); // Limit to requested number of items
@@ -64,6 +68,21 @@ export const fetchMarketNews = async (limit: number = 6): Promise<MarketNewsArti
     return getFallbackMarketNews();
   }
 };
+
+/**
+ * Ensures that a URL is valid and complete
+ */
+const ensureValidUrl = (url: string): string => {
+  if (!url) return "#";
+  
+  // Check if the URL already starts with http:// or https://
+  if (url.startsWith('http://') || url.startsWith('https://')) {
+    return url;
+  }
+  
+  // If it's a relative URL or missing the protocol, add https://
+  return `https://${url.startsWith('/') ? url.substring(1) : url}`;
+}
 
 /**
  * Fallback mock data for market news

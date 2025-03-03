@@ -9,13 +9,22 @@ import {
   TooltipTrigger
 } from "@/components/ui/tooltip";
 import { MarketNewsArticle } from "@/services/api/marketData/newsService";
-import { formatDate } from "@/lib/utils"; // Import from utils instead of defining locally
+import { formatDate } from "@/lib/utils";
 
 interface NewsCardProps {
   article: MarketNewsArticle;
 }
 
 const NewsCard: React.FC<NewsCardProps> = ({ article }) => {
+  // Ensure the URL is valid before rendering
+  const validUrl = article.url && article.url !== "#" 
+    ? article.url 
+    : `https://www.google.com/search?q=${encodeURIComponent(article.title)}`;
+  
+  const siteName = article.site 
+    ? article.site.replace(/^www\./, '').replace(/\.(com|org|net|io).*$/, '')
+    : "source";
+
   return (
     <Card className="bg-card/70 backdrop-blur-sm border border-muted/50 overflow-hidden shadow-md hover-card-highlight transition-all duration-300 hover:shadow-lg group">
       <CardContent className="p-0">
@@ -71,12 +80,12 @@ const NewsCard: React.FC<NewsCardProps> = ({ article }) => {
           </p>
           
           <a 
-            href={article.url} 
+            href={validUrl} 
             target="_blank" 
             rel="noopener noreferrer"
             className="flex items-center text-xs font-medium text-primary hover:text-primary/80 transition-colors mt-2 pt-2 border-t border-muted"
           >
-            Read on {article.site} <ExternalLink className="h-3 w-3 ml-1" />
+            Read on {siteName} <ExternalLink className="h-3 w-3 ml-1" />
           </a>
         </div>
       </CardContent>
