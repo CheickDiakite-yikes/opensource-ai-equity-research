@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -12,7 +11,8 @@ import {
   fetchStockQuote, 
   fetchEarningsTranscripts, 
   fetchSECFilings,
-  generateTranscriptHighlights
+  generateTranscriptHighlights,
+  fetchStockRating
 } from "@/services/api";
 import { toast } from "@/components/ui/use-toast";
 
@@ -28,17 +28,18 @@ const StockOverview = ({ symbol }: StockOverviewProps) => {
   const [loading, setLoading] = useState(true);
   const [documentsLoading, setDocumentsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [rating, setRating] = useState<string | null>(null);
 
-  // Load stock profile and quote data
   useEffect(() => {
     const loadData = async () => {
       try {
         setLoading(true);
         setError(null);
         
-        const [profileData, quoteData] = await Promise.all([
+        const [profileData, quoteData, ratingData] = await Promise.all([
           fetchStockProfile(symbol),
-          fetchStockQuote(symbol)
+          fetchStockQuote(symbol),
+          fetchStockRating(symbol)
         ]);
         
         if (!profileData || !quoteData) {
@@ -47,6 +48,7 @@ const StockOverview = ({ symbol }: StockOverviewProps) => {
         
         setProfile(profileData);
         setQuote(quoteData);
+        setRating(ratingData?.rating || null);
       } catch (err) {
         console.error("Error loading stock overview data:", err);
         setError(err.message);
@@ -60,7 +62,6 @@ const StockOverview = ({ symbol }: StockOverviewProps) => {
     }
   }, [symbol]);
 
-  // Load earnings calls and SEC filings data
   useEffect(() => {
     const loadDocuments = async () => {
       try {
@@ -71,9 +72,7 @@ const StockOverview = ({ symbol }: StockOverviewProps) => {
           fetchSECFilings(symbol)
         ]);
         
-        // If we have real data, use it
         if (earningsData && earningsData.length > 0) {
-          // Process the first few earnings calls to get highlights
           const processedCalls = await Promise.all(
             earningsData.slice(0, 3).map(async (call) => {
               if (call.content && !call.highlights) {
@@ -91,7 +90,6 @@ const StockOverview = ({ symbol }: StockOverviewProps) => {
           
           setEarningsCalls(processedCalls);
         } else {
-          // Fall back to mock data if API returns empty
           setEarningsCalls([
             {
               symbol,
@@ -122,11 +120,9 @@ const StockOverview = ({ symbol }: StockOverviewProps) => {
           ]);
         }
         
-        // If we have real SEC filings, use them
         if (filingsData && filingsData.length > 0) {
           setSecFilings(filingsData);
         } else {
-          // Fall back to mock data if API returns empty
           setSecFilings([
             {
               symbol,
@@ -290,6 +286,14 @@ const StockOverview = ({ symbol }: StockOverviewProps) => {
                 <p className="text-muted-foreground">Dividend</p>
                 <p className="font-medium">{profile.lastDiv ? profile.lastDiv.toFixed(2) : 'N/A'}</p>
               </div>
+              <div>
+                <p className="text-muted-foreground">Shares Outstanding</p>
+                <p className="font-medium">{quote.sharesOutstanding ? formatLargeNumber(quote.sharesOutstanding) : 'N/A'}</p>
+              </div>
+              <div>
+                <p className="text-muted-foreground">Stock Grade</p>
+                <p className="font-medium">{rating || profile.rating || 'N/A'}</p>
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -337,6 +341,12 @@ const StockOverview = ({ symbol }: StockOverviewProps) => {
                 <p className="font-medium">{profile.fullTimeEmployees || 'N/A'}</p>
               </div>
               <div>
+                <p className="text-muted-foreground">Location</p>
+                <p className="font-medium">
+                  {[profile.city, profile.state, profile.country].filter(Boolean).join(', ') || 'N/A'}
+                </p>
+              </div>
+              <div>
                 <p className="text-muted-foreground">Website</p>
                 <a 
                   href={profile.website} 
@@ -361,7 +371,6 @@ const StockOverview = ({ symbol }: StockOverviewProps) => {
         </CardContent>
       </Card>
       
-      {/* Earnings Transcript Analysis */}
       <Card>
         <CardHeader>
           <CardTitle className="text-lg flex items-center">
@@ -414,7 +423,6 @@ const StockOverview = ({ symbol }: StockOverviewProps) => {
         </CardContent>
       </Card>
       
-      {/* SEC Filings Section */}
       <Card>
         <CardHeader>
           <CardTitle className="text-lg flex items-center">

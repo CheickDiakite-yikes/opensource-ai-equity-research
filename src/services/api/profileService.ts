@@ -37,3 +37,21 @@ export const fetchStockQuote = async (symbol: string): Promise<StockQuote | null
     return null;
   }
 };
+
+/**
+ * Fetch stock rating data
+ */
+export const fetchStockRating = async (symbol: string): Promise<{ rating: string } | null> => {
+  try {
+    const data = await invokeSupabaseFunction<{ rating: string }[]>('get-stock-data', { 
+      symbol, 
+      endpoint: 'rating' 
+    });
+    
+    if (!data || !Array.isArray(data) || data.length === 0) return null;
+    return data[0];
+  } catch (error) {
+    console.error("Error fetching stock rating:", error);
+    return null;
+  }
+};

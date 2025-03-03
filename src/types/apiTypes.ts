@@ -1,4 +1,3 @@
-
 // Stock Profile Types
 export interface StockProfile {
   symbol: string;
@@ -37,6 +36,7 @@ export interface StockProfile {
   isActivelyTrading: boolean;
   isAdr: boolean;
   isFund: boolean;
+  rating: string; // Added rating field for stock grade
 }
 
 export interface StockQuote {
