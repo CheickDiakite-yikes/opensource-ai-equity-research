@@ -1,6 +1,5 @@
-
 import React from "react";
-import { ExternalLink, Calendar, ImageOff, ThumbsUp, ThumbsDown, MinusCircle } from "lucide-react";
+import { ExternalLink, Calendar, ImageOff, ThumbsUp, ThumbsDown, MinusCircle, Building } from "lucide-react";
 import { Card, CardContent, CardImage } from "@/components/ui/card";
 import { MarketNewsArticle } from "@/services/api/marketData/newsService";
 import { format, parseISO } from "date-fns";
@@ -26,7 +25,6 @@ const NewsCard: React.FC<NewsCardProps> = ({ article, index }) => {
     try {
       let date;
       
-      // Handle date string in format "YYYY-MM-DD HH:MM:SS"
       if (dateString.includes(' ')) {
         date = new Date(dateString.replace(' ', 'T'));
       } else {
@@ -94,7 +92,12 @@ const NewsCard: React.FC<NewsCardProps> = ({ article, index }) => {
           className="group-hover:scale-105 transition-transform duration-500"
           fallback={
             article.symbol ? 
-              <CompanyLogoFallback symbol={article.symbol} /> : 
+              <div className="flex items-center justify-center h-full">
+                <div className="flex items-center justify-center h-full">
+                  <Building className="h-12 w-12 text-muted-foreground/50" />
+                  <span className="ml-2 text-xl font-bold text-muted-foreground/70">{article.symbol}</span>
+                </div>
+              </div> : 
               <div className="flex items-center justify-center h-full">
                 <ImageOff className="h-10 w-10 text-muted-foreground/50" />
               </div>

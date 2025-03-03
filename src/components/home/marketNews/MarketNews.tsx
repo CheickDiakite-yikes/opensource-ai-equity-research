@@ -4,7 +4,6 @@ import { motion } from "framer-motion";
 import { Newspaper } from "lucide-react";
 import SectionHeader from "../SectionHeader";
 import { MarketNewsArticle } from "@/services/api/marketData/newsService";
-import { fetchCompanyLogo } from "@/services/api/marketData";
 import NewsCard from "./NewsCard";
 import NewsCardSkeleton from "./NewsCardSkeleton";
 
@@ -17,13 +16,7 @@ const MarketNews: React.FC<MarketNewsProps> = ({
   newsData,
   isLoading = false 
 }) => {
-  useEffect(() => {
-    newsData.forEach(article => {
-      if (article.symbol) {
-        fetchCompanyLogo(article.symbol).catch(console.error);
-      }
-    });
-  }, [newsData]);
+  // Removed fetchCompanyLogo usage as requested
   
   return (
     <div className="relative py-8 bg-gradient-to-b from-muted/20 to-background">
