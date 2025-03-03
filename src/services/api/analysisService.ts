@@ -1,3 +1,4 @@
+
 import { invokeSupabaseFunction } from "./base";
 import { AIDCFSuggestion, CustomDCFParams, CustomDCFResult, GrowthInsight, ResearchReport, StockPrediction } from "@/types/aiAnalysisTypes";
 import { EarningsCall, SECFiling } from "@/types";
@@ -36,7 +37,7 @@ export const fetchCustomDCF = async (symbol: string, params: CustomDCFParams): P
   try {
     console.log(`Fetching custom DCF for ${symbol} with params:`, params);
     
-    const data = await invokeSupabaseFunction<any[]>('get-custom-dcf', { 
+    const data = await invokeSupabaseFunction<any>('get-custom-dcf', { 
       symbol, 
       params
     });
@@ -47,7 +48,8 @@ export const fetchCustomDCF = async (symbol: string, params: CustomDCFParams): P
     }
     
     // Check if we received an error object
-    if (!Array.isArray(data) && 'error' in data) {
+    // Type check to ensure data has error properties when needed
+    if (data && typeof data === 'object' && 'error' in data) {
       console.error("Error from DCF API:", data.error, data.details);
       throw new Error(data.details || data.error || "DCF calculation failed");
     }
