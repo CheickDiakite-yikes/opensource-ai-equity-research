@@ -126,6 +126,215 @@ const ResearchReportDisplay: React.FC<ResearchReportDisplayProps> = ({ report })
     }
   };
 
+  // Create sensitivity analysis section content
+  const renderSensitivityAnalysisContent = () => {
+    if (!report.scenarioAnalysis) return null;
+    
+    return (
+      <div className="space-y-3">
+        {/* Bull Case */}
+        <div className="cursor-pointer" onClick={() => toggleScenario('bull')}>
+          <div className="flex justify-between items-center mb-1">
+            <div className="flex items-center">
+              <TrendingUp className="h-4 w-4 text-green-600 mr-2" />
+              <span className="font-medium">Bull Case</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-green-600 font-semibold">
+                {report.scenarioAnalysis.bullCase.price}
+              </span>
+              <span className="text-xs text-muted-foreground">
+                ({report.scenarioAnalysis.bullCase.probability} probability)
+              </span>
+            </div>
+          </div>
+          <Progress 
+            value={parseInt(report.scenarioAnalysis.bullCase.probability) || 25} 
+            className="h-2 bg-gray-100" 
+            indicatorClassName="bg-green-600" 
+          />
+          
+          {expandedScenarios === 'bull' && (
+            <div className="mt-2 p-3 bg-green-50 rounded-md">
+              <p className="text-sm font-medium text-green-800 mb-1">Key Drivers:</p>
+              <ul className="text-sm list-disc pl-5 text-green-700 space-y-1">
+                {report.scenarioAnalysis.bullCase.drivers.map((driver, idx) => (
+                  <li key={idx}>{driver}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
+        
+        {/* Base Case */}
+        <div className="cursor-pointer" onClick={() => toggleScenario('base')}>
+          <div className="flex justify-between items-center mb-1">
+            <div className="flex items-center">
+              <Activity className="h-4 w-4 text-blue-600 mr-2" />
+              <span className="font-medium">Base Case</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-blue-600 font-semibold">
+                {report.scenarioAnalysis.baseCase.price}
+              </span>
+              <span className="text-xs text-muted-foreground">
+                ({report.scenarioAnalysis.baseCase.probability} probability)
+              </span>
+            </div>
+          </div>
+          <Progress 
+            value={parseInt(report.scenarioAnalysis.baseCase.probability) || 50} 
+            className="h-2 bg-gray-100" 
+            indicatorClassName="bg-blue-600" 
+          />
+          
+          {expandedScenarios === 'base' && (
+            <div className="mt-2 p-3 bg-blue-50 rounded-md">
+              <p className="text-sm font-medium text-blue-800 mb-1">Key Drivers:</p>
+              <ul className="text-sm list-disc pl-5 text-blue-700 space-y-1">
+                {report.scenarioAnalysis.baseCase.drivers.map((driver, idx) => (
+                  <li key={idx}>{driver}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
+        
+        {/* Bear Case */}
+        <div className="cursor-pointer" onClick={() => toggleScenario('bear')}>
+          <div className="flex justify-between items-center mb-1">
+            <div className="flex items-center">
+              <TrendingDown className="h-4 w-4 text-red-600 mr-2" />
+              <span className="font-medium">Bear Case</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-red-600 font-semibold">
+                {report.scenarioAnalysis.bearCase.price}
+              </span>
+              <span className="text-xs text-muted-foreground">
+                ({report.scenarioAnalysis.bearCase.probability} probability)
+              </span>
+            </div>
+          </div>
+          <Progress 
+            value={parseInt(report.scenarioAnalysis.bearCase.probability) || 25} 
+            className="h-2 bg-gray-100" 
+            indicatorClassName="bg-red-600" 
+          />
+          
+          {expandedScenarios === 'bear' && (
+            <div className="mt-2 p-3 bg-red-50 rounded-md">
+              <p className="text-sm font-medium text-red-800 mb-1">Key Drivers:</p>
+              <ul className="text-sm list-disc pl-5 text-red-700 space-y-1">
+                {report.scenarioAnalysis.bearCase.drivers.map((driver, idx) => (
+                  <li key={idx}>{driver}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
+
+  // Create growth catalysts section content
+  const renderGrowthCatalystsContent = () => {
+    if (!report.catalysts) return null;
+    
+    return (
+      <div className="space-y-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* Positive Catalysts */}
+          <div className="p-3 bg-green-50 rounded-lg">
+            <h4 className="font-medium text-green-800 mb-2 flex items-center">
+              <TrendingUp className="h-4 w-4 mr-1.5" />
+              Positive Catalysts
+            </h4>
+            <ul className="space-y-2">
+              {report.catalysts.positive.map((catalyst, index) => (
+                <li key={index} className="text-sm text-green-700 pl-2 border-l-2 border-green-300">
+                  {catalyst}
+                </li>
+              ))}
+            </ul>
+          </div>
+          
+          {/* Negative Catalysts */}
+          <div className="p-3 bg-red-50 rounded-lg">
+            <h4 className="font-medium text-red-800 mb-2 flex items-center">
+              <TrendingDown className="h-4 w-4 mr-1.5" />
+              Growth Inhibitors
+            </h4>
+            <ul className="space-y-2">
+              {report.catalysts.negative.map((catalyst, index) => (
+                <li key={index} className="text-sm text-red-700 pl-2 border-l-2 border-red-300">
+                  {catalyst}
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+        
+        {/* Timeline if available */}
+        {report.catalysts.timeline && (
+          <div className="mt-4 pt-3 border-t">
+            <h4 className="font-medium mb-2">Catalyst Timeline</h4>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              <div className="p-2 bg-gray-50 rounded">
+                <span className="text-xs font-medium text-gray-600 block mb-1">Short Term</span>
+                <ul className="text-sm list-disc pl-5 space-y-1">
+                  {report.catalysts.timeline.shortTerm.map((item, idx) => (
+                    <li key={idx}>{item}</li>
+                  ))}
+                </ul>
+              </div>
+              <div className="p-2 bg-gray-50 rounded">
+                <span className="text-xs font-medium text-gray-600 block mb-1">Medium Term</span>
+                <ul className="text-sm list-disc pl-5 space-y-1">
+                  {report.catalysts.timeline.mediumTerm.map((item, idx) => (
+                    <li key={idx}>{item}</li>
+                  ))}
+                </ul>
+              </div>
+              <div className="p-2 bg-gray-50 rounded">
+                <span className="text-xs font-medium text-gray-600 block mb-1">Long Term</span>
+                <ul className="text-sm list-disc pl-5 space-y-1">
+                  {report.catalysts.timeline.longTerm.map((item, idx) => (
+                    <li key={idx}>{item}</li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  // Create an array of all report sections including the new ones
+  const allSections = [
+    // Add Sensitivity Analysis if available
+    ...(report.scenarioAnalysis ? [{
+      title: "Sensitivity Analysis",
+      content: renderSensitivityAnalysisContent(),
+      icon: <Target className="h-4 w-4" />
+    }] : []),
+    
+    // Add Growth Catalysts if available
+    ...(report.catalysts ? [{
+      title: "Growth Catalysts & Inhibitors",
+      content: renderGrowthCatalystsContent(),
+      icon: <Lightbulb className="h-4 w-4" />
+    }] : []),
+    
+    // Add the standard sections
+    ...report.sections.map(section => ({
+      title: section.title,
+      content: <div dangerouslySetInnerHTML={{ __html: section.content.replace(/\n/g, '<br>') }} />,
+      icon: <ArrowRight className="h-4 w-4" />
+    }))
+  ];
+
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-start">
@@ -163,218 +372,6 @@ const ResearchReportDisplay: React.FC<ResearchReportDisplayProps> = ({ report })
         )}
       </div>
       
-      {/* Scenario Analysis Section */}
-      {report.scenarioAnalysis && (
-        <Card className="overflow-hidden">
-          <CardContent className="p-4">
-            <div className="mb-3">
-              <h3 className="text-lg font-medium flex items-center">
-                <Target className="h-5 w-5 mr-2 text-primary" />
-                Sensitivity Analysis
-              </h3>
-              <p className="text-sm text-muted-foreground">
-                Price target scenarios based on different market conditions and outcomes
-              </p>
-            </div>
-            
-            <div className="space-y-3 mt-4">
-              {/* Bull Case */}
-              <div 
-                className="cursor-pointer" 
-                onClick={() => toggleScenario('bull')}
-              >
-                <div className="flex justify-between items-center mb-1">
-                  <div className="flex items-center">
-                    <TrendingUp className="h-4 w-4 text-green-600 mr-2" />
-                    <span className="font-medium">Bull Case</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-green-600 font-semibold">
-                      {report.scenarioAnalysis.bullCase.price}
-                    </span>
-                    <span className="text-xs text-muted-foreground">
-                      ({report.scenarioAnalysis.bullCase.probability} probability)
-                    </span>
-                  </div>
-                </div>
-                <Progress 
-                  value={parseInt(report.scenarioAnalysis.bullCase.probability) || 25} 
-                  className="h-2 bg-gray-100" 
-                  indicatorClassName="bg-green-600" 
-                />
-                
-                {expandedScenarios === 'bull' && (
-                  <div className="mt-2 p-3 bg-green-50 rounded-md">
-                    <p className="text-sm font-medium text-green-800 mb-1">Key Drivers:</p>
-                    <ul className="text-sm list-disc pl-5 text-green-700 space-y-1">
-                      {report.scenarioAnalysis.bullCase.drivers.map((driver, idx) => (
-                        <li key={idx}>{driver}</li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-              </div>
-              
-              {/* Base Case */}
-              <div 
-                className="cursor-pointer" 
-                onClick={() => toggleScenario('base')}
-              >
-                <div className="flex justify-between items-center mb-1">
-                  <div className="flex items-center">
-                    <Activity className="h-4 w-4 text-blue-600 mr-2" />
-                    <span className="font-medium">Base Case</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-blue-600 font-semibold">
-                      {report.scenarioAnalysis.baseCase.price}
-                    </span>
-                    <span className="text-xs text-muted-foreground">
-                      ({report.scenarioAnalysis.baseCase.probability} probability)
-                    </span>
-                  </div>
-                </div>
-                <Progress 
-                  value={parseInt(report.scenarioAnalysis.baseCase.probability) || 50} 
-                  className="h-2 bg-gray-100" 
-                  indicatorClassName="bg-blue-600" 
-                />
-                
-                {expandedScenarios === 'base' && (
-                  <div className="mt-2 p-3 bg-blue-50 rounded-md">
-                    <p className="text-sm font-medium text-blue-800 mb-1">Key Drivers:</p>
-                    <ul className="text-sm list-disc pl-5 text-blue-700 space-y-1">
-                      {report.scenarioAnalysis.baseCase.drivers.map((driver, idx) => (
-                        <li key={idx}>{driver}</li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-              </div>
-              
-              {/* Bear Case */}
-              <div 
-                className="cursor-pointer" 
-                onClick={() => toggleScenario('bear')}
-              >
-                <div className="flex justify-between items-center mb-1">
-                  <div className="flex items-center">
-                    <TrendingDown className="h-4 w-4 text-red-600 mr-2" />
-                    <span className="font-medium">Bear Case</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-red-600 font-semibold">
-                      {report.scenarioAnalysis.bearCase.price}
-                    </span>
-                    <span className="text-xs text-muted-foreground">
-                      ({report.scenarioAnalysis.bearCase.probability} probability)
-                    </span>
-                  </div>
-                </div>
-                <Progress 
-                  value={parseInt(report.scenarioAnalysis.bearCase.probability) || 25} 
-                  className="h-2 bg-gray-100" 
-                  indicatorClassName="bg-red-600" 
-                />
-                
-                {expandedScenarios === 'bear' && (
-                  <div className="mt-2 p-3 bg-red-50 rounded-md">
-                    <p className="text-sm font-medium text-red-800 mb-1">Key Drivers:</p>
-                    <ul className="text-sm list-disc pl-5 text-red-700 space-y-1">
-                      {report.scenarioAnalysis.bearCase.drivers.map((driver, idx) => (
-                        <li key={idx}>{driver}</li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-      
-      {/* Growth Catalysts Section */}
-      {report.catalysts && (
-        <Card className="overflow-hidden">
-          <CardContent className="p-4">
-            <div className="mb-3">
-              <h3 className="text-lg font-medium flex items-center">
-                <Lightbulb className="h-5 w-5 mr-2 text-primary" />
-                Growth Catalysts & Inhibitors
-              </h3>
-              <p className="text-sm text-muted-foreground">
-                Factors that could accelerate or hinder company growth
-              </p>
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-              {/* Positive Catalysts */}
-              <div className="p-3 bg-green-50 rounded-lg">
-                <h4 className="font-medium text-green-800 mb-2 flex items-center">
-                  <TrendingUp className="h-4 w-4 mr-1.5" />
-                  Positive Catalysts
-                </h4>
-                <ul className="space-y-2">
-                  {report.catalysts.positive.map((catalyst, index) => (
-                    <li key={index} className="text-sm text-green-700 pl-2 border-l-2 border-green-300">
-                      {catalyst}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-              
-              {/* Negative Catalysts */}
-              <div className="p-3 bg-red-50 rounded-lg">
-                <h4 className="font-medium text-red-800 mb-2 flex items-center">
-                  <TrendingDown className="h-4 w-4 mr-1.5" />
-                  Growth Inhibitors
-                </h4>
-                <ul className="space-y-2">
-                  {report.catalysts.negative.map((catalyst, index) => (
-                    <li key={index} className="text-sm text-red-700 pl-2 border-l-2 border-red-300">
-                      {catalyst}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </div>
-            
-            {/* Timeline if available */}
-            {report.catalysts.timeline && (
-              <div className="mt-4 border-t pt-3">
-                <h4 className="font-medium mb-2">Catalyst Timeline</h4>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                  <div className="p-2 bg-gray-50 rounded">
-                    <span className="text-xs font-medium text-gray-600 block mb-1">Short Term</span>
-                    <ul className="text-sm list-disc pl-5 space-y-1">
-                      {report.catalysts.timeline.shortTerm.map((item, idx) => (
-                        <li key={idx}>{item}</li>
-                      ))}
-                    </ul>
-                  </div>
-                  <div className="p-2 bg-gray-50 rounded">
-                    <span className="text-xs font-medium text-gray-600 block mb-1">Medium Term</span>
-                    <ul className="text-sm list-disc pl-5 space-y-1">
-                      {report.catalysts.timeline.mediumTerm.map((item, idx) => (
-                        <li key={idx}>{item}</li>
-                      ))}
-                    </ul>
-                  </div>
-                  <div className="p-2 bg-gray-50 rounded">
-                    <span className="text-xs font-medium text-gray-600 block mb-1">Long Term</span>
-                    <ul className="text-sm list-disc pl-5 space-y-1">
-                      {report.catalysts.timeline.longTerm.map((item, idx) => (
-                        <li key={idx}>{item}</li>
-                      ))}
-                    </ul>
-                  </div>
-                </div>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      )}
-      
       <div className="border rounded-lg p-4">
         <h3 className="text-lg font-medium mb-2">Executive Summary</h3>
         <p className="text-sm leading-relaxed">{report.summary}</p>
@@ -385,17 +382,19 @@ const ResearchReportDisplay: React.FC<ResearchReportDisplayProps> = ({ report })
           <h3 className="font-medium">Report Sections</h3>
         </div>
         <div className="divide-y">
-          {report.sections.map((section, index) => (
+          {allSections.map((section, index) => (
             <details key={index} className="group">
               <summary className="flex cursor-pointer list-none items-center justify-between p-4 hover:bg-muted/50">
-                <h4 className="font-medium">{section.title}</h4>
+                <div className="flex items-center">
+                  {section.icon}
+                  <h4 className="font-medium ml-2">{section.title}</h4>
+                </div>
                 <ArrowRight className="h-4 w-4 transition-transform group-open:rotate-90" />
               </summary>
               <div className="p-4 pt-0">
-                <div 
-                  className="text-sm text-muted-foreground prose-sm max-w-none"
-                  dangerouslySetInnerHTML={{ __html: section.content.replace(/\n/g, '<br>') }}
-                />
+                <div className="text-sm text-muted-foreground prose-sm max-w-none">
+                  {section.content}
+                </div>
               </div>
             </details>
           ))}
