@@ -11,6 +11,7 @@ export interface EarningsCall {
 }
 
 export interface SECFiling {
+  id?: number;
   symbol: string;
   type: string;
   filingDate: string;

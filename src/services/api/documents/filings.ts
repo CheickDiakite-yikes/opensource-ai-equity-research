@@ -24,6 +24,7 @@ export const fetchSECFilings = async (symbol: string): Promise<SECFiling[]> => {
     if (cachedFilings && cachedFilings.length > 0) {
       console.log(`Using ${cachedFilings.length} cached SEC filings for ${symbol}`);
       return cachedFilings.map(filing => ({
+        id: filing.id,
         symbol: filing.symbol,
         type: filing.type,
         filingDate: filing.filing_date,
@@ -35,13 +36,10 @@ export const fetchSECFilings = async (symbol: string): Promise<SECFiling[]> => {
       }));
     }
     
-    // Otherwise, get from API with retry logic
-    console.log(`Fetching SEC filings from API for ${symbol}`);
+    // Otherwise, get from Finnhub API with retry logic
+    console.log(`Fetching SEC filings from Finnhub API for ${symbol}`);
     const data = await withRetry(() => 
-      invokeSupabaseFunction<SECFiling[]>('get-stock-data', { 
-        symbol, 
-        endpoint: 'sec-filings' 
-      })
+      invokeSupabaseFunction<SECFiling[]>('get-sec-filings', { symbol })
     );
     
     // Trigger background caching process
@@ -62,8 +60,30 @@ export const fetchSECFilings = async (symbol: string): Promise<SECFiling[]> => {
 /**
  * Get a direct download link for an SEC filing
  */
-export const getSECFilingDownloadLink = (filingUrl: string): string => {
-  // For SEC filings, we usually just return the original URL
-  // as it typically points directly to the document on sec.gov
-  return filingUrl;
+export const getSECFilingDownloadLink = async (
+  url: string, 
+  filingId?: number,
+  symbol?: string,
+  form?: string,
+  filingDate?: string
+): Promise<string> => {
+  try {
+    const response = await invokeSupabaseFunction<{ url: string, cached: boolean }>('download-sec-filing', {
+      filingId,
+      url,
+      symbol,
+      form,
+      filingDate
+    });
+    
+    if (response && response.url) {
+      return response.url;
+    }
+    
+    // Fallback to the original URL if the function fails
+    return url;
+  } catch (error) {
+    console.error("Error getting SEC filing download link:", error);
+    return url;
+  }
 };

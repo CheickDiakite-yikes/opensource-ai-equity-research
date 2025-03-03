@@ -1,9 +1,12 @@
 
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { toast } from "@/components/ui/use-toast";
 import { SECFiling } from "@/types";
 import { FileText, Download, ExternalLink } from "lucide-react";
+import { getSECFilingDownloadLink } from "@/services/api/documents/filings";
 
 interface SECFilingsSectionProps {
   secFilings: SECFiling[];
@@ -13,6 +16,46 @@ interface SECFilingsSectionProps {
 }
 
 const SECFilingsSection = ({ secFilings, isLoading, symbol, companyName }: SECFilingsSectionProps) => {
+  const [downloadingIds, setDownloadingIds] = useState<Set<number | string>>(new Set());
+
+  const handleDownload = async (filing: SECFiling) => {
+    try {
+      // Mark this filing as downloading
+      setDownloadingIds(prev => new Set(prev).add(filing.id || filing.filingNumber));
+      
+      // Get download link (this will also cache the document)
+      const downloadUrl = await getSECFilingDownloadLink(
+        filing.url,
+        filing.id,
+        filing.symbol,
+        filing.form,
+        filing.filingDate
+      );
+      
+      // Open in new tab
+      window.open(downloadUrl, '_blank');
+      
+      toast({
+        title: "SEC Filing",
+        description: `${filing.type} downloaded successfully`,
+      });
+    } catch (error) {
+      console.error("Error downloading SEC filing:", error);
+      toast({
+        title: "Download Error",
+        description: "Failed to download the SEC filing",
+        variant: "destructive",
+      });
+    } finally {
+      // Remove from downloading state
+      setDownloadingIds(prev => {
+        const next = new Set(prev);
+        next.delete(filing.id || filing.filingNumber);
+        return next;
+      });
+    }
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -37,16 +80,20 @@ const SECFilingsSection = ({ secFilings, isLoading, symbol, companyName }: SECFi
               </thead>
               <tbody>
                 {secFilings.map((filing, index) => (
-                  <tr key={index} className="border-b last:border-0">
+                  <tr key={filing.id || index} className="border-b last:border-0">
                     <td className="py-3">{filing.type || filing.form}</td>
                     <td className="py-3">{new Date(filing.reportDate).toLocaleDateString()}</td>
                     <td className="py-3">{new Date(filing.filingDate).toLocaleDateString()}</td>
                     <td className="py-3 text-right">
-                      <Button variant="ghost" size="sm" className="gap-1 text-primary" asChild>
-                        <a href={filing.url} target="_blank" rel="noopener noreferrer">
-                          <Download className="h-3.5 w-3.5" />
-                          <span>Download</span>
-                        </a>
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="gap-1 text-primary"
+                        onClick={() => handleDownload(filing)}
+                        disabled={downloadingIds.has(filing.id || filing.filingNumber)}
+                      >
+                        <Download className="h-3.5 w-3.5" />
+                        <span>{downloadingIds.has(filing.id || filing.filingNumber) ? 'Downloading...' : 'Download'}</span>
                       </Button>
                     </td>
                   </tr>
