@@ -2,7 +2,7 @@
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ReportGeneratorForm } from "./ReportGeneratorForm";
+import ReportGeneratorForm from "./ReportGeneratorForm";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import ReportTabs from "./ReportTabs";
 import { FileText, Info, TrendingUp, AlertTriangle } from "lucide-react";
