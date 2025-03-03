@@ -1,9 +1,10 @@
 
-project_id = "rnpcygrrxeeqphdjuesh"
+project_id = "equity-research"
+
 [api]
 enabled = true
 port = 54321
-schemas = ["public", "storage", "graphql_public"]
+schemas = ["public", "storage", "graphql_public", "app"]
 extra_search_path = ["public", "extensions"]
 max_rows = 1000
 
@@ -12,9 +13,20 @@ port = 54322
 shadow_port = 54320
 major_version = 15
 
+[db.pooler]
+enabled = false
+port = 54329
+pool_mode = "transaction"
+default_pool_size = 20
+max_client_conn = 100
+
+[realtime]
+enabled = true
+
 [studio]
 enabled = true
 port = 54323
+api_url = "http://localhost"
 
 [inbucket]
 enabled = true
@@ -24,16 +36,70 @@ pop3_port = 54326
 
 [storage]
 enabled = true
-file_size_limit = "50MiB"
+file_size_limit = 104857600
 
 [auth]
 enabled = true
-site_url = "http://localhost:3000"
-additional_redirect_urls = ["https://localhost:3000"]
+site_url = "https://equity-ai-researcher.lovable.dev"
+additional_redirect_urls = ["https://localhost:3000", "http://localhost:5173"]
 jwt_expiry = 3600
+enable_refresh_token_rotation = true
+refresh_token_reuse_interval = 10
 enable_signup = true
+
+[auth.email]
+enable_signup = true
+double_confirm_changes = true
+enable_confirmations = true
+
+[auth.external.google]
+enabled = false
+client_id = ""
+secret = ""
+
+[auth.external.github]
+enabled = false
+client_id = ""
+secret = ""
 
 [analytics]
 enabled = false
 port = 54327
 vector_port = 54328
+backend = "postgres"
+
+[experimental]
+trace = {enabled = false}
+
+[ai]
+enabled = false
+
+[local.migrations]
+auto_migration_enabled = true
+
+[[functions]]
+name = "get-stock-data"
+
+[[functions]]
+name = "get-custom-dcf"
+
+[[functions]]
+name = "generate-research-report"
+
+[[functions]]
+name = "analyze-growth-insights"
+
+[[functions]]
+name = "predict-stock-price"
+
+[[functions]]
+name = "cache-company-documents"
+
+[[functions]]
+name = "generate-transcript-highlights"
+
+[[functions]]
+name = "get-finnhub-news"
+
+[[functions]]
+name = "generate-dcf-assumptions"

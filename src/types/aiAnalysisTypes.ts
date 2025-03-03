@@ -127,6 +127,46 @@ export interface CustomDCFParams {
   beta: number;
 }
 
+// New type for AI-generated DCF assumptions
+export interface AIDCFSuggestion {
+  symbol: string;
+  timestamp: string;
+  expiresAt: string;
+  assumptions: {
+    // Growth parameters
+    revenueGrowthPct: number;
+    ebitdaMarginPct: number;
+    capitalExpenditurePct: number;
+    taxRatePct: number;
+    
+    // Working capital parameters
+    depreciationAndAmortizationPct: number;
+    cashAndShortTermInvestmentsPct: number;
+    receivablesPct: number;
+    inventoriesPct: number;
+    payablesPct: number;
+    ebitPct: number;
+    operatingCashFlowPct: number;
+    sellingGeneralAndAdministrativeExpensesPct: number;
+    
+    // Rate parameters
+    longTermGrowthRatePct: number;
+    costOfEquityPct: number;
+    costOfDebtPct: number;
+    marketRiskPremiumPct: number;
+    riskFreeRatePct: number;
+    
+    // Other
+    beta: number;
+  };
+  explanation: string;
+  industryComparison?: {
+    revenueGrowth: { company: number; industry: number; difference: string };
+    profitMargin: { company: number; industry: number; difference: string };
+    debtRatio: { company: number; industry: number; difference: string };
+  };
+}
+
 // Yearly projection data from DCF model
 export interface YearlyDCFData {
   year: string;

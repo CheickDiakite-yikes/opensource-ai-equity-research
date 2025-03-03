@@ -5,8 +5,13 @@ import DCFValuationSummary from "./DCFValuationSummary";
 import ProjectedCashFlowsTable from "./ProjectedCashFlowsTable";
 import SensitivityAnalysisTable from "./SensitivityAnalysisTable";
 import { useCustomDCF } from "@/hooks/useCustomDCF";
-import { Loader2 } from "lucide-react";
+import { useAIDCFAssumptions } from "@/hooks/useAIDCFAssumptions";
+import { Loader2, RotateCw } from "lucide-react";
 import { toast } from "@/components/ui/use-toast";
+import { Button } from "@/components/ui/button";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { InfoIcon } from "lucide-react";
+import { CustomDCFParams } from "@/types/aiAnalysisTypes";
 
 interface AutomaticDCFSectionProps {
   financials: any[];
@@ -15,24 +20,24 @@ interface AutomaticDCFSectionProps {
 
 const AutomaticDCFSection: React.FC<AutomaticDCFSectionProps> = ({ financials, symbol }) => {
   const { calculateCustomDCF, customDCFResult, projectedData, isCalculating, error } = useCustomDCF(symbol);
+  const { assumptions, isLoading: isLoadingAssumptions, error: assumptionsError, refreshAssumptions } = useAIDCFAssumptions(symbol);
   const [hasAttemptedFetch, setHasAttemptedFetch] = useState(false);
 
   // Get the current price from financials or use a fallback
   const currentPrice = financials[0]?.price || 100;
 
+  // When assumptions change or on initial load, fetch DCF data
   useEffect(() => {
-    // Only fetch DCF data if we have a valid symbol and haven't tried already
-    if (symbol && !hasAttemptedFetch && !customDCFResult) {
-      fetchDCFData();
+    if (symbol && !hasAttemptedFetch && assumptions && !customDCFResult) {
+      calculateDCFWithAIAssumptions();
     }
-  }, [symbol]);
+  }, [symbol, assumptions]);
 
-  const fetchDCFData = async () => {
-    setHasAttemptedFetch(true);
-    
-    try {
-      // Default parameters (all provided in their correct format)
-      const params = {
+  // Convert AI assumptions to CustomDCFParams for the API
+  const convertAssumptionsToParams = (): CustomDCFParams => {
+    if (!assumptions) {
+      // Fallback default parameters
+      return {
         symbol,
         // Growth parameters (as decimals)
         revenueGrowthPct: 0.1094,
@@ -60,13 +65,74 @@ const AutomaticDCFSection: React.FC<AutomaticDCFSectionProps> = ({ financials, s
         // Other
         beta: financials[0]?.beta || 1.244,
       };
+    }
+
+    return {
+      symbol,
+      // Growth parameters
+      revenueGrowthPct: assumptions.assumptions.revenueGrowthPct,
+      ebitdaPct: assumptions.assumptions.ebitdaMarginPct,
+      capitalExpenditurePct: assumptions.assumptions.capitalExpenditurePct,
+      taxRate: assumptions.assumptions.taxRatePct,
       
+      // Working capital parameters
+      depreciationAndAmortizationPct: assumptions.assumptions.depreciationAndAmortizationPct,
+      cashAndShortTermInvestmentsPct: assumptions.assumptions.cashAndShortTermInvestmentsPct,
+      receivablesPct: assumptions.assumptions.receivablesPct,
+      inventoriesPct: assumptions.assumptions.inventoriesPct,
+      payablesPct: assumptions.assumptions.payablesPct,
+      ebitPct: assumptions.assumptions.ebitPct,
+      operatingCashFlowPct: assumptions.assumptions.operatingCashFlowPct,
+      sellingGeneralAndAdministrativeExpensesPct: assumptions.assumptions.sellingGeneralAndAdministrativeExpensesPct,
+      
+      // Rate parameters
+      longTermGrowthRate: assumptions.assumptions.longTermGrowthRatePct,
+      costOfEquity: assumptions.assumptions.costOfEquityPct,
+      costOfDebt: assumptions.assumptions.costOfDebtPct,
+      marketRiskPremium: assumptions.assumptions.marketRiskPremiumPct,
+      riskFreeRate: assumptions.assumptions.riskFreeRatePct,
+      
+      // Other
+      beta: assumptions.assumptions.beta
+    };
+  };
+
+  const calculateDCFWithAIAssumptions = async () => {
+    setHasAttemptedFetch(true);
+    
+    try {
+      const params = convertAssumptionsToParams();
+      
+      console.log("Calculating DCF with AI-generated parameters:", params);
       await calculateCustomDCF(params);
     } catch (err) {
-      console.error("Error fetching DCF data:", err);
+      console.error("Error calculating DCF with AI assumptions:", err);
       toast({
         title: "Error",
-        description: "Failed to load DCF data. Using estimated values instead.",
+        description: "Failed to calculate DCF. Using estimated values instead.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleRefreshAssumptions = async () => {
+    try {
+      toast({
+        title: "Refreshing",
+        description: "Generating new AI-powered DCF assumptions...",
+      });
+      
+      await refreshAssumptions();
+      
+      // If assumptions refreshed successfully, recalculate DCF
+      if (assumptions) {
+        calculateDCFWithAIAssumptions();
+      }
+    } catch (err) {
+      console.error("Error refreshing assumptions:", err);
+      toast({
+        title: "Error",
+        description: "Failed to refresh DCF assumptions.",
         variant: "destructive",
       });
     }
@@ -106,7 +172,7 @@ const AutomaticDCFSection: React.FC<AutomaticDCFSectionProps> = ({ financials, s
   const dcfData = useMockData ? mockDCFData : {
     intrinsicValue: customDCFResult.equityValuePerShare,
     assumptions: {
-      growthRate: `${(customDCFResult.revenuePercentage || 0).toFixed(1)}% (first 5 years), ${customDCFResult.longTermGrowthRate}% (terminal)`,
+      growthRate: `${(assumptions?.assumptions.revenueGrowthPct * 100 || 0).toFixed(1)}% (first 5 years), ${(assumptions?.assumptions.longTermGrowthRatePct * 100 || 0).toFixed(1)}% (terminal)`,
       discountRate: `${customDCFResult.wacc.toFixed(2)}%`,
       terminalMultiple: "DCF Model",
       taxRate: `${customDCFResult.taxRate.toFixed(1)}%`
@@ -125,11 +191,35 @@ const AutomaticDCFSection: React.FC<AutomaticDCFSectionProps> = ({ financials, s
 
   return (
     <div className="space-y-6">
-      {isCalculating && (
+      {(isCalculating || isLoadingAssumptions) && (
         <div className="flex justify-center items-center py-4">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          <span className="ml-2">Calculating DCF valuation...</span>
+          <span className="ml-2">
+            {isLoadingAssumptions ? "Loading AI-powered DCF assumptions..." : "Calculating DCF valuation..."}
+          </span>
         </div>
+      )}
+      
+      {assumptions && !isLoadingAssumptions && (
+        <Alert className="bg-blue-50 border-blue-200">
+          <InfoIcon className="h-4 w-4 text-blue-500" />
+          <AlertTitle className="font-medium text-blue-700">AI-Generated DCF Assumptions</AlertTitle>
+          <AlertDescription className="text-sm text-blue-600">
+            <p className="mb-2">{assumptions.explanation}</p>
+            <div className="flex justify-end">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="mt-2 text-blue-600 border-blue-300"
+                onClick={handleRefreshAssumptions}
+                disabled={isLoadingAssumptions || isCalculating}
+              >
+                <RotateCw className="mr-2 h-4 w-4" />
+                Refresh Analysis
+              </Button>
+            </div>
+          </AlertDescription>
+        </Alert>
       )}
       
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -137,11 +227,11 @@ const AutomaticDCFSection: React.FC<AutomaticDCFSectionProps> = ({ financials, s
           dcfValue={dcfValue}
           currentPrice={currentPrice}
           assumptions={dcfData.assumptions}
-          isLoading={isCalculating}
+          isLoading={isCalculating || isLoadingAssumptions}
         />
         <ProjectedCashFlowsTable 
           projections={dcfData.projections}
-          isLoading={isCalculating}
+          isLoading={isCalculating || isLoadingAssumptions}
         />
       </div>
       
@@ -149,7 +239,7 @@ const AutomaticDCFSection: React.FC<AutomaticDCFSectionProps> = ({ financials, s
         headers={dcfData.sensitivity.headers}
         rows={dcfData.sensitivity.rows}
         currentPrice={currentPrice}
-        isLoading={isCalculating}
+        isLoading={isCalculating || isLoadingAssumptions}
       />
     </div>
   );
