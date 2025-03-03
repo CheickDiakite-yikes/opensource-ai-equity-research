@@ -1,8 +1,9 @@
 
 import React from "react";
 import { motion } from "framer-motion";
-import { TrendingUp, TrendingDown } from "lucide-react";
+import { TrendingUp, TrendingDown, LineChart } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import SectionHeader from "./SectionHeader";
 
 interface MarketIndex {
@@ -34,18 +35,19 @@ const MarketPerformance: React.FC<MarketPerformanceProps> = ({
           <SectionHeader 
             title="Market Performance"
             description="Track global market indices performance in real-time."
+            icon={<LineChart className="w-6 h-6 text-primary" />}
           />
           <div className="grid gap-6 grid-cols-1 lg:grid-cols-3">
             {[0, 1, 2].map((i) => (
-              <Card key={i} className="bg-card/50 backdrop-blur-sm border-muted animate-pulse">
+              <Card key={i} className="bg-card/50 backdrop-blur-sm border-muted animate-pulse hover-card-highlight">
                 <CardContent className="p-6">
                   <div className="h-7 w-32 bg-muted rounded mb-6"></div>
                   <div className="space-y-4">
-                    {[0, 1, 2, 3].map((j) => (
-                      <div key={j} className="flex justify-between items-center">
-                        <div className="h-6 w-24 bg-muted rounded"></div>
-                        <div className="h-6 w-20 bg-muted rounded"></div>
-                        <div className="h-6 w-16 bg-muted rounded"></div>
+                    {[0, 1, 2, 3, 4].map((j) => (
+                      <div key={j} className="flex justify-between items-center py-2 border-b border-muted/30">
+                        <div className="h-5 w-24 bg-muted/60 rounded"></div>
+                        <div className="h-5 w-20 bg-muted/60 rounded"></div>
+                        <div className="h-5 w-16 bg-muted/60 rounded"></div>
                       </div>
                     ))}
                   </div>
@@ -59,7 +61,7 @@ const MarketPerformance: React.FC<MarketPerformanceProps> = ({
   }
   
   return (
-    <div className="relative py-12">
+    <div className="relative py-16 bg-gradient-to-b from-background to-muted/20">
       <div className="container mx-auto px-4 max-w-[1400px]">
         <motion.div 
           initial={{ opacity: 0, y: 20 }}
@@ -70,22 +72,37 @@ const MarketPerformance: React.FC<MarketPerformanceProps> = ({
           <SectionHeader 
             title="Market Performance"
             description="Track global market indices performance in real-time."
+            icon={<LineChart className="w-6 h-6 text-primary" />}
           />
           
-          <div className="grid gap-6 grid-cols-1 lg:grid-cols-3">
+          <div className="grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
             {marketData.map((region) => (
-              <Card key={region.name} className="bg-card/50 backdrop-blur-sm border-muted overflow-hidden">
+              <Card 
+                key={region.name} 
+                className="bg-card/70 backdrop-blur-sm border border-muted/50 overflow-hidden shadow-md hover-card-highlight"
+              >
                 <CardContent className="p-6">
-                  <h3 className="text-xl font-semibold mb-4 text-foreground">{region.name}</h3>
-                  <div className="space-y-4">
+                  <h3 className="text-xl font-semibold mb-4 text-foreground flex items-center gap-2">
+                    <div className="w-1.5 h-5 bg-primary rounded-full"></div>
+                    {region.name}
+                  </h3>
+                  <div className="space-y-1">
                     {region.indices.map((index) => (
                       <div 
                         key={index.symbol} 
-                        className="flex justify-between items-center py-2 border-b border-border last:border-0"
+                        className="flex justify-between items-center py-3 border-b border-border/30 last:border-0 group hover:bg-muted/20 rounded px-1 transition-colors"
                       >
-                        <div className="text-sm font-medium text-foreground">{index.name}</div>
-                        <div className="text-sm font-medium text-foreground">{Number(index.price).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
-                        <div className={`flex items-center text-sm font-semibold ${index.changePercent >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+                        <div className="text-sm font-medium text-foreground/90">{index.name}</div>
+                        <div className="text-sm font-medium text-foreground/90">
+                          {Number(index.price).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        </div>
+                        <div 
+                          className={`flex items-center text-xs font-semibold px-2 py-1 rounded-md ${
+                            index.changePercent >= 0 
+                              ? 'text-emerald-700 bg-emerald-50 dark:text-emerald-400 dark:bg-emerald-950/40' 
+                              : 'text-red-700 bg-red-50 dark:text-red-400 dark:bg-red-950/40'
+                          }`}
+                        >
                           {index.changePercent >= 0 ? (
                             <TrendingUp className="w-3 h-3 mr-1" />
                           ) : (
@@ -99,6 +116,12 @@ const MarketPerformance: React.FC<MarketPerformanceProps> = ({
                 </CardContent>
               </Card>
             ))}
+          </div>
+          
+          <div className="mt-8 text-center">
+            <Button variant="outline" className="text-sm">
+              View All Markets
+            </Button>
           </div>
         </motion.div>
       </div>

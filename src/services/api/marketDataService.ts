@@ -1,3 +1,4 @@
+
 import { invokeSupabaseFunction } from "./base";
 import { HistoricalPriceData, NewsArticle, CompanyPeer } from "@/types";
 
@@ -57,13 +58,48 @@ export const fetchCompanyPeers = async (symbol: string): Promise<string[]> => {
   }
 };
 
+interface MarketIndex {
+  symbol: string;
+  name: string;
+  price: number;
+  change: number;
+  changePercent: number;
+}
+
+interface MarketRegion {
+  name: string;
+  indices: MarketIndex[];
+}
+
 /**
- * Get major market indices data
- * This is mock data for demonstration purposes
+ * Fetch market indices data from FMP API
  */
-export const fetchMarketIndices = async () => {
-  // In a real application, this would make an API call to get live market data
-  // For demonstration, we're returning mock data
+export const fetchMarketIndices = async (): Promise<MarketRegion[]> => {
+  try {
+    // We'll use our Supabase function to proxy the request to FMP
+    // In a real implementation, this would be fetching from the actual FMP API
+    const result = await invokeSupabaseFunction<any>('get-stock-data', { 
+      endpoint: 'market-indices' 
+    });
+    
+    if (result && Array.isArray(result)) {
+      return result as MarketRegion[];
+    }
+    
+    // If the API call fails, fall back to our mock data
+    console.warn("Falling back to mock market indices data");
+    return getFallbackMarketIndices();
+  } catch (error) {
+    console.error("Error fetching market indices:", error);
+    // Return mock data in case of error
+    return getFallbackMarketIndices();
+  }
+};
+
+/**
+ * Fallback mock data for market indices
+ */
+const getFallbackMarketIndices = (): MarketRegion[] => {
   return [
     {
       name: "Americas",

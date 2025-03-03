@@ -8,6 +8,7 @@ import RecentSearches from "./RecentSearches";
 import HowToUse from "./HowToUse";
 import MarketPerformance from "./MarketPerformance";
 import { fetchMarketIndices } from "@/services/api/marketDataService";
+import { toast } from "sonner";
 
 interface LandingViewProps {
   recentSearches: string[];
@@ -37,10 +38,13 @@ const LandingView: React.FC<LandingViewProps> = ({
   useEffect(() => {
     const getMarketData = async () => {
       try {
+        setIsLoading(true);
         const data = await fetchMarketIndices();
         setMarketData(data);
+        console.log("Market data loaded:", data);
       } catch (error) {
         console.error("Failed to fetch market data:", error);
+        toast.error("Unable to load market data. Please try again later.");
       } finally {
         setIsLoading(false);
       }
@@ -54,7 +58,7 @@ const LandingView: React.FC<LandingViewProps> = ({
       variants={container}
       initial="hidden"
       animate="show"
-      className="space-y-12 my-12"
+      className="space-y-0 my-12"
     >
       <HeroSection />
       <FeatureCards />
