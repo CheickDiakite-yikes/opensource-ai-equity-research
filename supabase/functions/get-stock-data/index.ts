@@ -20,17 +20,20 @@ serve(async (req) => {
   try {
     const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     const { data: { user } } = await supabase.auth.getUser(req.headers.get("Authorization")?.split(" ")[1] || "");
-    const { symbol, endpoint } = await req.json();
+    const { symbol, endpoint, limit = 10 } = await req.json();
 
-    if (!symbol || !endpoint) {
+    // For general-latest endpoint, symbol is optional
+    if (!endpoint) {
       return new Response(
-        JSON.stringify({ error: "Symbol and endpoint are required" }),
+        JSON.stringify({ error: "Endpoint is required" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
     // Define cache key
-    const cacheKey = `${endpoint}_${symbol}`.toLowerCase();
+    const cacheKey = symbol 
+      ? `${endpoint}_${symbol}_${limit}`.toLowerCase()
+      : `${endpoint}_${limit}`.toLowerCase();
     
     // Check for cached data if user is authenticated
     let cachedData = null;
@@ -82,10 +85,19 @@ serve(async (req) => {
         url = `https://financialmodelingprep.com/api/v3/historical-price-full/${symbol}?apikey=${FMP_API_KEY}`;
         break;
       case "news":
-        url = `https://financialmodelingprep.com/api/v3/stock_news?tickers=${symbol}&limit=10&apikey=${FMP_API_KEY}`;
+        url = `https://financialmodelingprep.com/api/v3/stock_news?tickers=${symbol}&limit=${limit}&apikey=${FMP_API_KEY}`;
         break;
       case "peers":
         url = `https://financialmodelingprep.com/api/v4/stock_peers?symbol=${symbol}&apikey=${FMP_API_KEY}`;
+        break;
+      case "general-latest":
+        url = `https://financialmodelingprep.com/api/v3/fmp/articles?page=0&size=${limit}&apikey=${FMP_API_KEY}`;
+        break;
+      case "press-releases-latest":
+        url = `https://financialmodelingprep.com/api/v3/press-releases/${symbol}?limit=${limit}&apikey=${FMP_API_KEY}`;
+        break;
+      case "stock-latest":
+        url = `https://financialmodelingprep.com/api/v3/stock_news?limit=${limit}&apikey=${FMP_API_KEY}`;
         break;
       default:
         return new Response(
@@ -94,9 +106,16 @@ serve(async (req) => {
         );
     }
 
+    console.log(`Fetching data from: ${url.replace(FMP_API_KEY, "API_KEY_HIDDEN")}`);
+
     // Fetch data from FMP API
     const response = await fetch(url);
+    if (!response.ok) {
+      throw new Error(`FMP API responded with status: ${response.status}`);
+    }
+    
     const data = await response.json();
+    console.log(`Received data from FMP API: ${data ? (Array.isArray(data) ? `${data.length} items` : 'object') : 'null'}`);
 
     // Store in cache if authenticated
     if (user && data) {

@@ -1,3 +1,4 @@
+
 import React from "react";
 import { motion } from "framer-motion";
 import { Newspaper, ExternalLink, Calendar, ImageOff, Building } from "lucide-react";
@@ -55,6 +56,7 @@ const MarketNews: React.FC<MarketNewsProps> = ({
     try {
       let date;
       
+      // Handle date string in format "YYYY-MM-DD HH:MM:SS"
       if (dateString.includes(' ')) {
         date = new Date(dateString.replace(' ', 'T'));
       } else {
@@ -73,7 +75,7 @@ const MarketNews: React.FC<MarketNewsProps> = ({
     }
   }
 
-  function getImageUrl(imageUrl: string | undefined, symbol?: string): string {
+  function getImageUrl(imageUrl: string | undefined, symbol?: string | null): string {
     if (!imageUrl) return '/placeholder.svg';
     
     const isValidUrl = imageUrl.startsWith('http') && 

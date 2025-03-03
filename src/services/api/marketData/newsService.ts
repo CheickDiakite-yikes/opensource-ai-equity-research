@@ -2,11 +2,11 @@
 import { invokeSupabaseFunction } from "../base";
 
 /**
- * Market News Article type based on FMP Stock News Feed API
+ * Market News Article type based on FMP General News API format
  */
 export interface MarketNewsArticle {
-  symbol?: string;
-  publishedDate: string;  // "2025-02-03 23:53:40"
+  symbol?: string | null;
+  publishedDate: string;
   title: string;
   image: string;
   site: string;
@@ -16,12 +16,12 @@ export interface MarketNewsArticle {
 }
 
 /**
- * Fetch market news from FMP API using the stock-latest endpoint
+ * Fetch market news from FMP API using the general-latest endpoint
  */
 export const fetchMarketNews = async (limit: number = 6): Promise<MarketNewsArticle[]> => {
   try {
     const result = await invokeSupabaseFunction<any>('get-stock-data', { 
-      endpoint: 'stock-latest',  // Using the new endpoint from documentation
+      endpoint: 'general-latest',  // Using the general-latest endpoint as per documentation
       limit
     });
     
@@ -31,10 +31,10 @@ export const fetchMarketNews = async (limit: number = 6): Promise<MarketNewsArti
       }
       
       // Map the response to match our MarketNewsArticle interface
-      // Ensure dates are in a consistent format
+      // Based on the API response format shown in the screenshot
       return result.map((item: any) => ({
         symbol: item.symbol,
-        publishedDate: item.publishedDate ? item.publishedDate : new Date().toISOString().split('T').join(' ').split('.')[0],
+        publishedDate: item.publishedDate || new Date().toISOString().split('T').join(' ').split('.')[0],
         title: item.title,
         image: item.image,
         site: item.site,
@@ -54,19 +54,29 @@ export const fetchMarketNews = async (limit: number = 6): Promise<MarketNewsArti
 
 /**
  * Fallback mock data for market news
+ * Updated to match the format from the general-latest API endpoint
  */
 const getFallbackMarketNews = (): MarketNewsArticle[] => {
-  // Update the mock data with consistent date formats
   return [
     {
-      symbol: "MRK",
-      publishedDate: "2025-03-01 09:33:00",
-      title: "Merck Shares Plunge 8% as Weak Guidance Overshadows Strong Revenue Growth",
-      text: "Merck & Co (NYSE:MRK) saw its stock sink over 8% in pre-market today after delivering mixed fourth-quarter results and disappointing 2025 guidance.",
-      image: "https://images.unsplash.com/photo-1563986768494-4dee2763ff3f?q=80&w=1000",
-      url: "https://financialmodellingprep.com/market-news/fmp-merck-shares-plunge-8-as-weak-guidance-overshadows-strong-revenue-growth",
-      site: "Financial Modeling Prep",
-      publisher: "Seeking Alpha"
+      symbol: null,
+      publishedDate: "2025-02-03 23:51:37",
+      title: "Asia tech stocks rise after Trump pauses tariffs on China and Mexico",
+      image: "https://images.financialmodelingprep.com/news/asia-tech-stocks-rise-after-trump-pauses-tariffs-on-20250203.jpg",
+      site: "cnbc.com",
+      text: "Gains in Asian tech companies were broad-based, with stocks in Japan, South Korea and Hong Kong advancing. Semiconductor players Advantest and Lasertec led gains among Japanese stocks.",
+      url: "https://www.cnbc.com/2025/02/04/asia-tech-stocks-rise-after-trump-pauses-tariffs-on-china-and-mexico.html",
+      publisher: "CNBC"
+    },
+    {
+      symbol: "LNW",
+      publishedDate: "2025-02-03 23:32:00",
+      title: "Rosen Law Firm Encourages Light & Wonder, Inc. Investors to Inquire About Securities Class Action Investigation - LNW",
+      image: "https://images.financialmodelingprep.com/news/rosen-law-firm-encourages-light-wonder-inc-investors-to-20250203.jpg",
+      site: "prnewswire.com",
+      text: "NEW YORK, Feb. 3, 2025 /PRNewswire/ -- Why: Rosen Law Firm, a global investor rights law firm, continues to investigate potential securities claims on behalf of shareholders of Light & Wonder, Inc.",
+      url: "https://www.prnewswire.com/news-releases/rosen-law-firm-encourages-light--wonder-inc-investors-to-inquire-about-securities-class-action-investigation--lnw-302366877.html",
+      publisher: "PRNewsWire"
     },
     {
       symbol: "TSLA",
@@ -107,16 +117,6 @@ const getFallbackMarketNews = (): MarketNewsArticle[] => {
       url: "https://financialmodellingprep.com/market-news/fmp-microsoft-launches-ai-productivity-suite",
       site: "Financial Modeling Prep",
       publisher: "Bloomberg"
-    },
-    {
-      symbol: "OIL",
-      publishedDate: "2025-03-02 09:05:00",
-      title: "Oil Prices Drop 3% as OPEC+ Considers Increasing Production",
-      text: "Crude oil prices fell more than 3% after reports emerged that OPEC+ members are discussing a potential increase in production quotas starting in April.",
-      image: "https://images.unsplash.com/photo-1518291315662-e7b5d7608e22?q=80&w=1000",
-      url: "https://financialmodellingprep.com/market-news/fmp-oil-prices-drop-on-opec-news",
-      site: "Financial Modeling Prep",
-      publisher: "OilPrice.com"
     }
   ];
 };
