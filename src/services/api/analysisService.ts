@@ -21,9 +21,15 @@ export const generateResearchReport = async (reportRequest: ReportRequest): Prom
     
     console.log(`Generating ${reportRequest.reportType || 'comprehensive'} research report for ${reportRequest.symbol}`);
     
+    // Enrich request with explicit instructions for the new sections
+    const enrichedRequest = {
+      ...reportRequest,
+      includeExtendedSections: true, // Flag for backend to include all new sections
+    };
+    
     // Use retry logic for AI report generation
     const data = await withRetry(() => 
-      invokeSupabaseFunction<ResearchReport>('generate-research-report', { reportRequest }),
+      invokeSupabaseFunction<ResearchReport>('generate-research-report', { reportRequest: enrichedRequest }),
       2, // fewer retries for this expensive operation
       2000 // longer initial delay
     );
@@ -32,6 +38,18 @@ export const generateResearchReport = async (reportRequest: ReportRequest): Prom
       console.error("Failed to generate research report");
       return null;
     }
+    
+    // Validate the response has all required sections
+    if (!data.recommendation || !data.targetPrice) {
+      console.warn("Research report missing key fields");
+    }
+    
+    // Log the structure of the received report for debugging
+    console.log("Report sections received:", 
+      Object.keys(data).filter(key => 
+        key !== 'sections' && typeof data[key] === 'object'
+      )
+    );
     
     return data;
   } catch (error) {

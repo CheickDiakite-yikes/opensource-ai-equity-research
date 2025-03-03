@@ -30,6 +30,16 @@ const ResearchReportGenerator = ({ symbol }: ResearchReportGeneratorProps) => {
     handlePredictPrice
   } = useReportGeneration(symbol, data);
 
+  // Debug report structure if available
+  if (report) {
+    console.log("Report data available:", {
+      hasRatingDetails: !!report.ratingDetails,
+      hasScenarioAnalysis: !!report.scenarioAnalysis,
+      hasCatalysts: !!report.catalysts,
+      sections: report.sections.map(s => s.title)
+    });
+  }
+
   if (isLoading) {
     return <LoadingSkeleton />;
   }

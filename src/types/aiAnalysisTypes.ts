@@ -1,3 +1,4 @@
+
 import type { 
   StockQuote,
   IncomeStatement,
@@ -39,11 +40,11 @@ export interface ResearchReport {
   targetPrice: string;
   summary: string;
   sections: ReportSection[];
-  ratingDetails?: {
+  ratingDetails: {
     ratingScale: string;
     ratingJustification: string;
   };
-  scenarioAnalysis?: {
+  scenarioAnalysis: {
     bullCase: {
       price: string;
       probability: string;
@@ -60,7 +61,7 @@ export interface ResearchReport {
       drivers: string[];
     };
   };
-  catalysts?: {
+  catalysts: {
     positive: string[];
     negative: string[];
     timeline?: {
