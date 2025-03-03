@@ -38,7 +38,7 @@ serve(async (req) => {
         data = await fetchWithRetry(() => fetchFinancials(symbol, "income-statement"));
         break;
       case "balance-sheet":
-        data = await fetchWithRetry(() => fetchFinancials(symbol, "balance-sheet"));
+        data = await fetchWithRetry(() => fetchFinancials(symbol, "balance-sheet-statement", true));
         break;
       case "cash-flow":
         data = await fetchWithRetry(() => fetchFinancials(symbol, "cash-flow-statement"));
@@ -158,21 +158,74 @@ async function fetchRating(symbol) {
   return data.length > 0 ? data : [{ rating: "N/A" }];
 }
 
-async function fetchFinancials(symbol, type) {
+async function fetchFinancials(symbol, type, isBalanceSheet = false) {
+  // For balance sheets, try alternative endpoints if the main one fails
+  if (isBalanceSheet) {
+    try {
+      return await fetchBalanceSheetWithFallbacks(symbol);
+    } catch (error) {
+      console.error(`All balance sheet fetch attempts failed for ${symbol}:`, error);
+      // Return empty array instead of throwing
+      return [];
+    }
+  }
+  
+  // For other financial statements, use standard endpoint
   // Fetch financial data from FMP API
   const url = `https://financialmodelingprep.com/api/v3/${type}/${symbol}?limit=5&apikey=${FMP_API_KEY}`;
   const response = await fetch(url);
   
   if (!response.ok) {
-    throw new Error(`API error (${response.status}): Unable to fetch ${type} data for ${symbol}`);
+    console.error(`API error (${response.status}): Unable to fetch ${type} data for ${symbol}`);
+    // Return empty array instead of throwing
+    return [];
   }
   
   const data = await response.json();
   if (!data || !Array.isArray(data)) {
-    throw new Error(`No ${type} data found for ${symbol}`);
+    console.error(`No ${type} data found for ${symbol}`);
+    return [];
   }
   
   return data;
+}
+
+async function fetchBalanceSheetWithFallbacks(symbol) {
+  // Try primary endpoint first
+  const primaryUrl = `https://financialmodelingprep.com/api/v3/balance-sheet-statement/${symbol}?limit=5&apikey=${FMP_API_KEY}`;
+  try {
+    const response = await fetch(primaryUrl);
+    
+    if (response.ok) {
+      const data = await response.json();
+      if (data && Array.isArray(data) && data.length > 0) {
+        console.log(`Successfully fetched balance sheet from primary endpoint for ${symbol}`);
+        return data;
+      }
+    }
+    
+    // If we get here, primary endpoint failed
+    console.warn(`Primary balance sheet endpoint failed for ${symbol}, trying fallback...`);
+    
+    // Try alternative endpoint (some symbols work with different endpoint formats)
+    const fallbackUrl = `https://financialmodelingprep.com/api/v3/balance-sheet/${symbol}?limit=5&apikey=${FMP_API_KEY}`;
+    const fallbackResponse = await fetch(fallbackUrl);
+    
+    if (fallbackResponse.ok) {
+      const fallbackData = await fallbackResponse.json();
+      if (fallbackData && Array.isArray(fallbackData) && fallbackData.length > 0) {
+        console.log(`Successfully fetched balance sheet from fallback endpoint for ${symbol}`);
+        return fallbackData;
+      }
+    }
+    
+    // If all attempts fail, return empty array
+    console.warn(`All balance sheet endpoints failed for ${symbol}, returning empty array`);
+    return [];
+  } catch (error) {
+    console.error(`Error fetching balance sheet for ${symbol}:`, error);
+    return [];
+  }
 }
 
 async function fetchHistoricalPrice(symbol) {
