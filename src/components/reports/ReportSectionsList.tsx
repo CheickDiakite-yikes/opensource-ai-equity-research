@@ -1,4 +1,3 @@
-
 import React from "react";
 import { 
   ChevronRight, 
@@ -9,7 +8,8 @@ import {
   BarChart4, 
   DollarSign, 
   AlertTriangle, 
-  Leaf 
+  Leaf,
+  Star
 } from "lucide-react";
 import { ResearchReport } from "@/types";
 import { SensitivityAnalysis } from "./SensitivityAnalysis";
@@ -52,6 +52,28 @@ export const ReportSectionsList: React.FC<ReportSectionsListProps> = ({
     return <ChevronRight className="h-4 w-4" />;
   };
 
+  // Create a Rating and Recommendation section if report has ratingDetails
+  const ratingAndRecommendationSection = report.ratingDetails ? {
+    title: "Rating and Recommendation",
+    content: (
+      <div className="space-y-3">
+        <div className="flex items-center gap-2">
+          <Star className="h-4 w-4 text-amber-500" />
+          <span className="font-medium">Rating Scale: {report.ratingDetails.ratingScale}</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="font-medium">Recommendation: {report.recommendation}</span>
+        </div>
+        {report.ratingDetails.ratingJustification && (
+          <div className="mt-2">
+            <p className="text-sm text-muted-foreground">{report.ratingDetails.ratingJustification}</p>
+          </div>
+        )}
+      </div>
+    ),
+    icon: <Star className="h-4 w-4" />
+  } : null;
+
   // Create an array of all report sections including the new ones
   const allSections = [
     // Add Sensitivity Analysis if available
@@ -79,6 +101,20 @@ export const ReportSectionsList: React.FC<ReportSectionsListProps> = ({
       icon: getSectionIcon(section.title)
     }))
   ];
+
+  // Find the position of ESG Considerations section if it exists
+  const esgIndex = allSections.findIndex(section => 
+    section.title.toLowerCase().includes('esg') || 
+    section.title.toLowerCase().includes('environmental')
+  );
+
+  // If ESG section exists and we have rating details, insert the rating section after ESG
+  if (esgIndex !== -1 && ratingAndRecommendationSection) {
+    allSections.splice(esgIndex + 1, 0, ratingAndRecommendationSection);
+  } else if (ratingAndRecommendationSection) {
+    // Otherwise add it to the end
+    allSections.push(ratingAndRecommendationSection);
+  }
 
   return (
     <div className="border rounded-lg overflow-hidden">
