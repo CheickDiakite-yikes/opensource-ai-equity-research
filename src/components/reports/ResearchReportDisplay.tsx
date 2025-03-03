@@ -24,23 +24,9 @@ const ResearchReportDisplay: React.FC<ResearchReportDisplayProps> = ({ report })
   const handleDownload = () => {
     downloadReportAsHTML(report);
   };
-  
-  // Check if there are any placeholders in the report content
-  const checkForPlaceholders = () => {
-    const reportString = JSON.stringify(report);
-    return reportString.includes('[') && reportString.includes(']');
-  };
-  
-  const hasPlaceholders = checkForPlaceholders();
 
   return (
     <div className="space-y-6">
-      {hasPlaceholders && (
-        <div className="bg-yellow-50 border border-yellow-200 p-4 rounded-md text-sm text-yellow-800">
-          <p>Note: Some content in this report may contain placeholder text. This is for preview purposes only.</p>
-        </div>
-      )}
-      
       <div className="flex justify-between items-center">
         <h2 className="text-2xl font-bold">Research Report</h2>
         <Button 

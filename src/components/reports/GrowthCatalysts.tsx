@@ -51,9 +51,9 @@ export const GrowthCatalysts: React.FC<GrowthCatalystsProps> = ({ catalysts }) =
         </div>
       )}
       
-      {/* Timeline-based Catalysts (if available) */}
+      {/* Timeline of Expected Catalysts */}
       {catalysts.timeline && (
-        <div className="pt-2 border-t">
+        <div className="pt-2">
           <h4 className="font-medium mb-3">Timeline of Expected Catalysts</h4>
           
           {/* Short-term */}
