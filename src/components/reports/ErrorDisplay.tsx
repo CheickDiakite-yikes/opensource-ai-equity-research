@@ -13,7 +13,8 @@ const ErrorDisplay: React.FC<ErrorDisplayProps> = ({ error, onRetry }) => {
   // Check if it's an API error
   const isApiError = error.includes("API") || 
                      error.includes("2xx") || 
-                     error.includes("fetch");
+                     error.includes("fetch") ||
+                     error.includes("Failed to");
   
   return (
     <Card className="p-6">
@@ -27,7 +28,7 @@ const ErrorDisplay: React.FC<ErrorDisplayProps> = ({ error, onRetry }) => {
             <p className="font-medium mb-2">Possible solutions:</p>
             <ul className="list-disc list-inside space-y-1">
               <li>Check your internet connection</li>
-              <li>Verify that your API keys are set correctly in Supabase</li>
+              <li>The API keys are set correctly in Supabase, this might be a temporary service issue</li>
               <li>The third-party API may be unavailable or have rate limits</li>
             </ul>
           </div>

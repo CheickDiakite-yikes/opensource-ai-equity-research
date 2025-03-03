@@ -14,7 +14,8 @@ const ErrorDisplay = ({ errorMessage, onRetry }: ErrorDisplayProps) => {
   // Check if it's an API error
   const isApiError = fullError.includes("API") || 
                      fullError.includes("2xx") || 
-                     fullError.includes("fetch");
+                     fullError.includes("fetch") ||
+                     fullError.includes("Failed to");
   
   return (
     <Card className="p-6">
@@ -28,7 +29,7 @@ const ErrorDisplay = ({ errorMessage, onRetry }: ErrorDisplayProps) => {
             <p className="font-medium mb-2">Possible solutions:</p>
             <ul className="list-disc list-inside space-y-1">
               <li>Check your internet connection</li>
-              <li>Verify that the FMP_API_KEY environment variable is set correctly</li>
+              <li>The API keys are set correctly in Supabase, this might be a temporary service issue</li>
               <li>The third-party API may be unavailable or have rate limits</li>
             </ul>
           </div>

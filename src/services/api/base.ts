@@ -10,13 +10,15 @@ export const invokeSupabaseFunction = async <T>(
   payload: any
 ): Promise<T | null> => {
   try {
+    console.log(`Invoking Supabase function: ${functionName}`, payload);
+    
     const { data, error } = await supabase.functions.invoke(functionName, {
       body: payload
     });
 
     if (error) {
       console.error(`Error invoking ${functionName}:`, error);
-      throw new Error(error.message);
+      throw new Error(error.message || `Failed to invoke ${functionName}`);
     }
     
     if (!data) {
@@ -24,22 +26,23 @@ export const invokeSupabaseFunction = async <T>(
       return null;
     }
     
+    console.log(`Received data from ${functionName}:`, data);
     return data as T;
-  } catch (error) {
+  } catch (error: any) {
     console.error(`Error invoking ${functionName}:`, error);
     
     // Show a toast error only if it's not a server connection issue
     // to avoid flooding users with errors during connectivity issues
-    if (!error.message.includes('Failed to fetch') && 
-        !error.message.includes('Network error')) {
+    if (!error.message?.includes('Failed to fetch') && 
+        !error.message?.includes('Network error')) {
       toast({
         title: "API Error",
-        description: `Error fetching data: ${error.message}`,
+        description: `Error fetching data: ${error.message || 'Unknown error'}`,
         variant: "destructive",
       });
     }
     
-    return null;
+    throw error;
   }
 };
 
