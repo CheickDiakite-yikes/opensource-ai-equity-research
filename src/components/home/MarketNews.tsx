@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import { Newspaper, ExternalLink, Calendar, ImageOff } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import SectionHeader from "./SectionHeader";
-import { MarketNewsArticle } from "@/services/api/marketDataService";
+import { MarketNewsArticle } from "@/services/api/marketData/newsService";
 import { format } from "date-fns";
 import { 
   Tooltip,

@@ -1,9 +1,9 @@
-
 import React from "react";
 import { motion } from "framer-motion";
 import { TrendingUp, TrendingDown, LineChart } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import SectionHeader from "./SectionHeader";
+import { MarketIndex, MarketRegion } from "@/services/api/marketData/indicesService";
 
 interface MarketIndex {
   symbol: string;
