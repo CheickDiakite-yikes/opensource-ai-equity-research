@@ -1,11 +1,13 @@
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import HeroSection from "./HeroSection";
 import FeaturedCompanies from "./FeaturedCompanies";
 import FeatureCards from "./FeatureCards";
 import RecentSearches from "./RecentSearches";
 import HowToUse from "./HowToUse";
+import MarketPerformance from "./MarketPerformance";
+import { fetchMarketIndices } from "@/services/api/marketDataService";
 
 interface LandingViewProps {
   recentSearches: string[];
@@ -29,6 +31,24 @@ const LandingView: React.FC<LandingViewProps> = ({
   featuredSymbols, 
   onSelectSymbol 
 }) => {
+  const [marketData, setMarketData] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const getMarketData = async () => {
+      try {
+        const data = await fetchMarketIndices();
+        setMarketData(data);
+      } catch (error) {
+        console.error("Failed to fetch market data:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    getMarketData();
+  }, []);
+
   return (
     <motion.div 
       variants={container}
@@ -41,6 +61,10 @@ const LandingView: React.FC<LandingViewProps> = ({
       <FeaturedCompanies 
         featuredSymbols={featuredSymbols} 
         onSelectSymbol={onSelectSymbol} 
+      />
+      <MarketPerformance 
+        marketData={marketData} 
+        isLoading={isLoading} 
       />
       <RecentSearches 
         recentSearches={recentSearches} 
