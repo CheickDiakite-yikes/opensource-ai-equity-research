@@ -23,58 +23,120 @@ serve(async (req) => {
     console.log(`Processing ${endpoint} request for ${symbol}`);
     
     let data;
+    let attempts = 0;
+    const maxAttempts = 3;
     
-    switch (endpoint) {
-      case "profile":
-        data = await fetchWithRetry(() => fetchProfile(symbol));
-        break;
-      case "quote":
-        data = await fetchWithRetry(() => fetchQuote(symbol));
-        break;
-      case "rating":
-        data = await fetchWithRetry(() => fetchRating(symbol));
-        break;
-      case "income-statement":
-        data = await fetchWithRetry(() => fetchFinancials(symbol, "income-statement"));
-        break;
-      case "balance-sheet":
-        data = await fetchWithRetry(() => fetchFinancials(symbol, "balance-sheet-statement", true));
-        break;
-      case "cash-flow":
-        data = await fetchWithRetry(() => fetchFinancials(symbol, "cash-flow-statement"));
-        break;
-      case "ratios":
-        data = await fetchWithRetry(() => fetchFinancials(symbol, "ratios"));
-        break;
-      case "historical-price":
-        data = await fetchWithRetry(() => fetchHistoricalPrice(symbol));
-        break;
-      case "news":
-        data = await fetchWithRetry(() => fetchNews(symbol));
-        break;
-      case "peers":
-        data = await fetchWithRetry(() => fetchPeers(symbol));
-        break;
-      case "earning-transcripts":
-        data = await fetchWithRetry(() => fetchEarningTranscripts(symbol));
-        break;
-      case "transcript-content":
-        if (!quarter || !year) {
-          return new Response(
-            JSON.stringify({ error: "Quarter and year are required for transcript content" }),
-            { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
-          );
+    // Use a retry wrapper for all API calls to improve reliability
+    while (attempts < maxAttempts) {
+      try {
+        attempts++;
+        console.log(`Attempt ${attempts}/${maxAttempts} for ${endpoint} - ${symbol}`);
+        
+        switch (endpoint) {
+          case "profile":
+            data = await fetchProfile(symbol);
+            break;
+          case "quote":
+            data = await fetchQuote(symbol);
+            break;
+          case "rating":
+            data = await fetchRating(symbol);
+            break;
+          case "income-statement":
+            data = await fetchFinancials(symbol, "income-statement");
+            break;
+          case "balance-sheet":
+            data = await fetchBalanceSheetWithFallbacks(symbol);
+            break;
+          case "cash-flow":
+            data = await fetchFinancials(symbol, "cash-flow-statement");
+            break;
+          case "ratios":
+            data = await fetchFinancials(symbol, "ratios");
+            break;
+          case "historical-price":
+            data = await fetchHistoricalPrice(symbol);
+            break;
+          case "news":
+            data = await fetchNews(symbol);
+            break;
+          case "peers":
+            data = await fetchPeers(symbol);
+            break;
+          case "earning-transcripts":
+            data = await fetchEarningTranscripts(symbol);
+            break;
+          case "transcript-content":
+            if (!quarter || !year) {
+              return new Response(
+                JSON.stringify({ error: "Quarter and year are required for transcript content" }),
+                { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
+              );
+            }
+            data = await fetchTranscriptContent(symbol, quarter, year);
+            break;
+          case "sec-filings":
+            data = await fetchSECFilings(symbol);
+            break;
+          default:
+            return new Response(
+              JSON.stringify({ error: `Invalid endpoint: ${endpoint}` }),
+              { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
+            );
         }
-        data = await fetchWithRetry(() => fetchTranscriptContent(symbol, quarter, year));
-        break;
-      case "sec-filings":
-        data = await fetchWithRetry(() => fetchSECFilings(symbol));
-        break;
-      default:
-        return new Response(
-          JSON.stringify({ error: `Invalid endpoint: ${endpoint}` }),
-          { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
-        );
+        
+        // If we got data successfully, break out of the retry loop
+        if (data && (!Array.isArray(data) || data.length > 0)) {
+          console.log(`Successfully retrieved ${endpoint} data for ${symbol} on attempt ${attempts}`);
+          break;
+        } else {
+          console.warn(`Empty ${endpoint} data for ${symbol} on attempt ${attempts}, retrying...`);
+          // Short delay before next attempt
+          if (attempts < maxAttempts) {
+            await new Promise(r => setTimeout(r, 1000 * attempts)); // Increasing delay with each attempt
+          }
+        }
+      } catch (error) {
+        console.error(`Error on attempt ${attempts} for ${endpoint}:`, error);
+        // Short delay before next attempt
+        if (attempts < maxAttempts) {
+          await new Promise(r => setTimeout(r, 1000 * attempts)); // Increasing delay with each attempt
+        } else {
+          // On the last attempt, return empty data rather than throwing
+          console.error(`All ${maxAttempts} attempts failed for ${endpoint} - ${symbol}`);
+          data = endpoint === "balance-sheet" ? [] : 
+                 endpoint === "profile" || endpoint === "quote" ? [{ symbol, error: "Data not available" }] : 
+                 [];
+        }
+      }
+    }
+    
+    // For critical data like profile and quote, if we still don't have it after retries, 
+    // create a minimal placeholder object to prevent app crashes
+    if (["profile", "quote"].includes(endpoint) && (!data || !Array.isArray(data) || data.length === 0)) {
+      console.warn(`Creating placeholder data for ${endpoint} - ${symbol} after all retries failed`);
+      
+      if (endpoint === "profile") {
+        data = [{
+          symbol,
+          companyName: `${symbol} (Data Unavailable)`,
+          price: 0,
+          exchange: "Unknown",
+          industry: "Unknown",
+          sector: "Unknown",
+          description: `We couldn't retrieve company data for ${symbol}. Please try again later or check if this symbol is valid.`,
+          error: "Data unavailable after multiple attempts"
+        }];
+      } else if (endpoint === "quote") {
+        data = [{
+          symbol,
+          name: `${symbol} (Data Unavailable)`,
+          price: 0,
+          change: 0,
+          changesPercentage: 0,
+          error: "Data unavailable after multiple attempts"
+        }];
+      }
     }
     
     return new Response(
@@ -130,6 +192,8 @@ async function fetchProfile(symbol) {
 async function fetchQuote(symbol) {
   // Fetch quote data from FMP API
   const url = `https://financialmodelingprep.com/api/v3/quote/${symbol}?apikey=${FMP_API_KEY}`;
+  console.log(`Fetching quote from: ${url.replace(FMP_API_KEY, "API_KEY_HIDDEN")}`);
+  
   const response = await fetch(url);
   
   if (!response.ok) {
@@ -173,6 +237,8 @@ async function fetchFinancials(symbol, type, isBalanceSheet = false) {
   // For other financial statements, use standard endpoint
   // Fetch financial data from FMP API
   const url = `https://financialmodelingprep.com/api/v3/${type}/${symbol}?limit=5&apikey=${FMP_API_KEY}`;
+  console.log(`Fetching ${type} from: ${url.replace(FMP_API_KEY, "API_KEY_HIDDEN")}`);
+  
   const response = await fetch(url);
   
   if (!response.ok) {
@@ -191,41 +257,40 @@ async function fetchFinancials(symbol, type, isBalanceSheet = false) {
 }
 
 async function fetchBalanceSheetWithFallbacks(symbol) {
-  // Try primary endpoint first
-  const primaryUrl = `https://financialmodelingprep.com/api/v3/balance-sheet-statement/${symbol}?limit=5&apikey=${FMP_API_KEY}`;
-  try {
-    const response = await fetch(primaryUrl);
-    
-    if (response.ok) {
-      const data = await response.json();
-      if (data && Array.isArray(data) && data.length > 0) {
-        console.log(`Successfully fetched balance sheet from primary endpoint for ${symbol}`);
-        return data;
+  // Try all possible balance sheet endpoints
+  const endpoints = [
+    `https://financialmodelingprep.com/api/v3/balance-sheet-statement/${symbol}?limit=5&apikey=${FMP_API_KEY}`,
+    `https://financialmodelingprep.com/api/v3/balance-sheet/${symbol}?limit=5&apikey=${FMP_API_KEY}`,
+    `https://financialmodelingprep.com/api/v3/financials/balance-sheet-statement/${symbol}?apikey=${FMP_API_KEY}`,
+    `https://financialmodelingprep.com/api/v3/balance-sheet-statement-as-reported/${symbol}?limit=5&apikey=${FMP_API_KEY}`
+  ];
+  
+  let lastError = null;
+  console.log(`Trying multiple balance sheet endpoints for ${symbol}`);
+  
+  // Try each endpoint in sequence
+  for (const endpoint of endpoints) {
+    try {
+      console.log(`Trying balance sheet endpoint: ${endpoint.replace(FMP_API_KEY, "API_KEY_HIDDEN")}`);
+      const response = await fetch(endpoint);
+      
+      if (response.ok) {
+        const data = await response.json();
+        if (data && Array.isArray(data) && data.length > 0) {
+          console.log(`Successfully fetched balance sheet from endpoint: ${endpoint.replace(FMP_API_KEY, "API_KEY_HIDDEN")}`);
+          return data;
+        }
       }
+      
+      console.log(`Endpoint ${endpoint.replace(FMP_API_KEY, "API_KEY_HIDDEN")} failed, trying next...`);
+    } catch (error) {
+      console.error(`Error fetching from ${endpoint.replace(FMP_API_KEY, "API_KEY_HIDDEN")}:`, error);
+      lastError = error;
     }
-    
-    // If we get here, primary endpoint failed
-    console.warn(`Primary balance sheet endpoint failed for ${symbol}, trying fallback...`);
-    
-    // Try alternative endpoint (some symbols work with different endpoint formats)
-    const fallbackUrl = `https://financialmodelingprep.com/api/v3/balance-sheet/${symbol}?limit=5&apikey=${FMP_API_KEY}`;
-    const fallbackResponse = await fetch(fallbackUrl);
-    
-    if (fallbackResponse.ok) {
-      const fallbackData = await fallbackResponse.json();
-      if (fallbackData && Array.isArray(fallbackData) && fallbackData.length > 0) {
-        console.log(`Successfully fetched balance sheet from fallback endpoint for ${symbol}`);
-        return fallbackData;
-      }
-    }
-    
-    // If all attempts fail, return empty array
-    console.warn(`All balance sheet endpoints failed for ${symbol}, returning empty array`);
-    return [];
-  } catch (error) {
-    console.error(`Error fetching balance sheet for ${symbol}:`, error);
-    return [];
   }
+
+  console.warn(`All balance sheet endpoints failed for ${symbol}, returning empty array`);
+  return [];
 }
 
 async function fetchHistoricalPrice(symbol) {
@@ -276,7 +341,7 @@ async function fetchEarningTranscripts(symbol) {
   try {
     // Use the stable/earning-call-transcript endpoint as shown in the documentation
     const url = `https://financialmodelingprep.com/api/v3/earning_call_transcript/${symbol}?apikey=${FMP_API_KEY}`;
-    console.log(`Fetching earnings transcripts from: ${url}`);
+    console.log(`Fetching earnings transcripts from: ${url.replace(FMP_API_KEY, "API_KEY_HIDDEN")}`);
     
     const response = await fetch(url);
     
@@ -313,7 +378,7 @@ async function fetchEarningTranscripts(symbol) {
 async function fetchTranscriptContent(symbol, quarter, year) {
   try {
     const url = `https://financialmodelingprep.com/api/v3/earning_call_transcript/${symbol}/${quarter}/${year}?apikey=${FMP_API_KEY}`;
-    console.log(`Fetching transcript content from: ${url}`);
+    console.log(`Fetching transcript content from: ${url.replace(FMP_API_KEY, "API_KEY_HIDDEN")}`);
     
     const response = await fetch(url);
     

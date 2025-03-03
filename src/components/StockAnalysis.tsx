@@ -21,12 +21,16 @@ import { prepareFinancialData, prepareRatioData } from "@/utils/financialDataUti
 import { useResearchReportData } from "@/components/reports/useResearchReportData";
 import ErrorDisplay from "@/components/reports/ErrorDisplay";
 import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
+import { RefreshCw } from "lucide-react";
 
 interface StockAnalysisProps {
   symbol: string;
 }
 
 const StockAnalysis = ({ symbol }: StockAnalysisProps) => {
+  const [isRetrying, setIsRetrying] = useState(false);
+  
   // We'll use the useResearchReportData hook to get all financial data
   const { 
     isLoading, 
@@ -70,41 +74,61 @@ const StockAnalysis = ({ symbol }: StockAnalysisProps) => {
           
           // Try to fetch income statements if missing
           if (data.income.length === 0) {
-            const incomeData = await withRetry(() => fetchIncomeStatements(symbol), 2);
-            if (incomeData && incomeData.length > 0) {
-              newFinancials.income = incomeData;
-              dataImproved = true;
-              console.log(`Retrieved ${incomeData.length} income statements directly`);
+            try {
+              console.log(`Fetching income statements for ${symbol}...`);
+              const incomeData = await withRetry(() => fetchIncomeStatements(symbol), 2);
+              if (incomeData && incomeData.length > 0) {
+                newFinancials.income = incomeData;
+                dataImproved = true;
+                console.log(`Retrieved ${incomeData.length} income statements directly`);
+              }
+            } catch (err) {
+              console.error("Error fetching income statements:", err);
             }
           }
           
           // Try to fetch balance sheets if missing
           if (data.balance.length === 0) {
-            const balanceData = await withRetry(() => fetchBalanceSheets(symbol), 2);
-            if (balanceData && balanceData.length > 0) {
-              newFinancials.balance = balanceData;
-              dataImproved = true;
-              console.log(`Retrieved ${balanceData.length} balance sheets directly`);
+            try {
+              console.log(`Fetching balance sheets for ${symbol}...`);
+              const balanceData = await withRetry(() => fetchBalanceSheets(symbol), 2);
+              if (balanceData && balanceData.length > 0) {
+                newFinancials.balance = balanceData;
+                dataImproved = true;
+                console.log(`Retrieved ${balanceData.length} balance sheets directly`);
+              }
+            } catch (err) {
+              console.error("Error fetching balance sheets:", err);
             }
           }
           
           // Try to fetch cash flow statements if missing
           if (data.cashflow.length === 0) {
-            const cashflowData = await withRetry(() => fetchCashFlowStatements(symbol), 2);
-            if (cashflowData && cashflowData.length > 0) {
-              newFinancials.cashflow = cashflowData;
-              dataImproved = true;
-              console.log(`Retrieved ${cashflowData.length} cash flow statements directly`);
+            try {
+              console.log(`Fetching cash flow statements for ${symbol}...`);
+              const cashflowData = await withRetry(() => fetchCashFlowStatements(symbol), 2);
+              if (cashflowData && cashflowData.length > 0) {
+                newFinancials.cashflow = cashflowData;
+                dataImproved = true;
+                console.log(`Retrieved ${cashflowData.length} cash flow statements directly`);
+              }
+            } catch (err) {
+              console.error("Error fetching cash flow statements:", err);
             }
           }
           
           // Try to fetch ratios if missing
           if (data.ratios.length === 0) {
-            const ratiosData = await withRetry(() => fetchKeyRatios(symbol), 2);
-            if (ratiosData && ratiosData.length > 0) {
-              newFinancials.ratios = ratiosData;
-              dataImproved = true;
-              console.log(`Retrieved ${ratiosData.length} financial ratios directly`);
+            try {
+              console.log(`Fetching key ratios for ${symbol}...`);
+              const ratiosData = await withRetry(() => fetchKeyRatios(symbol), 2);
+              if (ratiosData && ratiosData.length > 0) {
+                newFinancials.ratios = ratiosData;
+                dataImproved = true;
+                console.log(`Retrieved ${ratiosData.length} financial ratios directly`);
+              }
+            } catch (err) {
+              console.error("Error fetching key ratios:", err);
             }
           }
           
@@ -112,9 +136,12 @@ const StockAnalysis = ({ symbol }: StockAnalysisProps) => {
           if (dataImproved) {
             setDirectFinancials(newFinancials);
             toast.success("Retrieved additional financial data");
+          } else {
+            toast.error(`Could not retrieve financial data for ${symbol}`);
           }
         } catch (err) {
           console.error("Error fetching missing financial data:", err);
+          toast.error(`Failed to retrieve financial data: ${err instanceof Error ? err.message : 'Unknown error'}`);
         }
       }
     };
@@ -139,17 +166,77 @@ const StockAnalysis = ({ symbol }: StockAnalysisProps) => {
     (combinedData.cashflow.length > 0 ? 1 : 0)
   ) >= 2;
 
-  if (isLoading) {
+  // Function to retry fetching data
+  const handleRetry = async () => {
+    setIsRetrying(true);
+    toast.info(`Attempting to fetch financial data for ${symbol}...`);
+    
+    try {
+      // Directly fetch all financial statements with higher retry counts
+      const [income, balance, cashflow, ratios] = await Promise.all([
+        withRetry(() => fetchIncomeStatements(symbol), 3),
+        withRetry(() => fetchBalanceSheets(symbol), 3),
+        withRetry(() => fetchCashFlowStatements(symbol), 3),
+        withRetry(() => fetchKeyRatios(symbol), 3)
+      ]);
+      
+      // Update the direct financials state
+      setDirectFinancials({
+        income,
+        balance,
+        cashflow,
+        ratios
+      });
+      
+      // Check if we got enough data
+      const gotEnoughData = (
+        (income.length > 0 ? 1 : 0) + 
+        (balance.length > 0 ? 1 : 0) + 
+        (cashflow.length > 0 ? 1 : 0)
+      ) >= 2;
+      
+      if (gotEnoughData) {
+        toast.success(`Successfully retrieved financial data for ${symbol}`);
+      } else {
+        toast.error(`Could not retrieve enough financial data for ${symbol}`);
+      }
+    } catch (err) {
+      console.error("Error in retry operation:", err);
+      toast.error(`Retry failed: ${err instanceof Error ? err.message : 'Unknown error'}`);
+    } finally {
+      setIsRetrying(false);
+    }
+  };
+
+  if (isLoading || isRetrying) {
     return <LoadingSkeleton />;
   }
 
   // If there's still not enough data after both attempts, show error
   if (error || !hasCombinedMinimumData) {
     return (
-      <ErrorDisplay 
-        error={error || `Insufficient financial data available for ${symbol}. At least 2 out of 3 financial statements (income, balance, cash flow) are required.`} 
-        onRetry={() => window.location.reload()} 
-      />
+      <Card className="p-6">
+        <div className="text-center py-8">
+          <h3 className="text-xl font-medium text-red-600 mb-4">No Financial Data Available</h3>
+          <p className="text-muted-foreground mb-6">
+            We couldn't load the financial data required for analysis. This may be due to:
+          </p>
+          <ul className="text-sm text-muted-foreground bg-muted p-4 rounded-md mb-6 mx-auto max-w-lg text-left">
+            <li className="mb-2">• Data provider API limitations or rate limiting</li>
+            <li className="mb-2">• The selected company ({symbol}) may not have public financial data</li>
+            <li className="mb-2">• Temporary connectivity issues with our data sources</li>
+            <li>• The financial data for this company may be in a different format</li>
+          </ul>
+          <Button 
+            onClick={handleRetry} 
+            className="mt-2 flex items-center gap-2"
+            disabled={isRetrying}
+          >
+            <RefreshCw className={`h-4 w-4 ${isRetrying ? 'animate-spin' : ''}`} />
+            <span>{isRetrying ? 'Retrying...' : 'Try Again'}</span>
+          </Button>
+        </div>
+      </Card>
     );
   }
 
