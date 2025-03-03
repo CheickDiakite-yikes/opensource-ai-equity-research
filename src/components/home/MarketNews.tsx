@@ -13,49 +13,29 @@ interface MarketNewsProps {
   isLoading?: boolean;
 }
 
-// Featured companies to fetch press releases from
-const FEATURED_COMPANIES = ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'META', 'TSLA'];
-
 const MarketNews: React.FC<MarketNewsProps> = ({ 
   newsData: initialNewsData,
   isLoading: initialLoading = false 
 }) => {
-  // Use React Query to fetch press releases from multiple companies
-  const { data: pressReleaseData, isLoading: isPressReleasesLoading } = useQuery({
-    queryKey: ['pressReleases'],
+  // Use React Query to fetch general market news
+  const { data: marketNewsData, isLoading: isNewsLoading } = useQuery({
+    queryKey: ['marketNews'],
     queryFn: async () => {
-      console.log('Fetching press releases from featured companies');
+      console.log('Fetching general market news');
       
-      // Randomly select 2 companies from the featured list
-      const shuffled = [...FEATURED_COMPANIES].sort(() => 0.5 - Math.random());
-      const selectedCompanies = shuffled.slice(0, 2);
+      // Fetch general market news
+      const results = await fetchMarketNews(6, 'general');
       
-      // Fetch press releases for selected companies
-      const results = await Promise.all(
-        selectedCompanies.map(symbol => 
-          fetchMarketNews(3, symbol)
-            .catch(error => {
-              console.error(`Error fetching press releases for ${symbol}:`, error);
-              return [];
-            })
-        )
-      );
-      
-      // Combine and sort by datetime (most recent first)
-      const combinedResults = results.flat().sort((a, b) => 
-        (b.datetime || 0) - (a.datetime || 0)
-      );
-      
-      console.log(`Fetched ${combinedResults.length} press releases from ${selectedCompanies.join(', ')}`);
-      return combinedResults;
+      console.log(`Fetched ${results.length} market news articles`);
+      return results;
     },
     // Combine with initial news data if available
     initialData: initialNewsData && initialNewsData.length > 0 ? initialNewsData : undefined,
   });
   
   // Determine final loading state and news data
-  const isLoading = initialLoading || isPressReleasesLoading;
-  const newsData = pressReleaseData || initialNewsData;
+  const isLoading = initialLoading || isNewsLoading;
+  const newsData = marketNewsData || initialNewsData;
   
   if (isLoading) {
     return (
@@ -96,8 +76,8 @@ const MarketNews: React.FC<MarketNewsProps> = ({
           className="mb-8 relative z-10"
         >
           <SectionHeader 
-            title="Recent Market News & Press Releases"
-            description="Stay informed with the latest press releases and financial market news from top companies."
+            title="Recent Market News"
+            description="Stay informed with the latest financial market news and updates."
             icon={<Newspaper className="w-6 h-6 text-primary" />}
           />
           
@@ -111,7 +91,7 @@ const MarketNews: React.FC<MarketNewsProps> = ({
               ))
             ) : (
               <div className="col-span-3 text-center py-10">
-                <p className="text-muted-foreground">No news or press releases available at this time.</p>
+                <p className="text-muted-foreground">No news available at this time.</p>
               </div>
             )}
           </div>

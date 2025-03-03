@@ -20,11 +20,11 @@ export interface MarketNewsArticle {
 }
 
 /**
- * Fetch market news from Finnhub API (press releases endpoint)
+ * Fetch market news from Finnhub API (general market news)
  */
-export const fetchMarketNews = async (limit: number = 6, symbol: string = 'AAPL'): Promise<MarketNewsArticle[]> => {
+export const fetchMarketNews = async (limit: number = 6, category: string = 'general'): Promise<MarketNewsArticle[]> => {
   try {
-    console.log(`Fetching market news press releases for symbol: ${symbol}, limit: ${limit}`);
+    console.log(`Fetching market news for category: ${category}, limit: ${limit}`);
     
     const response = await fetch('https://rnpcygrrxeeqphdjuesh.supabase.co/functions/v1/get-finnhub-news', {
       method: 'POST',
@@ -32,7 +32,7 @@ export const fetchMarketNews = async (limit: number = 6, symbol: string = 'AAPL'
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({ 
-        symbol,
+        category,
         limit
       }),
     });

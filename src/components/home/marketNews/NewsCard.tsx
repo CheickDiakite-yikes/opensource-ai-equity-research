@@ -1,6 +1,6 @@
 
 import React from "react";
-import { ExternalLink, Calendar, ImageOff, FileText } from "lucide-react";
+import { ExternalLink, Calendar, ImageOff } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { 
   Tooltip,
@@ -36,7 +36,7 @@ const NewsCard: React.FC<NewsCardProps> = ({ article }) => {
   const siteName = source.replace(/^www\./, '').replace(/\.(com|org|net|io).*$/, '');
   
   // Extract symbol from related field if available
-  const symbol = article.symbol || (article.related && article.related.match(/[A-Z]+/) ? article.related.match(/[A-Z]+/)[0] : null);
+  const symbol = article.related && article.related.match(/[A-Z]+/) ? article.related.match(/[A-Z]+/)[0] : null;
   
   // Ensure URL is properly formatted
   const articleUrl = article.url || "#";
@@ -64,9 +64,6 @@ const NewsCard: React.FC<NewsCardProps> = ({ article }) => {
     console.warn("Invalid news article URL:", articleUrl, "Full article data:", article);
   }
   
-  // Determine if this is a press release
-  const isPressRelease = article.category === 'press-release';
-  
   return (
     <Card className="bg-card/70 backdrop-blur-sm border border-muted/50 overflow-hidden shadow-md hover-card-highlight transition-all duration-300 hover:shadow-lg group">
       <CardContent className="p-0">
@@ -82,11 +79,7 @@ const NewsCard: React.FC<NewsCardProps> = ({ article }) => {
             />
           ) : (
             <div className="flex items-center justify-center h-full bg-slate-200">
-              {isPressRelease ? (
-                <FileText className="h-12 w-12 text-muted-foreground/50" />
-              ) : (
-                <ImageOff className="h-12 w-12 text-muted-foreground/50" />
-              )}
+              <ImageOff className="h-12 w-12 text-muted-foreground/50" />
             </div>
           )}
           
@@ -96,14 +89,8 @@ const NewsCard: React.FC<NewsCardProps> = ({ article }) => {
             </div>
           )}
           
-          {isPressRelease && (
-            <div className="absolute top-3 left-3 bg-primary/80 backdrop-blur-sm text-white text-xs px-2 py-1 rounded">
-              Press Release
-            </div>
-          )}
-          
-          {article.category && !symbol && !isPressRelease && (
-            <div className="absolute top-3 right-3 bg-black/60 backdrop-blur-sm text-white text-xs px-2 py-1 rounded capitalize">
+          {article.category && article.category !== 'general' && (
+            <div className="absolute top-3 left-3 bg-primary/80 backdrop-blur-sm text-white text-xs px-2 py-1 rounded capitalize">
               {article.category}
             </div>
           )}
