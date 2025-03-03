@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from "react";
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/components/ui/card";
 import { formatCurrency, formatPercentage } from "@/lib/utils";
@@ -61,6 +62,7 @@ const AutomaticDCFSection: React.FC<AutomaticDCFSectionProps> = ({ financials, s
         beta: financials[0]?.beta || 1.244,
       };
       
+      console.log("Sending automatic DCF calculation request with parameters:", params);
       await calculateCustomDCF(params);
     } catch (err) {
       console.error("Error fetching DCF data:", err);
@@ -106,10 +108,10 @@ const AutomaticDCFSection: React.FC<AutomaticDCFSectionProps> = ({ financials, s
   const dcfData = useMockData ? mockDCFData : {
     intrinsicValue: customDCFResult.equityValuePerShare,
     assumptions: {
-      growthRate: `${(customDCFResult.revenuePercentage || 0).toFixed(1)}% (first 5 years), ${customDCFResult.longTermGrowthRate}% (terminal)`,
+      growthRate: `${(customDCFResult.revenuePercentage || 0).toFixed(1)}% (first 5 years), ${(customDCFResult.longTermGrowthRate * 100).toFixed(2)}% (terminal)`,
       discountRate: `${customDCFResult.wacc.toFixed(2)}%`,
       terminalMultiple: "DCF Model",
-      taxRate: `${customDCFResult.taxRate.toFixed(1)}%`
+      taxRate: `${(customDCFResult.taxRate * 100).toFixed(1)}%`
     },
     projections: projectedData.map((yearData, index) => ({
       year: `Year ${index + 1}`,

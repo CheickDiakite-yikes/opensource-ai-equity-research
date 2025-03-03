@@ -17,7 +17,6 @@ interface CustomDCFSectionProps {
   error: string | null;
   customParams: Record<string, string>;
   onInputChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  onSelectChange: (name: string, value: string) => void;
   onCalculate: () => void;
 }
 
@@ -29,7 +28,6 @@ const CustomDCFSection: React.FC<CustomDCFSectionProps> = ({
   error,
   customParams,
   onInputChange,
-  onSelectChange,
   onCalculate
 }) => {
   return (
@@ -43,7 +41,6 @@ const CustomDCFSection: React.FC<CustomDCFSectionProps> = ({
           <DCFInputForm 
             customParams={customParams}
             onInputChange={onInputChange}
-            onSelectChange={onSelectChange}
             isCalculating={isCalculating}
             onCalculate={onCalculate}
           />
