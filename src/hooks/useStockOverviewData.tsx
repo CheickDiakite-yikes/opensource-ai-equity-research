@@ -70,7 +70,12 @@ export const useStockOverviewData = (symbol: string) => {
             earningsData.slice(0, 3).map(async (call) => {
               if (call.content && !call.highlights) {
                 try {
-                  const highlights = await generateTranscriptHighlights(call.content);
+                  const highlights = await generateTranscriptHighlights(call.content, {
+                    symbol: call.symbol,
+                    quarter: call.quarter,
+                    year: call.year,
+                    date: call.date
+                  });
                   return { ...call, highlights };
                 } catch (e) {
                   console.error("Error generating highlights:", e);
@@ -83,6 +88,7 @@ export const useStockOverviewData = (symbol: string) => {
           
           setEarningsCalls(processedCalls);
         } else {
+          // Fallback data if no real data is available
           setEarningsCalls([
             {
               symbol,
@@ -90,7 +96,7 @@ export const useStockOverviewData = (symbol: string) => {
               quarter: "Q3",
               year: "2023",
               content: "",
-              url: `https://seekingalpha.com/symbol/${symbol}/earnings/transcripts`,
+              url: `https://financialmodelingprep.com/api/v4/earning_call_transcript/${symbol}`,
               highlights: [
                 "Revenue increased 23% year over year to $34.15B",
                 "Daily active users increased 5% year over year to 2.09B",
@@ -103,7 +109,7 @@ export const useStockOverviewData = (symbol: string) => {
               quarter: "Q2",
               year: "2023",
               content: "",
-              url: `https://seekingalpha.com/symbol/${symbol}/earnings/transcripts`,
+              url: `https://financialmodelingprep.com/api/v4/earning_call_transcript/${symbol}`,
               highlights: [
                 "Revenue increased 11% year over year to $32.0B",
                 "Net income was $7.79B",

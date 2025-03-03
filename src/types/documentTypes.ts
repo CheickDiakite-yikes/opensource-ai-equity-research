@@ -1,12 +1,13 @@
 
-
 // Earnings and SEC Filing Types
 export interface EarningsCall {
+  id?: number;
   symbol: string;
   date: string;
   quarter: string;
   year: string;
   content: string;
+  title?: string;
   url: string;
   highlights?: string[];
 }
@@ -22,4 +23,3 @@ export interface SECFiling {
   url: string;
   filingNumber: string;
 }
-

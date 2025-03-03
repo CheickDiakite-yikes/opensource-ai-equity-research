@@ -86,3 +86,4 @@ verify_jwt = false
 
 [functions.generate-transcript-highlights]
 verify_jwt = false
+

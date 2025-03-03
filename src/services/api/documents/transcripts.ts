@@ -1,3 +1,4 @@
+
 import { invokeSupabaseFunction, withRetry } from "../base";
 import { EarningsCall } from "@/types";
 import { supabase } from "@/integrations/supabase/client";
@@ -13,7 +14,8 @@ export const fetchEarningsTranscripts = async (symbol: string): Promise<Earnings
       .from('earnings_transcripts')
       .select('*')
       .eq('symbol', symbol)
-      .order('date', { ascending: false });
+      .order('date', { ascending: false })
+      .limit(5);
     
     if (error) {
       console.error("Database error fetching transcripts:", error);
@@ -24,12 +26,14 @@ export const fetchEarningsTranscripts = async (symbol: string): Promise<Earnings
     if (cachedTranscripts && cachedTranscripts.length > 0) {
       console.log(`Using ${cachedTranscripts.length} cached transcripts for ${symbol}`);
       return cachedTranscripts.map(transcript => ({
+        id: transcript.id,
         symbol: transcript.symbol,
         quarter: transcript.quarter,
         year: transcript.year,
         date: transcript.date,
         content: transcript.content || "",
-        url: transcript.url || `https://seekingalpha.com/symbol/${symbol}/earnings/transcripts`,
+        title: transcript.title,
+        url: transcript.url || `https://financialmodelingprep.com/api/v4/earning_call_transcript/${symbol}/${transcript.quarter}/${transcript.year}`,
         highlights: Array.isArray(transcript.highlights) 
           ? transcript.highlights.map(item => String(item)) 
           : []
