@@ -35,6 +35,9 @@ const NewsCard: React.FC<NewsCardProps> = ({ article }) => {
   // Format source name for display
   const siteName = source.replace(/^www\./, '').replace(/\.(com|org|net|io).*$/, '');
   
+  // Extract symbol from related field if available
+  const symbol = article.symbol || (article.related && article.related.match(/[A-Z]+/) ? article.related.match(/[A-Z]+/)[0] : null);
+  
   return (
     <Card className="bg-card/70 backdrop-blur-sm border border-muted/50 overflow-hidden shadow-md hover-card-highlight transition-all duration-300 hover:shadow-lg group">
       <CardContent className="p-0">
@@ -54,13 +57,13 @@ const NewsCard: React.FC<NewsCardProps> = ({ article }) => {
             </div>
           )}
           
-          {article.symbol && (
+          {symbol && (
             <div className="absolute top-3 right-3 bg-black/60 backdrop-blur-sm text-white text-xs px-2 py-1 rounded">
-              {article.symbol}
+              {symbol}
             </div>
           )}
           
-          {article.category && !article.symbol && (
+          {article.category && !symbol && (
             <div className="absolute top-3 right-3 bg-black/60 backdrop-blur-sm text-white text-xs px-2 py-1 rounded capitalize">
               {article.category}
             </div>
