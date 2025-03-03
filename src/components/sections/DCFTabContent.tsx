@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useCustomDCF } from "@/hooks/useCustomDCF";
@@ -10,21 +9,36 @@ interface DCFTabContentProps {
   symbol: string;
 }
 
-const DCFTabContentProps: React.FC<DCFTabContentProps> = ({ financials, symbol }) => {
+const DCFTabContent: React.FC<DCFTabContentProps> = ({ financials, symbol }) => {
   const [activeTab, setActiveTab] = useState<string>("automatic");
   
-  // Custom DCF inputs state - some values as decimals, some as whole number percentages
+  // Custom DCF inputs state
   const [customParams, setCustomParams] = useState({
+    // Growth parameters (as decimals)
     revenueGrowth: "0.1094",
     ebitdaMargin: "0.3127",
     capexPercent: "0.0306", 
     taxRate: "0.2409",
-    longTermGrowthRate: "4", // Now as whole number percentage
-    costOfEquity: "0.0951",
-    costOfDebt: "3.64", // Now as whole number percentage
-    beta: "1.244",
-    marketRiskPremium: "4.72", // Now as whole number percentage
-    riskFreeRate: "3.64" // Now as whole number percentage
+    
+    // Working capital parameters (as decimals)
+    depreciationAndAmortizationPercent: "0.0345",
+    cashAndShortTermInvestmentsPercent: "0.2344",
+    receivablesPercent: "0.1533", 
+    inventoriesPercent: "0.0155",
+    payablesPercent: "0.1614",
+    ebitPercent: "0.2781",
+    operatingCashFlowPercent: "0.2886",
+    sellingGeneralAndAdministrativeExpensesPercent: "0.0662",
+    
+    // Rate parameters (whole number percentages)
+    longTermGrowthRate: "4",
+    costOfEquity: "9.51",
+    costOfDebt: "3.64",
+    marketRiskPremium: "4.72",
+    riskFreeRate: "3.64",
+    
+    // Other
+    beta: "1.244"
   });
   
   // Custom DCF calculation hook
@@ -49,16 +63,31 @@ const DCFTabContentProps: React.FC<DCFTabContentProps> = ({ financials, symbol }
   const handleCalculateCustomDCF = () => {
     calculateCustomDCF({
       symbol,
+      // Growth parameters
       revenueGrowthPct: parseFloat(customParams.revenueGrowth),
       ebitdaPct: parseFloat(customParams.ebitdaMargin),
       capitalExpenditurePct: parseFloat(customParams.capexPercent),
       taxRate: parseFloat(customParams.taxRate),
-      longTermGrowthRate: parseFloat(customParams.longTermGrowthRate) / 100, // Convert from percentage to decimal
-      costOfEquity: parseFloat(customParams.costOfEquity),
-      costOfDebt: parseFloat(customParams.costOfDebt) / 100, // Convert from percentage to decimal
+      
+      // Working capital parameters
+      depreciationAndAmortizationPct: parseFloat(customParams.depreciationAndAmortizationPercent),
+      cashAndShortTermInvestmentsPct: parseFloat(customParams.cashAndShortTermInvestmentsPercent),
+      receivablesPct: parseFloat(customParams.receivablesPercent),
+      inventoriesPct: parseFloat(customParams.inventoriesPercent),
+      payablesPct: parseFloat(customParams.payablesPercent),
+      ebitPct: parseFloat(customParams.ebitPercent),
+      operatingCashFlowPct: parseFloat(customParams.operatingCashFlowPercent),
+      sellingGeneralAndAdministrativeExpensesPct: parseFloat(customParams.sellingGeneralAndAdministrativeExpensesPercent),
+      
+      // Rate parameters - convert from percentage to decimal
+      longTermGrowthRate: parseFloat(customParams.longTermGrowthRate) / 100,
+      costOfEquity: parseFloat(customParams.costOfEquity) / 100,
+      costOfDebt: parseFloat(customParams.costOfDebt) / 100,
+      marketRiskPremium: parseFloat(customParams.marketRiskPremium) / 100,
+      riskFreeRate: parseFloat(customParams.riskFreeRate) / 100,
+      
+      // Other
       beta: parseFloat(customParams.beta),
-      marketRiskPremium: parseFloat(customParams.marketRiskPremium) / 100, // Convert from percentage to decimal
-      riskFreeRate: parseFloat(customParams.riskFreeRate) / 100, // Convert from percentage to decimal
     });
   };
   
@@ -92,4 +121,4 @@ const DCFTabContentProps: React.FC<DCFTabContentProps> = ({ financials, symbol }
   );
 };
 
-export default DCFTabContentProps;
+export default DCFTabContent;

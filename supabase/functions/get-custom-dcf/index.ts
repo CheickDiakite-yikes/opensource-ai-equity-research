@@ -35,27 +35,39 @@ serve(async (req) => {
     }
 
     // Construct query parameters for the custom DCF
-    // Based on the Python example, using the stable/custom-levered-discounted-cash-flow endpoint
     const queryParams = new URLSearchParams({
       apikey: apiKey,
       symbol: symbol,
     });
 
-    // Add custom parameters if provided
+    // Add custom parameters if provided, mapping the names to match the API's expected format
     if (params) {
+      // Growth parameters
       if (params.revenueGrowthPct !== undefined) queryParams.append('revenueGrowthPct', params.revenueGrowthPct.toString());
       if (params.ebitdaPct !== undefined) queryParams.append('ebitdaPct', params.ebitdaPct.toString());
+      if (params.ebitPct !== undefined) queryParams.append('ebitPct', params.ebitPct.toString());
       if (params.capitalExpenditurePct !== undefined) queryParams.append('capitalExpenditurePct', params.capitalExpenditurePct.toString());
       if (params.taxRate !== undefined) queryParams.append('taxRate', params.taxRate.toString());
+      
+      // Working capital parameters
+      if (params.depreciationAndAmortizationPct !== undefined) queryParams.append('depreciationAndAmortizationPct', params.depreciationAndAmortizationPct.toString());
+      if (params.cashAndShortTermInvestmentsPct !== undefined) queryParams.append('cashAndShortTermInvestmentsPct', params.cashAndShortTermInvestmentsPct.toString());
+      if (params.receivablesPct !== undefined) queryParams.append('receivablesPct', params.receivablesPct.toString());
+      if (params.inventoriesPct !== undefined) queryParams.append('inventoriesPct', params.inventoriesPct.toString());
+      if (params.payablesPct !== undefined) queryParams.append('payablesPct', params.payablesPct.toString());
+      if (params.operatingCashFlowPct !== undefined) queryParams.append('operatingCashFlowPct', params.operatingCashFlowPct.toString());
+      if (params.sellingGeneralAndAdministrativeExpensesPct !== undefined) queryParams.append('sellingGeneralAndAdministrativeExpensesPct', params.sellingGeneralAndAdministrativeExpensesPct.toString());
+      
+      // Rate parameters
       if (params.longTermGrowthRate !== undefined) queryParams.append('longTermGrowthRate', params.longTermGrowthRate.toString());
       if (params.costOfEquity !== undefined) queryParams.append('costOfEquity', params.costOfEquity.toString());
       if (params.costOfDebt !== undefined) queryParams.append('costOfDebt', params.costOfDebt.toString());
-      if (params.beta !== undefined) queryParams.append('beta', params.beta.toString());
       if (params.marketRiskPremium !== undefined) queryParams.append('marketRiskPremium', params.marketRiskPremium.toString());
       if (params.riskFreeRate !== undefined) queryParams.append('riskFreeRate', params.riskFreeRate.toString());
+      if (params.beta !== undefined) queryParams.append('beta', params.beta.toString());
     }
 
-    // Use the correct URL format from the Python example
+    // Use the correct URL format
     const url = `https://financialmodelingprep.com/stable/custom-levered-discounted-cash-flow?${queryParams}`;
     
     console.log(`Fetching custom DCF for ${symbol} from: ${url.replace(apiKey, "API_KEY_HIDDEN")}`);
