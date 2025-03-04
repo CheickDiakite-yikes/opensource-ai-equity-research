@@ -1,3 +1,4 @@
+
 // Stock Profile Types
 import { IncomeStatement, BalanceSheet, CashFlowStatement, KeyRatio } from './financialStatementTypes';
 
@@ -292,4 +293,79 @@ export interface StockMover {
   change: number;
   changesPercentage: number;
   exchange: string;
+}
+
+// Index Types
+export interface MarketIndex {
+  symbol: string;
+  name: string;
+  exchange: string;
+  currency: string;
+}
+
+export interface IndexQuote {
+  symbol: string;
+  name: string;
+  price: number;
+  changePercentage: number;
+  change: number;
+  volume: number;
+  dayLow: number;
+  dayHigh: number;
+  yearHigh: number;
+  yearLow: number;
+  marketCap: number | null;
+  priceAvg50: number;
+  priceAvg200: number;
+  exchange: string;
+  open: number;
+  previousClose: number;
+  timestamp: number;
+}
+
+export interface IndexShortQuote {
+  symbol: string;
+  price: number;
+  change: number;
+  volume: number;
+}
+
+export interface IndexHistoricalLightData {
+  symbol: string;
+  date: string;
+  price: number;
+  volume: number;
+}
+
+export interface IndexHistoricalFullData {
+  symbol: string;
+  date: string;
+  open: number;
+  high: number;
+  low: number;
+  close: number;
+  volume: number;
+  change: number;
+  changePercent: number;
+  vwap: number;
+}
+
+export interface IndexIntradayData {
+  date: string;
+  open: number;
+  low: number;
+  high: number;
+  close: number;
+  volume: number;
+}
+
+export interface IndexConstituent {
+  symbol: string;
+  name: string;
+  sector: string;
+  subSector: string;
+  headQuarter: string;
+  dateFirstAdded: string | null;
+  cik: string;
+  founded: string;
 }

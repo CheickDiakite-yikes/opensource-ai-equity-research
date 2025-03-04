@@ -27,7 +27,8 @@ serve(async (req) => {
       date,
       sector,
       industry,
-      exchange
+      exchange,
+      short
     } = await req.json();
     
     // For market data endpoints that don't require a symbol
@@ -35,14 +36,29 @@ serve(async (req) => {
       "sector-performance", "industry-performance", 
       "historical-sector-performance", "historical-industry-performance",
       "sector-pe", "industry-pe", "historical-sector-pe", "historical-industry-pe",
-      "biggest-gainers", "biggest-losers", "most-actives"
+      "biggest-gainers", "biggest-losers", "most-actives",
+      "index-list", "batch-index-quotes", "sp500-constituents", "nasdaq-constituents", "dowjones-constituents"
+    ];
+    
+    // For index endpoints that require a symbol
+    const indexEndpoints = [
+      "index-quote", "index-quote-short", "index-historical-eod-light", 
+      "index-historical-eod-full", "index-intraday-1min", "index-intraday-5min", 
+      "index-intraday-1hour"
     ];
     
     if (!symbol && !marketDataOnlyEndpoints.includes(endpoint)) {
-      return createResponse(
-        { error: "Symbol is required" },
-        400
-      );
+      if (indexEndpoints.includes(endpoint)) {
+        return createResponse(
+          { error: "Symbol is required for index endpoint" },
+          400
+        );
+      } else {
+        return createResponse(
+          { error: "Symbol is required" },
+          400
+        );
+      }
     }
     
     console.log(`Processing ${endpoint} request${symbol ? ` for ${symbol}` : ''}`);
@@ -80,8 +96,13 @@ serve(async (req) => {
                  "sector-performance", "industry-performance", 
                  "historical-sector-performance", "historical-industry-performance",
                  "sector-pe", "industry-pe", "historical-sector-pe", "historical-industry-pe",
-                 "biggest-gainers", "biggest-losers", "most-actives"].includes(endpoint)) {
-          const params = { from, to, date, sector, industry, exchange };
+                 "biggest-gainers", "biggest-losers", "most-actives",
+                 // New index endpoints
+                 "index-list", "index-quote", "index-quote-short", "batch-index-quotes",
+                 "index-historical-eod-light", "index-historical-eod-full",
+                 "index-intraday-1min", "index-intraday-5min", "index-intraday-1hour",
+                 "sp500-constituents", "nasdaq-constituents", "dowjones-constituents"].includes(endpoint)) {
+          const params = { from, to, date, sector, industry, exchange, short };
           data = await marketDataController.handleRequest(endpoint, symbol, params);
         }
         // Documents endpoints

@@ -18,5 +18,19 @@ export const API_BASE_URLS = {
 export const ERROR_MESSAGES = {
   PROFILE_NOT_FOUND: (symbol: string) => `No profile data found for ${symbol}`,
   QUOTE_NOT_FOUND: (symbol: string) => `No quote data found for ${symbol}`,
-  API_REQUEST_FAILED: (endpoint: string, symbol: string) => `Unable to fetch ${endpoint} data for ${symbol}`
+  API_REQUEST_FAILED: (endpoint: string, symbol: string) => `Unable to fetch ${endpoint} data for ${symbol}`,
+  INDEX_NOT_FOUND: (symbol: string) => `No index data found for ${symbol}`
+}
+
+/**
+ * Stock Index Constants
+ */
+export const STOCK_INDICES = {
+  SP500: "^GSPC",
+  DOW: "^DJI",
+  NASDAQ: "^IXIC",
+  RUSSELL: "^RUT",
+  VIX: "^VIX",
+  FTSE: "^FTSE",
+  DAX: "^GDAXI"
 }
