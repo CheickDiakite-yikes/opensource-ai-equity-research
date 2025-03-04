@@ -3,3 +3,4 @@
 export * from './calculationUtils';
 export * from './formatUtils';
 export * from './dataProcessingUtils';
+export * from './prepareDataUtils';

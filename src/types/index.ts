@@ -6,7 +6,12 @@ export * from './profile/companyTypes';
 
 // Financial data types
 export * from './financial/metricsTypes';
-export * from './financial/statementTypes';
+// Explicitly re-export statement types to avoid naming conflicts
+export type {
+  IncomeStatement,
+  BalanceSheet,
+  CashFlowStatement
+} from './financial/statementTypes';
 
 // Market data types
 export * from './market/indexTypes';

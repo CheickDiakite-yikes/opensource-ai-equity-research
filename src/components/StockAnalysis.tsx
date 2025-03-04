@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { useResearchReportData } from "@/components/reports/useResearchReportData";
 import LoadingSkeleton from "@/components/LoadingSkeleton";
-import { prepareFinancialData, prepareRatioData } from "@/utils/financialDataUtils";
+import { prepareFinancialData, prepareRatioData } from "@/utils/financial";
 import { toast } from "sonner";
 import { useDirectFinancialData } from "@/hooks/useDirectFinancialData";
 import ErrorState from "@/components/analysis/ErrorState";
