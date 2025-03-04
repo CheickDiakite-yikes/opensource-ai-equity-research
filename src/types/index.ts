@@ -1,3 +1,4 @@
+
 // Re-export all types from domain-specific files
 
 // Profile and company data types
@@ -18,6 +19,8 @@ export * from './news/newsTypes';
 export * from './historicalDataTypes';
 export * from './documentTypes';
 export * from './aiAnalysisTypes';
+
+// Export financialDataTypes directly to avoid naming conflicts
 export * from './financialDataTypes';
 
 // Re-export AI analysis types for backward compatibility
