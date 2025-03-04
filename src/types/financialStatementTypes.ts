@@ -126,15 +126,10 @@ export interface KeyRatio {
   symbol: string;
   date: string;
   period: string;
-  currentRatio: number;
-  quickRatio: number;
-  cashRatio: number;
-  daysOfSalesOutstanding: number;
-  daysOfInventoryOutstanding: number;
-  operatingCycle: number;
-  daysOfPayablesOutstanding: number;
-  cashConversionCycle: number;
+  reportedCurrency: string;
   grossProfitMargin: number;
+  ebitMargin: number;
+  ebitdaMargin: number;
   operatingProfitMargin: number;
   pretaxProfitMargin: number;
   netProfitMargin: number;
@@ -142,9 +137,6 @@ export interface KeyRatio {
   returnOnAssets: number;
   returnOnEquity: number;
   returnOnCapitalEmployed: number;
-  netIncomePerEBT: number;
-  ebtPerEbit: number;
-  ebitPerRevenue: number;
   debtRatio: number;
   debtEquityRatio: number;
   longTermDebtToCapitalization: number;
@@ -180,4 +172,13 @@ export interface KeyRatio {
   dividendYield: number;
   enterpriseValueMultiple: number;
   priceFairValue: number;
+  currentRatio: number;
+  quickRatio: number;
+  cashRatio: number;
+  daysOfSalesOutstanding: number;
+  daysOfInventoryOutstanding: number;
+  operatingCycle: number;
+  daysOfPayablesOutstanding: number;
+  cashConversionCycle: number;
+  [key: string]: any; // For any additional fields
 }

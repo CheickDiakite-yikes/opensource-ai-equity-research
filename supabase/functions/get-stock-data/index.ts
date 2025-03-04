@@ -1,7 +1,6 @@
 
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import { corsHeaders } from "../_shared/cors.ts";
-import { fetchWithRetry } from "../_shared/fetch-utils.ts";
 import { createResponse, createErrorResponse } from "../_shared/api-utils.ts";
 import { ProfileController } from "./controllers/profile-controller.ts";
 import { FinancialController } from "./controllers/financial-controller.ts";
@@ -15,7 +14,7 @@ serve(async (req) => {
   }
   
   try {
-    const { symbol, endpoint, quarter, year, limit, from, to, page } = await req.json();
+    const { symbol, endpoint, quarter, year, limit, period, from, to, page } = await req.json();
     
     if (!symbol) {
       return createResponse(
@@ -49,8 +48,10 @@ serve(async (req) => {
           data = await profileController.handleRequest(endpoint, symbol);
         }
         // Financial statements endpoints
-        else if (["income-statement", "balance-sheet", "cash-flow", "ratios"].includes(endpoint)) {
-          data = await financialController.handleRequest(endpoint, symbol);
+        else if (["income-statement", "income-statement-ttm", "balance-sheet", "balance-sheet-ttm",
+                  "cash-flow", "cash-flow-ttm", "ratios", "ratios-ttm", "key-metrics", 
+                  "key-metrics-ttm", "financial-scores"].includes(endpoint)) {
+          data = await financialController.handleRequest(endpoint, symbol, period, limit);
         }
         // Market data endpoints
         else if (["historical-price", "news", "peers"].includes(endpoint)) {

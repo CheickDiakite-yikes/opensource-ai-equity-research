@@ -1,4 +1,3 @@
-
 // Stock Profile Types
 export interface StockProfile {
   symbol: string;
@@ -139,4 +138,118 @@ export interface EmployeeCount {
   filingDate: string;
   employeeCount: number;
   source: string;
+}
+
+// TTM Financial Statement Types
+export interface IncomeStatementTTM extends Omit<IncomeStatement, 'period'> {
+  period: 'TTM';
+}
+
+export interface BalanceSheetTTM extends Omit<BalanceSheet, 'period'> {
+  period: 'TTM';
+}
+
+export interface CashFlowStatementTTM extends Omit<CashFlowStatement, 'period'> {
+  period: 'TTM';
+}
+
+// Key Metrics Types
+export interface KeyMetric {
+  symbol: string;
+  date: string;
+  period: string;
+  reportedCurrency: string;
+  marketCap: number;
+  enterpriseValue: number;
+  evToSales: number;
+  evToOperatingCashFlow: number;
+  evToFreeCashFlow: number;
+  evToEBITDA: number;
+  netDebtToEBITDA: number;
+  currentRatio: number;
+  incomeQuality: number;
+  grahamNumber: number;
+  grahamNetNet: number;
+  workingCapital: number;
+  investedCapital: number;
+  returnOnAssets: number;
+  operatingReturnOnAssets: number;
+  returnOnTangibleAssets: number;
+  returnOnEquity: number;
+  returnOnInvestedCapital: number;
+  returnOnCapitalEmployed: number;
+  earningsYield: number;
+  freeCashFlowYield: number;
+  capexToOperatingCashFlow: number;
+  capexToDepreciation: number;
+  capexToRevenue: number;
+  stockBasedCompensationToRevenue: number;
+  daysOfSalesOutstanding: number;
+  daysOfPayablesOutstanding: number;
+  daysOfInventoryOutstanding: number;
+  operatingCycle: number;
+  cashConversionCycle: number;
+  freeCashFlowToEquity: number;
+  freeCashFlowToFirm: number;
+  tangibleAssetValue: number;
+  netCurrentAssetValue: number;
+  [key: string]: any; // For any additional fields
+}
+
+export interface KeyMetricTTM extends Omit<KeyMetric, 'period'> {
+  marketCapTTM: number;
+  enterpriseValueTTM: number;
+  evToSalesTTM: number;
+  evToOperatingCashFlowTTM: number;
+  evToFreeCashFlowTTM: number;
+  evToEBITDATTM: number;
+  netDebtToEBITDATTM: number;
+  currentRatioTTM: number;
+  incomeQualityTTM: number;
+  grahamNumberTTM: number;
+  grahamNetNetTTM: number;
+  workingCapitalTTM: number;
+  investedCapitalTTM: number;
+  returnOnAssetsTTM: number;
+  operatingReturnOnAssetsTTM: number;
+  returnOnTangibleAssetsTTM: number;
+  returnOnEquityTTM: number;
+  returnOnInvestedCapitalTTM: number;
+  returnOnCapitalEmployedTTM: number;
+  earningsYieldTTM: number;
+  freeCashFlowYieldTTM: number;
+  capexToOperatingCashFlowTTM: number;
+  capexToDepreciationTTM: number;
+  capexToRevenueTTM: number;
+  [key: string]: any; // For any additional fields
+}
+
+export interface KeyRatioTTM extends Omit<KeyRatio, 'period'> {
+  grossProfitMarginTTM: number;
+  operatingProfitMarginTTM: number;
+  netProfitMarginTTM: number;
+  returnOnAssetsTTM: number;
+  returnOnEquityTTM: number;
+  debtToEquityRatioTTM: number;
+  currentRatioTTM: number;
+  quickRatioTTM: number;
+  priceToEarningsRatioTTM: number;
+  priceToBookRatioTTM: number;
+  dividendYieldTTM: number;
+  dividendYieldPercentageTTM: number;
+  [key: string]: any; // For any additional fields
+}
+
+export interface FinancialScore {
+  symbol: string;
+  reportedCurrency: string;
+  altmanZScore: number;
+  piotroskiScore: number;
+  workingCapital: number;
+  totalAssets: number;
+  retainedEarnings: number;
+  ebit: number;
+  marketCap: number;
+  totalLiabilities: number;
+  revenue: number;
 }
