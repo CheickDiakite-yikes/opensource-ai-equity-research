@@ -1,4 +1,3 @@
-
 // Stock Profile Types
 import { IncomeStatement, BalanceSheet, CashFlowStatement, KeyRatio } from './financialStatementTypes';
 
@@ -255,4 +254,42 @@ export interface FinancialScore {
   marketCap: number;
   totalLiabilities: number;
   revenue: number;
+}
+
+// Market Performance Types
+export interface SectorPerformance {
+  date: string;
+  sector: string;
+  exchange?: string;
+  averageChange: number;
+}
+
+export interface IndustryPerformance {
+  date: string;
+  industry: string;
+  exchange?: string;
+  averageChange: number;
+}
+
+export interface SectorPE {
+  date: string;
+  sector: string;
+  exchange?: string;
+  pe: number;
+}
+
+export interface IndustryPE {
+  date: string;
+  industry: string;
+  exchange?: string;
+  pe: number;
+}
+
+export interface StockMover {
+  symbol: string;
+  price: number;
+  name: string;
+  change: number;
+  changesPercentage: number;
+  exchange: string;
 }

@@ -14,16 +14,38 @@ serve(async (req) => {
   }
   
   try {
-    const { symbol, endpoint, quarter, year, limit, period, from, to, page } = await req.json();
+    const { 
+      symbol, 
+      endpoint, 
+      quarter, 
+      year, 
+      limit, 
+      period, 
+      from, 
+      to, 
+      page, 
+      date,
+      sector,
+      industry,
+      exchange
+    } = await req.json();
     
-    if (!symbol) {
+    // For market data endpoints that don't require a symbol
+    const marketDataOnlyEndpoints = [
+      "sector-performance", "industry-performance", 
+      "historical-sector-performance", "historical-industry-performance",
+      "sector-pe", "industry-pe", "historical-sector-pe", "historical-industry-pe",
+      "biggest-gainers", "biggest-losers", "most-actives"
+    ];
+    
+    if (!symbol && !marketDataOnlyEndpoints.includes(endpoint)) {
       return createResponse(
         { error: "Symbol is required" },
         400
       );
     }
     
-    console.log(`Processing ${endpoint} request for ${symbol}`);
+    console.log(`Processing ${endpoint} request${symbol ? ` for ${symbol}` : ''}`);
     
     // Group endpoints by controller
     const profileController = new ProfileController();
@@ -39,7 +61,7 @@ serve(async (req) => {
     while (attempts < maxAttempts) {
       try {
         attempts++;
-        console.log(`Attempt ${attempts}/${maxAttempts} for ${endpoint} - ${symbol}`);
+        console.log(`Attempt ${attempts}/${maxAttempts} for ${endpoint}${symbol ? ` - ${symbol}` : ''}`);
         
         // Profile and company data endpoints
         if (["profile", "quote", "rating", "peers", "market-cap", "historical-market-cap", 
@@ -54,8 +76,13 @@ serve(async (req) => {
           data = await financialController.handleRequest(endpoint, symbol, period, limit);
         }
         // Market data endpoints
-        else if (["historical-price", "news", "peers"].includes(endpoint)) {
-          data = await marketDataController.handleRequest(endpoint, symbol);
+        else if (["historical-price", "news", "peers",
+                 "sector-performance", "industry-performance", 
+                 "historical-sector-performance", "historical-industry-performance",
+                 "sector-pe", "industry-pe", "historical-sector-pe", "historical-industry-pe",
+                 "biggest-gainers", "biggest-losers", "most-actives"].includes(endpoint)) {
+          const params = { from, to, date, sector, industry, exchange };
+          data = await marketDataController.handleRequest(endpoint, symbol, params);
         }
         // Documents endpoints
         else if (["earning-transcripts", "transcript-content", "sec-filings"].includes(endpoint)) {
@@ -76,10 +103,10 @@ serve(async (req) => {
         
         // If we got data successfully, break out of the retry loop
         if (data && (!Array.isArray(data) || data.length > 0)) {
-          console.log(`Successfully retrieved ${endpoint} data for ${symbol} on attempt ${attempts}`);
+          console.log(`Successfully retrieved ${endpoint} data${symbol ? ` for ${symbol}` : ''} on attempt ${attempts}`);
           break;
         } else {
-          console.warn(`Empty ${endpoint} data for ${symbol} on attempt ${attempts}, retrying...`);
+          console.warn(`Empty ${endpoint} data${symbol ? ` for ${symbol}` : ''} on attempt ${attempts}, retrying...`);
           // Short delay before next attempt
           if (attempts < maxAttempts) {
             await new Promise(r => setTimeout(r, 1000 * attempts)); // Increasing delay with each attempt
@@ -92,7 +119,7 @@ serve(async (req) => {
           await new Promise(r => setTimeout(r, 1000 * attempts)); // Increasing delay with each attempt
         } else {
           // On the last attempt, return empty data rather than throwing
-          console.error(`All ${maxAttempts} attempts failed for ${endpoint} - ${symbol}`);
+          console.error(`All ${maxAttempts} attempts failed for ${endpoint}${symbol ? ` - ${symbol}` : ''}`);
           
           // Default empty responses based on endpoint type
           if (endpoint === "profile") {
