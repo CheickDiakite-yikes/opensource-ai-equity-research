@@ -15,7 +15,7 @@ serve(async (req) => {
   }
   
   try {
-    const { symbol, endpoint, quarter, year } = await req.json();
+    const { symbol, endpoint, quarter, year, limit, from, to, page } = await req.json();
     
     if (!symbol) {
       return createResponse(
@@ -43,7 +43,9 @@ serve(async (req) => {
         console.log(`Attempt ${attempts}/${maxAttempts} for ${endpoint} - ${symbol}`);
         
         // Profile and company data endpoints
-        if (["profile", "quote", "rating"].includes(endpoint)) {
+        if (["profile", "quote", "rating", "peers", "market-cap", "historical-market-cap", 
+             "shares-float", "executives", "executive-compensation", "company-notes", 
+             "employee-count", "historical-employee-count"].includes(endpoint)) {
           data = await profileController.handleRequest(endpoint, symbol);
         }
         // Financial statements endpoints

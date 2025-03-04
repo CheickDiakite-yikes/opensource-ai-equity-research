@@ -1,3 +1,4 @@
+
 // Stock Profile Types
 export interface StockProfile {
   symbol: string;
@@ -77,4 +78,65 @@ export interface NewsArticle {
   site: string;
   text: string;
   url: string;
+}
+
+export interface MarketCap {
+  symbol: string;
+  date: string;
+  marketCap: number;
+}
+
+export interface SharesFloat {
+  symbol: string;
+  date: string;
+  freeFloat: number;
+  floatShares: number;
+  outstandingShares: number;
+}
+
+export interface CompanyExecutive {
+  title: string;
+  name: string;
+  pay: number | null;
+  currencyPay: string;
+  gender: string;
+  yearBorn: number | null;
+  active: boolean | null;
+}
+
+export interface ExecutiveCompensation {
+  cik: string;
+  symbol: string;
+  companyName: string;
+  filingDate: string;
+  acceptedDate: string;
+  nameAndPosition: string;
+  year: number;
+  salary: number;
+  bonus: number;
+  stockAward: number;
+  optionAward: number;
+  incentivePlanCompensation: number;
+  allOtherCompensation: number;
+  total: number;
+  link: string;
+}
+
+export interface CompanyNote {
+  cik: string;
+  symbol: string;
+  title: string;
+  exchange: string;
+}
+
+export interface EmployeeCount {
+  symbol: string;
+  cik: string;
+  acceptanceTime: string;
+  periodOfReport: string;
+  companyName: string;
+  formType: string;
+  filingDate: string;
+  employeeCount: number;
+  source: string;
 }
