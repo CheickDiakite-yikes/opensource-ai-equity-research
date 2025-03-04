@@ -1,3 +1,4 @@
+
 import { IncomeStatement, BalanceSheet, CashFlowStatement, KeyRatio, FinancialData, RatioData } from "@/types";
 
 /**
@@ -55,37 +56,62 @@ export const prepareFinancialData = (
     const cashFlow: Partial<CashFlowStatement> = cashFlowStatements[i] || {};
     
     // Get the date from any available statement (prioritizing income statement)
-    const date = income.date || balance.date || cashFlow.date || 'Unknown';
+    const calendarYear = income.calendarYear || balance.calendarYear || cashFlow.calendarYear || 'Unknown';
     
     result.push({
-      date,
+      year: calendarYear,
       // Income statement data
       revenue: income.revenue || 0,
       costOfRevenue: income.costOfRevenue || 0,
       grossProfit: income.grossProfit || 0,
-      grossProfitRatio: income.grossProfitRatio || 0,
       operatingExpenses: income.operatingExpenses || 0,
       operatingIncome: income.operatingIncome || 0,
       netIncome: income.netIncome || 0,
+      eps: income.eps || 0,
       
       // Balance sheet data
       totalAssets: balance.totalAssets || 0,
-      totalCurrentAssets: balance.totalCurrentAssets || 0,
-      cashAndCashEquivalents: balance.cashAndCashEquivalents || 0,
       totalLiabilities: balance.totalLiabilities || 0,
+      totalEquity: balance.totalStockholdersEquity || 0,
+      cashAndCashEquivalents: balance.cashAndCashEquivalents || 0,
+      shortTermInvestments: balance.shortTermInvestments || 0,
+      accountsReceivable: balance.netReceivables || 0,
+      inventory: balance.inventory || 0,
+      totalCurrentAssets: balance.totalCurrentAssets || 0,
+      propertyPlantEquipment: balance.propertyPlantEquipmentNet || 0,
+      longTermInvestments: balance.longTermInvestments || 0,
+      intangibleAssets: balance.intangibleAssets || 0,
+      totalNonCurrentAssets: balance.totalNonCurrentAssets || 0,
+      accountsPayable: balance.accountPayables || 0,
+      shortTermDebt: balance.shortTermDebt || 0,
       totalCurrentLiabilities: balance.totalCurrentLiabilities || 0,
-      totalStockholdersEquity: balance.totalStockholdersEquity || 0,
+      longTermDebt: balance.longTermDebt || 0,
+      totalNonCurrentLiabilities: balance.totalNonCurrentLiabilities || 0,
       
       // Cash flow data
       operatingCashFlow: cashFlow.operatingCashFlow || 0,
       capitalExpenditure: cashFlow.capitalExpenditure || 0,
       freeCashFlow: cashFlow.freeCashFlow || 0,
-      netCashUsedForInvestingActivities: cashFlow.netCashUsedForInvestingActivities || 0
+      depreciation: cashFlow.depreciationAndAmortization || 0,
+      changeInWorkingCapital: cashFlow.changeInWorkingCapital || 0,
+      investmentCashFlow: cashFlow.netCashUsedForInvestingActivities || 0,
+      financingCashFlow: cashFlow.netCashUsedProvidedByFinancingActivities || 0,
+      netChangeInCash: cashFlow.netChangeInCash || 0
     });
   }
   
-  // Sort by date (oldest to newest)
-  return result.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+  // Sort by year (oldest to newest)
+  return result.sort((a, b) => {
+    // Ensure we're comparing strings as numbers when possible
+    const yearA = !isNaN(Number(a.year)) ? Number(a.year) : a.year;
+    const yearB = !isNaN(Number(b.year)) ? Number(b.year) : b.year;
+    
+    if (typeof yearA === 'number' && typeof yearB === 'number') {
+      return yearA - yearB;
+    }
+    // Fall back to string comparison
+    return String(a.year).localeCompare(String(b.year));
+  });
 };
 
 /**
@@ -95,39 +121,35 @@ export const prepareRatioData = (ratios: KeyRatio[]): RatioData[] => {
   if (!ratios || ratios.length === 0) return [];
   
   const result: RatioData[] = ratios.map(ratio => ({
-    date: ratio.date,
+    year: ratio.calendarYear || ratio.period || ratio.date || "",
+    // Key valuation ratios
+    peRatio: ratio.priceEarningsRatio || 0,
+    pbRatio: ratio.priceToBookRatio || 0,
+    
     // Profitability ratios
-    returnOnAssets: ratio.returnOnAssets || 0,
-    returnOnEquity: ratio.returnOnEquity || 0,
-    profitMargin: ratio.netProfitMargin || 0,
-    operatingProfitMargin: ratio.operatingProfitMargin || 0,
+    roe: ratio.returnOnEquity || 0, 
+    roa: ratio.returnOnAssets || 0,
+    grossMargin: ratio.grossProfitMargin || 0,
+    operatingMargin: ratio.operatingProfitMargin || 0,
+    netMargin: ratio.netProfitMargin || 0,
     
-    // Liquidity ratios
+    // Liquidity and solvency ratios
     currentRatio: ratio.currentRatio || 0,
-    quickRatio: ratio.quickRatio || 0,
-    cashRatio: ratio.cashRatio || 0,
-    
-    // Solvency ratios
-    debtToAssets: ratio.debtToAssets || 0,
-    debtToEquity: ratio.debtToEquity || 0,
-    
-    // Efficiency ratios
-    assetTurnover: ratio.assetTurnover || 0,
-    inventoryTurnover: ratio.inventoryTurnover || 0,
-    
-    // Valuation ratios
-    priceToEarnings: ratio.priceEarningsRatio || 0,
-    priceToBook: ratio.priceToBookRatio || 0,
-    priceToSales: ratio.priceToSalesRatio || 0,
-    enterpriseValueMultiple: ratio.enterpriseValueMultiple || 0,
-    
-    // Dividend ratios
-    dividendYield: ratio.dividendYield || 0,
-    dividendPayoutRatio: ratio.dividendPayoutRatio || 0,
+    debtToEquity: ratio.debtEquityRatio || 0
   }));
   
-  // Sort by date (oldest to newest)
-  return result.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+  // Sort by year (oldest to newest)
+  return result.sort((a, b) => {
+    // Ensure we're comparing strings as numbers when possible
+    const yearA = !isNaN(Number(a.year)) ? Number(a.year) : a.year;
+    const yearB = !isNaN(Number(b.year)) ? Number(b.year) : b.year;
+    
+    if (typeof yearA === 'number' && typeof yearB === 'number') {
+      return yearA - yearB;
+    }
+    // Fall back to string comparison
+    return String(a.year).localeCompare(String(b.year));
+  });
 };
 
 /**
@@ -159,9 +181,18 @@ export const getGrowthRates = (financials: FinancialData[]): Record<string, numb
     };
   }
   
-  // Sort by date (oldest to newest)
+  // Sort by year (oldest to newest)
   const sortedData = [...financials].sort(
-    (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
+    (a, b) => {
+      const yearA = !isNaN(Number(a.year)) ? Number(a.year) : a.year;
+      const yearB = !isNaN(Number(b.year)) ? Number(b.year) : b.year;
+      
+      if (typeof yearA === 'number' && typeof yearB === 'number') {
+        return yearA - yearB;
+      }
+      // Fall back to string comparison
+      return String(a.year).localeCompare(String(b.year));
+    }
   );
   
   const oldest = sortedData[0];

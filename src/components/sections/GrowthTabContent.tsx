@@ -1,91 +1,69 @@
 
 import React from "react";
-import { Card, CardHeader, CardContent, CardTitle } from "@/components/ui/card";
-import GrowthChart from "@/components/charts/GrowthChart";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import GrowthRateCard from "@/components/cards/GrowthRateCard";
+import GrowthChart from "@/components/charts/GrowthChart";
 import GrowthInsightsCard from "@/components/cards/GrowthInsightsCard";
-import { calculateCAGR, calculateGrowth, compareToIndustry } from "@/utils/financialDataUtils";
-import { EarningsCall, SECFiling } from "@/types";
+import { calculateYoYGrowth, getGrowthRates } from "@/utils/financialDataUtils";
 
 interface GrowthTabContentProps {
   financials: any[];
-  symbol?: string;
-  transcripts?: EarningsCall[];
-  filings?: SECFiling[];
+  symbol: string;
 }
 
-const GrowthTabContent: React.FC<GrowthTabContentProps> = ({ 
-  financials,
-  symbol = "",
-  transcripts = [],
-  filings = []
-}) => {
-  const revenueGrowthData = calculateGrowth(financials, 'revenue');
-  const netIncomeGrowthData = calculateGrowth(financials, 'netIncome');
+const GrowthTabContent: React.FC<GrowthTabContentProps> = ({ financials, symbol }) => {
+  const growthRates = getGrowthRates(financials);
   
-  const revenueCagr = calculateCAGR(financials, 'revenue');
-  const epsCagr = calculateCAGR(financials, 'eps');
-  const netIncomeCagr = calculateCAGR(financials, 'netIncome');
-
+  // Calculate YoY growth for the latest period
+  const calculateLatestYoY = (metric: string) => {
+    if (financials.length < 2) return 0;
+    
+    const sorted = [...financials].sort((a, b) => {
+      return new Date(b.year).getTime() - new Date(a.year).getTime();
+    });
+    
+    const current = sorted[0][metric];
+    const previous = sorted[1][metric];
+    
+    return calculateYoYGrowth(current, previous);
+  };
+  
+  const revenueYoY = calculateLatestYoY('revenue');
+  const netIncomeYoY = calculateLatestYoY('netIncome');
+  const cashFlowYoY = calculateLatestYoY('operatingCashFlow');
+  
   return (
     <div className="mt-4 space-y-6">
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <GrowthChart 
-          data={revenueGrowthData} 
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <GrowthRateCard 
           title="Revenue Growth" 
-          color="#3B82F6" 
+          cagrValue={growthRates.revenueGrowth} 
+          yoyValue={revenueYoY} 
         />
-        
-        <GrowthChart 
-          data={netIncomeGrowthData} 
-          title="Earnings Growth" 
-          color="#10B981" 
+        <GrowthRateCard 
+          title="Net Income Growth" 
+          cagrValue={growthRates.netIncomeGrowth} 
+          yoyValue={netIncomeYoY} 
+        />
+        <GrowthRateCard 
+          title="Cash Flow Growth" 
+          cagrValue={growthRates.operatingCashFlowGrowth} 
+          yoyValue={cashFlowYoY} 
         />
       </div>
       
-      <Card>
-        <CardHeader>
-          <CardTitle>5-Year Growth Rates</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {financials.length >= 2 ? (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <GrowthRateCard
-                title="Revenue CAGR"
-                value={revenueCagr}
-                industryAvg={8.5}
-                comparison={compareToIndustry(revenueCagr, 8.5)}
-              />
-              
-              <GrowthRateCard
-                title="EPS CAGR"
-                value={epsCagr}
-                industryAvg={9.4}
-                comparison={compareToIndustry(epsCagr, 9.4)}
-              />
-              
-              <GrowthRateCard
-                title="Net Income CAGR"
-                value={netIncomeCagr}
-                industryAvg={7.2}
-                comparison={compareToIndustry(netIncomeCagr, 7.2)}
-              />
-            </div>
-          ) : (
-            <p className="text-center text-muted-foreground py-6">
-              Insufficient historical data to calculate growth rates
-            </p>
-          )}
-        </CardContent>
-      </Card>
-
-      {symbol && (
-        <GrowthInsightsCard 
-          symbol={symbol}
-          transcripts={transcripts || []}
-          filings={filings || []}
-        />
-      )}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>Revenue and Income Growth</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <GrowthChart data={financials} />
+          </CardContent>
+        </Card>
+        
+        <GrowthInsightsCard symbol={symbol} growthRates={growthRates} />
+      </div>
     </div>
   );
 };
