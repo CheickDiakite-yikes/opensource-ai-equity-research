@@ -97,7 +97,7 @@ serve(async (req) => {
                  "historical-sector-performance", "historical-industry-performance",
                  "sector-pe", "industry-pe", "historical-sector-pe", "historical-industry-pe",
                  "biggest-gainers", "biggest-losers", "most-actives",
-                 // New index endpoints
+                 // Index endpoints
                  "index-list", "index-quote", "index-quote-short", "batch-index-quotes",
                  "index-historical-eod-light", "index-historical-eod-full",
                  "index-intraday-1min", "index-intraday-5min", "index-intraday-1hour",
