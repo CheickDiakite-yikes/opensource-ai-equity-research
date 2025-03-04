@@ -89,3 +89,9 @@ verify_jwt = false
 
 [functions.fetch-earnings-transcripts]
 verify_jwt = false
+
+[functions.execute-sql]
+verify_jwt = false
+
+[functions.optimize-database]
+verify_jwt = false

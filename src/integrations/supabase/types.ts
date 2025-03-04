@@ -9,6 +9,33 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      api_cache: {
+        Row: {
+          cache_key: string
+          created_at: string | null
+          data: Json
+          expires_at: string
+          id: number
+          metadata: Json | null
+        }
+        Insert: {
+          cache_key: string
+          created_at?: string | null
+          data: Json
+          expires_at: string
+          id?: number
+          metadata?: Json | null
+        }
+        Update: {
+          cache_key?: string
+          created_at?: string | null
+          data?: Json
+          expires_at?: string
+          id?: number
+          metadata?: Json | null
+        }
+        Relationships: []
+      }
       earnings_transcripts: {
         Row: {
           content: string | null
@@ -45,6 +72,42 @@ export type Database = {
           title?: string | null
           url?: string | null
           year?: string
+        }
+        Relationships: []
+      }
+      saved_analyses: {
+        Row: {
+          analysis_data: Json
+          analysis_type: string
+          created_at: string | null
+          description: string | null
+          id: string
+          name: string
+          symbol: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          analysis_data: Json
+          analysis_type: string
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          name: string
+          symbol: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          analysis_data?: Json
+          analysis_type?: string
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          name?: string
+          symbol?: string
+          updated_at?: string | null
+          user_id?: string
         }
         Relationships: []
       }
@@ -90,6 +153,39 @@ export type Database = {
           symbol?: string
           type?: string
           url?: string | null
+        }
+        Relationships: []
+      }
+      user_preferences: {
+        Row: {
+          created_at: string | null
+          default_view: string | null
+          id: string
+          preferred_metrics: string[] | null
+          theme: string | null
+          updated_at: string | null
+          user_id: string
+          watched_symbols: string[] | null
+        }
+        Insert: {
+          created_at?: string | null
+          default_view?: string | null
+          id?: string
+          preferred_metrics?: string[] | null
+          theme?: string | null
+          updated_at?: string | null
+          user_id: string
+          watched_symbols?: string[] | null
+        }
+        Update: {
+          created_at?: string | null
+          default_view?: string | null
+          id?: string
+          preferred_metrics?: string[] | null
+          theme?: string | null
+          updated_at?: string | null
+          user_id?: string
+          watched_symbols?: string[] | null
         }
         Relationships: []
       }
