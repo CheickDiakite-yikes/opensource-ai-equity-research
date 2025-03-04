@@ -1,3 +1,4 @@
+
 import { createClient } from "@supabase/supabase-js";
 import { toast } from "sonner";
 
@@ -150,5 +151,149 @@ export const runDatabaseMaintenance = async (): Promise<boolean> => {
   } catch (err) {
     console.error("Error running database maintenance:", err);
     return false;
+  }
+};
+
+/**
+ * Interface for semantic search results
+ */
+export interface SemanticSearchResult {
+  doc_id: number;
+  doc_type: 'transcript' | 'filing';
+  symbol: string;
+  date: string;
+  title: string;
+  relevance: number;
+  content_snippet: string;
+}
+
+/**
+ * Run semantic search on transcripts and filings
+ */
+export const runSemanticSearch = async (
+  searchTerm: string,
+  symbol?: string,
+  docType: 'all' | 'transcripts' | 'filings' = 'all',
+  limit: number = 20
+): Promise<SemanticSearchResult[]> => {
+  try {
+    // Create a cache key based on search parameters
+    const cacheKey = `search:${searchTerm}:${symbol || 'all'}:${docType}:${limit}`;
+    
+    return getCachedOrFetchData<SemanticSearchResult[]>(
+      cacheKey,
+      async () => {
+        // Prepare search terms for tsquery format
+        const formattedSearch = searchTerm
+          .replace(/[^\w\s]/g, '') // Remove special chars
+          .split(/\s+/)
+          .filter(word => word.length > 2) // Only words longer than 2 chars
+          .join(' & '); // Connect with AND operator
+        
+        if (!formattedSearch) {
+          return [];
+        }
+        
+        const { data, error } = await supabase.rpc('semantic_document_search', {
+          p_search_term: formattedSearch,
+          p_symbol: symbol || null,
+          p_doc_type: docType,
+          p_limit: limit
+        });
+        
+        if (error) {
+          console.error("Error running semantic search:", error);
+          return [];
+        }
+        
+        return data || [];
+      },
+      30 // Cache for 30 minutes
+    );
+  } catch (err) {
+    console.error("Error in runSemanticSearch:", err);
+    return [];
+  }
+};
+
+/**
+ * Interface for related document results
+ */
+export interface RelatedDocument {
+  doc_id: number;
+  doc_type: 'transcript' | 'filing';
+  symbol: string;
+  date: string;
+  title: string;
+  similarity: number;
+}
+
+/**
+ * Get related documents for a specific document
+ */
+export const getRelatedDocuments = async (
+  docId: number,
+  docType: 'transcript' | 'filing',
+  limit: number = 5
+): Promise<RelatedDocument[]> => {
+  try {
+    // Create a cache key
+    const cacheKey = `related:${docType}:${docId}:${limit}`;
+    
+    return getCachedOrFetchData<RelatedDocument[]>(
+      cacheKey,
+      async () => {
+        const { data, error } = await supabase.rpc('get_related_documents', {
+          p_doc_id: docId,
+          p_doc_type: docType,
+          p_limit: limit
+        });
+        
+        if (error) {
+          console.error("Error getting related documents:", error);
+          return [];
+        }
+        
+        return data || [];
+      },
+      60 // Cache for 60 minutes as document relationships don't change often
+    );
+  } catch (err) {
+    console.error("Error in getRelatedDocuments:", err);
+    return [];
+  }
+};
+
+/**
+ * Extract financial metrics from document text
+ */
+export const extractDocumentMetrics = async (
+  docId: number,
+  docType: 'transcript' | 'filing'
+): Promise<Record<string, string>> => {
+  try {
+    // Create a cache key
+    const cacheKey = `metrics:${docType}:${docId}`;
+    
+    return getCachedOrFetchData<Record<string, string>>(
+      cacheKey,
+      async () => {
+        const { data, error } = await supabase.rpc('extract_financial_metrics', {
+          p_doc_id: docId,
+          p_doc_type: docType
+        });
+        
+        if (error) {
+          console.error("Error extracting financial metrics:", error);
+          return {};
+        }
+        
+        return data || {};
+      },
+      1440 // Cache for 24 hours as document content doesn't change
+    );
+  } catch (err) {
+    console.error("Error in extractDocumentMetrics:", err);
+    return {};
   }
 };

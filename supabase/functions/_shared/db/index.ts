@@ -9,5 +9,4 @@ export { tableExists, addTableExistsFunction } from "./table-utils.ts";
 export { createCacheTable } from "./cache-utils.ts";
 export { optimizeTranscriptsTable } from "./transcript-utils.ts";
 export { optimizeFilingsTable } from "./filing-utils.ts";
-export { executeStoredProcedure, executeDBFunction, scheduleCacheCleanup } from "./procedure-utils.ts";
-
+export { executeStoredProcedure, executeDBFunction, scheduleCacheCleanup, runSemanticSearch, getRelatedDocuments, extractFinancialMetrics } from "./procedure-utils.ts";

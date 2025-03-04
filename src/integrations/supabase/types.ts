@@ -198,6 +198,19 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
+      execute_sql: {
+        Args: {
+          sql_statement: string
+        }
+        Returns: Json
+      }
+      extract_financial_metrics: {
+        Args: {
+          p_doc_id: number
+          p_doc_type: string
+        }
+        Returns: Json
+      }
       get_or_create_cache:
         | {
             Args: {
@@ -216,9 +229,41 @@ export type Database = {
             }
             Returns: Json
           }
+      get_related_documents: {
+        Args: {
+          p_doc_id: number
+          p_doc_type: string
+          p_limit?: number
+        }
+        Returns: {
+          doc_id: number
+          doc_type: string
+          symbol: string
+          date: string
+          title: string
+          similarity: number
+        }[]
+      }
       schedule_cache_cleanup: {
         Args: Record<PropertyKey, never>
         Returns: undefined
+      }
+      semantic_document_search: {
+        Args: {
+          p_search_term: string
+          p_symbol?: string
+          p_doc_type?: string
+          p_limit?: number
+        }
+        Returns: {
+          doc_id: number
+          doc_type: string
+          symbol: string
+          date: string
+          title: string
+          relevance: number
+          content_snippet: string
+        }[]
       }
       table_exists: {
         Args: {
