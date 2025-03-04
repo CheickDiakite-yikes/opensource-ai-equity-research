@@ -7,7 +7,7 @@ import { toast } from "sonner";
 import { useDirectFinancialData } from "@/hooks/useDirectFinancialData";
 import ErrorState from "@/components/analysis/ErrorState";
 import AnalysisTabs from "@/components/analysis/AnalysisTabs";
-import { FinancialData, RatioData } from "@/types";
+import { FinancialData, RatioData, KeyRatio } from "@/types";
 
 interface StockAnalysisProps {
   symbol: string;
@@ -79,7 +79,8 @@ const StockAnalysis = ({ symbol }: StockAnalysisProps) => {
     combinedData.balance, 
     combinedData.cashflow
   );
-  const ratioData: RatioData[] = prepareRatioData(combinedData.ratios);
+  // Cast to KeyRatio[] to ensure type compatibility
+  const ratioData: RatioData[] = prepareRatioData(combinedData.ratios as KeyRatio[]);
 
   // Generate empty mock data for any missing statement type
   if (combinedData.income.length === 0 || combinedData.balance.length === 0 || combinedData.cashflow.length === 0) {

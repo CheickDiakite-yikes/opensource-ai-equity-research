@@ -59,9 +59,5 @@ export interface RatioData {
   netMargin: number;
 }
 
-export interface KeyRatio {
-  date: string;
-  symbol: string;
-  period: string;
-  [key: string]: any; // Add this to allow for any ratio property
-}
+// Remove the KeyRatio interface from here to avoid conflicts
+// Instead, we'll import it from financial/statementTypes.ts where needed

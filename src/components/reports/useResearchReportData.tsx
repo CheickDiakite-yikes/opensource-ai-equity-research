@@ -121,7 +121,7 @@ export const useResearchReportData = (symbol: string) => {
           income,
           balance,
           cashflow,
-          ratios,
+          ratios: ratios as KeyRatio[], // Ensure we cast this to KeyRatio[] from types/financial/statementTypes
           news,
           peers,
           transcripts,

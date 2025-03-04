@@ -10,7 +10,8 @@ export * from './financial/metricsTypes';
 export type {
   IncomeStatement,
   BalanceSheet,
-  CashFlowStatement
+  CashFlowStatement,
+  KeyRatio
 } from './financial/statementTypes';
 
 // Market data types
@@ -26,7 +27,7 @@ export * from './documentTypes';
 export * from './aiAnalysisTypes';
 
 // Export financialDataTypes directly to avoid naming conflicts
-export * from './financialDataTypes';
+export type { FinancialData, RatioData } from './financialDataTypes';
 
 // Re-export AI analysis types for backward compatibility
 export type { RatingDetails } from './ai-analysis/reportTypes';
