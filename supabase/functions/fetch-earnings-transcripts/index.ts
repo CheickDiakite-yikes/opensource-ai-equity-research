@@ -22,21 +22,23 @@ serve(async (req) => {
     console.log(`Fetching earnings transcripts for ${symbol}`);
     
     // Construct the API URL based on provided parameters
-    let apiUrl = `https://financialmodelingprep.com/api/v3/earning_call_transcript/${symbol}`;
+    let apiUrl = "";
     
     // If quarter and year are provided, fetch a specific transcript
     if (quarter && year) {
-      apiUrl = `https://financialmodelingprep.com/api/v3/earning_call_transcript/${symbol}/${quarter}/${year}`;
+      apiUrl = `https://financialmodelingprep.com/stable/earning-call-transcript?symbol=${symbol}&quarter=${quarter}&year=${year}`;
       console.log(`Fetching specific transcript: ${apiUrl}`);
     } else {
       // Otherwise, fetch the list with optional limit
-      const limitParam = limit ? `?limit=${limit}` : "";
-      apiUrl = `https://financialmodelingprep.com/api/v3/earning_call_transcript/${symbol}${limitParam}`;
+      apiUrl = `https://financialmodelingprep.com/stable/earning-call-transcript?symbol=${symbol}`;
+      if (limit) {
+        apiUrl += `&limit=${limit}`;
+      }
       console.log(`Fetching transcript list: ${apiUrl}`);
     }
     
     // Add the API key
-    apiUrl += apiUrl.includes("?") ? `&apikey=${FMP_API_KEY}` : `?apikey=${FMP_API_KEY}`;
+    apiUrl += `&apikey=${FMP_API_KEY}`;
     
     // Fetch data from FMP API
     const response = await fetch(apiUrl);

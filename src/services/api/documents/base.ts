@@ -1,22 +1,21 @@
 
-import { invokeSupabaseFunction, withRetry } from "../base";
-import { supabase } from "@/integrations/supabase/client";
+import { invokeSupabaseFunction } from "../base";
 
 /**
  * Trigger background caching of company documents
  */
-export const triggerDocumentCaching = async (symbol: string, docType?: 'transcripts' | 'filings' | 'all'): Promise<void> => {
+export const triggerDocumentCaching = async (
+  symbol: string, 
+  docType: 'transcripts' | 'filings' | 'all' = 'all'
+): Promise<boolean> => {
   try {
-    console.log(`Triggering document caching for ${symbol}, type: ${docType || 'all'}`);
-    
-    // Fire and forget - no need to wait for result
-    invokeSupabaseFunction('cache-company-documents', { 
-      symbol, 
-      docType: docType || 'all'
-    }).catch(error => {
-      console.error("Error triggering document caching:", error);
+    await invokeSupabaseFunction('cache-company-documents', {
+      symbol,
+      docType
     });
+    return true;
   } catch (error) {
     console.error("Error triggering document caching:", error);
+    return false;
   }
 };

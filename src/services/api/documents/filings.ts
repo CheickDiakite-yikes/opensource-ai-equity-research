@@ -37,7 +37,7 @@ export const fetchSECFilings = async (symbol: string): Promise<SECFiling[]> => {
     }
     
     // Otherwise, get from Finnhub API with retry logic
-    console.log(`Fetching SEC filings from Finnhub API for ${symbol}`);
+    console.log(`Fetching SEC filings from API for ${symbol}`);
     const data = await withRetry(() => 
       invokeSupabaseFunction<SECFiling[]>('get-sec-filings', { symbol })
     );
@@ -54,6 +54,118 @@ export const fetchSECFilings = async (symbol: string): Promise<SECFiling[]> => {
   } catch (error) {
     console.error("Error fetching SEC filings:", error);
     return [];
+  }
+};
+
+/**
+ * Get SEC filings by form type (10-K, 10-Q, 8-K, etc.)
+ */
+export const fetchSECFilingsByFormType = async (
+  formType: string,
+  from?: string,
+  to?: string
+): Promise<SECFiling[]> => {
+  try {
+    console.log(`Fetching SEC filings by form type: ${formType}`);
+    const data = await withRetry(() => 
+      invokeSupabaseFunction<SECFiling[]>('get-sec-filings-by-form', { 
+        formType,
+        from,
+        to
+      })
+    );
+    
+    if (!data || !Array.isArray(data)) {
+      console.warn(`No SEC filings found for form type ${formType}`);
+      return [];
+    }
+    
+    return data;
+  } catch (error) {
+    console.error(`Error fetching SEC filings by form type ${formType}:`, error);
+    return [];
+  }
+};
+
+/**
+ * Get latest SEC filings 
+ */
+export const fetchLatestSECFilings = async (
+  from?: string,
+  to?: string,
+  limit: number = 20
+): Promise<SECFiling[]> => {
+  try {
+    console.log(`Fetching latest SEC filings`);
+    const data = await withRetry(() => 
+      invokeSupabaseFunction<SECFiling[]>('get-latest-sec-filings', { 
+        from,
+        to,
+        limit
+      })
+    );
+    
+    if (!data || !Array.isArray(data)) {
+      console.warn(`No latest SEC filings found`);
+      return [];
+    }
+    
+    return data;
+  } catch (error) {
+    console.error(`Error fetching latest SEC filings:`, error);
+    return [];
+  }
+};
+
+/**
+ * Get latest 8-K SEC filings
+ */
+export const fetchLatest8KFilings = async (
+  from?: string,
+  to?: string,
+  limit: number = 20
+): Promise<SECFiling[]> => {
+  try {
+    console.log(`Fetching latest 8-K SEC filings`);
+    const data = await withRetry(() => 
+      invokeSupabaseFunction<SECFiling[]>('get-latest-8k-filings', { 
+        from,
+        to,
+        limit
+      })
+    );
+    
+    if (!data || !Array.isArray(data)) {
+      console.warn(`No latest 8-K SEC filings found`);
+      return [];
+    }
+    
+    return data;
+  } catch (error) {
+    console.error(`Error fetching latest 8-K SEC filings:`, error);
+    return [];
+  }
+};
+
+/**
+ * Get SEC company profile by symbol
+ */
+export const fetchSECCompanyProfile = async (symbol: string): Promise<any> => {
+  try {
+    console.log(`Fetching SEC company profile for ${symbol}`);
+    const data = await withRetry(() => 
+      invokeSupabaseFunction<any>('get-sec-company-profile', { symbol })
+    );
+    
+    if (!data) {
+      console.warn(`No SEC company profile found for ${symbol}`);
+      return null;
+    }
+    
+    return data;
+  } catch (error) {
+    console.error(`Error fetching SEC company profile for ${symbol}:`, error);
+    return null;
   }
 };
 
