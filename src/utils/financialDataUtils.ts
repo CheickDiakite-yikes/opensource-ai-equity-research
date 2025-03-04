@@ -1,5 +1,6 @@
 
 import type { IncomeStatement, BalanceSheet, KeyRatio, CashFlowStatement } from "@/types";
+import type { FinancialData, RatioData } from "@/types";
 // Remove the import as we'll use our own implementation
 // import { formatCurrency } from "@/lib/utils";
 
@@ -10,7 +11,7 @@ export const prepareFinancialData = (
   income: IncomeStatement[], 
   balance: BalanceSheet[],
   cashflow: CashFlowStatement[] = []
-) => {
+): FinancialData[] => {
   if (income.length === 0) return [];
   
   return income.map((inc, index) => {
@@ -65,7 +66,7 @@ export const prepareFinancialData = (
 /**
  * Prepares ratio data for charts and tables
  */
-export const prepareRatioData = (ratios: KeyRatio[]) => {
+export const prepareRatioData = (ratios: KeyRatio[]): RatioData[] => {
   if (ratios.length === 0) return [];
   
   return ratios.map(ratio => {

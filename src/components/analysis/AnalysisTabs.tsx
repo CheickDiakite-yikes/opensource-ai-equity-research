@@ -11,8 +11,8 @@ import { FinancialData, RatioData } from "@/types";
 import { EarningsCall, SECFiling } from "@/types";
 
 interface AnalysisTabsProps {
-  financials: FinancialData;
-  ratioData: RatioData;
+  financials: FinancialData[];
+  ratioData: RatioData[];
   symbol: string;
   transcripts: EarningsCall[];
   filings: SECFiling[];
