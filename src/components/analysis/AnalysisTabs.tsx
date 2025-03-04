@@ -10,39 +10,36 @@ import DCFTabContent from '../sections/DCFTabContent';
 import { useDirectFinancialData } from '@/hooks/useDirectFinancialData';
 import LoadingSkeleton from '../LoadingSkeleton';
 import ErrorState from './ErrorState';
-import { FinancialData } from '@/types';
+import { FinancialData, RatioData } from '@/types';
 import { EarningsCall, SECFiling } from '@/types/documentTypes';
 
 interface AnalysisTabsProps {
   symbol: string;
+  financials: FinancialData[];
+  ratioData: RatioData[];
   transcripts?: EarningsCall[];
   filings?: SECFiling[];
 }
 
-const AnalysisTabs: React.FC<AnalysisTabsProps> = ({ symbol, transcripts = [], filings = [] }) => {
+const AnalysisTabs: React.FC<AnalysisTabsProps> = ({ 
+  symbol, 
+  financials, 
+  ratioData, 
+  transcripts = [], 
+  filings = [] 
+}) => {
   const [activeTab, setActiveTab] = useState("financials");
-  const { 
-    data: financialData, 
-    isLoading: isLoadingFinancials,
-    isError: isFinancialsError
-  } = useDirectFinancialData(symbol);
-
-  // Show loading state if data is being fetched
-  if (isLoadingFinancials) {
-    return <LoadingSkeleton items={5} />;
-  }
-
-  // Show error state if there was an error fetching data
-  if (isFinancialsError || !financialData || !financialData.financials || financialData.financials.length === 0) {
+  
+  // Error handling if financials data is missing
+  if (!financials || financials.length === 0) {
     return (
       <ErrorState 
-        title="Financial Data Error" 
-        message={`We couldn't load financial data for ${symbol}. Please try again later or check if this symbol is valid.`}
+        symbol={symbol} 
+        onRetry={() => {}} 
+        isRetrying={false} 
       />
     );
   }
-
-  const { financials, keyMetrics, financialRatios } = financialData;
 
   return (
     <Tabs defaultValue="financials" value={activeTab} onValueChange={setActiveTab} className="w-full">
@@ -68,7 +65,7 @@ const AnalysisTabs: React.FC<AnalysisTabsProps> = ({ symbol, transcripts = [], f
       </TabsContent>
       
       <TabsContent value="ratios">
-        <RatiosTabContent ratios={financialRatios} metrics={keyMetrics} symbol={symbol} />
+        <RatiosTabContent ratioData={ratioData} symbol={symbol} />
       </TabsContent>
       
       <TabsContent value="growth">
@@ -78,7 +75,7 @@ const AnalysisTabs: React.FC<AnalysisTabsProps> = ({ symbol, transcripts = [], f
       <TabsContent value="dcf">
         <DCFTabContent 
           symbol={symbol} 
-          financials={financials as FinancialData[]} 
+          financials={financials} 
         />
       </TabsContent>
     </Tabs>

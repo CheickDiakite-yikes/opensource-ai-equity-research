@@ -1,5 +1,5 @@
 
-import { buildFmpUrl } from "../../_shared/api-utils.ts";
+import { buildFmpUrl } from "../../../_shared/api-utils.ts";
 import { BaseFinancialController } from "./base-financial-controller.ts";
 
 /**

@@ -2,6 +2,9 @@
 // Financial Data Types for use in analysis components
 export interface FinancialData {
   year: string;
+  calendarYear?: string; // Adding this field as it seems to be used in some utilities
+  date?: string; // Adding this field as it's used in financialDataUtils.ts
+  
   // Income Statement data
   revenue: number;
   costOfRevenue: number;
@@ -10,6 +13,7 @@ export interface FinancialData {
   operatingIncome: number;
   netIncome: number;
   eps: number;
+  ebitda?: number; // Add this field to fix GrowthTabContent errors
   
   // Balance Sheet data
   totalAssets: number;
@@ -43,6 +47,7 @@ export interface FinancialData {
 
 export interface RatioData {
   year: string;
+  date?: string; // Adding this field as it's used in financialDataUtils.ts
   peRatio: number;
   pbRatio: number;
   roe: number;
@@ -52,4 +57,11 @@ export interface RatioData {
   grossMargin: number;
   operatingMargin: number;
   netMargin: number;
+}
+
+export interface KeyRatio {
+  date: string;
+  symbol: string;
+  period: string;
+  [key: string]: any; // Add this to allow for any ratio property
 }

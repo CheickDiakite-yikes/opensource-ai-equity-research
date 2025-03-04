@@ -1,4 +1,3 @@
-
 import { FinancialData, KeyRatio } from '../types/financialDataTypes';
 
 /**
@@ -309,4 +308,107 @@ export function getRatioTimeSeries(ratios: KeyRatio[], metricKey: keyof KeyRatio
       date: ratio.date,
       value: Number(ratio[metricKey]) || 0
     }));
+}
+
+/**
+ * Prepare financial data from income statements, balance sheets, and cash flows
+ */
+export function prepareFinancialData(
+  incomeStatements: any[],
+  balanceSheets: any[],
+  cashFlows: any[]
+): any[] {
+  if (!incomeStatements.length || !balanceSheets.length || !cashFlows.length) {
+    return [];
+  }
+
+  // Get a list of all available years from income statements
+  const years = incomeStatements.map(statement => 
+    statement.calendarYear || (statement.date ? new Date(statement.date).getFullYear().toString() : '')
+  );
+
+  return years.map(year => {
+    const incomeData = incomeStatements.find(statement => 
+      statement.calendarYear === year || (statement.date && new Date(statement.date).getFullYear().toString() === year)
+    ) || {};
+    
+    const balanceData = balanceSheets.find(statement => 
+      statement.calendarYear === year || (statement.date && new Date(statement.date).getFullYear().toString() === year)
+    ) || {};
+    
+    const cashFlowData = cashFlows.find(statement => 
+      statement.calendarYear === year || (statement.date && new Date(statement.date).getFullYear().toString() === year)
+    ) || {};
+
+    return {
+      year,
+      date: incomeData.date || balanceData.date || cashFlowData.date,
+      calendarYear: year,
+      // Income statement data
+      revenue: incomeData.revenue || 0,
+      costOfRevenue: incomeData.costOfRevenue || 0,
+      grossProfit: incomeData.grossProfit || 0,
+      operatingExpenses: incomeData.operatingExpenses || 0,
+      operatingIncome: incomeData.operatingIncome || 0,
+      netIncome: incomeData.netIncome || 0,
+      eps: incomeData.eps || 0,
+      ebitda: incomeData.ebitda || 0,
+      
+      // Balance sheet data
+      totalAssets: balanceData.totalAssets || 0,
+      totalLiabilities: balanceData.totalLiabilities || 0,
+      totalEquity: balanceData.totalEquity || 0,
+      cashAndCashEquivalents: balanceData.cashAndCashEquivalents || 0,
+      shortTermInvestments: balanceData.shortTermInvestments || 0,
+      accountsReceivable: balanceData.accountsReceivable || 0,
+      inventory: balanceData.inventory || 0,
+      totalCurrentAssets: balanceData.totalCurrentAssets || 0,
+      propertyPlantEquipment: balanceData.propertyPlantEquipment || 0,
+      longTermInvestments: balanceData.longTermInvestments || 0,
+      intangibleAssets: balanceData.intangibleAssets || 0,
+      totalNonCurrentAssets: balanceData.totalNonCurrentAssets || 0,
+      accountsPayable: balanceData.accountsPayable || 0,
+      shortTermDebt: balanceData.shortTermDebt || 0,
+      totalCurrentLiabilities: balanceData.totalCurrentLiabilities || 0,
+      longTermDebt: balanceData.longTermDebt || 0,
+      totalNonCurrentLiabilities: balanceData.totalNonCurrentLiabilities || 0,
+      
+      // Cash Flow data
+      operatingCashFlow: cashFlowData.operatingCashFlow || 0,
+      capitalExpenditure: cashFlowData.capitalExpenditure || 0,
+      freeCashFlow: cashFlowData.freeCashFlow || 0,
+      depreciation: cashFlowData.depreciation || 0,
+      changeInWorkingCapital: cashFlowData.changeInWorkingCapital || 0,
+      investmentCashFlow: cashFlowData.investmentCashFlow || 0,
+      financingCashFlow: cashFlowData.financingCashFlow || 0,
+      netChangeInCash: cashFlowData.netChangeInCash || 0
+    };
+  });
+}
+
+/**
+ * Prepare financial ratios from key ratio data
+ */
+export function prepareRatioData(ratios: any[]): any[] {
+  if (!ratios.length) {
+    return [];
+  }
+
+  return ratios.map(ratio => {
+    const year = ratio.date ? new Date(ratio.date).getFullYear().toString() : '';
+    
+    return {
+      year,
+      date: ratio.date,
+      peRatio: ratio.peRatio || 0,
+      pbRatio: ratio.priceToBookRatio || 0,
+      roe: ratio.returnOnEquity || 0,
+      roa: ratio.returnOnAssets || 0,
+      currentRatio: ratio.currentRatio || 0,
+      debtToEquity: ratio.debtToEquity || 0,
+      grossMargin: ratio.grossProfitMargin || 0,
+      operatingMargin: ratio.operatingProfitMargin || 0,
+      netMargin: ratio.netProfitMargin || 0
+    };
+  });
 }

@@ -3,7 +3,7 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
 import { GrowthRateCard } from '../cards/GrowthRateCard';
 import { GrowthInsightsCard } from '../cards/GrowthInsightsCard';
-import { GrowthChart } from '../charts/GrowthChart';
+import GrowthChart from '../charts/GrowthChart'; // Fixed import
 import { calculateCAGR, calculateYoYGrowth } from '../../utils/financialDataUtils';
 import type { FinancialData } from '../../types/financialDataTypes';
 
@@ -27,11 +27,13 @@ export const GrowthTabContent: React.FC<GrowthTabContentProps> = ({ financials, 
   // Calculate growth rates
   const revenueCAGR = calculateCAGR(financials, 'revenue');
   const netIncomeCAGR = calculateCAGR(financials, 'netIncome');
-  const ebitdaCAGR = calculateCAGR(financials, 'ebitda');
+  const ebitdaCAGR = financials[0].ebitda !== undefined ? 
+    calculateCAGR(financials, 'ebitda' as keyof FinancialData) : 0;
 
   const revenueYoY = calculateYoYGrowth(financials, 'revenue');
   const netIncomeYoY = calculateYoYGrowth(financials, 'netIncome');
-  const ebitdaYoY = calculateYoYGrowth(financials, 'ebitda');
+  const ebitdaYoY = financials[0].ebitda !== undefined ? 
+    calculateYoYGrowth(financials, 'ebitda' as keyof FinancialData) : 0;
 
   const growthRates = {
     revenue: revenueCAGR,
