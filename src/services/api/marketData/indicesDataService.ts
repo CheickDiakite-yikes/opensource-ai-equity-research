@@ -8,197 +8,210 @@ import {
   IndexHistoricalFullData,
   IndexIntradayData,
   IndexConstituent
-} from "@/types/apiTypes";
-import { STOCK_INDICES } from "@/constants";
+} from "@/types/market/indexTypes";
 
 /**
- * Fetch a list of all available market indices
+ * Fetch list of market indices
  */
-export const fetchMarketIndicesList = async (): Promise<MarketIndex[]> => {
+export const fetchIndexList = async (): Promise<MarketIndex[]> => {
   try {
-    const result = await invokeSupabaseFunction<MarketIndex[]>('get-stock-data', { 
+    const data = await invokeSupabaseFunction<MarketIndex[]>('get-stock-data', { 
       endpoint: 'index-list' 
     });
     
-    if (result && Array.isArray(result)) {
-      return result;
-    }
-    
-    console.error("Invalid response format from index-list endpoint");
-    return [];
+    if (!data || !Array.isArray(data)) return [];
+    return data;
   } catch (error) {
-    console.error("Error fetching market indices list:", error);
+    console.error("Error fetching index list:", error);
     return [];
   }
 };
 
 /**
- * Fetch detailed quote data for a specific market index
+ * Fetch index quote
  */
 export const fetchIndexQuote = async (symbol: string): Promise<IndexQuote | null> => {
   try {
-    const result = await invokeSupabaseFunction<IndexQuote[]>('get-stock-data', { 
-      endpoint: 'index-quote',
-      symbol
+    const data = await invokeSupabaseFunction<IndexQuote[]>('get-stock-data', { 
+      symbol,
+      endpoint: 'index-quote' 
     });
     
-    if (result && Array.isArray(result) && result.length > 0) {
-      return result[0];
-    }
-    
-    console.error(`No quote data found for index ${symbol}`);
-    return null;
+    if (!data || !Array.isArray(data) || data.length === 0) return null;
+    return data[0];
   } catch (error) {
-    console.error(`Error fetching quote for index ${symbol}:`, error);
+    console.error(`Error fetching index quote for ${symbol}:`, error);
     return null;
   }
 };
 
 /**
- * Fetch short quote data for a specific market index
+ * Fetch short index quote
  */
-export const fetchIndexShortQuote = async (symbol: string): Promise<IndexShortQuote | null> => {
+export const fetchIndexQuoteShort = async (symbol: string): Promise<IndexShortQuote | null> => {
   try {
-    const result = await invokeSupabaseFunction<IndexShortQuote[]>('get-stock-data', { 
-      endpoint: 'index-quote-short',
-      symbol
+    const data = await invokeSupabaseFunction<IndexShortQuote[]>('get-stock-data', { 
+      symbol,
+      endpoint: 'index-quote-short' 
     });
     
-    if (result && Array.isArray(result) && result.length > 0) {
-      return result[0];
-    }
-    
-    console.error(`No short quote data found for index ${symbol}`);
-    return null;
+    if (!data || !Array.isArray(data) || data.length === 0) return null;
+    return data[0];
   } catch (error) {
-    console.error(`Error fetching short quote for index ${symbol}:`, error);
+    console.error(`Error fetching short index quote for ${symbol}:`, error);
     return null;
   }
 };
 
 /**
- * Fetch quotes for all available market indices
+ * Fetch batch index quotes
  */
-export const fetchAllIndexQuotes = async (short: boolean = false): Promise<IndexShortQuote[]> => {
+export const fetchBatchIndexQuotes = async (short: boolean = false): Promise<IndexShortQuote[]> => {
   try {
-    const result = await invokeSupabaseFunction<IndexShortQuote[]>('get-stock-data', { 
+    const data = await invokeSupabaseFunction<IndexShortQuote[]>('get-stock-data', { 
       endpoint: 'batch-index-quotes',
-      short: short ? 'true' : 'false'
+      short
     });
     
-    if (result && Array.isArray(result)) {
-      return result;
-    }
-    
-    console.error("Invalid response format from batch-index-quotes endpoint");
-    return [];
+    if (!data || !Array.isArray(data)) return [];
+    return data;
   } catch (error) {
-    console.error("Error fetching all index quotes:", error);
+    console.error("Error fetching batch index quotes:", error);
     return [];
   }
 };
 
 /**
- * Fetch light historical EOD data for a market index
+ * Fetch historical EOD light data
  */
-export const fetchIndexHistoricalLight = async (
-  symbol: string, 
-  from?: string, 
+export const fetchIndexHistoricalEODLight = async (
+  symbol: string,
+  from?: string,
   to?: string
 ): Promise<IndexHistoricalLightData[]> => {
   try {
-    const result = await invokeSupabaseFunction<IndexHistoricalLightData[]>('get-stock-data', { 
-      endpoint: 'index-historical-eod-light',
+    const data = await invokeSupabaseFunction<IndexHistoricalLightData[]>('get-stock-data', { 
       symbol,
+      endpoint: 'index-historical-eod-light',
       from,
       to
     });
     
-    if (result && Array.isArray(result)) {
-      return result;
-    }
-    
-    console.error(`No light historical data found for index ${symbol}`);
-    return [];
+    if (!data || !Array.isArray(data)) return [];
+    return data;
   } catch (error) {
-    console.error(`Error fetching light historical data for index ${symbol}:`, error);
+    console.error(`Error fetching historical EOD light data for ${symbol}:`, error);
     return [];
   }
 };
 
 /**
- * Fetch full historical EOD data for a market index
+ * Fetch historical EOD full data
  */
-export const fetchIndexHistoricalFull = async (
-  symbol: string, 
-  from?: string, 
+export const fetchIndexHistoricalEODFull = async (
+  symbol: string,
+  from?: string,
   to?: string
 ): Promise<IndexHistoricalFullData[]> => {
   try {
-    const result = await invokeSupabaseFunction<IndexHistoricalFullData[]>('get-stock-data', { 
-      endpoint: 'index-historical-eod-full',
+    const data = await invokeSupabaseFunction<IndexHistoricalFullData[]>('get-stock-data', { 
       symbol,
+      endpoint: 'index-historical-eod-full',
       from,
       to
     });
     
-    if (result && Array.isArray(result)) {
-      return result;
-    }
-    
-    console.error(`No full historical data found for index ${symbol}`);
-    return [];
+    if (!data || !Array.isArray(data)) return [];
+    return data;
   } catch (error) {
-    console.error(`Error fetching full historical data for index ${symbol}:`, error);
+    console.error(`Error fetching historical EOD full data for ${symbol}:`, error);
     return [];
   }
 };
 
 /**
- * Fetch intraday data for a market index at different intervals
+ * Fetch intraday 1-minute data
  */
-export const fetchIndexIntraday = async (
-  symbol: string, 
-  interval: '1min' | '5min' | '1hour',
-  from?: string, 
+export const fetchIndexIntraday1Min = async (
+  symbol: string,
+  from?: string,
   to?: string
 ): Promise<IndexIntradayData[]> => {
   try {
-    const endpoint = `index-intraday-${interval}`;
-    const result = await invokeSupabaseFunction<IndexIntradayData[]>('get-stock-data', { 
-      endpoint,
+    const data = await invokeSupabaseFunction<IndexIntradayData[]>('get-stock-data', { 
       symbol,
+      endpoint: 'index-intraday-1min',
       from,
       to
     });
     
-    if (result && Array.isArray(result)) {
-      return result;
-    }
-    
-    console.error(`No ${interval} intraday data found for index ${symbol}`);
-    return [];
+    if (!data || !Array.isArray(data)) return [];
+    return data;
   } catch (error) {
-    console.error(`Error fetching ${interval} intraday data for index ${symbol}:`, error);
+    console.error(`Error fetching intraday 1-minute data for ${symbol}:`, error);
     return [];
   }
 };
 
 /**
- * Fetch S&P 500 constituent companies
+ * Fetch intraday 5-minute data
+ */
+export const fetchIndexIntraday5Min = async (
+  symbol: string,
+  from?: string,
+  to?: string
+): Promise<IndexIntradayData[]> => {
+  try {
+    const data = await invokeSupabaseFunction<IndexIntradayData[]>('get-stock-data', { 
+      symbol,
+      endpoint: 'index-intraday-5min',
+      from,
+      to
+    });
+    
+    if (!data || !Array.isArray(data)) return [];
+    return data;
+  } catch (error) {
+    console.error(`Error fetching intraday 5-minute data for ${symbol}:`, error);
+    return [];
+  }
+};
+
+/**
+ * Fetch intraday 1-hour data
+ */
+export const fetchIndexIntraday1Hour = async (
+  symbol: string,
+  from?: string,
+  to?: string
+): Promise<IndexIntradayData[]> => {
+  try {
+    const data = await invokeSupabaseFunction<IndexIntradayData[]>('get-stock-data', { 
+      symbol,
+      endpoint: 'index-intraday-1hour',
+      from,
+      to
+    });
+    
+    if (!data || !Array.isArray(data)) return [];
+    return data;
+  } catch (error) {
+    console.error(`Error fetching intraday 1-hour data for ${symbol}:`, error);
+    return [];
+  }
+};
+
+/**
+ * Fetch S&P 500 constituents
  */
 export const fetchSP500Constituents = async (): Promise<IndexConstituent[]> => {
   try {
-    const result = await invokeSupabaseFunction<IndexConstituent[]>('get-stock-data', { 
-      endpoint: 'sp500-constituents'
+    const data = await invokeSupabaseFunction<IndexConstituent[]>('get-stock-data', { 
+      endpoint: 'sp500-constituents' 
     });
     
-    if (result && Array.isArray(result)) {
-      return result;
-    }
-    
-    console.error("Invalid response format from sp500-constituents endpoint");
-    return [];
+    if (!data || !Array.isArray(data)) return [];
+    return data;
   } catch (error) {
     console.error("Error fetching S&P 500 constituents:", error);
     return [];
@@ -206,20 +219,16 @@ export const fetchSP500Constituents = async (): Promise<IndexConstituent[]> => {
 };
 
 /**
- * Fetch Nasdaq constituent companies
+ * Fetch Nasdaq constituents
  */
 export const fetchNasdaqConstituents = async (): Promise<IndexConstituent[]> => {
   try {
-    const result = await invokeSupabaseFunction<IndexConstituent[]>('get-stock-data', { 
-      endpoint: 'nasdaq-constituents'
+    const data = await invokeSupabaseFunction<IndexConstituent[]>('get-stock-data', { 
+      endpoint: 'nasdaq-constituents' 
     });
     
-    if (result && Array.isArray(result)) {
-      return result;
-    }
-    
-    console.error("Invalid response format from nasdaq-constituents endpoint");
-    return [];
+    if (!data || !Array.isArray(data)) return [];
+    return data;
   } catch (error) {
     console.error("Error fetching Nasdaq constituents:", error);
     return [];
@@ -227,20 +236,16 @@ export const fetchNasdaqConstituents = async (): Promise<IndexConstituent[]> => 
 };
 
 /**
- * Fetch Dow Jones constituent companies
+ * Fetch Dow Jones constituents
  */
 export const fetchDowJonesConstituents = async (): Promise<IndexConstituent[]> => {
   try {
-    const result = await invokeSupabaseFunction<IndexConstituent[]>('get-stock-data', { 
-      endpoint: 'dowjones-constituents'
+    const data = await invokeSupabaseFunction<IndexConstituent[]>('get-stock-data', { 
+      endpoint: 'dowjones-constituents' 
     });
     
-    if (result && Array.isArray(result)) {
-      return result;
-    }
-    
-    console.error("Invalid response format from dowjones-constituents endpoint");
-    return [];
+    if (!data || !Array.isArray(data)) return [];
+    return data;
   } catch (error) {
     console.error("Error fetching Dow Jones constituents:", error);
     return [];

@@ -2,7 +2,7 @@
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import { corsHeaders } from "../_shared/cors.ts";
 import { createResponse, createErrorResponse } from "../_shared/api-utils.ts";
-import { ProfileController } from "./controllers/profile-controller.ts";
+import { ProfileController } from "./controllers/profile/profile-controller.ts";
 import { FinancialController } from "./controllers/financial-controller.ts";
 import { MarketDataController } from "./controllers/market-data-controller.ts";
 import { DocumentsController } from "./controllers/documents-controller.ts";
