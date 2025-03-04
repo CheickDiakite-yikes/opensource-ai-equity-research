@@ -1,4 +1,7 @@
+
 // Stock Profile Types
+import { IncomeStatement, BalanceSheet, CashFlowStatement, KeyRatio } from './financialStatementTypes';
+
 export interface StockProfile {
   symbol: string;
   price: number;
