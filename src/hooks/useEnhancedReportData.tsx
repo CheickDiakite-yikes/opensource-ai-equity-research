@@ -1,7 +1,21 @@
 
-import { useState, useEffect } from "react";
-import { toast } from "@/components/ui/use-toast";
-import { enhancedApi } from "@/services/api/enhancedApiService";
+import { useState, useEffect, useCallback } from "react";
+import { toast } from "sonner";
+import { useCacheService } from "@/services/cache/useCacheService";
+
+import { 
+  fetchStockProfile, 
+  fetchStockQuote, 
+  fetchIncomeStatements, 
+  fetchBalanceSheets, 
+  fetchCashFlowStatements, 
+  fetchKeyRatios, 
+  fetchCompanyNews, 
+  fetchCompanyPeers, 
+  fetchEarningsTranscripts,
+  fetchSECFilings,
+  withRetry
+} from "@/services/api";
 
 import type { 
   StockProfile, 
@@ -52,231 +66,200 @@ export const useEnhancedReportData = (symbol: string) => {
   });
   const [error, setError] = useState<string | null>(null);
   const [dataLoadingStatus, setDataLoadingStatus] = useState<DataLoadingStatus>({});
+  
+  // Get cache service
+  const cacheService = useCacheService();
 
-  // Function to update a specific data field
-  const updateDataField = <K extends keyof ReportData>(field: K, value: ReportData[K]) => {
-    setData(prev => ({ ...prev, [field]: value }));
-  };
-
-  // Implement staggered loading
-  useEffect(() => {
-    const fetchData = async () => {
-      if (!symbol) return;
-      
-      try {
-        setIsLoading(true);
-        setError(null);
-        setDataLoadingStatus({});
-        
-        const statusTracker: {[key: string]: string} = {};
-        const updateStatus = (key: string, status: string) => {
-          statusTracker[key] = status;
-          setDataLoadingStatus({...statusTracker});
-        };
-        
-        // Stage 1: Critical data (profile and quote)
-        try {
-          updateStatus('profile', 'loading');
-          updateStatus('quote', 'loading');
-          
-          const [profile, quote] = await Promise.all([
-            enhancedApi.fetchStockProfile(symbol),
-            enhancedApi.fetchStockQuote(symbol)
-          ]);
-          
-          updateDataField('profile', profile);
-          updateDataField('quote', quote);
-          
-          updateStatus('profile', profile ? 'success' : 'empty');
-          updateStatus('quote', quote ? 'success' : 'empty');
-          
-          if (!profile || !quote) {
-            throw new Error(`Could not fetch core data for ${symbol}`);
-          }
-          
-          // Stage 2: Financial statements (important but can load after profile/quote)
-          setTimeout(async () => {
-            try {
-              const financialPromises = [
-                { key: 'income', promise: enhancedApi.fetchIncomeStatements(symbol) },
-                { key: 'balance', promise: enhancedApi.fetchBalanceSheets(symbol) },
-                { key: 'cashflow', promise: enhancedApi.fetchCashFlowStatements(symbol) },
-                { key: 'ratios', promise: enhancedApi.fetchKeyRatios(symbol) }
-              ];
-              
-              for (const { key, promise } of financialPromises) {
-                updateStatus(key, 'loading');
-                try {
-                  const result = await promise;
-                  updateDataField(key as keyof ReportData, result);
-                  updateStatus(key, result && Array.isArray(result) && result.length > 0 ? 'success' : 'empty');
-                } catch (err) {
-                  console.error(`Error loading ${key}:`, err);
-                  updateStatus(key, 'error');
-                }
-              }
-              
-              // Stage 3: Secondary data (load after financials)
-              setTimeout(async () => {
-                try {
-                  const secondaryPromises = [
-                    { key: 'news', promise: enhancedApi.fetchCompanyNews(symbol) },
-                    { key: 'peers', promise: enhancedApi.fetchCompanyPeers(symbol) }
-                  ];
-                  
-                  for (const { key, promise } of secondaryPromises) {
-                    updateStatus(key, 'loading');
-                    try {
-                      const result = await promise;
-                      updateDataField(key as keyof ReportData, result);
-                      updateStatus(key, result && Array.isArray(result) && result.length > 0 ? 'success' : 'empty');
-                    } catch (err) {
-                      console.error(`Error loading ${key}:`, err);
-                      updateStatus(key, 'error');
-                    }
-                  }
-                  
-                  // Stage 4: Document data (load last, as they're the largest and slowest)
-                  setTimeout(async () => {
-                    try {
-                      const documentPromises = [
-                        { key: 'transcripts', promise: enhancedApi.fetchEarningsTranscripts(symbol) },
-                        { key: 'filings', promise: enhancedApi.fetchSECFilings(symbol) }
-                      ];
-                      
-                      for (const { key, promise } of documentPromises) {
-                        updateStatus(key, 'loading');
-                        try {
-                          const result = await promise;
-                          updateDataField(key as keyof ReportData, result);
-                          updateStatus(key, result && Array.isArray(result) && result.length > 0 ? 'success' : 'empty');
-                        } catch (err) {
-                          console.error(`Error loading ${key}:`, err);
-                          updateStatus(key, 'error');
-                        }
-                      }
-                    } catch (err) {
-                      console.error("Error in document data stage:", err);
-                    } finally {
-                      setIsLoading(false);
-                    }
-                  }, 200);
-                } catch (err) {
-                  console.error("Error in secondary data stage:", err);
-                  setIsLoading(false);
-                }
-              }, 200);
-            } catch (err) {
-              console.error("Error in financial data stage:", err);
-              setIsLoading(false);
-            }
-          }, 100);
-          
-        } catch (err) {
-          console.error("Error in core data stage:", err);
-          setError(err.message || "Failed to load core data");
-          setIsLoading(false);
-          
-          toast({
-            title: "Error Loading Data",
-            description: `Failed to load data for ${symbol}: ${err.message}`,
-            variant: "destructive",
-          });
-        }
-        
-      } catch (err) {
-        console.error("Error in main fetch flow:", err);
-        setError(err.message || "An unexpected error occurred");
-        setIsLoading(false);
-        
-        toast({
-          title: "Error Loading Data",
-          description: `Failed to load data for ${symbol}: ${err.message}`,
-          variant: "destructive",
-        });
-      }
-    };
-
-    fetchData();
-  }, [symbol]);
-
-  // Function to manually refresh data
-  const refreshData = async (dataType?: keyof ReportData) => {
-    if (!symbol) return;
-    
+  // Function to load data with caching
+  const loadDataWithCaching = useCallback(async () => {
     try {
-      if (dataType) {
-        // Refresh specific data type
-        setDataLoadingStatus(prev => ({ ...prev, [dataType]: 'loading' }));
-        
-        let result;
-        switch (dataType) {
-          case 'profile':
-            result = await enhancedApi.fetchStockProfile(symbol, true);
-            break;
-          case 'quote':
-            result = await enhancedApi.fetchStockQuote(symbol, true);
-            break;
-          case 'income':
-            result = await enhancedApi.fetchIncomeStatements(symbol, true);
-            break;
-          case 'balance':
-            result = await enhancedApi.fetchBalanceSheets(symbol, true);
-            break;
-          case 'cashflow':
-            result = await enhancedApi.fetchCashFlowStatements(symbol, true);
-            break;
-          case 'ratios':
-            result = await enhancedApi.fetchKeyRatios(symbol, true);
-            break;
-          case 'news':
-            result = await enhancedApi.fetchCompanyNews(symbol, true);
-            break;
-          case 'peers':
-            result = await enhancedApi.fetchCompanyPeers(symbol, true);
-            break;
-          case 'transcripts':
-            result = await enhancedApi.fetchEarningsTranscripts(symbol, true);
-            break;
-          case 'filings':
-            result = await enhancedApi.fetchSECFilings(symbol, true);
-            break;
-        }
-        
-        updateDataField(dataType, result);
-        setDataLoadingStatus(prev => ({ 
-          ...prev, 
-          [dataType]: result && (Array.isArray(result) ? result.length > 0 : true) ? 'success' : 'empty' 
+      setIsLoading(true);
+      setError(null);
+      setDataLoadingStatus({});
+      
+      const statusTracker: {[key: string]: string} = {};
+      const updateStatus = (key: string, status: string) => {
+        statusTracker[key] = status;
+        setDataLoadingStatus({...statusTracker});
+      };
+      
+      // Try to get profile from cache first
+      const cachedProfile = await cacheService.getCache<StockProfile>(`profile-${symbol}`);
+      const cachedQuote = await cacheService.getCache<StockQuote>(`quote-${symbol}`);
+      
+      if (cachedProfile && cachedQuote) {
+        // Type assertion to ensure TypeScript knows these are the correct types
+        setData(prevData => ({
+          ...prevData,
+          profile: cachedProfile as StockProfile,
+          quote: cachedQuote as StockQuote
         }));
         
-        toast({
-          title: "Data Refreshed",
-          description: `${dataType.charAt(0).toUpperCase() + dataType.slice(1)} data has been refreshed.`,
-        });
-      } else {
-        // Refresh all data
-        toast({
-          title: "Refreshing All Data",
-          description: "Fetching latest data for all sections...",
-        });
-        
-        setIsLoading(true);
-        // Re-trigger the main data fetching flow
-        setTimeout(() => {
-          fetchData();
-        }, 100);
+        updateStatus('profile', 'success');
+        updateStatus('quote', 'success');
+        console.log('Using cached profile and quote data');
       }
-    } catch (err) {
-      console.error(`Error refreshing ${dataType || 'all'} data:`, err);
-      setDataLoadingStatus(prev => ({ ...prev, [dataType || 'all']: 'error' }));
       
-      toast({
-        title: "Error Refreshing Data",
-        description: `Failed to refresh ${dataType || 'all'} data: ${err.message}`,
-        variant: "destructive",
+      // Function to fetch data with status tracking
+      const fetchWithStatus = async <T,>(
+        key: string, 
+        fetchFn: () => Promise<T>,
+        errorValue: T,
+        cacheKey?: string
+      ): Promise<T> => {
+        try {
+          updateStatus(key, 'loading');
+          
+          // Check cache first if cacheKey is provided
+          if (cacheKey) {
+            const cachedData = await cacheService.getCache<T>(cacheKey);
+            if (cachedData) {
+              updateStatus(key, 'success');
+              console.log(`Using cached ${key} data`);
+              return cachedData as T;
+            }
+          }
+          
+          // Fetch fresh data
+          const result = await withRetry(() => fetchFn(), 2, 1000);
+          updateStatus(key, result ? 'success' : 'empty');
+          
+          // Cache the result if it's valid and we have a cache key
+          if (result && cacheKey) {
+            await cacheService.setCache(cacheKey, result);
+          }
+          
+          return result;
+        } catch (err) {
+          console.error(`Error fetching ${key}:`, err);
+          updateStatus(key, 'error');
+          return errorValue;
+        }
+      };
+      
+      // Fetch core data first if not cached
+      if (!cachedProfile || !cachedQuote) {
+        const [profile, quote] = await Promise.all([
+          fetchWithStatus('profile', () => fetchStockProfile(symbol), null, `profile-${symbol}`),
+          fetchWithStatus('quote', () => fetchStockQuote(symbol), null, `quote-${symbol}`)
+        ]);
+        
+        if (!profile || !quote) {
+          throw new Error(`Could not fetch core data for ${symbol}`);
+        }
+        
+        setData(prevData => ({
+          ...prevData,
+          profile,
+          quote
+        }));
+      }
+      
+      // Try to get financial data from cache
+      const cachedIncome = await cacheService.getCache<IncomeStatement[]>(`income-${symbol}`);
+      if (cachedIncome) {
+        setData(prevData => ({
+          ...prevData,
+          income: cachedIncome as IncomeStatement[]
+        }));
+        updateStatus('income', 'success');
+        console.log('Using cached income statement data');
+      }
+      
+      // Try to get balance sheet data from cache
+      const cachedBalance = await cacheService.getCache<BalanceSheet[]>(`balance-${symbol}`);
+      if (cachedBalance) {
+        setData(prevData => ({
+          ...prevData,
+          balance: cachedBalance as BalanceSheet[]
+        }));
+        updateStatus('balance', 'success');
+        console.log('Using cached balance sheet data');
+      }
+      
+      // Try to get cash flow data from cache
+      const cachedCashFlow = await cacheService.getCache<CashFlowStatement[]>(`cashflow-${symbol}`);
+      if (cachedCashFlow) {
+        setData(prevData => ({
+          ...prevData,
+          cashflow: cachedCashFlow as CashFlowStatement[]
+        }));
+        updateStatus('cashflow', 'success');
+        console.log('Using cached cash flow data');
+      }
+      
+      // Fetch financial data with staggered approach
+      const [income, balance, cashflow] = await Promise.all([
+        !cachedIncome ? fetchWithStatus('income', () => fetchIncomeStatements(symbol), [], `income-${symbol}`) : (cachedIncome as IncomeStatement[]),
+        !cachedBalance ? fetchWithStatus('balance', () => fetchBalanceSheets(symbol), [], `balance-${symbol}`) : (cachedBalance as BalanceSheet[]),
+        !cachedCashFlow ? fetchWithStatus('cashflow', () => fetchCashFlowStatements(symbol), [], `cashflow-${symbol}`) : (cachedCashFlow as CashFlowStatement[])
+      ]);
+      
+      // Update state with financial data
+      setData(prevData => ({
+        ...prevData,
+        income,
+        balance,
+        cashflow
+      }));
+      
+      // Second batch of data (less critical)
+      const [ratios, news, peers] = await Promise.all([
+        fetchWithStatus('ratios', () => fetchKeyRatios(symbol), [], `ratios-${symbol}`),
+        fetchWithStatus('news', () => fetchCompanyNews(symbol), [], `news-${symbol}`),
+        fetchWithStatus('peers', () => fetchCompanyPeers(symbol), [], `peers-${symbol}`)
+      ]);
+      
+      // Update state with second batch
+      setData(prevData => ({
+        ...prevData,
+        ratios,
+        news,
+        peers
+      }));
+      
+      // Final batch (lowest priority)
+      const [transcripts, filings] = await Promise.all([
+        fetchWithStatus('transcripts', () => fetchEarningsTranscripts(symbol), [], `transcripts-${symbol}`),
+        fetchWithStatus('filings', () => fetchSECFilings(symbol), [], `filings-${symbol}`)
+      ]);
+      
+      // Set final data
+      setData(prevData => ({
+        ...prevData,
+        transcripts,
+        filings
+      }));
+      
+      console.log(`Data loaded for ${symbol}:`, {
+        profile: !!data.profile,
+        quote: !!data.quote,
+        income: income.length,
+        balance: balance.length,
+        cashflow: cashflow.length,
+        ratios: ratios.length,
+        news: news.length,
+        peers: peers.length,
+        transcripts: transcripts.length,
+        filings: filings.length
       });
+      
+    } catch (err) {
+      console.error("Error fetching report data:", err);
+      setError(err instanceof Error ? err.message : String(err));
+      toast(`Failed to load data for ${symbol}: ${err instanceof Error ? err.message : String(err)}`, {
+        duration: 5000,
+      });
+    } finally {
+      setIsLoading(false);
     }
-  };
+  }, [symbol, cacheService]);
+
+  useEffect(() => {
+    if (symbol) {
+      loadDataWithCaching();
+    }
+  }, [symbol, loadDataWithCaching]);
 
   const hasStockData = Boolean(data.profile && data.quote);
   const hasFinancialData = data.income.length > 0 && data.balance.length > 0;
@@ -290,6 +273,6 @@ export const useEnhancedReportData = (symbol: string) => {
     hasStockData,
     hasFinancialData,
     showDataWarning,
-    refreshData
+    refreshData: loadDataWithCaching
   };
 };
