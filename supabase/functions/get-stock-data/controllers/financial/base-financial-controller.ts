@@ -1,6 +1,6 @@
 
-import { fetchWithRetry } from "../../_shared/fetch-utils.ts";
-import { buildFmpUrl, logApiRequest } from "../../_shared/api-utils.ts";
+import { fetchWithRetry } from "../../../_shared/fetch-utils.ts";
+import { buildFmpUrl, logApiRequest } from "../../../_shared/api-utils.ts";
 
 /**
  * Base controller for financial data endpoints with shared functionality

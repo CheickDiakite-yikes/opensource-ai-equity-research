@@ -1,6 +1,6 @@
 
-import { makeApiRequest, handleApiResponse, logApiRequest } from "../../_shared/api-utils.ts";
-import { FMP_API_KEY } from "../../_shared/constants.ts";
+import { makeApiRequest, handleApiResponse, logApiRequest } from "../../../_shared/api-utils.ts";
+import { FMP_API_KEY } from "../../../_shared/constants.ts";
 
 /**
  * Base controller for profile-related endpoints with shared functionality
