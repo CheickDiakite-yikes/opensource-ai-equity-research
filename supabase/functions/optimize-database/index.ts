@@ -7,7 +7,8 @@ import {
   addTableExistsFunction,
   optimizeTranscriptsTable,
   optimizeFilingsTable,
-  executeStoredProcedure
+  executeStoredProcedure,
+  scheduleCacheCleanup
 } from "../_shared/db/index.ts";
 
 // CORS headers for browser compatibility
@@ -60,6 +61,9 @@ serve(async (req) => {
         `;
         await executeStoredProcedure(supabase, 'cleanup_expired_cache', cleanupCacheProcedure);
         
+        // Schedule the cleanup task to run
+        await scheduleCacheCleanup(supabase);
+        
         resultMsg = "Successfully set up database tables and functions";
         break;
         
@@ -80,6 +84,15 @@ serve(async (req) => {
         }
         
         resultMsg = "Successfully cleaned up expired cache entries";
+        break;
+        
+      case 'maintenance':
+        // Run a complete maintenance routine
+        await optimizeTranscriptsTable(supabase);
+        await optimizeFilingsTable(supabase);
+        await supabase.rpc('cleanup_expired_cache');
+        
+        resultMsg = "Successfully performed complete database maintenance";
         break;
         
       default:

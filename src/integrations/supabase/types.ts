@@ -198,14 +198,34 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
-      get_or_create_cache: {
+      get_or_create_cache:
+        | {
+            Args: {
+              p_cache_key: string
+              p_expires_at: string
+              p_default_data?: Json
+            }
+            Returns: Json
+          }
+        | {
+            Args: {
+              p_user_id: string
+              p_cache_key: string
+              p_expires_at: string
+              p_default_data?: Json
+            }
+            Returns: Json
+          }
+      schedule_cache_cleanup: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
+      table_exists: {
         Args: {
-          p_user_id: string
-          p_cache_key: string
-          p_expires_at: string
-          p_default_data?: Json
+          schema_name: string
+          table_name: string
         }
-        Returns: Json
+        Returns: boolean
       }
       update_user_portfolio: {
         Args: {
