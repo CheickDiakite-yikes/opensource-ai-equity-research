@@ -29,15 +29,69 @@ export const fetchAIDCFAssumptions = async (symbol: string, refreshCache = false
 };
 
 /**
+ * DCF Types Enum
+ */
+export enum DCFType {
+  STANDARD = "standard",
+  LEVERED = "levered",
+  CUSTOM_ADVANCED = "advanced",
+  CUSTOM_LEVERED = "custom-levered"
+}
+
+/**
+ * Fetch standard DCF calculation
+ */
+export const fetchStandardDCF = async (symbol: string): Promise<any> => {
+  try {
+    console.log(`Fetching standard DCF for ${symbol}`);
+    
+    const data = await invokeSupabaseFunction('get-custom-dcf', { 
+      symbol,
+      type: DCFType.STANDARD
+    });
+    
+    return data;
+  } catch (error) {
+    console.error("Error fetching standard DCF:", error);
+    throw error;
+  }
+};
+
+/**
+ * Fetch levered DCF calculation
+ */
+export const fetchLeveredDCF = async (symbol: string, limit?: number): Promise<any> => {
+  try {
+    console.log(`Fetching levered DCF for ${symbol}`);
+    
+    const data = await invokeSupabaseFunction('get-custom-dcf', { 
+      symbol,
+      type: DCFType.LEVERED,
+      params: { limit }
+    });
+    
+    return data;
+  } catch (error) {
+    console.error("Error fetching levered DCF:", error);
+    throw error;
+  }
+};
+
+/**
  * Fetch custom DCF calculation based on user-defined parameters
  */
-export const fetchCustomDCF = async (symbol: string, params: CustomDCFParams): Promise<CustomDCFResult[]> => {
+export const fetchCustomDCF = async (
+  symbol: string, 
+  params: CustomDCFParams, 
+  type: DCFType = DCFType.CUSTOM_ADVANCED
+): Promise<CustomDCFResult[]> => {
   try {
     console.log(`Fetching custom DCF for ${symbol} with params:`, params);
     
     const data = await invokeSupabaseFunction<any>('get-custom-dcf', { 
       symbol, 
-      params
+      params,
+      type
     });
     
     if (!data) {
@@ -61,21 +115,21 @@ export const fetchCustomDCF = async (symbol: string, params: CustomDCFParams): P
     
     // Convert the FMP API response format to our application's expected format
     const transformedData: CustomDCFResult[] = data.map(item => ({
-      year: String(new Date().getFullYear() + (item.year || 0)),
+      year: String(new Date().getFullYear() + (item.year ? parseInt(item.year) - new Date().getFullYear() : 0)),
       symbol: symbol,
       revenue: item.revenue || 0,
-      revenuePercentage: item.revenueGrowth || 0,
+      revenuePercentage: item.revenuePercentage || 0,
       ebitda: item.ebitda || 0,
-      ebitdaPercentage: item.ebitdaMargin || 0,
+      ebitdaPercentage: item.ebitdaPercentage || 0,
       ebit: item.ebit || 0,
-      ebitPercentage: item.ebitMargin || 0,
-      depreciation: item.depreciationAndAmortization || 0,
-      capitalExpenditure: item.capex || 0,
-      capitalExpenditurePercentage: (item.capex / (item.revenue || 1)) * 100 || 0,
-      price: item.stockPrice || 0,
+      ebitPercentage: item.ebitPercentage || 0,
+      depreciation: item.depreciation || 0,
+      capitalExpenditure: item.capitalExpenditure || 0,
+      capitalExpenditurePercentage: item.capitalExpenditurePercentage || 0,
+      price: item.price || item["Stock Price"] || 0,
       beta: item.beta || 0,
-      dilutedSharesOutstanding: item.sharesOutstanding || 0,
-      costofDebt: item.costOfDebt || 0,
+      dilutedSharesOutstanding: item.dilutedSharesOutstanding || 0,
+      costofDebt: item.costofDebt || 0,
       taxRate: item.taxRate || 0,
       afterTaxCostOfDebt: item.afterTaxCostOfDebt || 0,
       riskFreeRate: item.riskFreeRate || 0,
@@ -88,18 +142,18 @@ export const fetchCustomDCF = async (symbol: string, params: CustomDCFParams): P
       equityWeighting: item.equityWeighting || 0,
       wacc: item.wacc || 0,
       operatingCashFlow: item.operatingCashFlow || 0,
-      pvLfcf: item.presentValueOfFCF || 0,
-      sumPvLfcf: item.sumPVFCF || 0,
-      longTermGrowthRate: item.perpetualGrowthRate || 0,
-      freeCashFlow: item.fcf || 0,
+      pvLfcf: item.pvLfcf || 0,
+      sumPvLfcf: item.sumPvLfcf || 0,
+      longTermGrowthRate: item.longTermGrowthRate || 0,
+      freeCashFlow: item.freeCashFlow || 0,
       terminalValue: item.terminalValue || 0,
-      presentTerminalValue: item.presentValueOfTerminalValue || 0,
+      presentTerminalValue: item.presentTerminalValue || 0,
       enterpriseValue: item.enterpriseValue || 0,
       netDebt: item.netDebt || 0,
       equityValue: item.equityValue || 0,
-      equityValuePerShare: item.dcf || 0,
-      freeCashFlowT1: item.fcfGrowthT1 || 0,
-      operatingCashFlowPercentage: (item.operatingCashFlow / (item.revenue || 1)) * 100 || 0
+      equityValuePerShare: item.equityValuePerShare || item.dcf || 0,
+      freeCashFlowT1: item.freeCashFlowT1 || 0,
+      operatingCashFlowPercentage: item.operatingCashFlowPercentage || 0
     }));
     
     // If the array is empty, we'll return a default mock result
@@ -171,4 +225,14 @@ export const fetchCustomDCF = async (symbol: string, params: CustomDCFParams): P
     
     throw error;
   }
+};
+
+/**
+ * Fetch custom levered DCF calculation based on user-defined parameters
+ */
+export const fetchCustomLeveredDCF = async (
+  symbol: string, 
+  params: CustomDCFParams
+): Promise<CustomDCFResult[]> => {
+  return fetchCustomDCF(symbol, params, DCFType.CUSTOM_LEVERED);
 };

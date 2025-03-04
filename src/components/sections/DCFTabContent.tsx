@@ -1,8 +1,10 @@
+
 import React, { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useCustomDCF } from "@/hooks/useCustomDCF";
 import AutomaticDCFSection from "./dcf/AutomaticDCFSection";
 import CustomDCFSection from "./dcf/CustomDCFSection";
+import { DCFType } from "@/services/api/analysis/dcfService";
 
 interface DCFTabContentProps {
   financials: any[];
@@ -11,6 +13,7 @@ interface DCFTabContentProps {
 
 const DCFTabContent: React.FC<DCFTabContentProps> = ({ financials, symbol }) => {
   const [activeTab, setActiveTab] = useState<string>("automatic");
+  const [dcfModel, setDcfModel] = useState<DCFType>(DCFType.CUSTOM_ADVANCED);
   
   // Custom DCF inputs state - all parameters included and properly formatted
   const [customParams, setCustomParams] = useState({
@@ -43,8 +46,11 @@ const DCFTabContent: React.FC<DCFTabContentProps> = ({ financials, symbol }) => 
   
   // Custom DCF calculation hook
   const { 
-    calculateCustomDCF, 
+    calculateStandardDCF,
+    calculateLeveredDCF,
+    calculateCustomDCF,
     customDCFResult, 
+    projectedData,
     isCalculating, 
     error 
   } = useCustomDCF(symbol);
@@ -60,8 +66,12 @@ const DCFTabContent: React.FC<DCFTabContentProps> = ({ financials, symbol }) => 
     setCustomParams(prev => ({ ...prev, [name]: value }));
   };
   
+  const handleModelChange = (model: DCFType) => {
+    setDcfModel(model);
+  };
+  
   const handleCalculateCustomDCF = () => {
-    calculateCustomDCF({
+    const params = {
       symbol,
       // Growth parameters - convert percentages to proper decimal format where needed
       revenueGrowthPct: parseFloat(customParams.revenueGrowth),
@@ -88,7 +98,18 @@ const DCFTabContent: React.FC<DCFTabContentProps> = ({ financials, symbol }) => 
       
       // Other
       beta: parseFloat(customParams.beta),
-    });
+    };
+    
+    // Pass the model type to the calculation function
+    calculateCustomDCF(params, dcfModel);
+  };
+  
+  const handleCalculateStandardDCF = () => {
+    calculateStandardDCF();
+  };
+  
+  const handleCalculateLeveredDCF = () => {
+    calculateLeveredDCF();
   };
   
   return (
@@ -109,11 +130,16 @@ const DCFTabContent: React.FC<DCFTabContentProps> = ({ financials, symbol }) => 
             currentPrice={currentPrice}
             isCalculating={isCalculating}
             customDCFResult={customDCFResult}
+            projectedData={projectedData}
             error={error}
             customParams={customParams}
             onInputChange={handleInputChange}
             onSelectChange={handleSelectChange}
             onCalculate={handleCalculateCustomDCF}
+            onCalculateStandard={handleCalculateStandardDCF}
+            onCalculateLevered={handleCalculateLeveredDCF}
+            dcfModel={dcfModel}
+            onModelChange={handleModelChange}
           />
         </TabsContent>
       </Tabs>

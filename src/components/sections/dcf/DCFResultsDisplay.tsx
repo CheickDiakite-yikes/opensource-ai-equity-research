@@ -1,143 +1,134 @@
 
 import React from "react";
+import { CustomDCFResult, YearlyDCFData } from "@/types";
 import { formatCurrency, formatLargeNumber, formatPercentage } from "@/lib/utils";
-import { motion } from "framer-motion";
-import { CustomDCFResult } from "@/types/aiAnalysisTypes";
+import { ArrowUp, ArrowDown } from "lucide-react";
+import { DCFType } from "@/services/api/analysis/dcfService";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
 interface DCFResultsDisplayProps {
   customDCFResult: CustomDCFResult;
+  projectedData: YearlyDCFData[];
   currentPrice: number;
+  dcfModel: DCFType;
 }
 
 const DCFResultsDisplay: React.FC<DCFResultsDisplayProps> = ({ 
   customDCFResult, 
-  currentPrice 
+  projectedData,
+  currentPrice,
+  dcfModel
 }) => {
-  // Calculate upside percentage - (intrinsic value / current price - 1) * 100
-  const upside = currentPrice > 0 ? ((customDCFResult.equityValuePerShare / currentPrice) - 1) * 100 : 0;
+  // Calculate upside/downside
+  const upside = ((customDCFResult.equityValuePerShare / currentPrice) - 1) * 100;
+  const isUndervalued = upside > 0;
   
   return (
     <div className="space-y-6">
-      <motion.div 
-        initial={{ opacity: 0, scale: 0.9 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.3 }}
-        className="p-6 rounded-lg bg-muted/30 border border-border"
-      >
-        <div className="mb-6">
-          <div className="text-sm text-muted-foreground">Equity Value Per Share</div>
-          <div className="text-4xl font-bold">
-            {formatCurrency(customDCFResult.equityValuePerShare)}
-          </div>
-          <div className={`text-sm font-medium ${
-            (upside > 0) 
-              ? 'text-green-600' 
-              : 'text-red-600'
-          }`}>
-            {Math.abs(upside).toFixed(2)}% {upside > 0 ? 'Upside' : 'Downside'}
-          </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="bg-muted/50 p-4 rounded-lg">
+          <div className="text-sm text-muted-foreground mb-1">Current Market Price</div>
+          <div className="text-2xl font-bold">{formatCurrency(currentPrice)}</div>
         </div>
         
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-          <div>
-            <div className="text-sm text-muted-foreground">Current Price:</div>
-            <div className="font-medium">{formatCurrency(currentPrice)}</div>
-          </div>
-          
-          <div>
-            <div className="text-sm text-muted-foreground">WACC:</div>
-            <div className="font-medium">{formatPercentage(customDCFResult.wacc)}</div>
-          </div>
-          
-          <div>
-            <div className="text-sm text-muted-foreground">Enterprise Value:</div>
-            <div className="font-medium">{formatLargeNumber(customDCFResult.enterpriseValue)}</div>
-          </div>
-          
-          <div>
-            <div className="text-sm text-muted-foreground">Equity Value:</div>
-            <div className="font-medium">{formatLargeNumber(customDCFResult.equityValue)}</div>
-          </div>
-          
-          <div>
-            <div className="text-sm text-muted-foreground">Revenue Growth:</div>
-            <div className="font-medium">{formatPercentage(customDCFResult.revenuePercentage)}</div>
-          </div>
-          
-          <div>
-            <div className="text-sm text-muted-foreground">Long Term Growth:</div>
-            <div className="font-medium">{formatPercentage(customDCFResult.longTermGrowthRate)}</div>
-          </div>
-        </div>
-      </motion.div>
-      
-      <div className="space-y-3">
-        <h3 className="text-sm font-medium">Key DCF Metrics</h3>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <div className="bg-muted/30 p-3 rounded border border-border/50">
-            <div className="text-xs text-muted-foreground mb-1">Terminal Value</div>
-            <div className="text-sm font-medium">{formatLargeNumber(customDCFResult.terminalValue)}</div>
-          </div>
-          <div className="bg-muted/30 p-3 rounded border border-border/50">
-            <div className="text-xs text-muted-foreground mb-1">Present Terminal Value</div>
-            <div className="text-sm font-medium">{formatLargeNumber(customDCFResult.presentTerminalValue)}</div>
-          </div>
-          <div className="bg-muted/30 p-3 rounded border border-border/50">
-            <div className="text-xs text-muted-foreground mb-1">PV of FCF</div>
-            <div className="text-sm font-medium">{formatLargeNumber(customDCFResult.pvLfcf)}</div>
-          </div>
-          <div className="bg-muted/30 p-3 rounded border border-border/50">
-            <div className="text-xs text-muted-foreground mb-1">Sum PV of FCF</div>
-            <div className="text-sm font-medium">{formatLargeNumber(customDCFResult.sumPvLfcf)}</div>
-          </div>
+        <div className="bg-muted/50 p-4 rounded-lg">
+          <div className="text-sm text-muted-foreground mb-1">DCF Intrinsic Value</div>
+          <div className="text-2xl font-bold">{formatCurrency(customDCFResult.equityValuePerShare)}</div>
         </div>
       </div>
-
-      <div className="space-y-3">
-        <h3 className="text-sm font-medium">Additional Metrics</h3>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <div className="bg-muted/30 p-3 rounded border border-border/50">
-            <div className="text-xs text-muted-foreground mb-1">Free Cash Flow</div>
-            <div className="text-sm font-medium">{formatLargeNumber(customDCFResult.freeCashFlow)}</div>
+      
+      <div className={`p-4 rounded-lg ${isUndervalued ? 'bg-green-50' : 'bg-red-50'} flex items-center`}>
+        <div className="flex-1">
+          <div className={`text-sm ${isUndervalued ? 'text-green-700' : 'text-red-700'} opacity-80 mb-1`}>
+            {isUndervalued ? 'Potential Upside' : 'Potential Downside'}
           </div>
-          <div className="bg-muted/30 p-3 rounded border border-border/50">
-            <div className="text-xs text-muted-foreground mb-1">FCF T1</div>
-            <div className="text-sm font-medium">{formatLargeNumber(customDCFResult.freeCashFlowT1)}</div>
+          <div className={`text-xl font-bold flex items-center ${isUndervalued ? 'text-green-700' : 'text-red-700'}`}>
+            {isUndervalued ? (
+              <ArrowUp className="h-5 w-5 mr-1" />
+            ) : (
+              <ArrowDown className="h-5 w-5 mr-1" />
+            )}
+            <span>{Math.abs(upside).toFixed(2)}%</span>
           </div>
-          <div className="bg-muted/30 p-3 rounded border border-border/50">
-            <div className="text-xs text-muted-foreground mb-1">Net Debt</div>
-            <div className="text-sm font-medium">{formatLargeNumber(customDCFResult.netDebt)}</div>
-          </div>
-          <div className="bg-muted/30 p-3 rounded border border-border/50">
-            <div className="text-xs text-muted-foreground mb-1">Op. Cash Flow %</div>
-            <div className="text-sm font-medium">{formatPercentage(customDCFResult.operatingCashFlowPercentage)}</div>
+        </div>
+        <div className="flex-1 border-l border-gray-200 pl-4">
+          <div className="text-sm text-muted-foreground mb-1">Valuation</div>
+          <div className={`text-lg font-semibold ${isUndervalued ? 'text-green-700' : 'text-red-700'}`}>
+            {isUndervalued ? 'Undervalued' : 'Overvalued'}
           </div>
         </div>
       </div>
       
-      <div className="space-y-3">
-        <h3 className="text-sm font-medium">Projected Cash Flow (Year {customDCFResult.year})</h3>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b">
-                <th className="text-left p-2">Revenue</th>
-                <th className="text-left p-2">Capital Expenditure</th>
-                <th className="text-left p-2">Operating Cash Flow</th>
-                <th className="text-left p-2">Free Cash Flow</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td className="p-2">{formatLargeNumber(customDCFResult.revenue)}</td>
-                <td className="p-2">{formatLargeNumber(customDCFResult.capitalExpenditure)}</td>
-                <td className="p-2">{formatLargeNumber(customDCFResult.operatingCashFlow)}</td>
-                <td className="p-2">{formatLargeNumber(customDCFResult.freeCashFlow)}</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
+      {(dcfModel === DCFType.CUSTOM_ADVANCED || dcfModel === DCFType.CUSTOM_LEVERED) && (
+        <>
+          <div className="pt-2">
+            <h3 className="text-base font-medium mb-3">Key DCF Parameters</h3>
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+              <div>
+                <div className="text-sm text-muted-foreground">WACC</div>
+                <div className="font-medium">{formatPercentage(customDCFResult.wacc)}</div>
+              </div>
+              <div>
+                <div className="text-sm text-muted-foreground">Terminal Growth</div>
+                <div className="font-medium">{formatPercentage(customDCFResult.longTermGrowthRate)}</div>
+              </div>
+              <div>
+                <div className="text-sm text-muted-foreground">Tax Rate</div>
+                <div className="font-medium">{formatPercentage(customDCFResult.taxRate)}</div>
+              </div>
+              <div>
+                <div className="text-sm text-muted-foreground">Revenue Growth</div>
+                <div className="font-medium">{formatPercentage(customDCFResult.revenuePercentage/100)}</div>
+              </div>
+              <div>
+                <div className="text-sm text-muted-foreground">EBITDA Margin</div>
+                <div className="font-medium">{formatPercentage(customDCFResult.ebitdaPercentage/100)}</div>
+              </div>
+              <div>
+                <div className="text-sm text-muted-foreground">Beta</div>
+                <div className="font-medium">{customDCFResult.beta.toFixed(2)}</div>
+              </div>
+            </div>
+          </div>
+          
+          {projectedData.length > 0 && (
+            <div className="pt-3">
+              <h3 className="text-base font-medium mb-3">Projected Cash Flows</h3>
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Year</TableHead>
+                      <TableHead>Revenue</TableHead>
+                      <TableHead>EBIT</TableHead>
+                      <TableHead>EBITDA</TableHead>
+                      <TableHead>Free Cash Flow</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {projectedData.map((data, index) => (
+                      <TableRow key={index}>
+                        <TableCell>{data.year}</TableCell>
+                        <TableCell>{formatLargeNumber(data.revenue)}</TableCell>
+                        <TableCell>{formatLargeNumber(data.ebit)}</TableCell>
+                        <TableCell>{formatLargeNumber(data.ebitda)}</TableCell>
+                        <TableCell>{formatLargeNumber(data.freeCashFlow)}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </div>
+          )}
+        </>
+      )}
     </div>
   );
 };

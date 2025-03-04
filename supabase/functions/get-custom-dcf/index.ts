@@ -25,8 +25,8 @@ serve(async (req) => {
       );
     }
     
-    // Parse the request body to get the symbol and parameters
-    const { symbol, params } = await req.json();
+    // Parse the request body to get the symbol, params, and dcf type
+    const { symbol, params, type = "advanced" } = await req.json();
     
     if (!symbol) {
       return new Response(
@@ -35,10 +35,56 @@ serve(async (req) => {
       );
     }
     
-    console.log(`Processing DCF request for ${symbol}`);
+    console.log(`Processing DCF request for ${symbol}, type: ${type}`);
     
-    // Construct the API URL for the FMP Custom DCF endpoint
-    const apiUrl = `https://financialmodelingprep.com/api/v4/advanced_discounted_cash_flow?symbol=${symbol}&apikey=${FMP_API_KEY}`;
+    // Determine which endpoint to use based on the DCF type
+    let apiUrl = "";
+    
+    switch (type) {
+      case "standard":
+        // Standard DCF endpoint
+        apiUrl = `https://financialmodelingprep.com/stable/discounted-cash-flow?symbol=${symbol}`;
+        break;
+      case "levered":
+        // Levered DCF endpoint
+        apiUrl = `https://financialmodelingprep.com/stable/levered-discounted-cash-flow?symbol=${symbol}`;
+        
+        // Add optional limit parameter if provided
+        if (params?.limit) {
+          apiUrl += `&limit=${params.limit}`;
+        }
+        break;
+      case "custom-levered":
+        // Custom Levered DCF endpoint
+        apiUrl = `https://financialmodelingprep.com/stable/custom-levered-discounted-cash-flow?symbol=${symbol}`;
+        
+        // Add all provided parameters to query string
+        if (params) {
+          Object.entries(params).forEach(([key, value]) => {
+            if (key !== 'symbol' && value !== undefined) {
+              apiUrl += `&${key}=${value}`;
+            }
+          });
+        }
+        break;
+      case "advanced":
+      default:
+        // Custom DCF Advanced endpoint (default)
+        apiUrl = `https://financialmodelingprep.com/stable/custom-discounted-cash-flow?symbol=${symbol}`;
+        
+        // Add all provided parameters to query string
+        if (params) {
+          Object.entries(params).forEach(([key, value]) => {
+            if (key !== 'symbol' && value !== undefined) {
+              apiUrl += `&${key}=${value}`;
+            }
+          });
+        }
+        break;
+    }
+    
+    // Add the API key
+    apiUrl += `&apikey=${FMP_API_KEY}`;
     
     console.log(`Calling FMP API: ${apiUrl.replace(FMP_API_KEY, 'API_KEY_HIDDEN')}`);
     
