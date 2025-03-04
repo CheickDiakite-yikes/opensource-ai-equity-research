@@ -7,6 +7,21 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Cache-control headers (per DCF type)
+const getCacheHeaders = (type: string) => {
+  let maxAge = 3600; // Default 1 hour cache
+  
+  // Custom DCF types that use user-defined parameters shouldn't be cached as long
+  if (type === 'custom-levered' || type === 'advanced') {
+    maxAge = 300; // 5 minutes for custom DCF calculations
+  }
+  
+  return {
+    'Cache-Control': `public, max-age=${maxAge}`,
+    'Vary': 'Origin, Accept-Encoding',
+  };
+};
+
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -88,6 +103,26 @@ serve(async (req) => {
     
     console.log(`Calling FMP API: ${apiUrl.replace(FMP_API_KEY, 'API_KEY_HIDDEN')}`);
     
+    // Check if we have a cached response (cached on the client side)
+    const headerObj = req.headers;
+    const ifNoneMatch = headerObj.get('if-none-match');
+    const ifModifiedSince = headerObj.get('if-modified-since');
+    
+    // Calculate ETag based on the request parameters
+    const requestETag = `W/"dcf-${symbol}-${type}-${JSON.stringify(params || {})}"`;
+    
+    // If ETag matches, return 304 Not Modified
+    if (ifNoneMatch === requestETag) {
+      return new Response(null, { 
+        status: 304,
+        headers: { 
+          ...corsHeaders,
+          ...getCacheHeaders(type),
+          'ETag': requestETag
+        }
+      });
+    }
+    
     // Fetch data from FMP API
     const response = await fetch(apiUrl);
     
@@ -108,10 +143,18 @@ serve(async (req) => {
     const data = await response.json();
     console.log(`Received DCF data from FMP API for ${symbol}`, data);
     
-    // Return the DCF data
+    // Return the DCF data with appropriate caching headers
     return new Response(
       JSON.stringify(data),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      { 
+        headers: { 
+          ...corsHeaders, 
+          'Content-Type': 'application/json',
+          ...getCacheHeaders(type),
+          'ETag': requestETag,
+          'Last-Modified': new Date().toUTCString()
+        } 
+      }
     );
     
   } catch (error) {
