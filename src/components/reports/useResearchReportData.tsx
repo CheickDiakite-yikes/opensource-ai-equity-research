@@ -17,15 +17,19 @@ import {
 
 import type { 
   StockProfile, 
-  StockQuote, 
+  StockQuote 
+} from "@/types/profile/companyTypes";
+import type { 
   IncomeStatement, 
   BalanceSheet, 
   CashFlowStatement, 
-  KeyRatio, 
-  NewsArticle, 
+  KeyRatio 
+} from "@/types/financial/statementTypes";
+import type { NewsArticle } from "@/types/news/newsTypes";
+import type { 
   EarningsCall,
   SECFiling
-} from "@/types";
+} from "@/types/documentTypes";
 
 export interface ReportData {
   profile: StockProfile | null;

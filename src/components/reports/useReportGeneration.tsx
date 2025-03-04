@@ -8,9 +8,9 @@ import {
 
 import type { 
   ReportRequest,
-  NewsArticle,
-  StockQuote,
-} from "@/types";
+} from "@/types/aiAnalysisTypes";
+import type { NewsArticle } from "@/types/news/newsTypes";
+import type { StockQuote } from "@/types/profile/companyTypes";
 import { ResearchReport } from "@/types/ai-analysis/reportTypes";
 import { StockPrediction } from "@/types/ai-analysis/predictionTypes";
 

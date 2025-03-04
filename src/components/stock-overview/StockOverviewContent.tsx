@@ -1,5 +1,6 @@
 
-import { StockProfile, StockQuote, EarningsCall, SECFiling } from "@/types";
+import { StockProfile, StockQuote } from "@/types/profile/companyTypes";
+import { EarningsCall, SECFiling } from "@/types/documentTypes";
 import CompanyHeader from "./CompanyHeader";
 import InfoCards from "./InfoCards";
 import CompanyDescription from "./CompanyDescription";

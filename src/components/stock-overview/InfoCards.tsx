@@ -1,5 +1,6 @@
+
 import { Card, CardContent } from "@/components/ui/card";
-import { StockProfile, StockQuote } from "@/types";
+import { StockProfile, StockQuote } from "@/types/profile/companyTypes";
 import { formatLargeNumber, formatCurrency } from "@/lib/utils";
 import { Briefcase, TrendingUp, Globe } from "lucide-react";
 import StockRatingIndicator from "./StockRatingIndicator";

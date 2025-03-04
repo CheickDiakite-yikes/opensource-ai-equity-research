@@ -1,6 +1,6 @@
 
 import { Badge } from "@/components/ui/badge";
-import { StockProfile, StockQuote } from "@/types";
+import { StockProfile, StockQuote } from "@/types/profile/companyTypes";
 import { cn, formatCurrency, formatPercentage } from "@/lib/utils";
 import { TrendingUp, TrendingDown, Building } from "lucide-react";
 import { useEffect, useState } from "react";

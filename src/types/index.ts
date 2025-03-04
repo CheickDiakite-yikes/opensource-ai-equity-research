@@ -1,16 +1,25 @@
-
 // Re-export all types from domain-specific files
-export * from './apiTypes';
+
+// Profile and company data types
+export * from './profile/companyTypes';
+
+// Financial data types
+export * from './financial/metricsTypes';
+export * from './financial/statementTypes';
+
+// Market data types
+export * from './market/indexTypes';
+export * from './market/performanceTypes';
+
+// News types
+export * from './news/newsTypes';
+
+// Other domain types 
 export * from './historicalDataTypes';
-export * from './financialStatementTypes';
 export * from './documentTypes';
 export * from './aiAnalysisTypes';
 export * from './financialDataTypes';
 
-// Add new interface for Rating and Recommendation
-// Note: This is now exported from reportTypes.ts, so we don't need to define it here
-// But keeping the re-export for backward compatibility
+// Re-export AI analysis types for backward compatibility
 export type { RatingDetails } from './ai-analysis/reportTypes';
-
-// Updated ResearchReport interface to match aiAnalysisTypes
 export type { ResearchReport } from './ai-analysis/reportTypes';
