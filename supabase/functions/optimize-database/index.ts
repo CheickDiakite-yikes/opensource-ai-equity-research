@@ -8,7 +8,7 @@ import {
   optimizeTranscriptsTable,
   optimizeFilingsTable,
   executeStoredProcedure
-} from "../_shared/db-utils.ts";
+} from "../_shared/db/index.ts";
 
 // CORS headers for browser compatibility
 const corsHeaders = {
