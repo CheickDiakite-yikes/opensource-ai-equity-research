@@ -3,8 +3,12 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
 import { GrowthRateCard } from '../cards/GrowthRateCard';
 import { GrowthInsightsCard } from '../cards/GrowthInsightsCard';
-import GrowthChart from '../charts/GrowthChart'; // Fixed import
-import { calculateCAGR, calculateYoYGrowth } from '../../utils/financialDataUtils';
+import GrowthChart from '../charts/GrowthChart';
+import { 
+  calculateCAGR, 
+  calculateYoYGrowth,
+  transformFinancialsToGrowthData
+} from '../../utils/financialDataUtils';
 import type { FinancialData } from '../../types/financialDataTypes';
 
 export interface GrowthTabContentProps {
@@ -41,6 +45,9 @@ export const GrowthTabContent: React.FC<GrowthTabContentProps> = ({ financials, 
     ebitda: ebitdaCAGR
   };
 
+  // Transform the data for the growth chart
+  const revenueGrowthData = transformFinancialsToGrowthData(financials, 'revenue');
+
   return (
     <div className="p-4 space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -66,7 +73,7 @@ export const GrowthTabContent: React.FC<GrowthTabContentProps> = ({ financials, 
           <CardTitle>Growth Trends</CardTitle>
         </CardHeader>
         <CardContent>
-          <GrowthChart data={financials} title="Revenue Growth" color="#10b981" />
+          <GrowthChart data={revenueGrowthData} title="Revenue Growth" color="#10b981" />
         </CardContent>
       </Card>
 
