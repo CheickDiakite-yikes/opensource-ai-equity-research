@@ -35,8 +35,8 @@ export const useDCFCalculation = (symbol: string) => {
       console.log("Calculating DCF with AI-generated parameters:", params);
       const result = await calculateCustomDCF(params);
       
-      // First, check if result exists
-      if (!result) {
+      // Handle null result case explicitly
+      if (result === null) {
         return { success: false };
       }
       

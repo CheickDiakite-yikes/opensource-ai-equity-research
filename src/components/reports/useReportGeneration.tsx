@@ -14,7 +14,7 @@ import type { StockQuote } from "@/types/profile/companyTypes";
 import { ResearchReport } from "@/types/ai-analysis/reportTypes";
 import { StockPrediction } from "@/types/ai-analysis/predictionTypes";
 
-import type { ReportData } from "./useResearchReportData";
+import type { ReportData } from "@/hooks/research/useResearchReportData";
 
 export const useReportGeneration = (symbol: string, data: ReportData) => {
   const [isGenerating, setIsGenerating] = useState(false);
