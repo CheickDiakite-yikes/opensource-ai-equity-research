@@ -39,8 +39,8 @@ export const useDCFCalculation = (symbol: string) => {
       // Try to calculate custom DCF first
       try {
         const result = await calculateCustomDCF(params);
-        if (result && result.dcfResult) {
-          return { success: true };
+        if (result) {
+          return { success: true, dcfResult: result.dcfResult };
         }
         throw new Error("Custom DCF calculation failed to return valid results");
       } catch (customErr) {
@@ -52,8 +52,8 @@ export const useDCFCalculation = (symbol: string) => {
           console.log("Trying standard DCF as fallback...");
           
           const standardResult = await calculateStandardDCF();
-          if (standardResult && standardResult.dcfResult) {
-            return { success: true };
+          if (standardResult) {
+            return { success: true, dcfResult: standardResult.dcfResult };
           }
         }
         

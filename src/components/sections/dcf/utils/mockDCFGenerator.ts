@@ -73,8 +73,8 @@ export const prepareMockDCFData = (financials: any[], currentPrice: number): For
   
   const mockData: FormattedDCFData = {
     intrinsicValue,
-    currentPrice,
-    upside,
+    currentPrice, // This is now allowed by updated type definition
+    upside,      // This is now allowed by updated type definition
     assumptions: {
       growthRate: "2.0% (first 5 years), 3.0% (terminal)",
       discountRate: "9.5%",
@@ -84,7 +84,7 @@ export const prepareMockDCFData = (financials: any[], currentPrice: number): For
     sensitivity: createSensitivityData(currentPrice),
     projections: [
       {
-        year: currentYear + 1 + "",
+        year: (currentYear + 1).toString(),
         revenue: currentPrice * 400000000,
         ebit: currentPrice * 120000000,
         ebitda: currentPrice * 145000000,
@@ -93,7 +93,7 @@ export const prepareMockDCFData = (financials: any[], currentPrice: number): For
         capitalExpenditure: currentPrice * 15000000
       },
       {
-        year: currentYear + 2 + "",
+        year: (currentYear + 2).toString(),
         revenue: currentPrice * 420000000,
         ebit: currentPrice * 128000000,
         ebitda: currentPrice * 153000000,
@@ -102,7 +102,7 @@ export const prepareMockDCFData = (financials: any[], currentPrice: number): For
         capitalExpenditure: currentPrice * 15500000
       },
       {
-        year: currentYear + 3 + "",
+        year: (currentYear + 3).toString(),
         revenue: currentPrice * 442000000,
         ebit: currentPrice * 136500000,
         ebitda: currentPrice * 161000000,
@@ -111,7 +111,7 @@ export const prepareMockDCFData = (financials: any[], currentPrice: number): For
         capitalExpenditure: currentPrice * 16000000
       },
       {
-        year: currentYear + 4 + "",
+        year: (currentYear + 4).toString(),
         revenue: currentPrice * 465000000,
         ebit: currentPrice * 145000000,
         ebitda: currentPrice * 170000000,
@@ -120,7 +120,7 @@ export const prepareMockDCFData = (financials: any[], currentPrice: number): For
         capitalExpenditure: currentPrice * 16500000
       },
       {
-        year: currentYear + 5 + "",
+        year: (currentYear + 5).toString(),
         revenue: currentPrice * 489000000,
         ebit: currentPrice * 154000000,
         ebitda: currentPrice * 179000000,
