@@ -8,7 +8,8 @@ import { GrowthCatalysts } from "./GrowthCatalysts";
 import { DisclaimerSection } from "./DisclaimerSection";
 import { downloadReportAsHTML } from "@/utils/reportDownloadUtils";
 import { Button } from "@/components/ui/button";
-import { Download } from "lucide-react";
+import { Download, AlertTriangle, FileText } from "lucide-react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 interface ResearchReportDisplayProps {
   report: ResearchReport;
@@ -25,6 +26,13 @@ const ResearchReportDisplay: React.FC<ResearchReportDisplayProps> = ({ report })
     downloadReportAsHTML(report);
   };
 
+  // Check if report is potentially low quality
+  const isLowQualityReport = 
+    !report.ratingDetails || 
+    !report.scenarioAnalysis || 
+    !report.catalysts ||
+    report.sections.some(section => section.content.length < 200);
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -39,6 +47,17 @@ const ResearchReportDisplay: React.FC<ResearchReportDisplayProps> = ({ report })
           <span>Download</span>
         </Button>
       </div>
+      
+      {isLowQualityReport && (
+        <Alert variant="warning" className="bg-amber-50 border-amber-200 text-amber-800">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertTitle>Report Quality Notice</AlertTitle>
+          <AlertDescription>
+            This report may not contain the level of detail typically found in professional equity research.
+            Consider regenerating with the "comprehensive" option for more detailed analysis.
+          </AlertDescription>
+        </Alert>
+      )}
       
       <ReportHeader
         companyName={report.companyName}

@@ -53,7 +53,7 @@ export const useReportGeneration = (symbol: string, data: ReportData) => {
       
       toast({
         title: "Generating AI Report",
-        description: "Creating a detailed AI-powered research report based on real financial data...",
+        description: `Creating a detailed ${reportType} research report based on financial data...`,
       });
       
       console.log("Sending report request:", {
@@ -61,7 +61,8 @@ export const useReportGeneration = (symbol: string, data: ReportData) => {
         companyName: data.profile.companyName,
         reportType,
         hasFinancials: !!data.income?.length,
-        newsCount: data.news?.length
+        newsCount: data.news?.length,
+        peersCount: data.peers?.length
       });
       
       const generatedReport = await generateResearchReport(reportRequest);
@@ -74,7 +75,11 @@ export const useReportGeneration = (symbol: string, data: ReportData) => {
         symbol: generatedReport.symbol,
         recommendation: generatedReport.recommendation,
         sectionsReceived: generatedReport.sections?.length || 0, 
-        sectionsData: generatedReport.sections?.map(s => s.title) || []
+        sectionsData: generatedReport.sections?.map(s => s.title) || [],
+        hasRatingDetails: !!generatedReport.ratingDetails,
+        hasScenarioAnalysis: !!generatedReport.scenarioAnalysis,
+        hasCatalysts: !!generatedReport.catalysts,
+        summaryLength: generatedReport.summary?.length || 0
       });
       
       // Make sure the report has at least some sections
@@ -88,11 +93,18 @@ export const useReportGeneration = (symbol: string, data: ReportData) => {
         ];
       }
       
+      // Check section content length for quality
+      const shortSections = generatedReport.sections.filter(s => s.content.length < 200);
+      if (shortSections.length > 0) {
+        console.warn(`Report has ${shortSections.length} sections with less than 200 characters:`, 
+          shortSections.map(s => s.title).join(', '));
+      }
+      
       setReport(generatedReport);
       
       toast({
         title: "AI Report Generated",
-        description: `Research report for ${data.profile.companyName} successfully generated using AI analysis of real financial data.`,
+        description: `Research report for ${data.profile.companyName} successfully generated with ${generatedReport.sections.length} sections.`,
       });
     } catch (err: any) {
       console.error("Error generating report:", err);

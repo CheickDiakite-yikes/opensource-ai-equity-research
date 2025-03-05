@@ -42,13 +42,13 @@ export const useDCFCalculation = (symbol: string) => {
       }
       
       // First, check if result exists and is an object with 'success' property
-      if (result && typeof result === 'object' && 'success' in result) {
+      if (typeof result === 'object' && result !== null && 'success' in result) {
         return result;
       }
       
       // If result exists and is an object but doesn't have success property,
       // wrap it in a success object
-      if (result && typeof result === 'object') {
+      if (typeof result === 'object' && result !== null) {
         return { success: true };
       }
       

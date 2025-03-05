@@ -42,10 +42,20 @@ const ResearchReportGenerator = ({ symbol }: ResearchReportGeneratorProps) => {
         hasScenarioAnalysis: !!report.scenarioAnalysis,
         hasCatalysts: !!report.catalysts,
         sections: report.sections.map(s => s.title),
-        sectionCount: report.sections.length
+        sectionCount: report.sections.length,
+        firstSectionContentLength: report.sections[0]?.content.length || 0,
+        summaryLength: report.summary?.length || 0
       });
     }
   }, [report]);
+
+  // If we have a report but it's too basic, show a warning
+  const isReportTooBasic = report && (
+    !report.ratingDetails || 
+    !report.scenarioAnalysis || 
+    !report.catalysts ||
+    report.sections.some(s => s.content.length < 200)
+  );
 
   if (isLoading) {
     return <LoadingSkeleton />;
@@ -68,6 +78,7 @@ const ResearchReportGenerator = ({ symbol }: ResearchReportGeneratorProps) => {
       onPredictPrice={handlePredictPrice}
       report={report}
       prediction={prediction}
+      isReportTooBasic={isReportTooBasic}
     />
   );
 };

@@ -10,7 +10,7 @@ import { StockQuote } from "@/types/profile/companyTypes";
  */
 export const generateResearchReport = async (reportRequest: any): Promise<ResearchReport> => {
   try {
-    console.log(`Generating AI research report for ${reportRequest.symbol}`);
+    console.log(`Generating AI research report for ${reportRequest.symbol} (type: ${reportRequest.reportType || 'standard'})`);
     
     const data = await invokeSupabaseFunction<ResearchReport>('generate-research-report', {
       reportRequest
@@ -32,8 +32,15 @@ export const generateResearchReport = async (reportRequest: any): Promise<Resear
       console.warn("No sections in research report, adding placeholder");
       data.sections = [{
         title: "Investment Thesis",
-        content: "Report sections are being generated. Please check back in a moment."
+        content: "Report sections are being generated. Please refresh or try regenerating the report if this message persists."
       }];
+    }
+    
+    // Check for very brief sections that might indicate generation issues
+    const shortSections = data.sections.filter(section => section.content.length < 200);
+    if (shortSections.length > 0) {
+      console.warn(`Report contains ${shortSections.length} brief sections that may need enhancement:`, 
+        shortSections.map(s => s.title).join(', '));
     }
     
     // Ensure each section has title and content
@@ -41,7 +48,7 @@ export const generateResearchReport = async (reportRequest: any): Promise<Resear
       if (!section.title || !section.content) {
         return {
           title: section.title || "Analysis Section",
-          content: section.content || "Content is being generated."
+          content: section.content || "Content is being generated. Please refresh or try regenerating the report if this message persists."
         };
       }
       return section;

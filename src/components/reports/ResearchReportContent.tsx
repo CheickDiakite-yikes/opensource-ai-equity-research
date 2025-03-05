@@ -1,13 +1,14 @@
 
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { FileText, AlertCircle } from "lucide-react";
+import { FileText, AlertCircle, RefreshCw } from "lucide-react";
 import ReportGeneratorForm from "@/components/reports/ReportGeneratorForm";
 import ReportTabs from "@/components/reports/ReportTabs";
 import { ReportData } from "./useResearchReportData";
 import { ResearchReport } from "@/types/ai-analysis/reportTypes";
 import { StockPrediction } from "@/types/ai-analysis/predictionTypes";
 import { motion } from "framer-motion";
+import { Button } from "@/components/ui/button";
 
 interface ResearchReportContentProps {
   data: ReportData;
@@ -21,6 +22,7 @@ interface ResearchReportContentProps {
   onPredictPrice: () => void;
   report: ResearchReport | null;
   prediction: StockPrediction | null;
+  isReportTooBasic?: boolean;
 }
 
 const ResearchReportContent: React.FC<ResearchReportContentProps> = ({
@@ -34,7 +36,8 @@ const ResearchReportContent: React.FC<ResearchReportContentProps> = ({
   onGenerateReport,
   onPredictPrice,
   report,
-  prediction
+  prediction,
+  isReportTooBasic = false
 }) => {
   return (
     <div className="space-y-6">
@@ -65,6 +68,30 @@ const ResearchReportContent: React.FC<ResearchReportContentProps> = ({
                 <div className="flex">
                   <AlertCircle className="h-5 w-5 mr-2 flex-shrink-0" />
                   <p>Limited financial data available. Report accuracy may be affected.</p>
+                </div>
+              </motion.div>
+            )}
+            
+            {isReportTooBasic && report && !isGenerating && (
+              <motion.div 
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-md text-blue-800 text-sm"
+              >
+                <div className="flex">
+                  <AlertCircle className="h-5 w-5 mr-2 flex-shrink-0" />
+                  <div>
+                    <p className="font-medium">Basic report detected</p>
+                    <p className="mt-1">This report appears to be missing some detailed sections typically found in professional equity research. Consider regenerating with more detailed options.</p>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="mt-2 text-xs"
+                      onClick={onGenerateReport}
+                    >
+                      <RefreshCw className="mr-1 h-3 w-3" /> Regenerate with more detail
+                    </Button>
+                  </div>
                 </div>
               </motion.div>
             )}
