@@ -5,6 +5,8 @@ import { StockPrediction } from './types.ts';
 import { formatDataForPrediction } from './dataFormatter.ts';
 import { generatePredictionWithOpenAI } from './predictionService.ts';
 import { createFallbackPrediction } from './fallbackGenerator.ts';
+import { validatePrediction } from './validationService.ts';
+import { determineIndustry } from './industryAnalysis.ts';
 
 const supabaseUrl = Deno.env.get("SUPABASE_URL") || "";
 const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY") || "";
@@ -59,7 +61,7 @@ Deno.serve(async (req) => {
         // Critical validation: Ensure prediction is meaningfully different from current price
         const currentPrice = stockData.price;
         
-        // Validate one-year prediction
+        // Validate prediction
         if (!validatePrediction(prediction, currentPrice)) {
           console.warn(`Invalid prediction generated for ${symbol}, retrying...`);
           prediction = null;
@@ -99,53 +101,6 @@ Deno.serve(async (req) => {
     });
   }
 });
-
-/**
- * Validates that prediction values are significantly different from current price
- */
-function validatePrediction(prediction: StockPrediction | null, currentPrice: number): boolean {
-  if (!prediction || !prediction.predictedPrice) return false;
-  
-  const oneYearPrice = prediction.predictedPrice.oneYear;
-  if (typeof oneYearPrice !== 'number') return false;
-  
-  // Check one-year prediction (should be at least 1% different)
-  const yearDiff = Math.abs((oneYearPrice - currentPrice) / currentPrice);
-  if (yearDiff < 0.01) return false;
-  
-  // Validate other timeframes
-  const timeframes = ['oneMonth', 'threeMonths', 'sixMonths'] as const;
-  return timeframes.every(timeframe => {
-    const price = prediction.predictedPrice[timeframe];
-    return typeof price === 'number' && Math.abs((price - currentPrice) / currentPrice) >= 0.005;
-  });
-}
-
-/**
- * Determine industry for better prediction context
- */
-function determineIndustry(symbol: string): string {
-  const industries: Record<string, string> = {
-    'AAPL': 'Technology',
-    'MSFT': 'Technology',
-    'GOOG': 'Technology',
-    'AMZN': 'Retail',
-    'META': 'Technology',
-    'TSLA': 'Automotive',
-    'NVDA': 'Semiconductor',
-    'JPM': 'Financial',
-    'BAC': 'Financial',
-    'WMT': 'Retail',
-    'JNJ': 'Healthcare',
-    'PG': 'Consumer Goods',
-    'V': 'Financial',
-    'MA': 'Financial',
-    'DIS': 'Entertainment',
-    'NFLX': 'Entertainment'
-  };
-  
-  return industries[symbol] || 'Technology';
-}
 
 /**
  * Log detailed prediction results
