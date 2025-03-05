@@ -49,6 +49,7 @@ export const transformDCFResponse = (data: any[], symbol: string): CustomDCFResu
     equityValue: item.equityValue || 0,
     equityValuePerShare: item.equityValuePerShare || item.dcf || 0,
     freeCashFlowT1: item.freeCashFlowT1 || 0,
-    operatingCashFlowPercentage: item.operatingCashFlowPercentage || item.operatingCashFlowPercent || 0
+    operatingCashFlowPercentage: item.operatingCashFlowPercentage || item.operatingCashFlowPercent || 0,
+    cashAndCashEquivalents: item.cashAndCashEquivalents || item.cashAndShortTermInvestments || 0  // Add the missing property
   }));
 };

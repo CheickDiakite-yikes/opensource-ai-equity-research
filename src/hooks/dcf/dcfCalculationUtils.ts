@@ -97,7 +97,8 @@ export const createDefaultDCFResult = (symbol: string, data?: any): CustomDCFRes
     equityValue: 0,
     equityValuePerShare: baseItem.dcf || 0,
     freeCashFlowT1: 0,
-    operatingCashFlowPercentage: 28.86
+    operatingCashFlowPercentage: 28.86,
+    cashAndCashEquivalents: baseItem.cashAndCashEquivalents || 0  // Add the missing property
   };
 };
 
