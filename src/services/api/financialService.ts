@@ -1,3 +1,4 @@
+
 import { invokeSupabaseFunction } from "./base";
 import { 
   IncomeStatement, 
@@ -45,8 +46,6 @@ export const fetchIncomeStatementTTM = async (symbol: string): Promise<IncomeSta
       endpoint: 'income-statement-ttm' 
     });
     
-    console.log("TTM Income Statement data received:", data);
-    
     if (!data || !Array.isArray(data) || data.length === 0) return null;
     return data[0];
   } catch (error) {
@@ -86,8 +85,6 @@ export const fetchBalanceSheetTTM = async (symbol: string): Promise<BalanceSheet
       symbol, 
       endpoint: 'balance-sheet-ttm' 
     });
-    
-    console.log("TTM Balance Sheet data received:", data);
     
     if (!data || !Array.isArray(data) || data.length === 0) return null;
     return data[0];
@@ -129,8 +126,6 @@ export const fetchCashFlowStatementTTM = async (symbol: string): Promise<CashFlo
       endpoint: 'cash-flow-ttm' 
     });
     
-    console.log("TTM Cash Flow data received:", data);
-    
     if (!data || !Array.isArray(data) || data.length === 0) return null;
     return data[0];
   } catch (error) {
@@ -171,8 +166,6 @@ export const fetchKeyRatiosTTM = async (symbol: string): Promise<KeyRatioTTM | n
       endpoint: 'ratios-ttm' 
     });
     
-    console.log("TTM Key Ratios data received:", data);
-    
     if (!data || !Array.isArray(data) || data.length === 0) return null;
     return data[0];
   } catch (error) {
@@ -212,8 +205,6 @@ export const fetchKeyMetricsTTM = async (symbol: string): Promise<KeyMetricTTM |
       symbol, 
       endpoint: 'key-metrics-ttm' 
     });
-    
-    console.log("TTM Key Metrics data received:", data);
     
     if (!data || !Array.isArray(data) || data.length === 0) return null;
     return data[0];

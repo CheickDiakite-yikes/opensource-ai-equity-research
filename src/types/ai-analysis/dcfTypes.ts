@@ -144,8 +144,6 @@ export interface DCFAssumptionsSummary {
 // Combined DCF data structure returned by utility functions
 export interface FormattedDCFData {
   intrinsicValue: number;
-  currentPrice?: number;
-  upside?: string;
   assumptions: DCFAssumptionsSummary;
   projections: YearlyDCFData[];
   sensitivity: DCFSensitivityData;

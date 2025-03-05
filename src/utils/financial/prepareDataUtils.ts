@@ -129,7 +129,6 @@ export function prepareRatioData(ratios: KeyRatio[]): RatioData[] {
       roa: ratio.returnOnAssets || 0,
       currentRatio: ratio.currentRatio || 0,
       debtToEquity: ratio.debtEquityRatio || 0,
-      debtEquity: ratio.debtEquityRatio || 0, // Ensure both property names are set
       grossMargin: ratio.grossProfitMargin || 0,
       operatingMargin: ratio.operatingProfitMargin || 0,
       netMargin: ratio.netProfitMargin || 0
