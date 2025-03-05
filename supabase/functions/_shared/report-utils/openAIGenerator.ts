@@ -1,7 +1,7 @@
 
-import { ResearchReport } from "./reportTypes";
-import { formatLargeNumber } from "./dataFormatter";
-import { createFallbackReport, ensureCompleteReportStructure, createDefaultSections, enhanceSectionContent } from "./fallbackReportGenerator";
+import { ResearchReport } from "./reportTypes.ts";
+import { formatLargeNumber } from "./dataFormatter.ts";
+import { createFallbackReport, ensureCompleteReportStructure, createDefaultSections, enhanceSectionContent } from "./fallbackReportGenerator.ts";
 import { API_BASE_URLS, OPENAI_MODELS } from "../constants.ts";
 
 // Extract JSON from text response (handles when GPT wraps JSON in markdown code blocks)
