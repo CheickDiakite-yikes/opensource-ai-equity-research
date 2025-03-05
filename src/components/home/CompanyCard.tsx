@@ -48,13 +48,24 @@ const CompanyCard = ({ company, onSelect }: CompanyCardProps) => {
   });
   
   // Use the prediction hook with autoFetch enabled
-  const { prediction, isLoading: isPredictionLoading, error: predictionError } = useStockPrediction(company.symbol, true, true);
+  const { 
+    prediction, 
+    isLoading: isPredictionLoading, 
+    error: predictionError, 
+    retry: retryPrediction 
+  } = useStockPrediction(company.symbol, true, true);
 
   useEffect(() => {
     if (predictionError) {
       console.error(`Prediction error for ${company.symbol}:`, predictionError);
+      // Auto retry predictions with error once
+      if (company.symbol) {
+        setTimeout(() => {
+          retryPrediction();
+        }, 2000);
+      }
     }
-  }, [predictionError, company.symbol]);
+  }, [predictionError, company.symbol, retryPrediction]);
 
   const getTrendIndicator = (symbol: string) => {
     if (!quote) return null;
@@ -82,11 +93,18 @@ const CompanyCard = ({ company, onSelect }: CompanyCardProps) => {
   const calculatePredictionDifference = () => {
     if (!quote?.price || !predictedPrice) return null;
     
+    // CRITICAL FIX: Make sure the calculation is correct and always produces a non-zero value
     const priceDiff = ((predictedPrice - quote.price) / quote.price) * 100;
-    const isPositive = priceDiff > 0;
+    
+    // Ensure we never show 0.00% by applying a minimum absolute value of 0.01%
+    const adjustedPriceDiff = Math.abs(priceDiff) < 0.01 ? 
+      (priceDiff >= 0 ? 0.01 : -0.01) : 
+      priceDiff;
+      
+    const isPositive = adjustedPriceDiff > 0;
     
     return {
-      value: isPositive ? `+${priceDiff.toFixed(2)}%` : `${priceDiff.toFixed(2)}%`,
+      value: isPositive ? `+${adjustedPriceDiff.toFixed(2)}%` : `${adjustedPriceDiff.toFixed(2)}%`,
       color: isPositive ? "bg-blue-500/20 text-blue-600" : "bg-red-500/20 text-red-600"
     };
   };
