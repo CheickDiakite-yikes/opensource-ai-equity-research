@@ -23,6 +23,11 @@ interface AssetsLiabilitiesChartProps {
 }
 
 const AssetsLiabilitiesChart: React.FC<AssetsLiabilitiesChartProps> = ({ data }) => {
+  // Sort data by year in ascending order (oldest to newest)
+  const sortedData = [...data].sort((a, b) => {
+    return parseInt(a.year) - parseInt(b.year);
+  });
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -39,7 +44,7 @@ const AssetsLiabilitiesChart: React.FC<AssetsLiabilitiesChartProps> = ({ data })
         <CardContent className="h-80 pt-4">
           <ResponsiveContainer width="100%" height="100%">
             <LineChart 
-              data={data}
+              data={sortedData}
               margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
             >
               <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />

@@ -1,6 +1,5 @@
 
 import React from "react";
-import { Card } from "@/components/ui/card";
 import AssetsLiabilitiesChart from "@/components/charts/AssetsLiabilitiesChart";
 import BalanceSheetTable from "@/components/tables/BalanceSheetTable";
 

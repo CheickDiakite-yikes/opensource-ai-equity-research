@@ -19,6 +19,11 @@ const ProjectedCashFlowsTable: React.FC<ProjectedCashFlowsTableProps> = ({
   projections,
   isLoading = false
 }) => {
+  // Sort projections by year in ascending order
+  const sortedProjections = [...projections].sort((a, b) => {
+    return parseInt(a.year) - parseInt(b.year);
+  });
+
   return (
     <Card>
       <CardHeader>
@@ -42,7 +47,7 @@ const ProjectedCashFlowsTable: React.FC<ProjectedCashFlowsTableProps> = ({
                 </tr>
               </thead>
               <tbody>
-                {projections.map((proj, i) => (
+                {sortedProjections.map((proj, i) => (
                   <tr key={i} className="border-b last:border-0">
                     <td className="py-2">{proj.year}</td>
                     <td className="text-right py-2">${(proj.revenue / 1000000).toFixed(2)}</td>

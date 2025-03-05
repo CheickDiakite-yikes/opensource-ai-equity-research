@@ -23,6 +23,11 @@ interface RevenueIncomeChartProps {
 }
 
 const RevenueIncomeChart: React.FC<RevenueIncomeChartProps> = ({ data }) => {
+  // Sort data by year in ascending order (oldest to newest)
+  const sortedData = [...data].sort((a, b) => {
+    return parseInt(a.year) - parseInt(b.year);
+  });
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -39,7 +44,7 @@ const RevenueIncomeChart: React.FC<RevenueIncomeChartProps> = ({ data }) => {
         <CardContent className="h-80 pt-4">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart 
-              data={data}
+              data={sortedData}
               margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
             >
               <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
