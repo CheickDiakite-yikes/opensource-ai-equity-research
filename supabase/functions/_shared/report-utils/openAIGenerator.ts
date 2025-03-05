@@ -1,10 +1,8 @@
-
 import { ResearchReport } from "./reportTypes.ts";
 import { formatLargeNumber } from "./dataFormatter.ts";
 import { createFallbackReport, ensureCompleteReportStructure, createDefaultSections, enhanceSectionContent } from "./fallbackReportGenerator.ts";
 import { API_BASE_URLS, OPENAI_MODELS } from "../constants.ts";
 
-// Extract JSON from text response (handles when GPT wraps JSON in markdown code blocks)
 export function extractJSONFromText(text: string) {
   try {
     return JSON.parse(text);
@@ -33,7 +31,6 @@ export function extractJSONFromText(text: string) {
   throw new Error("Could not extract valid JSON from response");
 }
 
-// Generate report using OpenAI
 export async function generateReportWithOpenAI(data: any, reportRequest: any, openAIApiKey: string) {
   const { reportType, symbol, companyName } = reportRequest;
   
@@ -105,16 +102,20 @@ Create a comprehensive, professional research report including:
 7. Thorough growth catalysts and risks assessment with timeline
 
 FOR THE FINANCIAL ANALYSIS SECTION:
-- Analyze at least 5 key financial metrics in detail (revenue, margins, profitability, debt, cash flow)
+- Analyze at least 8 key financial metrics in detail (revenue, margins, profitability, debt, cash flow, ROE, ROA, debt-to-equity)
 - Compare current performance against historical trends (minimum 3-year lookback)
 - Provide industry benchmarking for each key metric
 - Assess sustainability of current financial performance
 - Identify key drivers of future financial performance
-- Include a minimum of 3 specific financial ratios with interpretation
+- Include a minimum of 5 specific financial ratios with interpretation
 - Provide forward-looking financial projections with clear assumptions
 - Analyze capital allocation strategy and efficiency
 - Assess balance sheet strength and flexibility
 - Evaluate cash flow generation and reinvestment needs
+- Calculate and interpret year-over-year growth rates for key metrics
+- Evaluate working capital management and liquidity position
+- Assess debt coverage and interest servicing capacity
+- Analyze return on invested capital (ROIC) trends
 
 Your report should match the quality and depth of professional equity research from major investment banks.`;
 
@@ -215,7 +216,6 @@ Your report should match the quality and depth of professional equity research f
         } : undefined
       };
       
-      // Ensure the financial analysis section is comprehensive
       if (finalReport.sections) {
         const financialSectionIndex = finalReport.sections.findIndex(section => 
           section.title.toLowerCase().includes('financial') || 
@@ -225,17 +225,14 @@ Your report should match the quality and depth of professional equity research f
         if (financialSectionIndex !== -1) {
           const financialSection = finalReport.sections[financialSectionIndex];
           
-          // Check if financial section is substantial enough
-          if (financialSection.content.length < 500) {
+          if (financialSection.content.length < 700) {
             console.log("Financial analysis section is too short, enhancing it...");
             
-            // Generate enhanced financial content
             finalReport.sections[financialSectionIndex].content = generateEnhancedFinancialAnalysis(data);
           }
         } else {
           console.log("No financial analysis section found, adding one...");
           
-          // Add a financial analysis section if missing
           finalReport.sections.splice(2, 0, {
             title: "Financial Analysis",
             content: generateEnhancedFinancialAnalysis(data)
@@ -256,7 +253,6 @@ Your report should match the quality and depth of professional equity research f
   }
 }
 
-// Generate a detailed financial analysis section if needed
 function generateEnhancedFinancialAnalysis(data: any): string {
   const { financialSummary, companyName, symbol } = data;
   
@@ -264,7 +260,6 @@ function generateEnhancedFinancialAnalysis(data: any): string {
     return "Financial analysis data unavailable.";
   }
   
-  // Extract financial metrics
   const revenue = financialSummary.revenue ? `$${formatLargeNumber(financialSummary.revenue)}` : "N/A";
   const netIncome = financialSummary.netIncome ? `$${formatLargeNumber(financialSummary.netIncome)}` : "N/A";
   const grossMargin = financialSummary.grossMargin ? `${(financialSummary.grossMargin * 100).toFixed(2)}%` : "N/A";
@@ -281,11 +276,17 @@ function generateEnhancedFinancialAnalysis(data: any): string {
   const fcf = financialSummary.freeCashFlow ? `$${formatLargeNumber(financialSummary.freeCashFlow)}` : "N/A";
   const roe = financialSummary.returnOnEquity ? `${(financialSummary.returnOnEquity * 100).toFixed(2)}%` : "N/A";
   const roa = financialSummary.returnOnAssets ? `${(financialSummary.returnOnAssets * 100).toFixed(2)}%` : "N/A";
+  const roic = financialSummary.returnOnInvestedCapital ? `${(financialSummary.returnOnInvestedCapital * 100).toFixed(2)}%` : "N/A";
   const debtToEquity = financialSummary.debtToEquity ? financialSummary.debtToEquity.toFixed(2) : "N/A";
   const currentRatio = financialSummary.currentRatio ? financialSummary.currentRatio.toFixed(2) : "N/A";
+  const interestCoverage = financialSummary.interestCoverage ? financialSummary.interestCoverage.toFixed(2) : "N/A";
+  const capex = financialSummary.capitalExpenditure ? `$${formatLargeNumber(Math.abs(financialSummary.capitalExpenditure))}` : "N/A";
+  const dividendYield = financialSummary.dividendYield ? `${(financialSummary.dividendYield * 100).toFixed(2)}%` : "N/A";
+  const payoutRatio = financialSummary.payoutRatio ? `${(financialSummary.payoutRatio * 100).toFixed(2)}%` : "N/A";
+  const ebitda = financialSummary.ebitda ? `$${formatLargeNumber(financialSummary.ebitda)}` : "N/A";
+  const ebitdaMargin = financialSummary.ebitdaMargin ? `${(financialSummary.ebitdaMargin * 100).toFixed(2)}%` : "N/A";
   const year = financialSummary.year || "recent";
   
-  // Generate comprehensive analysis
   return `## Financial Performance Overview
 
 ${companyName} (${symbol}) reported revenue of ${revenue} for the ${year} fiscal year${revenueGrowth !== "N/A" ? `, representing a year-over-year growth of ${revenueGrowth}` : ""}. The company generated net income of ${netIncome}${netIncomeGrowth !== "N/A" ? `, which translates to a growth rate of ${netIncomeGrowth} compared to the previous year` : ""}.
@@ -302,6 +303,12 @@ ${
   parseFloat(String(operatingMargin)) > 20 ? "The robust operating margin demonstrates excellent operational efficiency and cost control across the organization." : 
   parseFloat(String(operatingMargin)) > 10 ? "The solid operating margin reflects adequate control over operating expenses relative to revenue generation." : 
   "The modest operating margin suggests there may be opportunities to optimize operating expenses and improve operational efficiency."
+}
+
+EBITDA of ${ebitda} resulted in an EBITDA margin of ${ebitdaMargin}, which ${
+  parseFloat(String(ebitdaMargin)) > 25 ? "is impressive and indicates strong operational performance before accounting for non-operational expenses." : 
+  parseFloat(String(ebitdaMargin)) > 15 ? "is solid and demonstrates healthy operational performance before accounting for capital structure and tax considerations." : 
+  "suggests that improving operational efficiency could be a priority for management."
 }
 
 ### Growth Trends
@@ -321,8 +328,8 @@ Net income growth ${netIncomeGrowth !== "N/A" ? `of ${netIncomeGrowth}` : ""} ${
 ### Balance Sheet Strength
 
 As of the ${year} fiscal year, ${companyName} reported total assets of ${totalAssets}, total liabilities of ${totalLiabilities}, and shareholders' equity of ${totalEquity}. The company maintains a debt level of ${debt} against cash and cash equivalents of ${cash}, resulting in a ${
-  parseFloat(cash) > parseFloat(debt) ? `net cash position of approximately $${formatLargeNumber(parseFloat(cash) - parseFloat(debt))}` : 
-  `net debt position of approximately $${formatLargeNumber(parseFloat(debt) - parseFloat(cash))}`
+  parseFloat(String(cash)) > parseFloat(String(debt)) ? `net cash position of approximately $${formatLargeNumber(parseFloat(String(cash)) - parseFloat(String(debt)))}` : 
+  `net debt position of approximately $${formatLargeNumber(parseFloat(String(debt)) - parseFloat(String(cash)))}`
 }.
 
 The debt-to-equity ratio stands at ${debtToEquity}, which is ${
@@ -337,20 +344,39 @@ The current ratio of ${currentRatio} ${
   "suggests potential liquidity constraints that warrant monitoring."
 }
 
+Interest coverage ratio of ${interestCoverage !== "N/A" ? interestCoverage : "N/A"} ${
+  interestCoverage !== "N/A" && parseFloat(String(interestCoverage)) > 5 ? "is strong, indicating the company can easily service its debt obligations from operating earnings." : 
+  interestCoverage !== "N/A" && parseFloat(String(interestCoverage)) > 2 ? "is adequate, suggesting the company can service its debt, though with less cushion than ideal." : 
+  interestCoverage !== "N/A" ? "is concerning and indicates potential challenges in servicing debt obligations from current earnings." :
+  "is not available, making it difficult to assess debt servicing capacity."
+}
+
 ### Cash Flow Analysis
 
 ${companyName} generated operating cash flow of ${ocf} and free cash flow of ${fcf} during the ${year} fiscal year. ${
-  fcf !== "N/A" && ocf !== "N/A" && parseFloat(fcf) > 0 ? 
+  fcf !== "N/A" && ocf !== "N/A" && parseFloat(String(fcf)) > 0 ? 
   `The positive free cash flow demonstrates the company's ability to generate cash beyond its operational and capital expenditure needs, providing flexibility for shareholder returns, debt reduction, or strategic investments.` : 
   `The company's cash flow profile requires careful analysis as it may indicate heavy investment for future growth or potential challenges in converting earnings to cash.`
 }
 
 The cash flow conversion rate (free cash flow as a percentage of net income) ${
-  fcf !== "N/A" && netIncome !== "N/A" && parseFloat(fcf) > parseFloat(netIncome) ? 
+  fcf !== "N/A" && netIncome !== "N/A" && parseFloat(String(fcf)) > parseFloat(String(netIncome)) ? 
   "exceeds 100%, which is excellent and indicates high-quality earnings with minimal accounting adjustments." : 
-  fcf !== "N/A" && netIncome !== "N/A" && parseFloat(fcf) > 0.8 * parseFloat(netIncome) ? 
+  fcf !== "N/A" && netIncome !== "N/A" && parseFloat(String(fcf)) > 0.8 * parseFloat(String(netIncome)) ? 
   "is strong at over 80%, indicating good quality of earnings." : 
   "suggests some disconnect between reported earnings and cash generation that warrants further investigation."
+}
+
+Capital expenditures of ${capex} represent ${
+  capex !== "N/A" && revenue !== "N/A" ? 
+  `approximately ${((parseFloat(String(capex)) / parseFloat(String(revenue))) * 100).toFixed(1)}% of revenue` : 
+  "a significant investment in future growth"
+}, which is ${
+  capex !== "N/A" && ocf !== "N/A" && parseFloat(String(capex)) < 0.5 * parseFloat(String(ocf)) ? 
+  "conservative and suggests the company may have additional capacity for strategic investments." : 
+  capex !== "N/A" && ocf !== "N/A" && parseFloat(String(capex)) < 0.8 * parseFloat(String(ocf)) ? 
+  "balanced and indicates reinvestment for future growth while maintaining positive free cash flow." : 
+  "aggressive and reflects substantial investment in growth initiatives, which may pressure near-term free cash flow."
 }
 
 ### Returns and Efficiency Metrics
@@ -365,6 +391,60 @@ ${
   parseFloat(String(roa)) > 5 ? "The robust ROA demonstrates effective deployment of company assets to generate profits." : 
   parseFloat(String(roa)) > 3 ? "The ROA is reasonable given the company's asset intensity." : 
   "The relatively modest ROA may indicate lower asset turnover or profit margins compared to industry benchmarks."
+}
+
+Return on Invested Capital (ROIC) of ${roic !== "N/A" ? roic : "N/A"} ${
+  roic !== "N/A" && parseFloat(String(roic)) > parseFloat(String(roe || "0")) ? 
+  "exceeds the company's ROE, suggesting efficient use of debt in the capital structure." : 
+  roic !== "N/A" && parseFloat(String(roic)) > 10 ? 
+  "demonstrates strong returns on both debt and equity capital employed in the business." : 
+  roic !== "N/A" ? 
+  "suggests opportunities for improving capital allocation efficiency." : 
+  "is not available for analysis."
+}
+
+### Shareholder Returns
+
+The company's dividend yield stands at ${dividendYield !== "N/A" ? dividendYield : "N/A"} with a payout ratio of ${payoutRatio !== "N/A" ? payoutRatio : "N/A"}, ${
+  dividendYield !== "N/A" && parseFloat(String(dividendYield)) > 3 ? 
+  "offering investors an attractive income component." : 
+  dividendYield !== "N/A" && parseFloat(String(dividendYield)) > 1 ? 
+  "providing a moderate income component to investors." : 
+  dividendYield !== "N/A" ? 
+  "indicating the company prioritizes reinvestment in growth over current income to shareholders." : 
+  "with insufficient data to assess the company's shareholder return policy."
+} ${
+  payoutRatio !== "N/A" && parseFloat(String(payoutRatio)) > 80 ? 
+  "The high payout ratio raises questions about the sustainability of the current dividend level." : 
+  payoutRatio !== "N/A" && parseFloat(String(payoutRatio)) > 40 ? 
+  "The balanced payout ratio suggests a sustainable dividend policy with room for future increases." : 
+  payoutRatio !== "N/A" ? 
+  "The conservative payout ratio provides significant flexibility for future dividend increases." : 
+  ""
+}
+
+### Working Capital Management
+
+${
+  financialSummary.currentAssets && financialSummary.currentLiabilities ? 
+  `Working capital of $${formatLargeNumber(financialSummary.currentAssets - financialSummary.currentLiabilities)} reflects the company's short-term operational liquidity.` : 
+  "Working capital data is not fully available for detailed analysis."
+} ${
+  financialSummary.inventoryTurnover ? 
+  `Inventory turnover of ${financialSummary.inventoryTurnover.toFixed(2)}x indicates ${
+    financialSummary.inventoryTurnover > 8 ? "efficient inventory management." : 
+    financialSummary.inventoryTurnover > 4 ? "reasonable inventory efficiency." : 
+    "potential opportunities to optimize inventory levels."
+  }` : 
+  ""
+} ${
+  financialSummary.receivablesTurnover ? 
+  `Accounts receivable turnover of ${financialSummary.receivablesTurnover.toFixed(2)}x suggests ${
+    financialSummary.receivablesTurnover > 8 ? "strong collection practices and high-quality customers." : 
+    financialSummary.receivablesTurnover > 4 ? "adequate management of customer credit and collections." : 
+    "potential room for improvement in credit policies and collection efficiency."
+  }` : 
+  ""
 }
 
 ### Industry Comparison and Outlook
@@ -382,9 +462,9 @@ Looking ahead, we expect ${companyName}'s financial performance to be shaped by 
 }
 
 Capital allocation priorities likely include ${
-  parseFloat(cash) > parseFloat(debt) * 2 ? 
+  parseFloat(String(cash)) > parseFloat(String(debt)) * 2 ? 
   "strategic acquisitions, share repurchases, and potential dividend increases given the strong cash position." : 
-  debt !== "N/A" && parseFloat(debt) > parseFloat(totalEquity) ? 
+  debt !== "N/A" && parseFloat(String(debt)) > parseFloat(String(totalEquity)) ? 
   "debt reduction to strengthen the balance sheet, alongside targeted growth investments." : 
   "a balanced approach to organic growth investments, shareholder returns, and maintaining financial flexibility."
 }
@@ -392,7 +472,7 @@ Capital allocation priorities likely include ${
 ### Conclusion
 
 ${companyName}'s financial position can be characterized as ${
-  (parseFloat(String(grossMargin)) > 35 && parseFloat(String(roe)) > 15 && parseFloat(cash) > parseFloat(debt)) ? 
+  (parseFloat(String(grossMargin)) > 35 && parseFloat(String(roe)) > 15 && parseFloat(String(cash)) > parseFloat(String(debt))) ? 
   "strong, with industry-leading profitability, healthy returns on capital, and a solid balance sheet that provides significant strategic flexibility." : 
   (parseFloat(String(grossMargin)) > 25 && parseFloat(String(roe)) > 10) ? 
   "solid, with competitive margins and returns that support continued investment in growth initiatives." : 

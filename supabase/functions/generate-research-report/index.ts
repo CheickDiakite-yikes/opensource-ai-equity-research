@@ -41,15 +41,15 @@ Deno.serve(async (req) => {
       report.sections = createDefaultSections(formattedData);
     }
     
-    // Validate sections have sufficient content
+    // Validate sections have sufficient content - increase minimum content length to 300 characters
     report.sections = report.sections.map(section => {
-      if (!section.content || section.content.length < 100) {
+      if (!section.content || section.content.length < 300) {
         console.warn(`Section ${section.title} has insufficient content, enhancing it`);
         section.content = enhanceSectionContent(section.title, formattedData);
       }
       
       // If it's a financial section, make sure it's particularly detailed
-      if (section.title.toLowerCase().includes('financial') && section.content.length < 800) {
+      if (section.title.toLowerCase().includes('financial') && section.content.length < 1000) {
         console.warn(`Financial section ${section.title} needs more detail, enhancing it further`);
         section.content = enhanceSectionContent(section.title, formattedData, true);
       }

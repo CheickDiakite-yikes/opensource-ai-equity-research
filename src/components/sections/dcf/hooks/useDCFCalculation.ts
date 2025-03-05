@@ -1,80 +1,72 @@
-
 import { useState, useCallback } from "react";
-import { useCustomDCF } from "@/hooks/dcf/useCustomDCF";
-import { convertAssumptionsToParams } from "../utils/dcfDataUtils";
 import { toast } from "@/components/ui/use-toast";
-import { AIDCFSuggestion } from "@/types/ai-analysis/dcfTypes";
+import { calculateCustomDCF } from "@/services/api";
+import { 
+  CustomDCFResult, 
+  DCFInputs,
+  YearlyDCFData
+} from "@/types/ai-analysis/dcfTypes";
 
-export const useDCFCalculation = (symbol: string) => {
-  const [usingMockData, setUsingMockData] = useState(false);
-  
-  const { 
-    calculateCustomDCF, 
-    customDCFResult, 
-    projectedData, 
-    isCalculating, 
-    error: dcfError 
-  } = useCustomDCF(symbol);
+export function useDCFCalculation(symbol: string) {
+  const [isLoading, setIsLoading] = useState(false);
+  const [dcfResult, setDcfResult] = useState<CustomDCFResult | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
-  // Calculate DCF with AI assumptions
-  const calculateDCFWithAIAssumptions = useCallback(async (
-    assumptions: AIDCFSuggestion | null,
-    financials: any[]
+  const calculateDCF = useCallback(async (
+    customInputs?: Partial<DCFInputs>
   ) => {
-    setUsingMockData(false);
-    
+    setIsLoading(true);
+    setError(null);
+
     try {
-      if (!assumptions) {
-        console.warn("No AI assumptions available for DCF calculation, using mock data");
-        setUsingMockData(true);
-        return { success: false };
+      const result = await calculateCustomDCF(symbol, customInputs);
+
+      if (result && result.status === 200) {
+        const data = await result.json();
+        
+        // Add null check before accessing properties
+        if (data && typeof data === 'object') {
+          const dcfResult: CustomDCFResult = {
+            equityValuePerShare: data.equityValuePerShare || 0,
+            enterpriseValue: data.enterpriseValue || 0,
+            equityValue: data.equityValue || 0,
+            totalDebt: data.totalDebt || 0,
+            cashAndCashEquivalents: data.cashAndCashEquivalents || 0,
+            wacc: data.wacc || 0.09,
+            taxRate: data.taxRate || 0.21,
+            revenuePercentage: data.revenuePercentage || 8.5,
+            longTermGrowthRate: data.longTermGrowthRate || 0.03,
+            yearlyProjections: data.yearlyProjections || []
+          };
+          
+          setDcfResult(dcfResult);
+          toast({
+            title: "DCF Calculation Complete",
+            description: `Intrinsic value per share: $${dcfResult.equityValuePerShare?.toFixed(2)}`,
+          });
+        } else {
+          throw new Error("Invalid response format from DCF calculation");
+        }
+      } else {
+        throw new Error(`DCF calculation failed with status: ${result?.status || 'unknown'}`);
       }
-      
-      const params = convertAssumptionsToParams(assumptions, symbol, financials);
-      
-      console.log("Calculating DCF with AI-generated parameters:", params);
-      const result = await calculateCustomDCF(params);
-      
-      // Handle null result
-      if (result === null) {
-        console.warn("DCF calculation returned null result");
-        return { success: false };
-      }
-      
-      // First, check if result exists and is an object with 'success' property
-      if (typeof result === 'object' && result !== null && 'success' in result) {
-        return result;
-      }
-      
-      // If result exists and is an object but doesn't have success property,
-      // wrap it in a success object
-      if (typeof result === 'object' && result !== null) {
-        return { success: true };
-      }
-      
-      // If result is not an object or is null, return a failure object
-      return { success: false };
-    } catch (err) {
-      console.error("Error calculating DCF with AI assumptions:", err);
-      setUsingMockData(true);
-      
+    } catch (error: any) {
+      console.error("DCF calculation error:", error);
+      setError(error.message || "Failed to calculate DCF");
       toast({
-        title: "Using Estimated DCF",
-        description: "We couldn't calculate an exact DCF with AI assumptions. Using estimated values instead.",
-        variant: "default",
+        title: "DCF Calculation Error",
+        description: error.message || "Failed to calculate DCF",
+        variant: "destructive",
       });
-      
-      return { success: false, error: err };
+    } finally {
+      setIsLoading(false);
     }
-  }, [symbol, calculateCustomDCF]);
+  }, [symbol, setIsLoading, setDcfResult, setError]);
 
   return {
-    customDCFResult,
-    projectedData,
-    isCalculating,
-    dcfError,
-    usingMockData,
-    setUsingMockData,
-    calculateDCFWithAIAssumptions
+    isLoading,
+    dcfResult,
+    error,
+    calculateDCF,
   };
-};
+}
