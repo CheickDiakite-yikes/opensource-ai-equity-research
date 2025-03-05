@@ -10,6 +10,7 @@ export const useDCFData = (symbol: string, financials: any[]) => {
   const { assumptions, isLoading: isLoadingAssumptions, error: assumptionsError, refreshAssumptions } = useAIDCFAssumptions(symbol);
   const [hasAttemptedFetch, setHasAttemptedFetch] = useState(false);
   const [errors, setErrors] = useState<string[]>([]);
+  const [usingMockData, setUsingMockData] = useState(false);
   
   // Get the current price from financials
   const currentPrice = financials && financials.length > 0 
@@ -43,18 +44,26 @@ export const useDCFData = (symbol: string, financials: any[]) => {
 
   const calculateDCFWithAIAssumptions = async () => {
     setHasAttemptedFetch(true);
+    setUsingMockData(false);
     
     try {
+      if (!assumptions) {
+        console.warn("No AI assumptions available for DCF calculation, using mock data");
+        setUsingMockData(true);
+        return;
+      }
+      
       const params = convertAssumptionsToParams(assumptions, symbol, financials);
       
       console.log("Calculating DCF with AI-generated parameters:", params);
       await calculateCustomDCF(params);
     } catch (err) {
       console.error("Error calculating DCF with AI assumptions:", err);
+      setUsingMockData(true);
       toast({
-        title: "Error",
-        description: "Failed to calculate DCF with AI assumptions. Trying standard DCF instead.",
-        variant: "destructive",
+        title: "Using Estimated DCF",
+        description: "We couldn't calculate an exact DCF with AI assumptions. Using estimated values instead.",
+        variant: "default",
       });
     }
   };
@@ -67,6 +76,8 @@ export const useDCFData = (symbol: string, financials: any[]) => {
       });
       
       await refreshAssumptions();
+      setHasAttemptedFetch(false);
+      setUsingMockData(false);
       
       // If assumptions refreshed successfully, recalculate DCF
       setTimeout(() => {
@@ -76,19 +87,25 @@ export const useDCFData = (symbol: string, financials: any[]) => {
       }, 500);
     } catch (err) {
       console.error("Error refreshing assumptions:", err);
+      setUsingMockData(true);
       toast({
         title: "Error",
-        description: "Failed to refresh DCF assumptions.",
+        description: "Failed to refresh DCF assumptions. Using estimated values instead.",
         variant: "destructive",
       });
     }
   };
 
-  // If we're calculating or have an error, use mock data
-  const useMockData = isCalculating || (dcfError && !customDCFResult) || !customDCFResult;
+  // Determine whether to use mock data
+  // We use mock data if:
+  // 1. We're still calculating, or
+  // 2. There was an error and no customDCFResult, or
+  // 3. There's no customDCFResult, or
+  // 4. We explicitly set usingMockData to true
+  const shouldUseMockData = isCalculating || (dcfError && !customDCFResult) || !customDCFResult || usingMockData;
 
   // Determine which data to use (real or mock)
-  const dcfData = useMockData 
+  const dcfData = shouldUseMockData 
     ? mockDCFData 
     : prepareDCFData(customDCFResult, assumptions, projectedData, mockDCFData.sensitivity);
 
@@ -99,6 +116,7 @@ export const useDCFData = (symbol: string, financials: any[]) => {
     isLoadingAssumptions,
     errors,
     assumptions,
+    usingMockData: shouldUseMockData,
     handleRefreshAssumptions
   };
 };

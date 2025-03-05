@@ -50,6 +50,11 @@ export const fetchStandardDCF = async (symbol: string): Promise<any> => {
       type: DCFType.STANDARD
     });
     
+    if (!data || !Array.isArray(data) || data.length === 0) {
+      console.error("Empty or invalid response from standard DCF API");
+      throw new Error("Standard DCF calculation returned no data");
+    }
+    
     return data;
   } catch (error) {
     console.error("Error fetching standard DCF:", error);
@@ -75,6 +80,11 @@ export const fetchLeveredDCF = async (symbol: string, limit?: number): Promise<a
       params
     });
     
+    if (!data || !Array.isArray(data) || data.length === 0) {
+      console.error("Empty or invalid response from levered DCF API");
+      throw new Error("Levered DCF calculation returned no data");
+    }
+    
     return data;
   } catch (error) {
     console.error("Error fetching levered DCF:", error);
@@ -95,18 +105,19 @@ export const fetchCustomDCF = async (
     
     // Format parameters for the FMP API
     const apiParams: any = {
-      revenueGrowthPct: params.revenueGrowthPct,
-      ebitdaPct: params.ebitdaPct,
-      capitalExpenditurePct: params.capitalExpenditurePct,
+      // Convert to proper parameter names expected by FMP API
+      revenueGrowth: params.revenueGrowthPct,
+      ebitdaMargin: params.ebitdaPct,
+      capexPercent: params.capitalExpenditurePct,
       taxRate: params.taxRate,
-      depreciationAndAmortizationPct: params.depreciationAndAmortizationPct,
-      cashAndShortTermInvestmentsPct: params.cashAndShortTermInvestmentsPct,
-      receivablesPct: params.receivablesPct,
-      inventoriesPct: params.inventoriesPct,
-      payablesPct: params.payablesPct,
-      ebitPct: params.ebitPct,
-      operatingCashFlowPct: params.operatingCashFlowPct,
-      sellingGeneralAndAdministrativeExpensesPct: params.sellingGeneralAndAdministrativeExpensesPct,
+      depreciationAndAmortizationPercent: params.depreciationAndAmortizationPct,
+      cashAndShortTermInvestmentsPercent: params.cashAndShortTermInvestmentsPct,
+      receivablesPercent: params.receivablesPct,
+      inventoriesPercent: params.inventoriesPct,
+      payablesPercent: params.payablesPct,
+      ebitPercent: params.ebitPct,
+      operatingCashFlowPercent: params.operatingCashFlowPct,
+      sellingGeneralAndAdministrativeExpensesPercent: params.sellingGeneralAndAdministrativeExpensesPct,
       longTermGrowthRate: params.longTermGrowthRate,
       costOfEquity: params.costOfEquity,
       costOfDebt: params.costOfDebt,
@@ -144,6 +155,12 @@ export const fetchCustomDCF = async (
       throw new Error("Invalid response format from DCF service");
     }
     
+    // Empty array is a valid response from the API, but indicates no data was returned
+    if (data.length === 0) {
+      console.warn(`Received empty array from ${type} DCF API for ${symbol}`);
+      throw new Error("DCF calculation returned no data");
+    }
+    
     console.log(`Received ${data.length} DCF records for ${symbol}`);
     
     // Convert the FMP API response format to our application's expected format
@@ -151,20 +168,20 @@ export const fetchCustomDCF = async (
       year: String(item.year || new Date().getFullYear()),
       symbol: symbol,
       revenue: item.revenue || 0,
-      revenuePercentage: item.revenuePercentage || 0,
+      revenuePercentage: item.revenuePercentage || item.revenueGrowth || 0,
       ebitda: item.ebitda || 0,
-      ebitdaPercentage: item.ebitdaPercentage || 0,
+      ebitdaPercentage: item.ebitdaPercentage || item.ebitdaMargin || 0,
       ebit: item.ebit || 0,
-      ebitPercentage: item.ebitPercentage || 0,
+      ebitPercentage: item.ebitPercentage || item.ebitPercent || 0,
       depreciation: item.depreciation || 0,
       capitalExpenditure: item.capitalExpenditure || 0,
-      capitalExpenditurePercentage: item.capitalExpenditurePercentage || 0,
+      capitalExpenditurePercentage: item.capitalExpenditurePercentage || item.capexPercent || 0,
       price: item.price || item["Stock Price"] || 0,
       beta: item.beta || 0,
       dilutedSharesOutstanding: item.dilutedSharesOutstanding || 0,
-      costofDebt: item.costofDebt || 0,
+      costofDebt: item.costofDebt || item.costOfDebt || 0,
       taxRate: item.taxRate || 0,
-      afterTaxCostOfDebt: item.afterTaxCostOfDebt || 0,
+      afterTaxCostOfDebt: item.afterTaxCostOfDebt || ((item.costofDebt || item.costOfDebt || 0) * (1 - (item.taxRate || 0))),
       riskFreeRate: item.riskFreeRate || 0,
       marketRiskPremium: item.marketRiskPremium || 0,
       costOfEquity: item.costOfEquity || 0,
@@ -186,13 +203,8 @@ export const fetchCustomDCF = async (
       equityValue: item.equityValue || 0,
       equityValuePerShare: item.equityValuePerShare || item.dcf || 0,
       freeCashFlowT1: item.freeCashFlowT1 || 0,
-      operatingCashFlowPercentage: item.operatingCashFlowPercentage || 0
+      operatingCashFlowPercentage: item.operatingCashFlowPercentage || item.operatingCashFlowPercent || 0
     }));
-    
-    // If the array is empty, we'll throw an error rather than using mock data
-    if (transformedData.length === 0) {
-      throw new Error("DCF calculation returned no data");
-    }
     
     return transformedData;
   } catch (error) {

@@ -76,33 +76,56 @@ export const prepareMockDCFData = (financials: any[]) => {
     ? financials.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())[0]
     : null;
   
+  // Get current price or use a default
   const currentPrice = latestFinancial?.price || 100;
+  
+  // Use real financial data if available, otherwise use reasonable defaults
   const revenue = latestFinancial?.revenue || 10000;
-  const operatingIncome = latestFinancial?.operatingIncome || 2000;
-  const netIncome = latestFinancial?.netIncome || 1500;
+  const operatingIncome = latestFinancial?.operatingIncome || revenue * 0.20;
+  const netIncome = latestFinancial?.netIncome || revenue * 0.15;
+  
+  // Generate a reasonable intrinsic value based on PE ratio (15-25x earnings is common)
+  // We'll use 20x as a middle ground
+  const peRatio = 20;
+  const estimatedIntrinsicValue = netIncome > 0 
+    ? (netIncome / (latestFinancial?.sharesOutstanding || 1000000000)) * peRatio
+    : currentPrice * 1.15; // Fallback
+  
+  // Create growth rate estimates (realistic growth tapering)
+  const growthRates = [0.085, 0.08, 0.075, 0.07, 0.065];
+  
+  // Create projected data for 5 years
+  const currentYear = new Date().getFullYear();
   
   return {
-    intrinsicValue: currentPrice * 1.15, // More realistic mock value (15% upside)
+    intrinsicValue: Math.max(estimatedIntrinsicValue, currentPrice * 0.75), // Realistic valuation
     assumptions: {
       growthRate: "8.5% (first 5 years), 3% (terminal)",
       discountRate: "9.5%",
       terminalMultiple: "15x",
       taxRate: "21%"
     },
-    projections: [1, 2, 3, 4, 5].map(year => ({
-      year: `${new Date().getFullYear() + year - 1}`,
-      revenue: revenue * Math.pow(1.085, year),
-      ebit: operatingIncome * Math.pow(1.09, year),
-      fcf: netIncome * 0.8 * Math.pow(1.075, year)
-    })),
+    projections: [1, 2, 3, 4, 5].map(year => {
+      // Apply growth rate with tapering growth (more realistic)
+      const yearIndex = year - 1;
+      const yearGrowth = growthRates[yearIndex] || 0.065;
+      const cumulativeGrowth = Math.pow(1 + yearGrowth, year);
+      
+      return {
+        year: `${currentYear + year - 1}`,
+        revenue: Math.round(revenue * cumulativeGrowth),
+        ebit: Math.round(operatingIncome * cumulativeGrowth),
+        fcf: Math.round(netIncome * 0.8 * cumulativeGrowth)
+      };
+    }),
     sensitivity: {
-      headers: ["", "9.0%", "9.5%", "10.0%", "10.5%", "11.0%"],
+      headers: ["", "8.5%", "9.0%", "9.5%", "10.0%", "10.5%"],
       rows: [
-        { growth: "2.0%", values: [currentPrice * 1.1, currentPrice * 1.05, currentPrice, currentPrice * 0.95, currentPrice * 0.9] },
-        { growth: "2.5%", values: [currentPrice * 1.15, currentPrice * 1.1, currentPrice * 1.05, currentPrice, currentPrice * 0.95] },
-        { growth: "3.0%", values: [currentPrice * 1.2, currentPrice * 1.15, currentPrice * 1.1, currentPrice * 1.05, currentPrice] },
-        { growth: "3.5%", values: [currentPrice * 1.25, currentPrice * 1.2, currentPrice * 1.15, currentPrice * 1.1, currentPrice * 1.05] },
-        { growth: "4.0%", values: [currentPrice * 1.3, currentPrice * 1.25, currentPrice * 1.2, currentPrice * 1.15, currentPrice * 1.1] }
+        { growth: "2.0%", values: [currentPrice * 1.20, currentPrice * 1.15, currentPrice * 1.10, currentPrice * 1.05, currentPrice * 1.00] },
+        { growth: "2.5%", values: [currentPrice * 1.25, currentPrice * 1.20, currentPrice * 1.15, currentPrice * 1.10, currentPrice * 1.05] },
+        { growth: "3.0%", values: [currentPrice * 1.30, currentPrice * 1.25, currentPrice * 1.20, currentPrice * 1.15, currentPrice * 1.10] },
+        { growth: "3.5%", values: [currentPrice * 1.35, currentPrice * 1.30, currentPrice * 1.25, currentPrice * 1.20, currentPrice * 1.15] },
+        { growth: "4.0%", values: [currentPrice * 1.40, currentPrice * 1.35, currentPrice * 1.30, currentPrice * 1.25, currentPrice * 1.20] }
       ]
     }
   };
@@ -124,25 +147,41 @@ export const prepareDCFData = (
   const intrinsicValue = parseFloat(customDCFResult.equityValuePerShare.toString());
   
   // Use calculated/reasonable values or fallback to defaults
-  const growthRateInitial = (assumptions?.assumptions.revenueGrowthPct || customDCFResult.revenuePercentage / 100 || 0.085) * 100;
-  const growthRateTerminal = (assumptions?.assumptions.longTermGrowthRatePct || customDCFResult.longTermGrowthRate || 0.03) * 100;
+  const growthRateInitial = (assumptions?.assumptions.revenueGrowthPct || 
+    (customDCFResult.revenuePercentage ? customDCFResult.revenuePercentage / 100 : null) || 0.085) * 100;
+  
+  const growthRateTerminal = (assumptions?.assumptions.longTermGrowthRatePct || 
+    customDCFResult.longTermGrowthRate || 0.03) * 100;
+  
   const taxRate = (customDCFResult.taxRate || 0.21) * 100;
   const waccPercent = (customDCFResult.wacc || 0.095) * 100;
   
+  // Don't allow negative or extremely high intrinsic values
+  const validIntrinsicValue = isNaN(intrinsicValue) || 
+    intrinsicValue <= 0 || 
+    intrinsicValue > 1000000 ? 100 : intrinsicValue;
+  
+  // Make sure projections are properly sorted by year
+  const sortedProjections = [...projectedData].sort((a, b) => {
+    const yearA = parseInt(a.year) || 0;
+    const yearB = parseInt(b.year) || 0;
+    return yearA - yearB;
+  });
+  
   return {
-    intrinsicValue: isNaN(intrinsicValue) || intrinsicValue <= 0 ? 100 : intrinsicValue,
+    intrinsicValue: validIntrinsicValue,
     assumptions: {
       growthRate: `${growthRateInitial.toFixed(1)}% (first 5 years), ${growthRateTerminal.toFixed(1)}% (terminal)`,
       discountRate: `${waccPercent.toFixed(2)}%`,
       terminalMultiple: "DCF Model",
       taxRate: `${taxRate.toFixed(1)}%`
     },
-    projections: projectedData.map((yearData, index) => ({
+    projections: sortedProjections.map((yearData, index) => ({
       year: yearData.year || `Year ${index + 1}`,
       revenue: yearData.revenue || 0,
       ebit: yearData.ebit || 0,
       fcf: yearData.freeCashFlow || 0
     })),
-    sensitivity: mockSensitivity
+    sensitivity: mockSensitivity // Always use mock sensitivity data since the API doesn't return this
   };
 };

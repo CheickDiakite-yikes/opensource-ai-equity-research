@@ -70,8 +70,8 @@ serve(async (req) => {
         }
         break;
       case "custom-levered":
-        // Custom Levered DCF endpoint - use the correct stable endpoint
-        apiUrl = `https://financialmodelingprep.com/api/v3/valuation/discounted-levered-cash-flow/${symbol}?`;
+        // Custom Levered DCF endpoint - using the stable endpoint
+        apiUrl = `https://financialmodelingprep.com/api/v4/advanced/discounted-levered-cash-flow/${symbol}?`;
         
         // Add all provided parameters to query string
         if (params) {
@@ -84,8 +84,8 @@ serve(async (req) => {
         break;
       case "advanced":
       default:
-        // Custom DCF Advanced endpoint (default) - use the correct stable endpoint
-        apiUrl = `https://financialmodelingprep.com/api/v3/valuation/discounted-cash-flow/${symbol}?`;
+        // Custom DCF Advanced endpoint - using the stable endpoint
+        apiUrl = `https://financialmodelingprep.com/api/v4/advanced/discounted-cash-flow/${symbol}?`;
         
         // Add all provided parameters to query string
         if (params) {
@@ -145,6 +145,90 @@ serve(async (req) => {
     // Parse the API response
     const data = await response.json();
     console.log(`Received DCF data from FMP API for ${symbol}`, data);
+    
+    // For empty responses, try a fallback to v3 endpoint
+    if (Array.isArray(data) && data.length === 0 && (type === "advanced" || type === "custom-levered")) {
+      console.log(`Empty response from v4 API, trying v3 fallback endpoint for ${symbol}`);
+      
+      // Determine v3 fallback URL
+      let fallbackUrl = "";
+      if (type === "custom-levered") {
+        fallbackUrl = `https://financialmodelingprep.com/api/v3/valuation/discounted-levered-cash-flow/${symbol}?`;
+      } else {
+        fallbackUrl = `https://financialmodelingprep.com/api/v3/valuation/discounted-cash-flow/${symbol}?`;
+      }
+      
+      // Add all provided parameters to query string
+      if (params) {
+        Object.entries(params).forEach(([key, value]) => {
+          if (key !== 'symbol' && value !== undefined && value !== null) {
+            fallbackUrl += `&${key}=${value}`;
+          }
+        });
+      }
+      
+      // Add the API key
+      fallbackUrl += `&apikey=${FMP_API_KEY}`;
+      
+      console.log(`Calling FMP fallback API: ${fallbackUrl.replace(FMP_API_KEY, 'API_KEY_HIDDEN')}`);
+      
+      // Fetch data from FMP API fallback
+      const fallbackResponse = await fetch(fallbackUrl);
+      
+      if (!fallbackResponse.ok) {
+        const errorText = await fallbackResponse.text();
+        console.error(`FMP Fallback API Error (${fallbackResponse.status}): ${errorText}`);
+        
+        // If both attempts fail, return original data
+        return new Response(
+          JSON.stringify(data),
+          { 
+            headers: { 
+              ...corsHeaders, 
+              'Content-Type': 'application/json',
+              ...getCacheHeaders(type),
+              'ETag': requestETag,
+              'Last-Modified': new Date().toUTCString()
+            } 
+          }
+        );
+      }
+      
+      // Parse the fallback API response
+      const fallbackData = await fallbackResponse.json();
+      console.log(`Received DCF data from FMP fallback API for ${symbol}`, fallbackData);
+      
+      // Return the fallback DCF data with appropriate caching headers
+      return new Response(
+        JSON.stringify(fallbackData),
+        { 
+          headers: { 
+            ...corsHeaders, 
+            'Content-Type': 'application/json',
+            ...getCacheHeaders(type),
+            'ETag': requestETag,
+            'Last-Modified': new Date().toUTCString()
+          } 
+        }
+      );
+    }
+    
+    // Handle standard DCF response that may be just one object instead of an array
+    if (!Array.isArray(data) && type === "standard") {
+      const standardData = [data]; // Wrap in array for consistent handling
+      return new Response(
+        JSON.stringify(standardData),
+        { 
+          headers: { 
+            ...corsHeaders, 
+            'Content-Type': 'application/json',
+            ...getCacheHeaders(type),
+            'ETag': requestETag,
+            'Last-Modified': new Date().toUTCString()
+          } 
+        }
+      );
+    }
     
     // For custom DCF types, ensure we update the free cash flow values
     if (type === 'advanced' || type === 'custom-levered') {
