@@ -3,8 +3,8 @@ import { useState, useEffect } from "react";
 import { StockPrediction } from "@/types/ai-analysis/predictionTypes";
 import { generateStockPrediction } from "@/services/api/analysis/researchService";
 import { fetchStockQuote } from "@/services/api/profileService";
-import { fetchFinancialStatements } from "@/services/api/financialService";
-import { fetchLatestNews } from "@/services/api/marketDataService";
+import { fetchAllFinancialData } from "@/services/api/financialService";
+import { fetchMarketNews } from "@/services/api/marketData/newsService";
 import { toast } from "@/components/ui/use-toast";
 
 export const useStockPrediction = (symbol: string, autoFetch: boolean = false, quickMode: boolean = true) => {
@@ -20,8 +20,8 @@ export const useStockPrediction = (symbol: string, autoFetch: boolean = false, q
       // Get required data for prediction
       const [quote, financials, news] = await Promise.all([
         fetchStockQuote(symbol),
-        fetchFinancialStatements(symbol),
-        fetchLatestNews(symbol, 5)
+        fetchAllFinancialData(symbol),
+        fetchMarketNews(5, 'general')
       ]);
       
       if (!quote) {
