@@ -38,9 +38,9 @@ export const useDCFCalculation = (symbol: string) => {
       
       // Try to calculate custom DCF first
       try {
-        const result = await calculateCustomDCF(params);
-        if (result) {
-          return { success: true, dcfResult: result.dcfResult };
+        const customResult = await calculateCustomDCF(params);
+        if (customResult) {
+          return { success: true, dcfResult: customResult.dcfResult };
         }
         throw new Error("Custom DCF calculation failed to return valid results");
       } catch (customErr) {
