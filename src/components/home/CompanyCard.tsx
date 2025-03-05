@@ -2,9 +2,7 @@
 import React from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { motion } from "framer-motion";
-import { fetchStockQuote, fetchStockRating } from "@/services/api/profileService";
-import { useQuery } from "@tanstack/react-query";
-import { useStockPrediction } from "@/hooks/useStockPrediction";
+import { useCompanyCardData } from "@/hooks/useCompanyCardData";
 
 // Import our new components
 import CompanyCardHeader from "./card-components/CompanyCardHeader";
@@ -37,39 +35,14 @@ export const itemAnimation = {
 };
 
 const CompanyCard = ({ company, onSelect }: CompanyCardProps) => {
-  const { data: quote, isError: isQuoteError } = useQuery({
-    queryKey: ['stockQuote', company.symbol],
-    queryFn: () => fetchStockQuote(company.symbol),
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    retry: 2,
-  });
-
-  const { data: ratingData, isError: isRatingError } = useQuery({
-    queryKey: ['stockRating', company.symbol],
-    queryFn: () => fetchStockRating(company.symbol),
-    staleTime: 15 * 60 * 1000, // 15 minutes
-    retry: 2,
-  });
-  
-  // Use the prediction hook with autoFetch enabled - set quick mode to true for faster predictions
-  const { 
-    prediction, 
-    isLoading: isPredictionLoading, 
-    error: predictionError, 
-    retry: retryPrediction 
-  } = useStockPrediction(company.symbol, true, true);
-
-  React.useEffect(() => {
-    if (predictionError) {
-      console.error(`Prediction error for ${company.symbol}:`, predictionError);
-      // Auto retry predictions with error once
-      if (company.symbol) {
-        setTimeout(() => {
-          retryPrediction();
-        }, 2000);
-      }
-    }
-  }, [predictionError, company.symbol, retryPrediction]);
+  // Use our custom hook to fetch data
+  const {
+    quote,
+    prediction,
+    isPredictionLoading,
+    isQuoteError,
+    predictionError
+  } = useCompanyCardData(company.symbol);
 
   return (
     <motion.div
