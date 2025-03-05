@@ -1,7 +1,7 @@
 
 import React, { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useCustomDCF } from "@/hooks/useCustomDCF";
+import { useCustomDCF } from "@/hooks/dcf/useCustomDCF";
 import AutomaticDCFSection from "./dcf/AutomaticDCFSection";
 import CustomDCFSection from "./dcf/CustomDCFSection";
 import { DCFType } from "@/services/api/analysis/dcfService";

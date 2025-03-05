@@ -68,10 +68,10 @@ const AutomaticDCFSection: React.FC<AutomaticDCFSectionProps> = ({ financials, s
                   intrinsicValue={dcfData.intrinsicValue}
                   currentPrice={currentPrice}
                   assumptions={{
-                    growthRate: `${(dcfData.assumptions.growthRate * 100).toFixed(1)}%`,
-                    discountRate: `${(dcfData.assumptions.discountRate * 100).toFixed(1)}%`,
+                    growthRate: `${(Number(dcfData.assumptions.growthRate) * 100).toFixed(1)}%`,
+                    discountRate: `${(Number(dcfData.assumptions.discountRate) * 100).toFixed(1)}%`,
                     terminalMultiple: `${dcfData.assumptions.terminalMultiple}x`,
-                    taxRate: `${(dcfData.assumptions.taxRate * 100).toFixed(1)}%`
+                    taxRate: `${(Number(dcfData.assumptions.taxRate) * 100).toFixed(1)}%`
                   }}
                   symbol={symbol}
                 />
