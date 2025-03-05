@@ -1,8 +1,12 @@
+
 import { extractJSONFromText, ensureNumberInRange, ensureArrayWithItems } from "./utils.ts";
 import { FormattedData, StockPrediction, PredictionHistoryEntry } from "./types.ts";
 import { createFallbackPrediction } from "./fallbackGenerator.ts";
 import { validatePrediction } from "./validationService.ts";
 import { getIndustryGrowthContext, getIndustryConstraints, formatMarketCap } from "./industryAnalysis.ts";
+
+// Import default sentiment generator early (moved from the middle of the file)
+import { generateDefaultSentiment, generateDefaultDrivers, generateDefaultRisks } from "./fallbackGenerator.ts";
 
 /**
  * Generates a prediction using OpenAI's API
@@ -240,9 +244,16 @@ function generateConsistentPrediction(data: FormattedData): StockPrediction {
     overallSentiment = "Neutral";
   }
   
-  // Combine key drivers and risks
-  const allKeyDrivers = history.flatMap(p => Array.isArray(p.key_drivers) ? p.key_drivers : []);
-  const allRisks = history.flatMap(p => Array.isArray(p.risks) ? p.risks : []);
+  // Combine key drivers and risks - handle potential non-array values
+  const allKeyDrivers = history.flatMap(p => {
+    if (Array.isArray(p.key_drivers)) return p.key_drivers;
+    return [];
+  });
+  
+  const allRisks = history.flatMap(p => {
+    if (Array.isArray(p.risks)) return p.risks;
+    return [];
+  });
   
   // Count occurrences of each driver and risk
   const driverCounts = countOccurrences(allKeyDrivers);
@@ -466,10 +477,7 @@ function processPredictionResponse(predictionData: any, data: FormattedData): St
   const sixMonthsPredicted = ensureDifferentPrice(sixMonthsBlended, currentPrice, 0.02);
   const oneYearPredicted = ensureDifferentPrice(oneYearBlended, currentPrice, 0.025);
   
-  // Import functions from default sentiment generator if needed
-  import { generateDefaultSentiment, generateDefaultDrivers, generateDefaultRisks } from "./fallbackGenerator.ts";
-  
-  // Build the final prediction
+  // Build the final prediction ensuring arrays for keyDrivers and risks
   const prediction: StockPrediction = {
     symbol: data.symbol,
     currentPrice: data.currentPrice,

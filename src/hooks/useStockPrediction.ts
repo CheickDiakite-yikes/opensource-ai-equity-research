@@ -17,12 +17,12 @@ export interface PredictionHistoryEntry {
   three_month_price: number;
   six_month_price: number;
   one_year_price: number;
-  sentiment_analysis: string;
-  confidence_level: number;
-  key_drivers: string[];
-  risks: string[];
+  sentiment_analysis: string | null;
+  confidence_level: number | null;
+  key_drivers: string[] | any; // Accept any JSON type from database
+  risks: string[] | any; // Accept any JSON type from database
   prediction_date: string;
-  metadata: Record<string, any>;
+  metadata: Record<string, any> | null;
 }
 
 export const useStockPrediction = (symbol: string, autoFetch: boolean = false, quickMode: boolean = true) => {
@@ -48,8 +48,15 @@ export const useStockPrediction = (symbol: string, autoFetch: boolean = false, q
         return [];
       }
       
-      setHistory(data || []);
-      return data || [];
+      // Type cast to ensure compatibility
+      const typedData = data?.map(item => ({
+        ...item,
+        key_drivers: Array.isArray(item.key_drivers) ? item.key_drivers : [],
+        risks: Array.isArray(item.risks) ? item.risks : []
+      })) as PredictionHistoryEntry[];
+      
+      setHistory(typedData || []);
+      return typedData || [];
     } catch (err) {
       console.error(`Error in fetchPredictionHistory for ${symbol}:`, err);
       return [];
@@ -75,7 +82,7 @@ export const useStockPrediction = (symbol: string, autoFetch: boolean = false, q
       if (recentPrediction && !quickMode) {
         console.log(`Using recent prediction for ${symbol} from ${new Date(recentPrediction.prediction_date).toLocaleString()}`);
         
-        // Convert to StockPrediction format
+        // Convert to StockPrediction format with proper type handling
         const formattedPrediction: StockPrediction = {
           symbol: recentPrediction.symbol,
           currentPrice: recentPrediction.current_price,
@@ -87,8 +94,9 @@ export const useStockPrediction = (symbol: string, autoFetch: boolean = false, q
           },
           sentimentAnalysis: recentPrediction.sentiment_analysis || '',
           confidenceLevel: recentPrediction.confidence_level || 75,
-          keyDrivers: recentPrediction.key_drivers || [],
-          risks: recentPrediction.risks || []
+          // Ensure these are arrays
+          keyDrivers: Array.isArray(recentPrediction.key_drivers) ? recentPrediction.key_drivers : [],
+          risks: Array.isArray(recentPrediction.risks) ? recentPrediction.risks : []
         };
         
         setPrediction(formattedPrediction);
