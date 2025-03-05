@@ -60,5 +60,23 @@ export interface RatioData {
   netMargin: number;
 }
 
+// TTM (Trailing Twelve Months) data interface
+export interface TTMData {
+  peRatio?: number;
+  pbRatio?: number;
+  roe?: number;
+  roa?: number;
+  currentRatio?: number;
+  debtToEquity?: number;
+  grossMargin?: number;
+  operatingMargin?: number;
+  netMargin?: number;
+  revenue?: number;
+  grossProfit?: number;
+  operatingIncome?: number;
+  netIncome?: number;
+  eps?: number;
+}
+
 // Remove the KeyRatio interface from here to avoid conflicts
 // Instead, we'll import it from financial/statementTypes.ts where needed
