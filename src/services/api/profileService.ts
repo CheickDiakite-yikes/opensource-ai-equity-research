@@ -1,4 +1,3 @@
-
 import { invokeSupabaseFunction } from "./base";
 import { StockProfile, StockQuote, CompanyExecutive, ExecutiveCompensation } from "@/types";
 
@@ -25,16 +24,52 @@ export const fetchStockProfile = async (symbol: string): Promise<StockProfile | 
  */
 export const fetchStockQuote = async (symbol: string): Promise<StockQuote | null> => {
   try {
-    const data = await invokeSupabaseFunction<StockQuote[]>('get-stock-data', { 
-      symbol, 
-      endpoint: 'quote' 
-    });
+    // Track retry attempts in this closure to limit retry loops
+    let attempts = 0;
+    const maxAttempts = 2;
     
-    if (!data || !Array.isArray(data) || data.length === 0) return null;
-    return data[0] as StockQuote;
+    while (attempts < maxAttempts) {
+      try {
+        attempts++;
+        console.log(`Attempt ${attempts}/${maxAttempts} to fetch stock quote for ${symbol}`);
+        
+        const data = await invokeSupabaseFunction<StockQuote[]>('get-stock-data', { 
+          symbol, 
+          endpoint: 'quote' 
+        });
+        
+        if (!data || !Array.isArray(data) || data.length === 0) {
+          console.warn(`Empty quote data received for ${symbol}`);
+          // If we got an empty array but no error, continue with retry
+          if (attempts < maxAttempts) {
+            await new Promise(resolve => setTimeout(resolve, 1000 * attempts));
+            continue;
+          }
+          
+          // Create placeholder on last attempt
+          return createPlaceholderQuote(symbol);
+        }
+        
+        return data[0] as StockQuote;
+      } catch (err) {
+        console.error(`Error on attempt ${attempts} fetching stock quote:`, err);
+        
+        // Only retry if we haven't hit max attempts
+        if (attempts < maxAttempts) {
+          await new Promise(resolve => setTimeout(resolve, 1000 * attempts));
+          continue;
+        }
+        
+        // Fallback to placeholder on final attempt failure
+        return createPlaceholderQuote(symbol);
+      }
+    }
+    
+    // This should never be reached due to the returns in the loop
+    return createPlaceholderQuote(symbol);
   } catch (error) {
-    console.error("Error fetching stock quote:", error);
-    return null;
+    console.error("Outer error fetching stock quote:", error);
+    return createPlaceholderQuote(symbol);
   }
 };
 
@@ -48,12 +83,45 @@ export const fetchStockRating = async (symbol: string): Promise<{ rating: string
       endpoint: 'rating' 
     });
     
-    if (!data || !Array.isArray(data) || data.length === 0) return null;
+    if (!data || !Array.isArray(data) || data.length === 0) {
+      return { rating: "N/A" };
+    }
+    
     return data[0];
   } catch (error) {
     console.error("Error fetching stock rating:", error);
-    return null;
+    return { rating: "N/A" };
   }
+};
+
+/**
+ * Create a placeholder quote object for fallback when API fails
+ */
+const createPlaceholderQuote = (symbol: string): StockQuote => {
+  return {
+    symbol,
+    name: `${symbol} (Data Unavailable)`,
+    price: 0,
+    change: 0,
+    changesPercentage: 0,
+    dayLow: 0,
+    dayHigh: 0,
+    yearHigh: 0,
+    yearLow: 0,
+    marketCap: 0,
+    priceAvg50: 0,
+    priceAvg200: 0,
+    volume: 0,
+    avgVolume: 0,
+    exchange: "Unknown",
+    open: 0,
+    previousClose: 0,
+    eps: 0,
+    pe: 0,
+    earningsAnnouncement: null,
+    sharesOutstanding: 0,
+    timestamp: 0
+  };
 };
 
 /**

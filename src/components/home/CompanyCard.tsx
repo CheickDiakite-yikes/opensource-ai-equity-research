@@ -40,6 +40,7 @@ const CompanyCard = ({ company, onSelect }: CompanyCardProps) => {
     quote,
     prediction,
     isPredictionLoading,
+    isQuoteLoading,
     isQuoteError,
     predictionError
   } = useCompanyCardData(company.symbol);
@@ -65,7 +66,7 @@ const CompanyCard = ({ company, onSelect }: CompanyCardProps) => {
               <PriceDisplay 
                 price={quote?.price || null}
                 label="Current Price"
-                isLoading={!quote && !isQuoteError}
+                isLoading={isQuoteLoading}
                 error={isQuoteError}
                 iconColor="text-blue-500"
               />
@@ -80,7 +81,7 @@ const CompanyCard = ({ company, onSelect }: CompanyCardProps) => {
             </div>
 
             <div className="flex items-center justify-between">
-              {quote && (
+              {quote && quote.changesPercentage !== 0 && (
                 <TrendIndicator 
                   percentage={quote.changesPercentage} 
                   timeframe="24h" 

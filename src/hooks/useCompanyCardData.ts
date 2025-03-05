@@ -19,7 +19,12 @@ export const useCompanyCardData = (symbol: string) => {
     queryKey: ['stockQuote', symbol],
     queryFn: () => fetchStockQuote(symbol),
     staleTime: 5 * 60 * 1000, // 5 minutes
-    retry: 2,
+    retry: 3,
+    retryDelay: attempt => Math.min(1000 * 2 ** attempt, 10000), // Exponential backoff with max 10s
+    // Disable error throwing to prevent UI errors
+    onError: (error) => {
+      console.error(`Error fetching quote for ${symbol}:`, error);
+    }
   });
 
   // Fetch stock rating data
@@ -31,7 +36,12 @@ export const useCompanyCardData = (symbol: string) => {
     queryKey: ['stockRating', symbol],
     queryFn: () => fetchStockRating(symbol),
     staleTime: 15 * 60 * 1000, // 15 minutes
-    retry: 2,
+    retry: 3,
+    retryDelay: attempt => Math.min(1000 * 2 ** attempt, 10000), // Exponential backoff with max 10s
+    // Silently handle rating errors as they're not critical
+    onError: (error) => {
+      console.warn(`Error fetching rating for ${symbol}:`, error);
+    }
   });
   
   // Use prediction hook with autoFetch and quickMode enabled
@@ -61,8 +71,8 @@ export const useCompanyCardData = (symbol: string) => {
     quote,
     ratingData,
     prediction,
-    isQuoteLoading: isQuoteLoading,
-    isRatingLoading: isRatingLoading,
+    isQuoteLoading,
+    isRatingLoading,
     isPredictionLoading,
     isQuoteError,
     isRatingError,

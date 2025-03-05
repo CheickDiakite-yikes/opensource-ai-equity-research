@@ -21,8 +21,14 @@ export const invokeSupabaseFunction = async <T>(
   try {
     console.log(`Invoking Supabase function: ${functionName} with payload:`, payload);
     
+    // Add timestamp to help prevent caching issues
+    const enhancedPayload = {
+      ...payload,
+      _timestamp: new Date().getTime()
+    };
+    
     const { data, error } = await supabase.functions.invoke(functionName, {
-      body: payload,
+      body: enhancedPayload,
     });
 
     if (error) {
@@ -41,18 +47,26 @@ export const invokeSupabaseFunction = async <T>(
     if (err instanceof Error && err.message.includes('Failed to fetch')) {
       console.error(`Network error calling ${functionName}:`, err);
       
-      // Don't show toast for connection issues as they often happen in development
-      // and can be spammy, but log them clearly
+      // Log the error clearly but don't show a toast for network issues
       console.warn("⚠️ Connection issue detected. Make sure Supabase Edge Functions are deployed.");
       
       throw new Error(`Network error: Could not connect to ${functionName}. Please check your internet connection.`);
     }
     
-    // Show toast for other errors
-    const errorMessage = err instanceof Error ? err.message : String(err);
-    toast.error(`API error: ${errorMessage}`, {
-      duration: 5000,
-    });
+    // Suppress toast for repeated errors (show max once per minute per function)
+    const errorKey = `error_${functionName}_${Math.floor(Date.now() / 60000)}`;
+    const hasShownRecently = sessionStorage.getItem(errorKey);
+    
+    if (!hasShownRecently) {
+      // Show toast for other errors
+      const errorMessage = err instanceof Error ? err.message : String(err);
+      toast.error(`API error: ${errorMessage}`, {
+        duration: 5000,
+      });
+      
+      // Mark that we've shown this error recently
+      sessionStorage.setItem(errorKey, "true");
+    }
     
     throw err;
   }
