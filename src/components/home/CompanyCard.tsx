@@ -81,7 +81,7 @@ const CompanyCard = ({ company, onSelect }: CompanyCardProps) => {
             </div>
 
             <div className="flex items-center justify-between">
-              {quote && quote.changesPercentage !== 0 && (
+              {quote && quote.changesPercentage !== undefined && (
                 <TrendIndicator 
                   percentage={quote.changesPercentage} 
                   timeframe="24h" 

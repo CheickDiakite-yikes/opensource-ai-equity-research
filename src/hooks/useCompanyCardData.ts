@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { fetchStockQuote, fetchStockRating } from "@/services/api/profileService";
 import { useStockPrediction } from "@/hooks/useStockPrediction";
 import { useState, useEffect } from "react";
+import { StockQuote } from "@/types";
 
 /**
  * Custom hook to fetch and manage all data needed for the CompanyCard component
@@ -15,15 +16,16 @@ export const useCompanyCardData = (symbol: string) => {
     data: quote, 
     isLoading: isQuoteLoading,
     isError: isQuoteError 
-  } = useQuery({
+  } = useQuery<StockQuote | null, Error>({
     queryKey: ['stockQuote', symbol],
     queryFn: () => fetchStockQuote(symbol),
     staleTime: 5 * 60 * 1000, // 5 minutes
     retry: 3,
     retryDelay: attempt => Math.min(1000 * 2 ** attempt, 10000), // Exponential backoff with max 10s
-    // Disable error throwing to prevent UI errors
-    onError: (error) => {
-      console.error(`Error fetching quote for ${symbol}:`, error);
+    meta: {
+      errorHandler: (error: Error) => {
+        console.error(`Error fetching quote for ${symbol}:`, error);
+      }
     }
   });
 
@@ -32,15 +34,16 @@ export const useCompanyCardData = (symbol: string) => {
     data: ratingData, 
     isLoading: isRatingLoading,
     isError: isRatingError 
-  } = useQuery({
+  } = useQuery<{ rating: string } | null, Error>({
     queryKey: ['stockRating', symbol],
     queryFn: () => fetchStockRating(symbol),
     staleTime: 15 * 60 * 1000, // 15 minutes
     retry: 3,
     retryDelay: attempt => Math.min(1000 * 2 ** attempt, 10000), // Exponential backoff with max 10s
-    // Silently handle rating errors as they're not critical
-    onError: (error) => {
-      console.warn(`Error fetching rating for ${symbol}:`, error);
+    meta: {
+      errorHandler: (error: Error) => {
+        console.warn(`Error fetching rating for ${symbol}:`, error);
+      }
     }
   });
   
