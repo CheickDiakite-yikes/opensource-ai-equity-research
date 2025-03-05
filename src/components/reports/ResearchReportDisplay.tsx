@@ -49,7 +49,7 @@ const ResearchReportDisplay: React.FC<ResearchReportDisplayProps> = ({ report })
       </div>
       
       {isLowQualityReport && (
-        <Alert variant="warning" className="bg-amber-50 border-amber-200 text-amber-800">
+        <Alert variant="destructive" className="bg-amber-50 border-amber-200 text-amber-800">
           <AlertTriangle className="h-4 w-4" />
           <AlertTitle>Report Quality Notice</AlertTitle>
           <AlertDescription>
