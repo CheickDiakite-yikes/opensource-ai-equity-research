@@ -36,12 +36,13 @@ export const useDCFCalculation = (symbol: string) => {
       const result = await calculateCustomDCF(params);
       
       // Check if result exists and is an object with the success property
-      if (result && typeof result === 'object' && 'success' in result) {
-        return result; // Return the result if it's a valid object with success property
-      }
-      
-      // If result exists but not the expected object format, wrap it in a success object
-      if (result) {
+      if (result && typeof result === 'object') {
+        // If result has a success property, return it
+        if ('success' in result) {
+          return result;
+        }
+        
+        // If result exists but doesn't have success property, wrap it in a success object
         return { success: true };
       }
       
