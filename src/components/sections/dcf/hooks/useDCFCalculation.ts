@@ -37,12 +37,12 @@ export const useDCFCalculation = (symbol: string) => {
       
       // First, check if result exists
       if (!result) {
+        console.warn("No result returned from DCF calculation");
         return { success: false };
       }
       
-      // Then check if it's an object
-      if (typeof result === 'object') {
-        // Now it's safe to check for the 'success' property
+      // Then check if it's an object with 'success' property
+      if (typeof result === 'object' && result !== null) {
         if ('success' in result) {
           return result;
         }

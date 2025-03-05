@@ -1,4 +1,7 @@
 
+/**
+ * Stock Price Prediction
+ */
 export interface StockPrediction {
   symbol: string;
   currentPrice: number;
@@ -12,11 +15,4 @@ export interface StockPrediction {
   confidenceLevel: number;
   keyDrivers: string[];
   risks: string[];
-}
-
-export interface GrowthInsight {
-  type: "positive" | "negative" | "neutral";
-  source: "earnings" | "filing" | "analysis";
-  sourceDate: string;
-  content: string;
 }

@@ -2,14 +2,15 @@
 import { invokeSupabaseFunction } from "../base";
 import { ResearchReport } from "@/types/ai-analysis/reportTypes";
 import { StockPrediction } from "@/types/ai-analysis/predictionTypes";
-import { NewsArticle, StockQuote } from "@/types";
+import { NewsArticle } from "@/types/news/newsTypes";
+import { StockQuote } from "@/types/profile/companyTypes";
 
 /**
  * Generate an AI research report for a company
  */
 export const generateResearchReport = async (reportRequest: any): Promise<ResearchReport> => {
   try {
-    console.log(`Generating research report for ${reportRequest.symbol}`);
+    console.log(`Generating AI research report for ${reportRequest.symbol}`);
     
     const data = await invokeSupabaseFunction<ResearchReport>('generate-research-report', {
       reportRequest
@@ -20,7 +21,7 @@ export const generateResearchReport = async (reportRequest: any): Promise<Resear
       throw new Error("Failed to generate research report");
     }
     
-    console.log(`Research report generated for ${reportRequest.symbol} with ${data.sections?.length || 0} sections`);
+    console.log(`AI research report generated for ${reportRequest.symbol} with ${data.sections?.length || 0} sections`);
     return data;
   } catch (error) {
     console.error("Error generating research report:", error);
@@ -38,7 +39,7 @@ export const generateStockPrediction = async (
   news: NewsArticle[]
 ): Promise<StockPrediction> => {
   try {
-    console.log(`Generating stock prediction for ${symbol}`);
+    console.log(`Generating AI stock prediction for ${symbol}`);
     
     const data = await invokeSupabaseFunction<StockPrediction>('predict-stock-price', {
       symbol,
@@ -52,7 +53,7 @@ export const generateStockPrediction = async (
       throw new Error("Failed to generate stock prediction");
     }
     
-    console.log(`Stock prediction generated for ${symbol}`);
+    console.log(`AI stock prediction generated for ${symbol}`);
     return data;
   } catch (error) {
     console.error("Error generating stock prediction:", error);

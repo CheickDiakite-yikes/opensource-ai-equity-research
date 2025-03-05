@@ -55,7 +55,7 @@ export const useReportGeneration = (symbol: string, data: ReportData) => {
       };
       
       toast({
-        title: "Generating Report",
+        title: "Generating AI Report",
         description: "Creating a detailed AI-powered research report based on real financial data...",
       });
       
@@ -71,8 +71,8 @@ export const useReportGeneration = (symbol: string, data: ReportData) => {
       setReport(generatedReport);
       
       toast({
-        title: "Report Generated",
-        description: `Research report for ${data.profile.companyName} successfully generated with AI analysis of financial data.`,
+        title: "AI Report Generated",
+        description: `Research report for ${data.profile.companyName} successfully generated using AI analysis of real financial data.`,
       });
     } catch (err) {
       console.error("Error generating report:", err);
@@ -109,8 +109,8 @@ export const useReportGeneration = (symbol: string, data: ReportData) => {
       };
       
       toast({
-        title: "Generating Prediction",
-        description: "Analyzing financial data and market trends to predict future prices...",
+        title: "Generating AI Prediction",
+        description: "Analyzing real financial data and market trends using AI to predict future prices...",
       });
       
       const prediction = await generateStockPrediction(
@@ -127,8 +127,8 @@ export const useReportGeneration = (symbol: string, data: ReportData) => {
       setPrediction(prediction);
       
       toast({
-        title: "Prediction Generated",
-        description: "Price prediction has been successfully generated based on AI analysis.",
+        title: "AI Prediction Generated",
+        description: "Price prediction has been successfully generated based on AI analysis of real market data.",
       });
     } catch (err) {
       console.error("Error generating prediction:", err);

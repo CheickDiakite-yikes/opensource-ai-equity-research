@@ -1,44 +1,45 @@
 
-import type { 
-  StockQuote,
-  IncomeStatement,
-  BalanceSheet,
-  CashFlowStatement,
-  KeyRatio,
-  NewsArticle
-} from '../index';
-
-// OpenAI Types
-export interface ReportRequest {
-  symbol: string;
-  companyName: string;
-  sector: string;
-  industry: string;
-  description: string;
-  stockData: StockQuote;
-  financials: {
-    income: IncomeStatement[];
-    balance: BalanceSheet[];
-    cashflow: CashFlowStatement[];
-    ratios: KeyRatio[];
-  };
-  news: NewsArticle[];
-  peers: string[];
-  reportType?: string;
-}
-
+/**
+ * Research Report Section
+ */
 export interface ReportSection {
   title: string;
   content: string;
 }
 
+/**
+ * Rating Details
+ */
 export interface RatingDetails {
-  ratingScale: string;
-  ratingJustification?: string;
+  overallRating: string;
+  financialStrength: string;
+  growthOutlook: string;
+  valuationAttractiveness: string;
+  competitivePosition: string;
 }
 
+/**
+ * Scenario Analysis
+ */
+export interface ScenarioAnalysis {
+  bullCase: {
+    price: string;
+    description: string;
+  };
+  baseCase: {
+    price: string;
+    description: string;
+  };
+  bearCase: {
+    price: string;
+    description: string;
+  };
+}
+
+/**
+ * Research Report
+ */
 export interface ResearchReport {
-  id?: string;
   symbol: string;
   companyName: string;
   date: string;
@@ -47,30 +48,6 @@ export interface ResearchReport {
   summary: string;
   sections: ReportSection[];
   ratingDetails?: RatingDetails;
-  scenarioAnalysis?: {
-    bullCase: {
-      price: string;
-      probability: string;
-      drivers: string[];
-    };
-    baseCase: {
-      price: string;
-      probability: string;
-      drivers: string[];
-    };
-    bearCase: {
-      price: string;
-      probability: string;
-      drivers: string[];
-    };
-  };
-  catalysts?: {
-    positive: string[];
-    negative: string[];
-    timeline?: {
-      shortTerm: string[];
-      mediumTerm: string[];
-      longTerm: string[];
-    };
-  };
+  scenarioAnalysis?: ScenarioAnalysis;
+  catalysts?: string[];
 }
