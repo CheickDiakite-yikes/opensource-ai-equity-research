@@ -124,3 +124,30 @@ export interface CustomDCFResult {
   freeCashFlowT1: number;
   operatingCashFlowPercentage: number;
 }
+
+// New types for better type safety
+
+// DCF Sensitivity Analysis data structure
+export interface DCFSensitivityData {
+  headers: string[];
+  rows: Array<{
+    growth: string;
+    values: number[];
+  }>;
+}
+
+// DCF Assumptions Summary for display
+export interface DCFAssumptionsSummary {
+  growthRate: string;
+  discountRate: string;
+  terminalMultiple: string;
+  taxRate: string;
+}
+
+// Combined DCF data structure returned by utility functions
+export interface FormattedDCFData {
+  intrinsicValue: number;
+  assumptions: DCFAssumptionsSummary;
+  projections: YearlyDCFData[];
+  sensitivity: DCFSensitivityData;
+}

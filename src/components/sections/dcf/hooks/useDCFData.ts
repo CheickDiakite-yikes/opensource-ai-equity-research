@@ -4,7 +4,7 @@ import { useCustomDCF } from "@/hooks/dcf/useCustomDCF";
 import { useAIDCFAssumptions } from "@/hooks/dcf/useAIDCFAssumptions";
 import { convertAssumptionsToParams, prepareMockDCFData, prepareDCFData } from "../utils/dcfDataUtils";
 import { toast } from "@/components/ui/use-toast";
-import { AIDCFSuggestion, YearlyDCFData } from "@/types/ai-analysis/dcfTypes";
+import { AIDCFSuggestion, YearlyDCFData, FormattedDCFData } from "@/types/ai-analysis/dcfTypes";
 
 export const useDCFData = (symbol: string, financials: any[]) => {
   // Custom hooks
@@ -98,13 +98,9 @@ export const useDCFData = (symbol: string, financials: any[]) => {
     usingMockData;
 
   // Determine which data to use (real or mock)
-  const dcfData = getDCFData(
-    shouldUseMockData,
-    mockDCFData,
-    customDCFResult,
-    assumptions,
-    projectedData
-  );
+  const dcfData: FormattedDCFData = shouldUseMockData
+    ? mockDCFData
+    : prepareDCFData(customDCFResult, assumptions, projectedData, mockDCFData.sensitivity);
 
   return {
     dcfData,
@@ -147,11 +143,11 @@ const collectErrors = (
   const newErrors: string[] = [];
   
   if (assumptionsError) {
-    newErrors.push(`AI Assumptions Error: ${assumptionsError.message || assumptionsError}`);
+    newErrors.push(`AI Assumptions Error: ${assumptionsError.message || String(assumptionsError)}`);
   }
   
   if (dcfError) {
-    newErrors.push(`DCF Calculation Error: ${dcfError.message || dcfError}`);
+    newErrors.push(`DCF Calculation Error: ${dcfError.message || String(dcfError)}`);
   }
   
   setErrors(newErrors);
@@ -187,19 +183,4 @@ const handleRefreshError = (
     description: "Failed to refresh DCF assumptions. Using estimated values instead.",
     variant: "destructive",
   });
-};
-
-/**
- * Determine which DCF data to use
- */
-const getDCFData = (
-  shouldUseMockData: boolean,
-  mockDCFData: any,
-  customDCFResult: any,
-  assumptions: AIDCFSuggestion | null,
-  projectedData: YearlyDCFData[]
-) => {
-  return shouldUseMockData 
-    ? mockDCFData 
-    : prepareDCFData(customDCFResult, assumptions, projectedData, mockDCFData.sensitivity);
 };
