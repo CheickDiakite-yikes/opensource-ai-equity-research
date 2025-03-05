@@ -1,5 +1,5 @@
 
-import { AIDCFSuggestion, CustomDCFParams, CustomDCFResult } from "@/types/ai-analysis/dcfTypes";
+import { AIDCFSuggestion, CustomDCFParams, CustomDCFResult, YearlyDCFData } from "@/types/ai-analysis/dcfTypes";
 
 // Convert AI assumptions to CustomDCFParams
 export const convertAssumptionsToParams = (
@@ -97,6 +97,30 @@ export const prepareMockDCFData = (financials: any[]) => {
   // Create projected data for 5 years
   const currentYear = new Date().getFullYear();
   
+  // Fix: Make mock projections match YearlyDCFData interface
+  const mockProjections: YearlyDCFData[] = [1, 2, 3, 4, 5].map(year => {
+    // Apply growth rate with tapering growth (more realistic)
+    const yearIndex = year - 1;
+    const yearGrowth = growthRates[yearIndex] || 0.065;
+    const cumulativeGrowth = Math.pow(1 + yearGrowth, year);
+    
+    // Estimated values based on revenue
+    const mockRevenue = Math.round(revenue * cumulativeGrowth);
+    const mockEbit = Math.round(operatingIncome * cumulativeGrowth);
+    const mockEbitda = Math.round(mockEbit * 1.2); // Approximate EBITDA
+    const mockFcf = Math.round(netIncome * 0.8 * cumulativeGrowth);
+    
+    return {
+      year: `${currentYear + year - 1}`,
+      revenue: mockRevenue,
+      ebit: mockEbit,
+      ebitda: mockEbitda,
+      freeCashFlow: mockFcf,
+      operatingCashFlow: mockFcf * 1.25, // Approximate operating cash flow
+      capitalExpenditure: mockFcf * -0.25 // Approximate capex (negative)
+    };
+  });
+  
   return {
     intrinsicValue: Math.max(estimatedIntrinsicValue, currentPrice * 0.75), // Realistic valuation
     assumptions: {
@@ -105,19 +129,7 @@ export const prepareMockDCFData = (financials: any[]) => {
       terminalMultiple: "15x",
       taxRate: "21%"
     },
-    projections: [1, 2, 3, 4, 5].map(year => {
-      // Apply growth rate with tapering growth (more realistic)
-      const yearIndex = year - 1;
-      const yearGrowth = growthRates[yearIndex] || 0.065;
-      const cumulativeGrowth = Math.pow(1 + yearGrowth, year);
-      
-      return {
-        year: `${currentYear + year - 1}`,
-        revenue: Math.round(revenue * cumulativeGrowth),
-        ebit: Math.round(operatingIncome * cumulativeGrowth),
-        fcf: Math.round(netIncome * 0.8 * cumulativeGrowth)
-      };
-    }),
+    projections: mockProjections,
     sensitivity: {
       headers: ["", "8.5%", "9.0%", "9.5%", "10.0%", "10.5%"],
       rows: [
@@ -135,7 +147,7 @@ export const prepareMockDCFData = (financials: any[]) => {
 export const prepareDCFData = (
   customDCFResult: CustomDCFResult | null,
   assumptions: AIDCFSuggestion | null,
-  projectedData: any[],
+  projectedData: YearlyDCFData[],
   mockSensitivity: any
 ) => {
   // Return mock data if DCF result is null
@@ -161,12 +173,20 @@ export const prepareDCFData = (
     intrinsicValue <= 0 || 
     intrinsicValue > 1000000 ? 100 : intrinsicValue;
   
-  // Make sure projections are properly sorted by year
-  const sortedProjections = [...projectedData].sort((a, b) => {
+  // Make sure projections are properly sorted by year and include all required fields
+  const sortedProjections: YearlyDCFData[] = [...projectedData].sort((a, b) => {
     const yearA = parseInt(a.year) || 0;
     const yearB = parseInt(b.year) || 0;
     return yearA - yearB;
-  });
+  }).map(yearData => ({
+    year: yearData.year || `Year`,
+    revenue: yearData.revenue || 0,
+    ebit: yearData.ebit || 0,
+    ebitda: yearData.ebitda || 0,
+    freeCashFlow: yearData.freeCashFlow || 0,
+    operatingCashFlow: yearData.operatingCashFlow || 0,
+    capitalExpenditure: yearData.capitalExpenditure || 0
+  }));
   
   return {
     intrinsicValue: validIntrinsicValue,
@@ -176,12 +196,7 @@ export const prepareDCFData = (
       terminalMultiple: "DCF Model",
       taxRate: `${taxRate.toFixed(1)}%`
     },
-    projections: sortedProjections.map((yearData, index) => ({
-      year: yearData.year || `Year ${index + 1}`,
-      revenue: yearData.revenue || 0,
-      ebit: yearData.ebit || 0,
-      fcf: yearData.freeCashFlow || 0
-    })),
+    projections: sortedProjections,
     sensitivity: mockSensitivity // Always use mock sensitivity data since the API doesn't return this
   };
 };
