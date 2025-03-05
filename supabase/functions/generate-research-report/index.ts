@@ -1,6 +1,7 @@
 
 import { corsHeaders } from '../_shared/cors.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.36.0';
+import { API_BASE_URLS, OPENAI_MODELS, OPENAI_API_KEY } from '../_shared/constants.ts';
 
 const supabaseUrl = Deno.env.get("SUPABASE_URL") || "";
 const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY") || "";
@@ -13,6 +14,49 @@ interface ReportSection {
   content: string;
 }
 
+interface RatingDetails {
+  overallRating: string;
+  financialStrength: string;
+  growthOutlook: string;
+  valuationAttractiveness: string;
+  competitivePosition: string;
+  ratingScale?: string;
+  ratingJustification?: string;
+}
+
+interface ScenarioAnalysis {
+  bullCase: { 
+    price: string; 
+    description: string; 
+    probability?: string;
+    drivers?: string[];
+  };
+  baseCase: { 
+    price: string; 
+    description: string; 
+    probability?: string;
+    drivers?: string[];
+  };
+  bearCase: { 
+    price: string; 
+    description: string; 
+    probability?: string;
+    drivers?: string[];
+  };
+}
+
+interface CatalystTimeline {
+  shortTerm?: string[];
+  mediumTerm?: string[];
+  longTerm?: string[];
+}
+
+interface GrowthCatalysts {
+  positive?: string[];
+  negative?: string[];
+  timeline?: CatalystTimeline;
+}
+
 interface ResearchReport {
   symbol: string;
   companyName: string;
@@ -21,19 +65,9 @@ interface ResearchReport {
   targetPrice: string;
   summary: string;
   sections: ReportSection[];
-  ratingDetails?: {
-    overallRating: string;
-    financialStrength: string;
-    growthOutlook: string;
-    valuationAttractiveness: string;
-    competitivePosition: string;
-  };
-  scenarioAnalysis?: {
-    bullCase: { price: string; description: string; };
-    baseCase: { price: string; description: string; };
-    bearCase: { price: string; description: string; };
-  };
-  catalysts?: string[];
+  ratingDetails?: RatingDetails;
+  scenarioAnalysis?: ScenarioAnalysis;
+  catalysts?: GrowthCatalysts;
 }
 
 Deno.serve(async (req) => {
@@ -198,7 +232,14 @@ Your report should include:
 - Concise executive summary
 - Data-driven analysis in each section
 
-Format as a detailed JSON object matching the expected ResearchReport interface.`;
+You MUST follow this output format precisely:
+1. Use the exact ResearchReport interface structure required by the app
+2. The 'ratingDetails' should include: overallRating, financialStrength, growthOutlook, valuationAttractiveness, competitivePosition, ratingScale, and ratingJustification
+3. The 'scenarioAnalysis' must include bullCase, baseCase, and bearCase with: price, description, probability, and drivers fields
+4. The 'catalysts' should include positive, negative, and a timeline with shortTerm, mediumTerm, and longTerm arrays
+5. Make sure all fields are properly formatted as strings or arrays as required
+
+Format as a detailed JSON object matching the interface structure.`;
 
   const userPrompt = `Please analyze this company and create a detailed research report:
 
@@ -223,21 +264,32 @@ Based on this data, create a comprehensive research report including:
 2. Target price
 3. Summary of investment thesis
 4. Detailed analysis in each required section
-5. Rating details (financial strength, growth outlook, valuation, competitive position)
-6. Scenario analysis (bull, base, bear cases)
-7. Key catalysts
+5. Rating details:
+   - overallRating, financialStrength, growthOutlook, valuationAttractiveness, competitivePosition
+   - ratingScale (e.g., "1-5 with 5 being highest")
+   - ratingJustification
+6. Scenario analysis:
+   - bullCase, baseCase, bearCase each with:
+   - price (target price in each scenario)
+   - description (brief explanation of the scenario)
+   - probability (likelihood as percentage string)
+   - drivers (array of key factors that would drive this scenario)
+7. Growth catalysts:
+   - positive (array of positive growth drivers)
+   - negative (array of risks or negative factors)
+   - timeline with shortTerm, mediumTerm, longTerm arrays
 
 Ensure all financial analysis and projections are grounded in the data provided.`;
 
   try {
-    const response = await fetch("https://api.openai.com/v1/chat/completions", {
+    const response = await fetch(API_BASE_URLS.OPENAI + "/chat/completions", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         "Authorization": `Bearer ${openAIApiKey}`
       },
       body: JSON.stringify({
-        model: "gpt-4o-mini",
+        model: OPENAI_MODELS.DEFAULT,
         messages: [
           { role: "system", content: systemPrompt },
           { role: "user", content: userPrompt }
@@ -265,7 +317,7 @@ Ensure all financial analysis and projections are grounded in the data provided.
       // Try to parse directly if the response is already JSON
       const reportData = extractJSONFromText(content);
       
-      // Ensure it has the required fields
+      // Ensure the report structure matches our interface
       const finalReport: ResearchReport = {
         symbol: data.symbol,
         companyName: data.companyName,
@@ -274,9 +326,50 @@ Ensure all financial analysis and projections are grounded in the data provided.
         targetPrice: reportData.targetPrice || `$${(data.currentPrice * 1.1).toFixed(2)}`,
         summary: reportData.summary || reportData.executive_summary || "",
         sections: reportData.sections || [],
-        ratingDetails: reportData.ratingDetails || reportData.rating_details,
-        scenarioAnalysis: reportData.scenarioAnalysis || reportData.scenario_analysis,
-        catalysts: reportData.catalysts || []
+        
+        // Ensure ratingDetails has the correct structure
+        ratingDetails: reportData.ratingDetails ? {
+          overallRating: reportData.ratingDetails.overallRating || "Neutral",
+          financialStrength: reportData.ratingDetails.financialStrength || "Adequate",
+          growthOutlook: reportData.ratingDetails.growthOutlook || "Stable",
+          valuationAttractiveness: reportData.ratingDetails.valuationAttractiveness || "Fair",
+          competitivePosition: reportData.ratingDetails.competitivePosition || "Average",
+          ratingScale: reportData.ratingDetails.ratingScale || "1-5 scale (5 is highest)",
+          ratingJustification: reportData.ratingDetails.ratingJustification || ""
+        } : undefined,
+        
+        // Ensure scenarioAnalysis has the correct structure with required fields
+        scenarioAnalysis: reportData.scenarioAnalysis ? {
+          bullCase: {
+            price: reportData.scenarioAnalysis.bullCase?.price || `$${(data.currentPrice * 1.2).toFixed(2)}`,
+            description: reportData.scenarioAnalysis.bullCase?.description || "Optimistic scenario",
+            probability: reportData.scenarioAnalysis.bullCase?.probability || "25%",
+            drivers: reportData.scenarioAnalysis.bullCase?.drivers || []
+          },
+          baseCase: {
+            price: reportData.scenarioAnalysis.baseCase?.price || `$${(data.currentPrice * 1.05).toFixed(2)}`,
+            description: reportData.scenarioAnalysis.baseCase?.description || "Most likely scenario",
+            probability: reportData.scenarioAnalysis.baseCase?.probability || "50%",
+            drivers: reportData.scenarioAnalysis.baseCase?.drivers || []
+          },
+          bearCase: {
+            price: reportData.scenarioAnalysis.bearCase?.price || `$${(data.currentPrice * 0.9).toFixed(2)}`,
+            description: reportData.scenarioAnalysis.bearCase?.description || "Pessimistic scenario",
+            probability: reportData.scenarioAnalysis.bearCase?.probability || "25%",
+            drivers: reportData.scenarioAnalysis.bearCase?.drivers || []
+          }
+        } : undefined,
+        
+        // Ensure catalysts has the correct structure
+        catalysts: reportData.catalysts ? {
+          positive: reportData.catalysts.positive || [],
+          negative: reportData.catalysts.negative || [],
+          timeline: reportData.catalysts.timeline ? {
+            shortTerm: reportData.catalysts.timeline.shortTerm || [],
+            mediumTerm: reportData.catalysts.timeline.mediumTerm || [],
+            longTerm: reportData.catalysts.timeline.longTerm || []
+          } : undefined
+        } : undefined
       };
       
       return finalReport;
@@ -373,7 +466,45 @@ function createFallbackReport(data: any): ResearchReport {
         title: "ESG Considerations",
         content: `${data.companyName}, like other companies in the ${data.industry} industry, faces various environmental, social, and governance challenges. Without specific ESG data, we cannot provide a detailed assessment of the company's ESG performance.`
       }
-    ]
+    ],
+    ratingDetails: {
+      overallRating: "Neutral",
+      financialStrength: "Adequate",
+      growthOutlook: "Stable",
+      valuationAttractiveness: "Fair",
+      competitivePosition: "Average",
+      ratingScale: "1-5 scale (5 is highest)",
+      ratingJustification: "This rating is based on a balanced assessment of the company's financial position, market opportunity, and competitive landscape."
+    },
+    scenarioAnalysis: {
+      bullCase: {
+        price: `$${(targetPrice * 1.2).toFixed(2)}`,
+        description: "In an optimistic scenario, the company exceeds growth expectations.",
+        probability: "25%",
+        drivers: ["Market expansion", "Margin improvement", "New product success"]
+      },
+      baseCase: {
+        price: `$${targetPrice.toFixed(2)}`,
+        description: "Our base case assumes steady growth in line with the sector average.",
+        probability: "50%",
+        drivers: ["Continued market presence", "Stable margins", "Moderate growth"]
+      },
+      bearCase: {
+        price: `$${(targetPrice * 0.8).toFixed(2)}`,
+        description: "In a pessimistic scenario, the company faces increased competition and margin pressure.",
+        probability: "25%",
+        drivers: ["Competitive pressure", "Margin erosion", "Slowing growth"]
+      }
+    },
+    catalysts: {
+      positive: ["Industry growth", "Cost optimization", "Innovation potential"],
+      negative: ["Competitive threats", "Regulatory changes", "Economic slowdown"],
+      timeline: {
+        shortTerm: ["Quarterly earnings", "Product launches"],
+        mediumTerm: ["Market expansion", "Margin improvement initiatives"],
+        longTerm: ["Industry consolidation", "Long-term strategic goals"]
+      }
+    }
   };
 }
 

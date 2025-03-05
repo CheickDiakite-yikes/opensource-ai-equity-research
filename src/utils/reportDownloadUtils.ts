@@ -1,7 +1,6 @@
 
 import { toast } from "@/components/ui/use-toast";
-import { ResearchReport } from "@/types";
-import { generateReportHTML } from "@/lib/utils";
+import { ResearchReport, RatingDetails, ScenarioAnalysis, GrowthCatalysts } from "@/types/ai-analysis/reportTypes";
 
 /**
  * Generates and downloads a research report as an HTML file
@@ -28,7 +27,7 @@ export const downloadReportAsHTML = (report: ResearchReport) => {
           <p class="price-target">${report.targetPrice}</p>
         </div>
         
-        ${report.ratingDetails ? 
+        ${report.ratingDetails && report.ratingDetails.ratingScale ? 
           `<div class="rating-item">
             <h3>Rating Scale</h3>
             <p>${report.ratingDetails.ratingScale}</p>
@@ -53,7 +52,7 @@ export const downloadReportAsHTML = (report: ResearchReport) => {
         <div class="scenario bull">
           <h3>Bull Case: ${report.scenarioAnalysis.bullCase?.price || "N/A"}</h3>
           <p>Probability: ${report.scenarioAnalysis.bullCase?.probability || "N/A"}</p>
-          ${report.scenarioAnalysis.bullCase?.drivers?.length ? 
+          ${report.scenarioAnalysis.bullCase?.drivers && report.scenarioAnalysis.bullCase.drivers.length ? 
             `<div class="drivers">
               <h4>Key Drivers:</h4>
               <ul>${report.scenarioAnalysis.bullCase.drivers.map(d => `<li>${d}</li>`).join('')}</ul>
@@ -64,7 +63,7 @@ export const downloadReportAsHTML = (report: ResearchReport) => {
         <div class="scenario base">
           <h3>Base Case: ${report.scenarioAnalysis.baseCase?.price || "N/A"}</h3>
           <p>Probability: ${report.scenarioAnalysis.baseCase?.probability || "N/A"}</p>
-          ${report.scenarioAnalysis.baseCase?.drivers?.length ? 
+          ${report.scenarioAnalysis.baseCase?.drivers && report.scenarioAnalysis.baseCase.drivers.length ? 
             `<div class="drivers">
               <h4>Key Drivers:</h4>
               <ul>${report.scenarioAnalysis.baseCase.drivers.map(d => `<li>${d}</li>`).join('')}</ul>
@@ -75,7 +74,7 @@ export const downloadReportAsHTML = (report: ResearchReport) => {
         <div class="scenario bear">
           <h3>Bear Case: ${report.scenarioAnalysis.bearCase?.price || "N/A"}</h3>
           <p>Probability: ${report.scenarioAnalysis.bearCase?.probability || "N/A"}</p>
-          ${report.scenarioAnalysis.bearCase?.drivers?.length ? 
+          ${report.scenarioAnalysis.bearCase?.drivers && report.scenarioAnalysis.bearCase.drivers.length ? 
             `<div class="drivers">
               <h4>Key Drivers:</h4>
               <ul>${report.scenarioAnalysis.bearCase.drivers.map(d => `<li>${d}</li>`).join('')}</ul>
@@ -91,14 +90,14 @@ export const downloadReportAsHTML = (report: ResearchReport) => {
       <div class="section catalysts">
         <h2>Growth Catalysts & Inhibitors</h2>
         
-        ${report.catalysts.positive?.length ? 
+        ${report.catalysts.positive && report.catalysts.positive.length ? 
           `<div class="positive-catalysts">
             <h3>Positive Catalysts</h3>
             <ul>${report.catalysts.positive.map(c => `<li>${c}</li>`).join('')}</ul>
           </div>` : ''
         }
         
-        ${report.catalysts.negative?.length ? 
+        ${report.catalysts.negative && report.catalysts.negative.length ? 
           `<div class="negative-catalysts">
             <h3>Negative Catalysts</h3>
             <ul>${report.catalysts.negative.map(c => `<li>${c}</li>`).join('')}</ul>
@@ -109,21 +108,21 @@ export const downloadReportAsHTML = (report: ResearchReport) => {
           `<div class="catalysts-timeline">
             <h3>Timeline of Expected Catalysts</h3>
             
-            ${report.catalysts.timeline.shortTerm?.length ? 
+            ${report.catalysts.timeline.shortTerm && report.catalysts.timeline.shortTerm.length ? 
               `<div class="timeline-section">
                 <h4>Short-term</h4>
                 <ul>${report.catalysts.timeline.shortTerm.map(c => `<li>${c}</li>`).join('')}</ul>
               </div>` : ''
             }
             
-            ${report.catalysts.timeline.mediumTerm?.length ? 
+            ${report.catalysts.timeline.mediumTerm && report.catalysts.timeline.mediumTerm.length ? 
               `<div class="timeline-section">
                 <h4>Medium-term</h4>
                 <ul>${report.catalysts.timeline.mediumTerm.map(c => `<li>${c}</li>`).join('')}</ul>
               </div>` : ''
             }
             
-            ${report.catalysts.timeline.longTerm?.length ? 
+            ${report.catalysts.timeline.longTerm && report.catalysts.timeline.longTerm.length ? 
               `<div class="timeline-section">
                 <h4>Long-term</h4>
                 <ul>${report.catalysts.timeline.longTerm.map(c => `<li>${c}</li>`).join('')}</ul>
@@ -148,7 +147,9 @@ export const downloadReportAsHTML = (report: ResearchReport) => {
     content += `
       <div class="section rating-details">
         <h2>Rating and Recommendation</h2>
-        <p><strong>Rating Scale:</strong> ${report.ratingDetails.ratingScale}</p>
+        ${report.ratingDetails.ratingScale ? 
+          `<p><strong>Rating Scale:</strong> ${report.ratingDetails.ratingScale}</p>` : ''
+        }
         <p><strong>Recommendation:</strong> ${report.recommendation}</p>
         ${report.ratingDetails.ratingJustification ? 
           `<p><strong>Justification:</strong> ${report.ratingDetails.ratingJustification}</p>` : ''

@@ -60,7 +60,9 @@ export const ReportSectionsList: React.FC<ReportSectionsListProps> = ({
       <div className="space-y-3">
         <div className="flex items-center gap-2">
           <Star className="h-4 w-4 text-amber-500" />
-          <span className="font-medium">Rating Scale: {report.ratingDetails.ratingScale}</span>
+          {report.ratingDetails.ratingScale && (
+            <span className="font-medium">Rating Scale: {report.ratingDetails.ratingScale}</span>
+          )}
         </div>
         <div className="flex items-center gap-2">
           <span className="font-medium">Recommendation: {report.recommendation}</span>

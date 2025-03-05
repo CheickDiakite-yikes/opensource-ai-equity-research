@@ -6,10 +6,10 @@ import {
   Clock,
   CalendarRange
 } from "lucide-react";
-import { ResearchReport } from "@/types/ai-analysis/reportTypes";
+import { GrowthCatalysts as GrowthCatalystsType } from "@/types/ai-analysis/reportTypes";
 
 interface GrowthCatalystsProps {
-  catalysts: ResearchReport["catalysts"];
+  catalysts: GrowthCatalystsType | undefined;
 }
 
 export const GrowthCatalysts: React.FC<GrowthCatalystsProps> = ({ catalysts }) => {

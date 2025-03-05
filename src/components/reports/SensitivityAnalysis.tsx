@@ -2,10 +2,10 @@
 import React from "react";
 import { TrendingUp, TrendingDown, Activity } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
-import { ResearchReport } from "@/types";
+import { ScenarioAnalysis } from "@/types/ai-analysis/reportTypes";
 
 interface SensitivityAnalysisProps {
-  scenarioAnalysis: ResearchReport["scenarioAnalysis"];
+  scenarioAnalysis: ScenarioAnalysis | undefined;
   expandedScenarios: string | null;
   toggleScenario: (scenario: string) => void;
 }
@@ -41,11 +41,11 @@ export const SensitivityAnalysis: React.FC<SensitivityAnalysisProps> = ({
           indicatorClassName="bg-green-600" 
         />
         
-        {expandedScenarios === 'bull' && (
+        {expandedScenarios === 'bull' && scenarioAnalysis.bullCase?.drivers && (
           <div className="mt-2 p-3 bg-green-50 rounded-md">
             <p className="text-sm font-medium text-green-800 mb-1">Key Drivers:</p>
             <ul className="text-sm list-disc pl-5 text-green-700 space-y-1">
-              {scenarioAnalysis.bullCase?.drivers?.map((driver, idx) => (
+              {scenarioAnalysis.bullCase.drivers.map((driver, idx) => (
                 <li key={idx}>{driver}</li>
               ))}
             </ul>
@@ -75,11 +75,11 @@ export const SensitivityAnalysis: React.FC<SensitivityAnalysisProps> = ({
           indicatorClassName="bg-blue-600" 
         />
         
-        {expandedScenarios === 'base' && (
+        {expandedScenarios === 'base' && scenarioAnalysis.baseCase?.drivers && (
           <div className="mt-2 p-3 bg-blue-50 rounded-md">
             <p className="text-sm font-medium text-blue-800 mb-1">Key Drivers:</p>
             <ul className="text-sm list-disc pl-5 text-blue-700 space-y-1">
-              {scenarioAnalysis.baseCase?.drivers?.map((driver, idx) => (
+              {scenarioAnalysis.baseCase.drivers.map((driver, idx) => (
                 <li key={idx}>{driver}</li>
               ))}
             </ul>
@@ -109,11 +109,11 @@ export const SensitivityAnalysis: React.FC<SensitivityAnalysisProps> = ({
           indicatorClassName="bg-red-600" 
         />
         
-        {expandedScenarios === 'bear' && (
+        {expandedScenarios === 'bear' && scenarioAnalysis.bearCase?.drivers && (
           <div className="mt-2 p-3 bg-red-50 rounded-md">
             <p className="text-sm font-medium text-red-800 mb-1">Key Drivers:</p>
             <ul className="text-sm list-disc pl-5 text-red-700 space-y-1">
-              {scenarioAnalysis.bearCase?.drivers?.map((driver, idx) => (
+              {scenarioAnalysis.bearCase.drivers.map((driver, idx) => (
                 <li key={idx}>{driver}</li>
               ))}
             </ul>

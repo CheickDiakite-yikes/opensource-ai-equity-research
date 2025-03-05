@@ -6,9 +6,7 @@ import {
   generateStockPrediction
 } from "@/services/api";
 
-import type { 
-  ReportRequest,
-} from "@/types/aiAnalysisTypes";
+import { ReportRequest } from "@/types/ai-analysis/reportTypes";
 import type { NewsArticle } from "@/types/news/newsTypes";
 import type { StockQuote } from "@/types/profile/companyTypes";
 import { ResearchReport } from "@/types/ai-analysis/reportTypes";

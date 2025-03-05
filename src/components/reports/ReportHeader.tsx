@@ -61,7 +61,7 @@ export const ReportHeader: React.FC<ReportHeaderProps> = ({
         </div>
         
         {/* Rating Details if available */}
-        {ratingDetails && (
+        {ratingDetails && ratingDetails.ratingScale && (
           <div className="p-3 border rounded-lg flex-1">
             <span className="text-xs text-muted-foreground block mb-1">Rating Scale</span>
             <span className="text-sm font-medium">{ratingDetails.ratingScale}</span>
