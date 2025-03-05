@@ -74,10 +74,10 @@ export const prepareMockDCFData = (financials: any[]) => {
   const currentPrice = financials[0]?.price || 100;
   
   return {
-    intrinsicValue: financials[0]?.price ? (financials[0].price * 1.2) : 100,
+    intrinsicValue: currentPrice * 1.15, // More realistic mock value (15% upside)
     assumptions: {
       growthRate: "8.5% (first 5 years), 3% (terminal)",
-      discountRate: "10.5%",
+      discountRate: "9.5%",
       terminalMultiple: "15x",
       taxRate: "21%"
     },
@@ -88,13 +88,13 @@ export const prepareMockDCFData = (financials: any[]) => {
       fcf: financials[0]?.netIncome ? (financials[0].netIncome * 0.8 * Math.pow(1.075, year)) : 1500 * Math.pow(1.075, year)
     })),
     sensitivity: {
-      headers: ["", "9.5%", "10.0%", "10.5%", "11.0%", "11.5%"],
+      headers: ["", "9.0%", "9.5%", "10.0%", "10.5%", "11.0%"],
       rows: [
-        { growth: "2.0%", values: [95, 90, 85, 80, 75] },
-        { growth: "2.5%", values: [100, 95, 90, 85, 80] },
-        { growth: "3.0%", values: [105, 100, 95, 90, 85] },
-        { growth: "3.5%", values: [110, 105, 100, 95, 90] },
-        { growth: "4.0%", values: [115, 110, 105, 100, 95] }
+        { growth: "2.0%", values: [currentPrice * 1.1, currentPrice * 1.05, currentPrice, currentPrice * 0.95, currentPrice * 0.9] },
+        { growth: "2.5%", values: [currentPrice * 1.15, currentPrice * 1.1, currentPrice * 1.05, currentPrice, currentPrice * 0.95] },
+        { growth: "3.0%", values: [currentPrice * 1.2, currentPrice * 1.15, currentPrice * 1.1, currentPrice * 1.05, currentPrice] },
+        { growth: "3.5%", values: [currentPrice * 1.25, currentPrice * 1.2, currentPrice * 1.15, currentPrice * 1.1, currentPrice * 1.05] },
+        { growth: "4.0%", values: [currentPrice * 1.3, currentPrice * 1.25, currentPrice * 1.2, currentPrice * 1.15, currentPrice * 1.1] }
       ]
     }
   };
@@ -107,13 +107,21 @@ export const prepareDCFData = (
   projectedData: any[],
   mockSensitivity: any
 ) => {
+  // Ensure we have valid data for the intrinsic value
+  const intrinsicValue = parseFloat(customDCFResult.equityValuePerShare.toString());
+  
+  // Use calculated/reasonable values or fallback to defaults
+  const growthRateInitial = (assumptions?.assumptions.revenueGrowthPct || 0.085) * 100;
+  const growthRateTerminal = (assumptions?.assumptions.longTermGrowthRatePct || 0.03) * 100;
+  const taxRate = (customDCFResult.taxRate || 0.21) * 100;
+  
   return {
-    intrinsicValue: customDCFResult.equityValuePerShare,
+    intrinsicValue: isNaN(intrinsicValue) || intrinsicValue <= 0 ? 100 : intrinsicValue,
     assumptions: {
-      growthRate: `${(assumptions?.assumptions.revenueGrowthPct * 100 || 0).toFixed(1)}% (first 5 years), ${(assumptions?.assumptions.longTermGrowthRatePct * 100 || 0).toFixed(1)}% (terminal)`,
+      growthRate: `${growthRateInitial.toFixed(1)}% (first 5 years), ${growthRateTerminal.toFixed(1)}% (terminal)`,
       discountRate: `${(customDCFResult.wacc * 100).toFixed(2)}%`,
       terminalMultiple: "DCF Model",
-      taxRate: `${(customDCFResult.taxRate * 100).toFixed(1)}%`
+      taxRate: `${taxRate.toFixed(1)}%`
     },
     projections: projectedData.map((yearData, index) => ({
       year: `Year ${index + 1}`,

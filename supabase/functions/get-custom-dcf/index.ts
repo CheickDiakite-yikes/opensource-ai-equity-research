@@ -58,20 +58,20 @@ serve(async (req) => {
     switch (type) {
       case "standard":
         // Standard DCF endpoint
-        apiUrl = `https://financialmodelingprep.com/stable/discounted-cash-flow?symbol=${symbol}`;
+        apiUrl = `https://financialmodelingprep.com/api/v3/discounted-cash-flow/${symbol}`;
         break;
       case "levered":
         // Levered DCF endpoint
-        apiUrl = `https://financialmodelingprep.com/stable/levered-discounted-cash-flow?symbol=${symbol}`;
+        apiUrl = `https://financialmodelingprep.com/api/v3/levered-discounted-cash-flow/${symbol}`;
         
         // Add optional limit parameter if provided
         if (params?.limit) {
-          apiUrl += `&limit=${params.limit}`;
+          apiUrl += `?limit=${params.limit}`;
         }
         break;
       case "custom-levered":
         // Custom Levered DCF endpoint
-        apiUrl = `https://financialmodelingprep.com/stable/custom-levered-discounted-cash-flow?symbol=${symbol}`;
+        apiUrl = `https://financialmodelingprep.com/api/v3/valuation/discounted-levered-cash-flow/${symbol}?`;
         
         // Add all provided parameters to query string
         if (params) {
@@ -85,7 +85,7 @@ serve(async (req) => {
       case "advanced":
       default:
         // Custom DCF Advanced endpoint (default)
-        apiUrl = `https://financialmodelingprep.com/stable/custom-discounted-cash-flow?symbol=${symbol}`;
+        apiUrl = `https://financialmodelingprep.com/api/v3/valuation/discounted-cash-flow/${symbol}?`;
         
         // Add all provided parameters to query string
         if (params) {
@@ -99,7 +99,11 @@ serve(async (req) => {
     }
     
     // Add the API key
-    apiUrl += `&apikey=${FMP_API_KEY}`;
+    if (apiUrl.includes('?')) {
+      apiUrl += `&apikey=${FMP_API_KEY}`;
+    } else {
+      apiUrl += `?apikey=${FMP_API_KEY}`;
+    }
     
     console.log(`Calling FMP API: ${apiUrl.replace(FMP_API_KEY, 'API_KEY_HIDDEN')}`);
     
@@ -142,6 +146,20 @@ serve(async (req) => {
     // Parse the API response
     const data = await response.json();
     console.log(`Received DCF data from FMP API for ${symbol}`, data);
+    
+    // For custom DCF types, ensure we update the free cash flow values
+    if (type === 'advanced' || type === 'custom-levered') {
+      if (Array.isArray(data)) {
+        data.forEach(item => {
+          // Set explicit free cash flow if missing
+          if (item.freeCashFlow === undefined || item.freeCashFlow === 0) {
+            const operatingCashFlow = item.operatingCashFlow || 0;
+            const capitalExpenditure = item.capitalExpenditure || 0;
+            item.freeCashFlow = operatingCashFlow - capitalExpenditure;
+          }
+        });
+      }
+    }
     
     // Return the DCF data with appropriate caching headers
     return new Response(

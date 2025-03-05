@@ -8,10 +8,15 @@ interface BalanceSheetTabContentProps {
 }
 
 const BalanceSheetTabContent: React.FC<BalanceSheetTabContentProps> = ({ financials }) => {
+  // Sort financials by year in ascending order (oldest to newest)
+  const sortedFinancials = [...financials].sort((a, b) => {
+    return new Date(a.date).getTime() - new Date(b.date).getTime();
+  });
+
   return (
     <div className="mt-4 space-y-6">
-      <AssetsLiabilitiesChart data={financials} />
-      <BalanceSheetTable data={financials} />
+      <AssetsLiabilitiesChart data={sortedFinancials} />
+      <BalanceSheetTable data={sortedFinancials} />
     </div>
   );
 };

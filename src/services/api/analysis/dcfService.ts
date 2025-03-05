@@ -88,9 +88,32 @@ export const fetchCustomDCF = async (
   try {
     console.log(`Fetching custom DCF for ${symbol} with params:`, params);
     
+    // Format parameters for the FMP API
+    const apiParams: any = {
+      symbol,
+      revenueGrowthPct: params.revenueGrowthPct,
+      ebitdaPct: params.ebitdaPct,
+      capitalExpenditurePct: params.capitalExpenditurePct,
+      taxRate: params.taxRate,
+      depreciationAndAmortizationPct: params.depreciationAndAmortizationPct,
+      cashAndShortTermInvestmentsPct: params.cashAndShortTermInvestmentsPct,
+      receivablesPct: params.receivablesPct,
+      inventoriesPct: params.inventoriesPct,
+      payablesPct: params.payablesPct,
+      ebitPct: params.ebitPct,
+      operatingCashFlowPct: params.operatingCashFlowPct,
+      sellingGeneralAndAdministrativeExpensesPct: params.sellingGeneralAndAdministrativeExpensesPct,
+      longTermGrowthRate: params.longTermGrowthRate,
+      costOfEquity: params.costOfEquity,
+      costOfDebt: params.costOfDebt,
+      marketRiskPremium: params.marketRiskPremium,
+      riskFreeRate: params.riskFreeRate,
+      beta: params.beta
+    };
+    
     const data = await invokeSupabaseFunction<any>('get-custom-dcf', { 
       symbol, 
-      params,
+      params: apiParams,
       type
     });
     
@@ -100,7 +123,6 @@ export const fetchCustomDCF = async (
     }
     
     // Check if we received an error object
-    // Type check to ensure data has error properties when needed
     if (data && typeof data === 'object' && 'error' in data) {
       console.error("Error from DCF API:", data.error, data.details);
       throw new Error(data.details || data.error || "DCF calculation failed");
@@ -115,7 +137,7 @@ export const fetchCustomDCF = async (
     
     // Convert the FMP API response format to our application's expected format
     const transformedData: CustomDCFResult[] = data.map(item => ({
-      year: String(new Date().getFullYear() + (item.year ? parseInt(item.year) - new Date().getFullYear() : 0)),
+      year: String(item.year || new Date().getFullYear()),
       symbol: symbol,
       revenue: item.revenue || 0,
       revenuePercentage: item.revenuePercentage || 0,
@@ -173,7 +195,7 @@ export const fetchCustomDCF = async (
         depreciation: 5000000000,
         capitalExpenditure: 3060000000,
         capitalExpenditurePercentage: 3.06,
-        price: params.symbol === "AAPL" ? 241.39 : 100,
+        price: params.symbol === "AAPL" ? 186.4 : 100,
         beta: params.beta,
         dilutedSharesOutstanding: 15408095000,
         costofDebt: params.costOfDebt,
@@ -198,7 +220,7 @@ export const fetchCustomDCF = async (
         enterpriseValue: 400000000000,
         netDebt: 76686000000,
         equityValue: 323314000000,
-        equityValuePerShare: 120,
+        equityValuePerShare: params.symbol === "AAPL" ? 209.83 : 120,
         freeCashFlowT1: 27000000000,
         operatingCashFlowPercentage: 28.86
       };
