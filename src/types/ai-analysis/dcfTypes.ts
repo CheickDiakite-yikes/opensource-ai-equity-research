@@ -1,4 +1,3 @@
-
 // Custom DCF Analysis Types
 export interface CustomDCFParams {
   symbol: string;
@@ -145,8 +144,6 @@ export interface DCFAssumptionsSummary {
 // Combined DCF data structure returned by utility functions
 export interface FormattedDCFData {
   intrinsicValue: number;
-  currentPrice?: number; // Make this property optional
-  upside?: number;       // Make this property optional
   assumptions: DCFAssumptionsSummary;
   projections: YearlyDCFData[];
   sensitivity: DCFSensitivityData;

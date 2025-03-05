@@ -39,7 +39,6 @@ export const formatDCFParameters = (params: CustomDCFParams): Record<string, any
     }
   });
   
-  console.log("Formatted DCF parameters:", apiParams);
   return apiParams;
 };
 
@@ -59,10 +58,9 @@ const validateDCFResponse = (data: any, symbol: string): any => {
   }
   
   // Empty array is a valid response from the API, but indicates no data was returned
-  // We'll handle this case differently now - return a flag indicating we should try again
   if (data.length === 0) {
     console.warn(`Received empty array from DCF API for ${symbol}`);
-    return { empty: true };
+    throw new Error("DCF calculation returned no data");
   }
   
   return data;
@@ -82,8 +80,7 @@ export const fetchCustomDCF = async (
     // Format parameters for the API
     const apiParams = formatDCFParameters(params);
     
-    // First attempt
-    let data = await invokeSupabaseFunction<any>('get-custom-dcf', { 
+    const data = await invokeSupabaseFunction<any>('get-custom-dcf', { 
       symbol, 
       params: apiParams,
       type
@@ -97,27 +94,10 @@ export const fetchCustomDCF = async (
     // Validate the response
     const validatedData = validateDCFResponse(data, symbol);
     
-    // If we got an empty result, try again with standard DCF type as fallback
-    if (validatedData.empty) {
-      console.log("Empty result received, trying standard DCF as fallback");
-      
-      // Try standard DCF as fallback
-      data = await invokeSupabaseFunction<any>('get-custom-dcf', {
-        symbol,
-        type: DCFType.STANDARD
-      });
-      
-      if (!data || data.length === 0) {
-        throw new Error("Both custom and standard DCF calculations failed to return data");
-      }
-      
-      console.log("Standard DCF fallback succeeded:", data);
-    }
-    
-    console.log(`Received ${data.length} DCF records for ${symbol}`);
+    console.log(`Received ${validatedData.length} DCF records for ${symbol}`);
     
     // Transform the data to our application format
-    return transformDCFResponse(data, symbol);
+    return transformDCFResponse(validatedData, symbol);
   } catch (error) {
     console.error("Error fetching custom DCF:", error);
     
@@ -139,11 +119,5 @@ export const fetchCustomLeveredDCF = async (
   symbol: string, 
   params: CustomDCFParams
 ): Promise<CustomDCFResult[]> => {
-  try {
-    return await fetchCustomDCF(symbol, params, DCFType.CUSTOM_LEVERED);
-  } catch (error) {
-    // If levered DCF fails, try standard as fallback
-    console.log("Levered DCF failed, trying standard DCF as fallback");
-    return fetchCustomDCF(symbol, params, DCFType.STANDARD);
-  }
+  return fetchCustomDCF(symbol, params, DCFType.CUSTOM_LEVERED);
 };

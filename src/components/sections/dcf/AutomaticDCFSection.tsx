@@ -14,14 +14,9 @@ import { RefreshCw } from "lucide-react";
 interface AutomaticDCFSectionProps {
   financials: any[];
   symbol: string;
-  quoteData?: any; // Add quoteData prop
 }
 
-const AutomaticDCFSection: React.FC<AutomaticDCFSectionProps> = ({ 
-  financials, 
-  symbol,
-  quoteData 
-}) => {
+const AutomaticDCFSection: React.FC<AutomaticDCFSectionProps> = ({ financials, symbol }) => {
   const { 
     dcfData, 
     currentPrice, 
@@ -31,7 +26,7 @@ const AutomaticDCFSection: React.FC<AutomaticDCFSectionProps> = ({
     assumptions,
     usingMockData,
     handleRefreshAssumptions
-  } = useDCFData(symbol, financials, quoteData); // Pass quoteData
+  } = useDCFData(symbol, financials);
   
   const isLoading = isCalculating || isLoadingAssumptions;
   
