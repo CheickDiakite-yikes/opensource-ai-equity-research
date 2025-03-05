@@ -9,6 +9,10 @@ import {
   fetchBalanceSheets, 
   fetchCashFlowStatements, 
   fetchKeyRatios, 
+  fetchKeyRatiosTTM,
+  fetchIncomeStatementTTM,
+  fetchBalanceSheetTTM,
+  fetchCashFlowStatementTTM,
   fetchCompanyNews, 
   fetchCompanyPeers, 
   fetchEarningsTranscripts,
@@ -25,19 +29,35 @@ import type {
   CashFlowStatement, 
   KeyRatio 
 } from "@/types/financial/statementTypes";
+import type { 
+  KeyRatioTTM 
+} from "@/types/financial/metrics/keyRatioTTM";
 import type { NewsArticle } from "@/types/news/newsTypes";
 import type { 
   EarningsCall,
   SECFiling
 } from "@/types/documentTypes";
+import type {
+  IncomeStatementTTM 
+} from "@/types/financial/ttm/incomeStatementTTM";
+import type {
+  BalanceSheetTTM 
+} from "@/types/financial/ttm/balanceSheetTTM";
+import type {
+  CashFlowStatementTTM 
+} from "@/types/financial/ttm/cashFlowTTM";
 
 export interface ReportData {
   profile: StockProfile | null;
   quote: StockQuote | null;
   income: IncomeStatement[];
+  incomeTTM: IncomeStatementTTM | null;
   balance: BalanceSheet[];
+  balanceTTM: BalanceSheetTTM | null;
   cashflow: CashFlowStatement[];
+  cashflowTTM: CashFlowStatementTTM | null;
   ratios: KeyRatio[];
+  ratiosTTM: KeyRatioTTM | null;
   news: NewsArticle[];
   peers: string[];
   transcripts: EarningsCall[];
@@ -54,9 +74,13 @@ export const useResearchReportData = (symbol: string) => {
     profile: null,
     quote: null,
     income: [],
+    incomeTTM: null,
     balance: [],
+    balanceTTM: null,
     cashflow: [],
+    cashflowTTM: null,
     ratios: [],
+    ratiosTTM: null,
     news: [],
     peers: [],
     transcripts: [],
@@ -104,11 +128,28 @@ export const useResearchReportData = (symbol: string) => {
           throw new Error(`Could not fetch core data for ${symbol}`);
         }
         
-        const [income, balance, cashflow, ratios, news, peers, transcripts, filings] = await Promise.all([
+        const [
+          income, 
+          incomeTTM,
+          balance, 
+          balanceTTM,
+          cashflow, 
+          cashflowTTM,
+          ratios, 
+          ratiosTTM,
+          news, 
+          peers, 
+          transcripts, 
+          filings
+        ] = await Promise.all([
           fetchWithStatus('income', () => fetchIncomeStatements(symbol), []),
+          fetchWithStatus('incomeTTM', () => fetchIncomeStatementTTM(symbol), null),
           fetchWithStatus('balance', () => fetchBalanceSheets(symbol), []),
+          fetchWithStatus('balanceTTM', () => fetchBalanceSheetTTM(symbol), null),
           fetchWithStatus('cashflow', () => fetchCashFlowStatements(symbol), []),
+          fetchWithStatus('cashflowTTM', () => fetchCashFlowStatementTTM(symbol), null),
           fetchWithStatus('ratios', () => fetchKeyRatios(symbol), []),
+          fetchWithStatus('ratiosTTM', () => fetchKeyRatiosTTM(symbol), null),
           fetchWithStatus('news', () => fetchCompanyNews(symbol), []),
           fetchWithStatus('peers', () => fetchCompanyPeers(symbol), []),
           fetchWithStatus('transcripts', () => fetchEarningsTranscripts(symbol), []),
@@ -119,9 +160,13 @@ export const useResearchReportData = (symbol: string) => {
           profile,
           quote,
           income,
+          incomeTTM,
           balance,
+          balanceTTM,
           cashflow,
+          cashflowTTM,
           ratios: ratios as KeyRatio[], // Ensure we cast this to KeyRatio[] from types/financial/statementTypes
+          ratiosTTM,
           news,
           peers,
           transcripts,
@@ -132,9 +177,13 @@ export const useResearchReportData = (symbol: string) => {
           profile: !!profile,
           quote: !!quote,
           income: income.length,
+          incomeTTM: !!incomeTTM,
           balance: balance.length,
+          balanceTTM: !!balanceTTM,
           cashflow: cashflow.length,
+          cashflowTTM: !!cashflowTTM,
           ratios: ratios.length,
+          ratiosTTM: !!ratiosTTM,
           news: news.length,
           peers: peers.length,
           transcripts: transcripts.length,

@@ -120,6 +120,10 @@ export function prepareRatioData(ratios: KeyRatio[]): RatioData[] {
   
   return ratios.map(ratio => {
     const year = ratio.date.split('-')[0]; // Extract year from date
+    
+    // Ensure we populate both debtToEquity and debtEquity for compatibility
+    const debtToEquity = ratio.debtEquityRatio || 0;
+    
     return {
       year,
       date: ratio.date,
@@ -128,7 +132,8 @@ export function prepareRatioData(ratios: KeyRatio[]): RatioData[] {
       roe: ratio.returnOnEquity || 0,
       roa: ratio.returnOnAssets || 0,
       currentRatio: ratio.currentRatio || 0,
-      debtToEquity: ratio.debtEquityRatio || 0,
+      debtToEquity: debtToEquity,
+      debtEquity: debtToEquity, // For compatibility with other components
       grossMargin: ratio.grossProfitMargin || 0,
       operatingMargin: ratio.operatingProfitMargin || 0,
       netMargin: ratio.netProfitMargin || 0

@@ -33,8 +33,15 @@ export const useDCFCalculation = (symbol: string) => {
       const params = convertAssumptionsToParams(assumptions, symbol, financials);
       
       console.log("Calculating DCF with AI-generated parameters:", params);
-      await calculateCustomDCF(params);
-      return { success: true };
+      const result = await calculateCustomDCF(params);
+      
+      // Ensure result is not null before accessing its properties
+      if (result && 'success' in result) {
+        return result; // Return the result if it's a valid object with success property
+      }
+      
+      // If result doesn't contain success property or is null/undefined
+      return { success: true }; // Assume success if we got here without errors
     } catch (err) {
       console.error("Error calculating DCF with AI assumptions:", err);
       setUsingMockData(true);
