@@ -1,4 +1,3 @@
-
 import { toast } from "@/components/ui/use-toast";
 import { ResearchReport, RatingDetails, ScenarioAnalysis, GrowthCatalysts } from "@/types/ai-analysis/reportTypes";
 
@@ -27,12 +26,10 @@ export const downloadReportAsHTML = (report: ResearchReport) => {
           <p class="price-target">${report.targetPrice}</p>
         </div>
         
-        ${report.ratingDetails && report.ratingDetails.ratingScale ? 
-          `<div class="rating-item">
-            <h3>Rating Scale</h3>
-            <p>${report.ratingDetails.ratingScale}</p>
-          </div>` : ''
-        }
+        <div class="rating-item">
+          <h3>Rating Scale</h3>
+          <p>Buy, Sell, Hold, Overweight, Underweight</p>
+        </div>
       </div>
     </div>`;
   
@@ -147,9 +144,7 @@ export const downloadReportAsHTML = (report: ResearchReport) => {
     content += `
       <div class="section rating-details">
         <h2>Rating and Recommendation</h2>
-        ${report.ratingDetails.ratingScale ? 
-          `<p><strong>Rating Scale:</strong> Our recommendations include: Buy, Sell, Hold, Overweight, and Underweight</p>` : ''
-        }
+        <p><strong>Rating Scale:</strong> Our recommendations include: Buy, Sell, Hold, Overweight, and Underweight</p>
         <p><strong>Recommendation:</strong> ${report.recommendation}</p>
         ${report.ratingDetails.ratingJustification ? 
           `<p><strong>Justification:</strong> ${report.ratingDetails.ratingJustification}</p>` : ''
@@ -328,4 +323,3 @@ export const downloadReportAsHTML = (report: ResearchReport) => {
     description: "Research report has been downloaded as HTML.",
   });
 };
-
