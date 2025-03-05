@@ -39,6 +39,21 @@ Deno.serve(async (req) => {
     // Add industry classification for better prediction context
     formattedData.industry = determineIndustry(symbol);
     
+    // Retrieve historical predictions for this symbol
+    const { data: historyData, error: historyError } = await supabase
+      .from('stock_prediction_history')
+      .select('*')
+      .eq('symbol', symbol)
+      .order('prediction_date', { ascending: false })
+      .limit(5);
+    
+    if (historyError) {
+      console.warn(`Error retrieving prediction history for ${symbol}:`, historyError);
+    }
+    
+    // Add historical predictions to formatted data
+    formattedData.predictionHistory = historyData || [];
+    
     // Attempt to generate AI prediction with a max of 2 retries
     let prediction: StockPrediction | null = null;
     let attempts = 0;
@@ -83,6 +98,39 @@ Deno.serve(async (req) => {
     
     if (!prediction) {
       throw new Error(`Failed to generate valid prediction for ${symbol} after ${maxAttempts} attempts`);
+    }
+    
+    // Save prediction to history table
+    try {
+      const { error: insertError } = await supabase
+        .from('stock_prediction_history')
+        .insert({
+          symbol: prediction.symbol,
+          current_price: prediction.currentPrice,
+          one_month_price: prediction.predictedPrice.oneMonth,
+          three_month_price: prediction.predictedPrice.threeMonths,
+          six_month_price: prediction.predictedPrice.sixMonths,
+          one_year_price: prediction.predictedPrice.oneYear,
+          sentiment_analysis: prediction.sentimentAnalysis,
+          confidence_level: prediction.confidenceLevel,
+          key_drivers: prediction.keyDrivers,
+          risks: prediction.risks,
+          metadata: {
+            generation_method: attempts === maxAttempts ? 'fallback' : 'openai',
+            quick_mode: quickMode === true,
+            industry: formattedData.industry,
+            attempt_count: attempts
+          }
+        });
+        
+      if (insertError) {
+        console.error(`Error saving prediction history for ${symbol}:`, insertError);
+      } else {
+        console.log(`Successfully saved prediction history for ${symbol}`);
+      }
+    } catch (saveError) {
+      console.error(`Exception saving prediction history for ${symbol}:`, saveError);
+      // Non-critical error, continue with returning the prediction
     }
     
     // Final logging of prediction values

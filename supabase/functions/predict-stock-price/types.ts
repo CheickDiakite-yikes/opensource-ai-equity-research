@@ -14,6 +14,22 @@ export interface StockPrediction {
   risks: string[];
 }
 
+export interface PredictionHistoryEntry {
+  id: string;
+  symbol: string;
+  current_price: number;
+  one_month_price: number;
+  three_month_price: number;
+  six_month_price: number;
+  one_year_price: number;
+  sentiment_analysis: string;
+  confidence_level: number;
+  key_drivers: string[];
+  risks: string[];
+  prediction_date: string;
+  metadata: Record<string, any>;
+}
+
 export interface FormattedData {
   symbol: string;
   currentPrice: number;
@@ -22,4 +38,5 @@ export interface FormattedData {
   newsSummary: Record<string, any>;
   quickMode?: boolean;
   industry?: string;
+  predictionHistory?: PredictionHistoryEntry[];
 }

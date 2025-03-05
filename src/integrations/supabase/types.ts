@@ -156,6 +156,54 @@ export type Database = {
         }
         Relationships: []
       }
+      stock_prediction_history: {
+        Row: {
+          confidence_level: number | null
+          current_price: number
+          id: string
+          key_drivers: Json | null
+          metadata: Json | null
+          one_month_price: number
+          one_year_price: number
+          prediction_date: string | null
+          risks: Json | null
+          sentiment_analysis: string | null
+          six_month_price: number
+          symbol: string
+          three_month_price: number
+        }
+        Insert: {
+          confidence_level?: number | null
+          current_price: number
+          id?: string
+          key_drivers?: Json | null
+          metadata?: Json | null
+          one_month_price: number
+          one_year_price: number
+          prediction_date?: string | null
+          risks?: Json | null
+          sentiment_analysis?: string | null
+          six_month_price: number
+          symbol: string
+          three_month_price: number
+        }
+        Update: {
+          confidence_level?: number | null
+          current_price?: number
+          id?: string
+          key_drivers?: Json | null
+          metadata?: Json | null
+          one_month_price?: number
+          one_year_price?: number
+          prediction_date?: string | null
+          risks?: Json | null
+          sentiment_analysis?: string | null
+          six_month_price?: number
+          symbol?: string
+          three_month_price?: number
+        }
+        Relationships: []
+      }
       user_preferences: {
         Row: {
           created_at: string | null

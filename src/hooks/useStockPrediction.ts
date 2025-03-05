@@ -7,18 +7,95 @@ import { fetchAllFinancialData } from "@/services/api/financialService";
 import { fetchMarketNews } from "@/services/api/marketData/newsService";
 import { toast } from "@/components/ui/use-toast";
 import { NewsArticle } from "@/types/news/newsTypes";
+import { supabase } from "@/integrations/supabase/client";
+
+export interface PredictionHistoryEntry {
+  id: string;
+  symbol: string;
+  current_price: number;
+  one_month_price: number;
+  three_month_price: number;
+  six_month_price: number;
+  one_year_price: number;
+  sentiment_analysis: string;
+  confidence_level: number;
+  key_drivers: string[];
+  risks: string[];
+  prediction_date: string;
+  metadata: Record<string, any>;
+}
 
 export const useStockPrediction = (symbol: string, autoFetch: boolean = false, quickMode: boolean = true) => {
   const [prediction, setPrediction] = useState<StockPrediction | null>(null);
+  const [history, setHistory] = useState<PredictionHistoryEntry[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [retryCount, setRetryCount] = useState<number>(0);
   const MAX_RETRIES = 2;
 
+  // Fetch prediction history from the database
+  const fetchPredictionHistory = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('stock_prediction_history')
+        .select('*')
+        .eq('symbol', symbol)
+        .order('prediction_date', { ascending: false })
+        .limit(5);
+        
+      if (error) {
+        console.error(`Error fetching prediction history for ${symbol}:`, error);
+        return [];
+      }
+      
+      setHistory(data || []);
+      return data || [];
+    } catch (err) {
+      console.error(`Error in fetchPredictionHistory for ${symbol}:`, err);
+      return [];
+    }
+  };
+
   const generatePrediction = async () => {
     try {
       setIsLoading(true);
       setError(null);
+      
+      // Fetch prediction history first
+      const historyData = await fetchPredictionHistory();
+      
+      // If we have recent history (less than 24 hours old), use it instead of generating new prediction
+      const recentPrediction = historyData.find(p => {
+        const predictionDate = new Date(p.prediction_date);
+        const now = new Date();
+        const hoursSinceGeneration = (now.getTime() - predictionDate.getTime()) / (1000 * 60 * 60);
+        return hoursSinceGeneration < 24;
+      });
+      
+      if (recentPrediction && !quickMode) {
+        console.log(`Using recent prediction for ${symbol} from ${new Date(recentPrediction.prediction_date).toLocaleString()}`);
+        
+        // Convert to StockPrediction format
+        const formattedPrediction: StockPrediction = {
+          symbol: recentPrediction.symbol,
+          currentPrice: recentPrediction.current_price,
+          predictedPrice: {
+            oneMonth: recentPrediction.one_month_price,
+            threeMonths: recentPrediction.three_month_price,
+            sixMonths: recentPrediction.six_month_price,
+            oneYear: recentPrediction.one_year_price
+          },
+          sentimentAnalysis: recentPrediction.sentiment_analysis || '',
+          confidenceLevel: recentPrediction.confidence_level || 75,
+          keyDrivers: recentPrediction.key_drivers || [],
+          risks: recentPrediction.risks || []
+        };
+        
+        setPrediction(formattedPrediction);
+        setRetryCount(0); // Reset retry count on success
+        
+        return formattedPrediction;
+      }
       
       // Get required data for prediction
       const [quote, financials, marketNews] = await Promise.all([
@@ -104,6 +181,7 @@ export const useStockPrediction = (symbol: string, autoFetch: boolean = false, q
 
   return {
     prediction,
+    predictionHistory: history,
     isLoading,
     error,
     generatePrediction,
