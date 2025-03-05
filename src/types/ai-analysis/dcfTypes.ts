@@ -1,3 +1,4 @@
+
 // Custom DCF Analysis Types
 export interface CustomDCFParams {
   symbol: string;
@@ -32,6 +33,7 @@ export interface CustomDCFParams {
 // New type for AI-generated DCF assumptions
 export interface AIDCFSuggestion {
   symbol: string;
+  company: string; // Added company property
   timestamp: string;
   expiresAt: string;
   assumptions: {

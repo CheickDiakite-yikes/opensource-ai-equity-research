@@ -55,7 +55,10 @@ const AutomaticDCFSection: React.FC<AutomaticDCFSectionProps> = ({ financials, s
       <DCFErrorDisplay errors={errors} />
       
       {isLoading ? (
-        <DCFLoadingIndicator />
+        <DCFLoadingIndicator 
+          isLoading={isCalculating} 
+          isLoadingAssumptions={isLoadingAssumptions} 
+        />
       ) : (
         <div className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -64,7 +67,12 @@ const AutomaticDCFSection: React.FC<AutomaticDCFSectionProps> = ({ financials, s
                 <DCFValuationSummary
                   intrinsicValue={dcfData.intrinsicValue}
                   currentPrice={currentPrice}
-                  assumptions={dcfData.assumptions}
+                  assumptions={{
+                    growthRate: `${(dcfData.assumptions.growthRate * 100).toFixed(1)}%`,
+                    discountRate: `${(dcfData.assumptions.discountRate * 100).toFixed(1)}%`,
+                    terminalMultiple: `${dcfData.assumptions.terminalMultiple}x`,
+                    taxRate: `${(dcfData.assumptions.taxRate * 100).toFixed(1)}%`
+                  }}
                   symbol={symbol}
                 />
               </CardContent>
@@ -73,7 +81,7 @@ const AutomaticDCFSection: React.FC<AutomaticDCFSectionProps> = ({ financials, s
             <Card>
               <CardContent className="pt-6">
                 <SensitivityAnalysisTable 
-                  data={dcfData.sensitivity} 
+                  sensitivityData={dcfData.sensitivity} 
                   currentPrice={currentPrice}
                 />
               </CardContent>
@@ -82,7 +90,7 @@ const AutomaticDCFSection: React.FC<AutomaticDCFSectionProps> = ({ financials, s
           
           <Card>
             <CardContent className="pt-6">
-              <ProjectedCashFlowsTable data={dcfData.projections} />
+              <ProjectedCashFlowsTable projections={dcfData.projections} />
             </CardContent>
           </Card>
         </div>

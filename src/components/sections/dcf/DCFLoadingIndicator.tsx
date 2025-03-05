@@ -1,24 +1,38 @@
 
 import React from "react";
-import { Loader2 } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 
-interface DCFLoadingIndicatorProps {
+export interface DCFLoadingIndicatorProps {
   isLoading: boolean;
   isLoadingAssumptions: boolean;
 }
 
 const DCFLoadingIndicator: React.FC<DCFLoadingIndicatorProps> = ({ 
-  isLoading, 
-  isLoadingAssumptions 
+  isLoading,
+  isLoadingAssumptions
 }) => {
-  if (!isLoading && !isLoadingAssumptions) return null;
-  
   return (
-    <div className="flex justify-center items-center py-4">
-      <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      <span className="ml-2">
-        {isLoadingAssumptions ? "Loading AI-powered DCF assumptions..." : "Calculating DCF valuation..."}
-      </span>
+    <div className="space-y-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="rounded-md border p-6 shadow-sm">
+          <h3 className="text-lg font-semibold mb-4">DCF Valuation</h3>
+          <div className="space-y-3">
+            <Skeleton className="h-8 w-full" />
+            <Skeleton className="h-24 w-full" />
+            <Skeleton className="h-12 w-3/4" />
+          </div>
+        </div>
+        
+        <div className="rounded-md border p-6 shadow-sm">
+          <h3 className="text-lg font-semibold mb-4">Sensitivity Analysis</h3>
+          <Skeleton className="h-[200px] w-full" />
+        </div>
+      </div>
+      
+      <div className="rounded-md border p-6 shadow-sm">
+        <h3 className="text-lg font-semibold mb-4">Projected Cash Flows</h3>
+        <Skeleton className="h-[300px] w-full" />
+      </div>
     </div>
   );
 };

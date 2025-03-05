@@ -1,86 +1,80 @@
 
 import React from "react";
-import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/components/ui/card";
-import { formatCurrency } from "@/utils/financialDataUtils";
-import { Loader2 } from "lucide-react";
+import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
+import { formatCurrency } from "@/utils/financial/formatUtils";
 
-interface SensitivityRow {
-  growth: string;
-  values: number[];
-}
-
-interface SensitivityAnalysisTableProps {
-  headers: string[];
-  rows: SensitivityRow[];
+export interface SensitivityAnalysisTableProps {
+  sensitivityData: any[][];
   currentPrice: number;
-  isLoading?: boolean;
 }
 
 const SensitivityAnalysisTable: React.FC<SensitivityAnalysisTableProps> = ({ 
-  headers, 
-  rows, 
-  currentPrice,
-  isLoading = false
+  sensitivityData,
+  currentPrice
 }) => {
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Sensitivity Analysis</CardTitle>
-        <CardDescription className="text-xs text-muted-foreground">Stock price in USD based on different inputs</CardDescription>
-      </CardHeader>
-      <CardContent>
-        {isLoading ? (
-          <div className="flex justify-center items-center h-40">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          </div>
-        ) : (
-          <>
-            <div className="text-sm text-muted-foreground mb-4">
-              The table below shows how changes in the discount rate (WACC) and terminal growth rate affect the estimated stock price.
-            </div>
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b">
-                    <th className="text-left font-medium p-2">Growth / WACC</th>
-                    {headers.slice(1).map((header, i) => (
-                      <th key={i} className="text-center font-medium p-2">{header}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {rows.map((row, i) => (
-                    <tr key={i} className="border-b last:border-0">
-                      <td className="p-2 font-medium">{row.growth}</td>
-                      {row.values.map((value, j) => {
-                        const percentChange = ((value - 95) / 95) * 100;
-                        const basePrice = currentPrice;
-                        const adjustedPrice = basePrice * (1 + percentChange / 100);
-                        
-                        return (
-                          <td 
-                            key={j} 
-                            className={`p-2 text-center ${
-                              adjustedPrice > currentPrice 
-                                ? 'bg-green-50 text-green-700' 
-                                : adjustedPrice < currentPrice 
-                                  ? 'bg-red-50 text-red-700' 
-                                  : ''
-                            }`}
-                          >
-                            {formatCurrency(parseFloat(adjustedPrice.toFixed(2)))}
-                          </td>
-                        );
-                      })}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </>
-        )}
-      </CardContent>
-    </Card>
+    <div className="space-y-4">
+      <h3 className="text-lg font-semibold">Sensitivity Analysis</h3>
+      <p className="text-sm text-gray-500 mb-4">
+        The table below shows estimated stock prices at different combinations of growth rates and discount rates.
+      </p>
+      
+      <div className="overflow-x-auto">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead className="w-[100px]">Growth↓ Discount→</TableHead>
+              {sensitivityData[0]?.map((_, colIndex) => (
+                <TableHead key={`head-${colIndex}`} className="text-center">
+                  {(7 + colIndex).toFixed(1)}%
+                </TableHead>
+              ))}
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {sensitivityData?.map((row, rowIndex) => (
+              <TableRow key={`row-${rowIndex}`}>
+                <TableCell className="font-medium">{(2 + rowIndex).toFixed(1)}%</TableCell>
+                {row.map((value, colIndex) => {
+                  const isHighlighted = 
+                    Math.abs(value - currentPrice) < currentPrice * 0.1;
+                    
+                  const cellColor = isHighlighted 
+                    ? 'bg-blue-50 font-semibold' 
+                    : value > currentPrice 
+                      ? 'bg-green-50' 
+                      : 'bg-red-50';
+                      
+                  return (
+                    <TableCell 
+                      key={`cell-${rowIndex}-${colIndex}`} 
+                      className={`text-center ${cellColor}`}
+                    >
+                      {formatCurrency(value)}
+                    </TableCell>
+                  );
+                })}
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
+      
+      <div className="flex space-x-4 text-xs">
+        <div className="flex items-center">
+          <div className="w-3 h-3 bg-green-50 mr-1 border border-green-200"></div>
+          <span>Upside Potential</span>
+        </div>
+        <div className="flex items-center">
+          <div className="w-3 h-3 bg-red-50 mr-1 border border-red-200"></div>
+          <span>Downside Risk</span>
+        </div>
+        <div className="flex items-center">
+          <div className="w-3 h-3 bg-blue-50 mr-1 border border-blue-200"></div>
+          <span>Near Current Price</span>
+        </div>
+      </div>
+    </div>
   );
 };
 

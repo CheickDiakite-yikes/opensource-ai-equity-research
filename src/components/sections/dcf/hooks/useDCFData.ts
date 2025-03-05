@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from "react";
-import { useCustomDCF } from "@/hooks/useCustomDCF";
-import { useAIDCFAssumptions } from "@/hooks/useAIDCFAssumptions";
+import { useCustomDCF } from "@/hooks/dcf/useCustomDCF";
+import { useAIDCFAssumptions } from "@/hooks/dcf/useAIDCFAssumptions";
 import { convertAssumptionsToParams, prepareMockDCFData, prepareDCFData } from "../utils/dcfDataUtils";
 import { toast } from "@/components/ui/use-toast";
 

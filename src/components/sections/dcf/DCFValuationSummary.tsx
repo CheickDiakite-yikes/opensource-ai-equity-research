@@ -1,11 +1,10 @@
 
 import React from "react";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { formatCurrency, formatLargeNumber } from "@/lib/utils";
-import { ArrowUp, ArrowDown, Loader2 } from "lucide-react";
+import { AIDCFSuggestion } from "@/types/ai-analysis/dcfTypes";
+import { formatCurrency, formatPercentage } from "@/utils/financial/formatUtils";
 
-interface DCFValuationSummaryProps {
-  dcfValue: number;
+export interface DCFValuationSummaryProps {
+  intrinsicValue: number;
   currentPrice: number;
   assumptions: {
     growthRate: string;
@@ -13,71 +12,66 @@ interface DCFValuationSummaryProps {
     terminalMultiple: string;
     taxRate: string;
   };
-  isLoading?: boolean;
+  symbol: string;
 }
 
-const DCFValuationSummary: React.FC<DCFValuationSummaryProps> = ({ 
-  dcfValue, 
+const DCFValuationSummary: React.FC<DCFValuationSummaryProps> = ({
+  intrinsicValue,
   currentPrice,
   assumptions,
-  isLoading = false
+  symbol
 }) => {
-  // Calculate upside percentage - (intrinsic value / current price - 1) * 100
-  const upside = currentPrice > 0 ? ((dcfValue / currentPrice) - 1) * 100 : 0;
-  
-  // Format upside percentage with 2 decimal places
-  const formattedUpside = Math.abs(upside).toFixed(2);
-  const isPositive = upside >= 0;
+  const upside = ((intrinsicValue - currentPrice) / currentPrice) * 100;
+  const isUndervalued = intrinsicValue > currentPrice;
   
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>DCF Valuation Summary</CardTitle>
-      </CardHeader>
-      <CardContent>
-        {isLoading ? (
-          <div className="flex justify-center items-center h-40">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+    <div className="space-y-4">
+      <h3 className="text-lg font-semibold">DCF Valuation Summary</h3>
+      
+      <div className="flex items-center space-x-4">
+        <div className="text-3xl font-bold">
+          {formatCurrency(intrinsicValue)}
+        </div>
+        <div className={`text-sm font-medium px-2 py-1 rounded ${isUndervalued ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+          {isUndervalued ? '🔼' : '🔽'} {Math.abs(upside).toFixed(1)}% {isUndervalued ? 'Undervalued' : 'Overvalued'}
+        </div>
+      </div>
+      
+      <div className="grid grid-cols-2 gap-2 text-sm">
+        <div className="flex flex-col">
+          <span className="text-gray-500">Current Price</span>
+          <span className="font-medium">{formatCurrency(currentPrice)}</span>
+        </div>
+        <div className="flex flex-col">
+          <span className="text-gray-500">Potential Upside</span>
+          <span className={`font-medium ${isUndervalued ? 'text-green-600' : 'text-red-600'}`}>
+            {upside > 0 ? '+' : ''}{upside.toFixed(1)}%
+          </span>
+        </div>
+      </div>
+      
+      <div className="pt-2">
+        <h4 className="text-sm font-medium mb-2">Key Assumptions</h4>
+        <div className="grid grid-cols-2 gap-2 text-sm">
+          <div className="flex justify-between">
+            <span className="text-gray-500">Growth Rate:</span>
+            <span>{assumptions.growthRate}</span>
           </div>
-        ) : (
-          <div className="space-y-6">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="bg-muted/50 p-4 rounded-lg">
-                <div className="text-sm text-muted-foreground mb-1">Intrinsic Value</div>
-                <div className="text-2xl font-bold">{formatCurrency(dcfValue)}</div>
-              </div>
-              <div className={`p-4 rounded-lg ${isPositive ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}>
-                <div className="text-sm opacity-80 mb-1">
-                  {isPositive ? 'Potential Upside' : 'Potential Downside'}
-                </div>
-                <div className="text-2xl font-bold flex items-center">
-                  {isPositive ? (
-                    <ArrowUp className="h-5 w-5 mr-1 text-green-700" />
-                  ) : (
-                    <ArrowDown className="h-5 w-5 mr-1 text-red-700" />
-                  )}
-                  <span>{formattedUpside}%</span>
-                </div>
-              </div>
-            </div>
-            
-            <div>
-              <h3 className="text-sm font-medium mb-2">Key Assumptions</h3>
-              <div className="grid grid-cols-2 gap-y-2 text-sm">
-                <div className="text-muted-foreground">Growth Rate:</div>
-                <div>{assumptions.growthRate}</div>
-                <div className="text-muted-foreground">Discount Rate (WACC):</div>
-                <div>{assumptions.discountRate}</div>
-                <div className="text-muted-foreground">Terminal Multiple:</div>
-                <div>{assumptions.terminalMultiple}</div>
-                <div className="text-muted-foreground">Tax Rate:</div>
-                <div>{assumptions.taxRate}</div>
-              </div>
-            </div>
+          <div className="flex justify-between">
+            <span className="text-gray-500">Discount Rate:</span>
+            <span>{assumptions.discountRate}</span>
           </div>
-        )}
-      </CardContent>
-    </Card>
+          <div className="flex justify-between">
+            <span className="text-gray-500">Terminal Multiple:</span>
+            <span>{assumptions.terminalMultiple}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-gray-500">Tax Rate:</span>
+            <span>{assumptions.taxRate}</span>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 };
 

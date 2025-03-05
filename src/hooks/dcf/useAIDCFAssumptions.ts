@@ -115,6 +115,11 @@ export const useAIDCFAssumptions = (symbol: string) => {
     if (!data.explanation) {
       data.explanation = "AI-generated DCF assumptions based on historical performance and industry benchmarks.";
     }
+    
+    // Add company field if missing
+    if (!data.company) {
+      data.company = symbol;
+    }
 
     return data;
   };
