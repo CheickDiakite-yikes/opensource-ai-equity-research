@@ -47,11 +47,37 @@ Deno.serve(async (req) => {
         console.warn(`Section ${section.title} has insufficient content, enhancing it`);
         section.content = enhanceSectionContent(section.title, formattedData);
       }
+      
+      // If it's a financial section, make sure it's particularly detailed
+      if (section.title.toLowerCase().includes('financial') && section.content.length < 800) {
+        console.warn(`Financial section ${section.title} needs more detail, enhancing it further`);
+        section.content = enhanceSectionContent(section.title, formattedData, true);
+      }
+      
       return section;
     });
     
+    // Ensure there's a financial analysis section with detailed content
+    const hasFinancialSection = report.sections.some(section => 
+      section.title.toLowerCase().includes('financial') || 
+      section.title.toLowerCase().includes('financials')
+    );
+    
+    if (!hasFinancialSection) {
+      console.log("No dedicated financial analysis section found, adding one");
+      // Add a financial section after business overview (typically 2nd position)
+      report.sections.splice(Math.min(2, report.sections.length), 0, {
+        title: "Financial Analysis",
+        content: enhanceSectionContent("Financial Analysis", formattedData, true)
+      });
+    }
+    
     // Log the sections we're returning
     console.log(`Returning report with ${report.sections.length} sections: ${report.sections.map(s => s.title).join(', ')}`);
+    console.log(`Financial section length: ${report.sections.find(s => 
+      s.title.toLowerCase().includes('financial') || 
+      s.title.toLowerCase().includes('financials')
+    )?.content.length || 0} characters`);
     
     // Ensure we have all required report details
     ensureCompleteReportStructure(report, formattedData);
