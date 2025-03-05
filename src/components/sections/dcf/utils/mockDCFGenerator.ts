@@ -80,11 +80,11 @@ export const createMockSensitivityAnalysis = (currentPrice: number): DCFSensitiv
   return {
     headers: ["", "8.5%", "9.0%", "9.5%", "10.0%", "10.5%"],
     rows: [
-      { growth: "2.0%", values: [(currentPrice * 1.20).toString(), (currentPrice * 1.15).toString(), (currentPrice * 1.10).toString(), (currentPrice * 1.05).toString(), (currentPrice * 1.00).toString()] },
-      { growth: "2.5%", values: [(currentPrice * 1.25).toString(), (currentPrice * 1.20).toString(), (currentPrice * 1.15).toString(), (currentPrice * 1.10).toString(), (currentPrice * 1.05).toString()] },
-      { growth: "3.0%", values: [(currentPrice * 1.30).toString(), (currentPrice * 1.25).toString(), (currentPrice * 1.20).toString(), (currentPrice * 1.15).toString(), (currentPrice * 1.10).toString()] },
-      { growth: "3.5%", values: [(currentPrice * 1.35).toString(), (currentPrice * 1.30).toString(), (currentPrice * 1.25).toString(), (currentPrice * 1.20).toString(), (currentPrice * 1.15).toString()] },
-      { growth: "4.0%", values: [(currentPrice * 1.40).toString(), (currentPrice * 1.35).toString(), (currentPrice * 1.30).toString(), (currentPrice * 1.25).toString(), (currentPrice * 1.20).toString()] }
+      { growth: "2.0%", values: [parseFloat((currentPrice * 1.20).toFixed(2)), parseFloat((currentPrice * 1.15).toFixed(2)), parseFloat((currentPrice * 1.10).toFixed(2)), parseFloat((currentPrice * 1.05).toFixed(2)), parseFloat((currentPrice * 1.00).toFixed(2))] },
+      { growth: "2.5%", values: [parseFloat((currentPrice * 1.25).toFixed(2)), parseFloat((currentPrice * 1.20).toFixed(2)), parseFloat((currentPrice * 1.15).toFixed(2)), parseFloat((currentPrice * 1.10).toFixed(2)), parseFloat((currentPrice * 1.05).toFixed(2))] },
+      { growth: "3.0%", values: [parseFloat((currentPrice * 1.30).toFixed(2)), parseFloat((currentPrice * 1.25).toFixed(2)), parseFloat((currentPrice * 1.20).toFixed(2)), parseFloat((currentPrice * 1.15).toFixed(2)), parseFloat((currentPrice * 1.10).toFixed(2))] },
+      { growth: "3.5%", values: [parseFloat((currentPrice * 1.35).toFixed(2)), parseFloat((currentPrice * 1.30).toFixed(2)), parseFloat((currentPrice * 1.25).toFixed(2)), parseFloat((currentPrice * 1.20).toFixed(2)), parseFloat((currentPrice * 1.15).toFixed(2))] },
+      { growth: "4.0%", values: [parseFloat((currentPrice * 1.40).toFixed(2)), parseFloat((currentPrice * 1.35).toFixed(2)), parseFloat((currentPrice * 1.30).toFixed(2)), parseFloat((currentPrice * 1.25).toFixed(2)), parseFloat((currentPrice * 1.20).toFixed(2))] }
     ]
   };
 };

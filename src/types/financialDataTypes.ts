@@ -54,6 +54,7 @@ export interface RatioData {
   roa: number;
   currentRatio: number;
   debtToEquity: number;
+  debtEquity: number; // Added to match expected type in RatiosTabContent
   grossMargin: number;
   operatingMargin: number;
   netMargin: number;

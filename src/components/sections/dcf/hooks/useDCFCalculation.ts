@@ -34,7 +34,14 @@ export const useDCFCalculation = (symbol: string) => {
       
       console.log("Calculating DCF with AI-generated parameters:", params);
       const result = await calculateCustomDCF(params);
-      return { success: true, dcfResult: result?.dcfResult || null };
+      
+      // Make sure we're returning an object with dcfResult property
+      if (result && typeof result === 'object' && 'dcfResult' in result) {
+        return { success: true, dcfResult: result.dcfResult || null };
+      } else {
+        console.warn("DCF calculation returned unexpected result format:", result);
+        return { success: true, dcfResult: customDCFResult || null };
+      }
     } catch (err) {
       console.error("Error calculating DCF with AI assumptions:", err);
       setUsingMockData(true);
@@ -47,7 +54,7 @@ export const useDCFCalculation = (symbol: string) => {
       
       return { success: false, error: err, dcfResult: null };
     }
-  }, [symbol, calculateCustomDCF]);
+  }, [symbol, calculateCustomDCF, customDCFResult]);
 
   return {
     customDCFResult,
