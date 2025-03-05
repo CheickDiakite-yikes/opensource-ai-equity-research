@@ -1,4 +1,3 @@
-
 import { corsHeaders } from '../_shared/cors.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.36.0';
 
@@ -7,7 +6,6 @@ const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY") || "";
 const supabase = createClient(supabaseUrl, supabaseAnonKey);
 const openAIApiKey = Deno.env.get("OPENAI_API_KEY") || "";
 
-// Define types for the response
 interface StockPrediction {
   symbol: string;
   currentPrice: number;
@@ -24,7 +22,6 @@ interface StockPrediction {
 }
 
 Deno.serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
@@ -38,10 +35,8 @@ Deno.serve(async (req) => {
     
     console.log(`Generating AI price prediction for ${symbol}`);
     
-    // Prepare data for OpenAI
     const formattedData = formatDataForPrediction(symbol, stockData, financials, news);
     
-    // Generate prediction using OpenAI
     const prediction = await generatePredictionWithOpenAI(formattedData);
     
     return new Response(JSON.stringify(prediction), {
@@ -58,15 +53,9 @@ Deno.serve(async (req) => {
   }
 });
 
-// Format data for price prediction
 function formatDataForPrediction(symbol: string, stockData: any, financials: any, news: any[]) {
-  // Format financial data
   const financialSummary = extractFinancialIndicators(financials);
-  
-  // Format technical indicators
   const technicalIndicators = extractTechnicalIndicators(stockData);
-  
-  // Format news sentiment
   const newsSummary = formatNewsSummary(news);
   
   return {
@@ -78,11 +67,9 @@ function formatDataForPrediction(symbol: string, stockData: any, financials: any
   };
 }
 
-// Extract key financial indicators for prediction
 function extractFinancialIndicators(financials: any) {
   if (!financials) return {};
   
-  // Extract Income Statement data (last 3 years if available)
   const incomeData = financials.income?.slice(0, 3).map((statement: any) => ({
     year: statement.calendarYear,
     revenue: statement.revenue,
@@ -91,7 +78,6 @@ function extractFinancialIndicators(financials: any) {
     operatingMargin: statement.operatingIncomeRatio
   })) || [];
   
-  // Extract Balance Sheet data
   const balanceData = financials.balance?.slice(0, 3).map((statement: any) => ({
     year: statement.calendarYear,
     totalAssets: statement.totalAssets,
@@ -101,7 +87,6 @@ function extractFinancialIndicators(financials: any) {
     debt: statement.totalDebt
   })) || [];
   
-  // Extract Cash Flow data
   const cashflowData = financials.cashflow?.slice(0, 3).map((statement: any) => ({
     year: statement.calendarYear,
     operatingCashFlow: statement.operatingCashFlow,
@@ -110,7 +95,6 @@ function extractFinancialIndicators(financials: any) {
     dividendsPaid: statement.dividendsPaid
   })) || [];
   
-  // Extract Key Ratios
   const ratioData = financials.ratios?.slice(0, 1).map((data: any) => ({
     year: data.calendarYear,
     pe: data.priceEarningsRatio,
@@ -122,7 +106,6 @@ function extractFinancialIndicators(financials: any) {
     currentRatio: data.currentRatio
   })) || [];
   
-  // Calculate growth rates if we have multiple years
   const growthRates = calculateGrowthRates(incomeData);
   
   return {
@@ -134,7 +117,6 @@ function extractFinancialIndicators(financials: any) {
   };
 }
 
-// Calculate growth rates from income data
 function calculateGrowthRates(incomeData: any[]) {
   if (!incomeData || incomeData.length < 2) return {};
   
@@ -152,13 +134,11 @@ function calculateGrowthRates(incomeData: any[]) {
   };
 }
 
-// Calculate growth rate between two values
 function calculateGrowthRate(current: number, previous: number) {
   if (!current || !previous || previous === 0) return null;
   return ((current - previous) / Math.abs(previous) * 100).toFixed(2) + '%';
 }
 
-// Extract technical indicators
 function extractTechnicalIndicators(stockData: any) {
   if (!stockData) return {};
   
@@ -175,19 +155,16 @@ function extractTechnicalIndicators(stockData: any) {
   };
 }
 
-// Format news data
 function formatNewsSummary(news: any[]) {
   if (!news || news.length === 0) return [];
   
-  // Return only recent news (last 5 articles)
   return news.slice(0, 5).map(article => ({
     date: article.publishedDate,
     title: article.title,
-    summary: article.text?.substring(0, 300) + '...' // Truncate for brevity
+    summary: article.text?.substring(0, 300) + '...'
   }));
 }
 
-// Generate prediction using OpenAI
 async function generatePredictionWithOpenAI(data: any) {
   const systemPrompt = `You are a financial analyst specializing in stock price predictions. 
 Your task is to analyze the provided financial and market data for ${data.symbol} and generate 
@@ -232,6 +209,12 @@ Based on this data, please provide:
 Please ensure your price predictions are realistic based on the data provided and current market conditions.`;
 
   try {
+    const quickMode = data.quickMode === true;
+    
+    const modelToUse = quickMode ? "gpt-4o-mini" : "gpt-4o-mini";
+    const maxTokens = quickMode ? 1200 : 1500;
+    const temperature = quickMode ? 0.4 : 0.3;
+    
     const response = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -239,13 +222,13 @@ Please ensure your price predictions are realistic based on the data provided an
         "Authorization": `Bearer ${openAIApiKey}`
       },
       body: JSON.stringify({
-        model: "gpt-4o-mini",
+        model: modelToUse,
         messages: [
           { role: "system", content: systemPrompt },
           { role: "user", content: userPrompt }
         ],
-        temperature: 0.3,
-        max_tokens: 1500
+        temperature: temperature,
+        max_tokens: maxTokens
       })
     });
 
@@ -262,12 +245,9 @@ Please ensure your price predictions are realistic based on the data provided an
       throw new Error("No content in OpenAI response");
     }
 
-    // Extract JSON from the response
     try {
-      // Try to parse the JSON
       const predictionData = extractJSONFromText(content);
       
-      // Format and validate the prediction data
       const prediction: StockPrediction = {
         symbol: data.symbol,
         currentPrice: data.currentPrice,
@@ -288,7 +268,6 @@ Please ensure your price predictions are realistic based on the data provided an
       console.error("Error parsing OpenAI response:", parseError);
       console.log("Raw response:", content);
       
-      // Fallback to generate a basic prediction
       return createFallbackPrediction(data);
     }
   } catch (error) {
@@ -297,16 +276,12 @@ Please ensure your price predictions are realistic based on the data provided an
   }
 }
 
-// Extract JSON from text response (handles when GPT wraps JSON in markdown code blocks)
 function extractJSONFromText(text: string) {
-  // Check if the text is already valid JSON
   try {
     return JSON.parse(text);
   } catch (e) {
-    // Not valid JSON, try to extract it
   }
   
-  // Try to extract JSON from markdown code blocks
   const jsonMatch = text.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
   if (jsonMatch && jsonMatch[1]) {
     try {
@@ -316,7 +291,6 @@ function extractJSONFromText(text: string) {
     }
   }
   
-  // Try to find anything that looks like JSON
   const possibleJson = text.match(/\{[\s\S]*\}/);
   if (possibleJson) {
     try {
@@ -329,7 +303,6 @@ function extractJSONFromText(text: string) {
   throw new Error("Could not extract valid JSON from response");
 }
 
-// Create a basic fallback prediction when OpenAI fails
 function createFallbackPrediction(data: any): StockPrediction {
   return {
     symbol: data.symbol,
@@ -347,7 +320,6 @@ function createFallbackPrediction(data: any): StockPrediction {
   };
 }
 
-// Ensure value is a number, or use default
 function ensureNumberValue(value: any, defaultValue: number): number {
   if (typeof value === 'number' && !isNaN(value)) {
     return value;
@@ -355,14 +327,12 @@ function ensureNumberValue(value: any, defaultValue: number): number {
   return defaultValue;
 }
 
-// Ensure number is within range
 function ensureNumberInRange(value: any, min: number, max: number): number {
   const num = Number(value);
   if (isNaN(num)) return (min + max) / 2;
   return Math.min(Math.max(num, min), max);
 }
 
-// Ensure array has items or use default
 function ensureArrayWithItems(array: any, defaultArray: string[]): string[] {
   if (Array.isArray(array) && array.length > 0) {
     return array;
@@ -370,12 +340,10 @@ function ensureArrayWithItems(array: any, defaultArray: string[]): string[] {
   return defaultArray;
 }
 
-// Generate default sentiment analysis
 function generateDefaultSentiment(data: any): string {
   return "Based on recent financial data and market trends, the overall sentiment for this stock appears cautiously optimistic. The company has shown stability in its core financial metrics, though market conditions may introduce some volatility in the short term.";
 }
 
-// Generate default key drivers
 function generateDefaultDrivers(): string[] {
   return [
     "Strong revenue growth in core product lines",
@@ -386,7 +354,6 @@ function generateDefaultDrivers(): string[] {
   ];
 }
 
-// Generate default risks
 function generateDefaultRisks(): string[] {
   return [
     "Increasing competition in primary markets",

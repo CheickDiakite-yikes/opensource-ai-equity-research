@@ -1,10 +1,11 @@
 
-import React from "react";
+import React, { useEffect } from "react";
 import { TrendingUp, TrendingDown, ExternalLink, DollarSign } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { motion } from "framer-motion";
 import { fetchStockQuote, fetchStockRating } from "@/services/api/profileService";
 import { useQuery } from "@tanstack/react-query";
+import { useStockPrediction } from "@/hooks/useStockPrediction";
 
 export interface CompanyCardProps {
   company: { symbol: string, name: string };
@@ -42,10 +43,9 @@ const CompanyCard = ({ company, onSelect }: CompanyCardProps) => {
     queryFn: () => fetchStockRating(company.symbol),
     staleTime: 15 * 60 * 1000, // 15 minutes
   });
-
-  const predictedPrice = quote?.price 
-    ? (quote.price * (1 + (Math.sin(company.symbol.charCodeAt(0)) * 0.25))).toFixed(2)
-    : null;
+  
+  // Use the prediction hook with autoFetch enabled
+  const { prediction, isLoading: isPredictionLoading } = useStockPrediction(company.symbol, true);
 
   const getTrendIndicator = (symbol: string) => {
     if (!quote) return null;
@@ -65,6 +65,9 @@ const CompanyCard = ({ company, onSelect }: CompanyCardProps) => {
   };
 
   const trend = quote ? getTrendIndicator(company.symbol) : null;
+  
+  // Get the predicted price (1 year forecast)
+  const predictedPrice = prediction?.predictedPrice?.oneYear;
 
   return (
     <motion.div
@@ -109,15 +112,19 @@ const CompanyCard = ({ company, onSelect }: CompanyCardProps) => {
                 </div>
               )}
 
-              {predictedPrice && (
-                <div className="flex flex-col space-y-1">
-                  <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">AI Prediction</span>
-                  <div className="flex items-center">
-                    <DollarSign className="h-4 w-4 text-indigo-500 mr-1" />
-                    <span className="font-bold text-lg">{predictedPrice}</span>
-                  </div>
+              <div className="flex flex-col space-y-1">
+                <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">AI Prediction</span>
+                <div className="flex items-center">
+                  <DollarSign className="h-4 w-4 text-indigo-500 mr-1" />
+                  {isPredictionLoading ? (
+                    <div className="h-6 w-16 bg-slate-200 dark:bg-slate-700 animate-pulse rounded" />
+                  ) : predictedPrice ? (
+                    <span className="font-bold text-lg">{predictedPrice.toFixed(2)}</span>
+                  ) : (
+                    <span className="text-sm text-slate-500">N/A</span>
+                  )}
                 </div>
-              )}
+              </div>
             </div>
 
             <div className="flex items-center justify-between">

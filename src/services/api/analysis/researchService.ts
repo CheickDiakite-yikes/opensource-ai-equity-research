@@ -69,16 +69,18 @@ export const generateStockPrediction = async (
   symbol: string,
   quote: StockQuote,
   financials: any,
-  news: NewsArticle[]
+  news: NewsArticle[],
+  quickMode: boolean = false
 ): Promise<StockPrediction> => {
   try {
-    console.log(`Generating AI stock prediction for ${symbol}`);
+    console.log(`Generating AI stock prediction for ${symbol}${quickMode ? ' (quick mode)' : ''}`);
     
     const data = await invokeSupabaseFunction<StockPrediction>('predict-stock-price', {
       symbol,
       stockData: quote,
       financials,
-      news
+      news,
+      quickMode // Pass the quick mode flag to the edge function
     });
     
     if (!data) {

@@ -24,7 +24,7 @@ const FeaturedCompanies: React.FC<FeaturedCompaniesProps> = ({
         >
           <SectionHeader 
             title="Featured Companies"
-            description="Explore trending stocks and access in-depth financial analysis with just one click."
+            description="Explore trending stocks with real-time AI price predictions and in-depth financial analysis."
           />
           
           <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 w-full">
