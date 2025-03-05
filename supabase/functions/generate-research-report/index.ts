@@ -41,43 +41,61 @@ Deno.serve(async (req) => {
       report.sections = createDefaultSections(formattedData);
     }
     
-    // Validate sections have sufficient content - increase minimum content length to 300 characters
+    // Validate all sections have sufficient content
     report.sections = report.sections.map(section => {
-      if (!section.content || section.content.length < 300) {
-        console.warn(`Section ${section.title} has insufficient content, enhancing it`);
-        section.content = enhanceSectionContent(section.title, formattedData);
+      // Different minimum content length requirements for different section types
+      let minLength = 300;
+      
+      if (section.title.toLowerCase().includes('financial')) {
+        minLength = 1000; // Financial sections need more detail
+      } else if (
+        section.title.toLowerCase().includes('risk') || 
+        section.title.toLowerCase().includes('valuation') ||
+        section.title.toLowerCase().includes('thesis') ||
+        section.title.toLowerCase().includes('esg')
+      ) {
+        minLength = 600; // Other important analysis sections need substantial detail
       }
       
-      // If it's a financial section, make sure it's particularly detailed
-      if (section.title.toLowerCase().includes('financial') && section.content.length < 1000) {
-        console.warn(`Financial section ${section.title} needs more detail, enhancing it further`);
-        section.content = enhanceSectionContent(section.title, formattedData, true);
+      if (!section.content || section.content.length < minLength) {
+        console.warn(`Section ${section.title} has insufficient content (${section.content?.length || 0} chars), enhancing it to meet ${minLength} char minimum`);
+        section.content = enhanceSectionContent(section.title, formattedData, 
+          section.title.toLowerCase().includes('financial')); // Pass true for extra detail on financial sections
       }
       
       return section;
     });
     
-    // Ensure there's a financial analysis section with detailed content
-    const hasFinancialSection = report.sections.some(section => 
-      section.title.toLowerCase().includes('financial') || 
-      section.title.toLowerCase().includes('financials')
-    );
+    // Check for required sections and add them if missing
+    const requiredSections = [
+      'Financial Analysis', 
+      'Valuation', 
+      'Risk Factors', 
+      'ESG Considerations',
+      'Investment Thesis',
+      'Business Overview'
+    ];
     
-    if (!hasFinancialSection) {
-      console.log("No dedicated financial analysis section found, adding one");
-      // Add a financial section after business overview (typically 2nd position)
-      report.sections.splice(Math.min(2, report.sections.length), 0, {
-        title: "Financial Analysis",
-        content: enhanceSectionContent("Financial Analysis", formattedData, true)
-      });
+    for (const sectionTitle of requiredSections) {
+      const hasSection = report.sections.some(section => 
+        section.title.toLowerCase().includes(sectionTitle.toLowerCase())
+      );
+      
+      if (!hasSection) {
+        console.log(`Adding missing required section: ${sectionTitle}`);
+        // Add the section in an appropriate position
+        const insertPosition = determineInsertPosition(report.sections, sectionTitle);
+        report.sections.splice(insertPosition, 0, {
+          title: sectionTitle,
+          content: enhanceSectionContent(sectionTitle, formattedData, 
+            sectionTitle.toLowerCase().includes('financial'))
+        });
+      }
     }
     
     // Log the sections we're returning
     console.log(`Returning report with ${report.sections.length} sections: ${report.sections.map(s => s.title).join(', ')}`);
-    console.log(`Financial section length: ${report.sections.find(s => 
-      s.title.toLowerCase().includes('financial') || 
-      s.title.toLowerCase().includes('financials')
-    )?.content.length || 0} characters`);
+    console.log(`Section content lengths: ${report.sections.map(s => `${s.title}: ${s.content.length}`).join(', ')}`);
     
     // Ensure we have all required report details
     ensureCompleteReportStructure(report, formattedData);
@@ -95,3 +113,57 @@ Deno.serve(async (req) => {
     });
   }
 });
+
+// Helper function to determine the best insert position for a new section
+function determineInsertPosition(sections: Array<{title: string, content: string}>, newSectionTitle: string): number {
+  // Ideal sequence of sections (partial)
+  const idealSequence = [
+    'Executive Summary',
+    'Investment Thesis',
+    'Business Overview',
+    'Financial Analysis',
+    'Valuation',
+    'Risk Factors',
+    'ESG Considerations',
+    'Rating and Recommendation'
+  ];
+  
+  const targetIndex = idealSequence.findIndex(title => 
+    title.toLowerCase() === newSectionTitle.toLowerCase());
+  
+  if (targetIndex === -1) {
+    // If not in ideal sequence, add near the end but before rating/recommendation
+    const ratingIndex = sections.findIndex(s => 
+      s.title.toLowerCase().includes('rating') || 
+      s.title.toLowerCase().includes('recommendation'));
+    
+    return ratingIndex !== -1 ? ratingIndex : sections.length;
+  }
+  
+  // Find the first section that should come after the new section
+  for (let i = targetIndex + 1; i < idealSequence.length; i++) {
+    const afterSectionIndex = sections.findIndex(s => 
+      s.title.toLowerCase().includes(idealSequence[i].toLowerCase()));
+    
+    if (afterSectionIndex !== -1) {
+      return afterSectionIndex;
+    }
+  }
+  
+  // Find the last section that should come before the new section
+  for (let i = targetIndex - 1; i >= 0; i--) {
+    const beforeSectionIndex = sections.findIndex(s => 
+      s.title.toLowerCase().includes(idealSequence[i].toLowerCase()));
+    
+    if (beforeSectionIndex !== -1) {
+      return beforeSectionIndex + 1;
+    }
+  }
+  
+  // Default to adding at the end before any rating section
+  const ratingIndex = sections.findIndex(s => 
+    s.title.toLowerCase().includes('rating') || 
+    s.title.toLowerCase().includes('recommendation'));
+  
+  return ratingIndex !== -1 ? ratingIndex : sections.length;
+}
