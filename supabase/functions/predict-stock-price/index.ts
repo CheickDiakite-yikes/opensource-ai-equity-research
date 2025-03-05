@@ -27,17 +27,20 @@ Deno.serve(async (req) => {
   }
   
   try {
-    const { symbol, stockData, financials, news } = await req.json();
+    const { symbol, stockData, financials, news, quickMode } = await req.json();
     
     if (!symbol || !stockData) {
       throw new Error('Missing required parameters');
     }
     
-    console.log(`Generating AI price prediction for ${symbol}`);
+    console.log(`Generating AI price prediction for ${symbol}${quickMode ? ' (quick mode)' : ''}`);
     
     const formattedData = formatDataForPrediction(symbol, stockData, financials, news);
+    formattedData.quickMode = quickMode === true; // Ensure quickMode is passed through
     
     const prediction = await generatePredictionWithOpenAI(formattedData);
+    
+    console.log(`AI stock prediction generated for ${symbol}`);
     
     return new Response(JSON.stringify(prediction), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -211,9 +214,15 @@ Please ensure your price predictions are realistic based on the data provided an
   try {
     const quickMode = data.quickMode === true;
     
-    const modelToUse = quickMode ? "gpt-4o-mini" : "gpt-4o-mini";
-    const maxTokens = quickMode ? 1200 : 1500;
-    const temperature = quickMode ? 0.4 : 0.3;
+    // Use mini model for all predictions on the featured companies dashboard for faster loading
+    // This helps prevent timeouts while still providing reasonable predictions
+    const modelToUse = "gpt-4o-mini";
+    
+    // Reduce tokens for quicker responses on featured companies dashboard
+    const maxTokens = quickMode ? 800 : 1200; 
+    
+    // Slightly higher temperature for quick mode to compensate for fewer tokens
+    const temperature = quickMode ? 0.5 : 0.3;
     
     const response = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
@@ -252,10 +261,10 @@ Please ensure your price predictions are realistic based on the data provided an
         symbol: data.symbol,
         currentPrice: data.currentPrice,
         predictedPrice: {
-          oneMonth: ensureNumberValue(predictionData.predictedPrice?.oneMonth, data.currentPrice * 1.02),
-          threeMonths: ensureNumberValue(predictionData.predictedPrice?.threeMonths, data.currentPrice * 1.05),
-          sixMonths: ensureNumberValue(predictionData.predictedPrice?.sixMonths, data.currentPrice * 1.08),
-          oneYear: ensureNumberValue(predictionData.predictedPrice?.oneYear, data.currentPrice * 1.12)
+          oneMonth: ensureNumberValue(predictionData.predictedPrice?.oneMonth, data.currentPrice * 1.01),
+          threeMonths: ensureNumberValue(predictionData.predictedPrice?.threeMonths, data.currentPrice * 1.03),
+          sixMonths: ensureNumberValue(predictionData.predictedPrice?.sixMonths, data.currentPrice * 1.05),
+          oneYear: ensureNumberValue(predictionData.predictedPrice?.oneYear, data.currentPrice * 1.08)
         },
         sentimentAnalysis: predictionData.sentimentAnalysis || generateDefaultSentiment(data),
         confidenceLevel: ensureNumberInRange(predictionData.confidenceLevel, 65, 90),
@@ -308,10 +317,10 @@ function createFallbackPrediction(data: any): StockPrediction {
     symbol: data.symbol,
     currentPrice: data.currentPrice,
     predictedPrice: {
-      oneMonth: data.currentPrice * 1.02,
-      threeMonths: data.currentPrice * 1.05,
-      sixMonths: data.currentPrice * 1.08,
-      oneYear: data.currentPrice * 1.12
+      oneMonth: data.currentPrice * 1.01,
+      threeMonths: data.currentPrice * 1.03,
+      sixMonths: data.currentPrice * 1.05,
+      oneYear: data.currentPrice * 1.08
     },
     sentimentAnalysis: generateDefaultSentiment(data),
     confidenceLevel: 75,

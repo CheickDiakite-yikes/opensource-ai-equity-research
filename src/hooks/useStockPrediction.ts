@@ -12,6 +12,8 @@ export const useStockPrediction = (symbol: string, autoFetch: boolean = false, q
   const [prediction, setPrediction] = useState<StockPrediction | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+  const [retryCount, setRetryCount] = useState<number>(0);
+  const MAX_RETRIES = 2;
 
   const generatePrediction = async () => {
     try {
@@ -20,9 +22,18 @@ export const useStockPrediction = (symbol: string, autoFetch: boolean = false, q
       
       // Get required data for prediction
       const [quote, financials, marketNews] = await Promise.all([
-        fetchStockQuote(symbol),
-        fetchAllFinancialData(symbol),
-        fetchMarketNews(5, 'general')
+        fetchStockQuote(symbol).catch(err => {
+          console.error(`Error fetching quote for ${symbol}:`, err);
+          return null;
+        }),
+        fetchAllFinancialData(symbol).catch(err => {
+          console.error(`Error fetching financials for ${symbol}:`, err);
+          return {};
+        }),
+        fetchMarketNews(5, 'general').catch(err => {
+          console.error('Error fetching market news:', err);
+          return [];
+        })
       ]);
       
       if (!quote) {
@@ -42,17 +53,45 @@ export const useStockPrediction = (symbol: string, autoFetch: boolean = false, q
       
       // Generate the prediction
       const result = await generateStockPrediction(symbol, quote, financials, news, quickMode);
+      
+      if (!result) {
+        throw new Error(`Failed to generate prediction for ${symbol}`);
+      }
+      
       setPrediction(result);
+      setRetryCount(0); // Reset retry count on success
       
       return result;
     } catch (err: any) {
       console.error(`Error generating prediction for ${symbol}:`, err);
+      
+      // Set error message
       setError(err.message || `Failed to generate prediction for ${symbol}`);
+      
+      // Return null to indicate failure
       return null;
     } finally {
       setIsLoading(false);
     }
   };
+
+  // Auto-retry on failure if within retry limits
+  useEffect(() => {
+    if (error && autoFetch && retryCount < MAX_RETRIES) {
+      const retryDelay = 3000 * (retryCount + 1); // Exponential backoff
+      
+      console.log(`Retrying prediction for ${symbol} in ${retryDelay/1000}s (attempt ${retryCount + 1}/${MAX_RETRIES})`);
+      
+      const timer = setTimeout(() => {
+        setRetryCount(prev => prev + 1);
+        generatePrediction().catch(err => {
+          console.error(`Retry failed for ${symbol}:`, err);
+        });
+      }, retryDelay);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [error, autoFetch, retryCount, symbol]);
 
   // Auto-fetch on mount if enabled
   useEffect(() => {
@@ -67,6 +106,10 @@ export const useStockPrediction = (symbol: string, autoFetch: boolean = false, q
     prediction,
     isLoading,
     error,
-    generatePrediction
+    generatePrediction,
+    retry: () => {
+      setRetryCount(0); // Reset retry count
+      return generatePrediction();
+    }
   };
 };

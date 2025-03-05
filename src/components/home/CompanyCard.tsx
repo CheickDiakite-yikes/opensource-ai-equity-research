@@ -1,11 +1,12 @@
 
 import React, { useEffect } from "react";
-import { TrendingUp, TrendingDown, ExternalLink, DollarSign } from "lucide-react";
+import { TrendingUp, TrendingDown, ExternalLink, DollarSign, AlertTriangle } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { motion } from "framer-motion";
 import { fetchStockQuote, fetchStockRating } from "@/services/api/profileService";
 import { useQuery } from "@tanstack/react-query";
 import { useStockPrediction } from "@/hooks/useStockPrediction";
+import { toast } from "sonner";
 
 export interface CompanyCardProps {
   company: { symbol: string, name: string };
@@ -32,20 +33,28 @@ export const itemAnimation = {
 };
 
 const CompanyCard = ({ company, onSelect }: CompanyCardProps) => {
-  const { data: quote } = useQuery({
+  const { data: quote, isError: isQuoteError } = useQuery({
     queryKey: ['stockQuote', company.symbol],
     queryFn: () => fetchStockQuote(company.symbol),
     staleTime: 5 * 60 * 1000, // 5 minutes
+    retry: 2,
   });
 
-  const { data: ratingData } = useQuery({
+  const { data: ratingData, isError: isRatingError } = useQuery({
     queryKey: ['stockRating', company.symbol],
     queryFn: () => fetchStockRating(company.symbol),
     staleTime: 15 * 60 * 1000, // 15 minutes
+    retry: 2,
   });
   
   // Use the prediction hook with autoFetch enabled
-  const { prediction, isLoading: isPredictionLoading } = useStockPrediction(company.symbol, true);
+  const { prediction, isLoading: isPredictionLoading, error: predictionError } = useStockPrediction(company.symbol, true, true);
+
+  useEffect(() => {
+    if (predictionError) {
+      console.error(`Prediction error for ${company.symbol}:`, predictionError);
+    }
+  }, [predictionError, company.symbol]);
 
   const getTrendIndicator = (symbol: string) => {
     if (!quote) return null;
@@ -68,6 +77,21 @@ const CompanyCard = ({ company, onSelect }: CompanyCardProps) => {
   
   // Get the predicted price (1 year forecast)
   const predictedPrice = prediction?.predictedPrice?.oneYear;
+  
+  // Calculate prediction percentage difference from current price
+  const calculatePredictionDifference = () => {
+    if (!quote?.price || !predictedPrice) return null;
+    
+    const priceDiff = ((predictedPrice - quote.price) / quote.price) * 100;
+    const isPositive = priceDiff > 0;
+    
+    return {
+      value: isPositive ? `+${priceDiff.toFixed(2)}%` : `${priceDiff.toFixed(2)}%`,
+      color: isPositive ? "bg-blue-500/20 text-blue-600" : "bg-red-500/20 text-red-600"
+    };
+  };
+  
+  const predictionDiff = calculatePredictionDifference();
 
   return (
     <motion.div
@@ -102,13 +126,18 @@ const CompanyCard = ({ company, onSelect }: CompanyCardProps) => {
             </div>
 
             <div className="grid grid-cols-2 gap-4 mb-2">
-              {quote && (
+              {quote ? (
                 <div className="flex flex-col space-y-1">
                   <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">Current Price</span>
                   <div className="flex items-center">
                     <DollarSign className="h-4 w-4 text-blue-500 mr-1" />
                     <span className="font-bold text-lg">{quote.price.toFixed(2)}</span>
                   </div>
+                </div>
+              ) : (
+                <div className="flex flex-col space-y-1">
+                  <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">Current Price</span>
+                  <div className="h-6 w-20 bg-slate-200 dark:bg-slate-700 animate-pulse rounded" />
                 </div>
               )}
 
@@ -118,6 +147,11 @@ const CompanyCard = ({ company, onSelect }: CompanyCardProps) => {
                   <DollarSign className="h-4 w-4 text-indigo-500 mr-1" />
                   {isPredictionLoading ? (
                     <div className="h-6 w-16 bg-slate-200 dark:bg-slate-700 animate-pulse rounded" />
+                  ) : predictionError ? (
+                    <div className="flex items-center text-amber-500">
+                      <AlertTriangle className="h-4 w-4 mr-1" />
+                      <span className="text-sm">Error</span>
+                    </div>
                   ) : predictedPrice ? (
                     <span className="font-bold text-lg">{predictedPrice.toFixed(2)}</span>
                   ) : (
@@ -138,9 +172,13 @@ const CompanyCard = ({ company, onSelect }: CompanyCardProps) => {
                 </div>
               )}
               
-              {ratingData && (
-                <div className="px-2.5 py-1.5 rounded-md bg-blue-500/10 text-blue-600 dark:bg-blue-500/20 dark:text-blue-400 text-sm font-medium">
-                  {ratingData.rating || "Hold"}
+              {predictionDiff ? (
+                <div className={`px-2.5 py-1.5 rounded-md ${predictionDiff.color} text-sm font-medium`}>
+                  {predictionDiff.value}
+                </div>
+              ) : (
+                <div className="px-2.5 py-1.5 rounded-md bg-slate-200 dark:bg-slate-700 text-slate-500 dark:text-slate-400 text-sm font-medium">
+                  {isPredictionLoading ? "Loading..." : "N/A"}
                 </div>
               )}
             </div>
