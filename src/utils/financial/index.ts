@@ -5,3 +5,4 @@ export * from './formatUtils';
 export * from './dataProcessingUtils';
 export * from './prepareDataUtils';
 export * from './ratioAnalysisUtils';
+export * from './dcfCalculationUtils';

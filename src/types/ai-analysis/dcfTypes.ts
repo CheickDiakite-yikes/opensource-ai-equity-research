@@ -30,6 +30,21 @@ export interface CustomDCFParams {
   beta: number;
 }
 
+// New interface for DCF inputs
+export interface DCFInputs {
+  revenuePercentage?: number;
+  ebitdaPercentage?: number;
+  capitalExpenditurePercentage?: number; 
+  taxRate?: number;
+  longTermGrowthRate?: number;
+  wacc?: number;
+  beta?: number;
+  costOfEquity?: number;
+  costOfDebt?: number;
+  marketRiskPremium?: number;
+  riskFreeRate?: number;
+}
+
 // New type for AI-generated DCF assumptions
 export interface AIDCFSuggestion {
   symbol: string;
@@ -123,6 +138,8 @@ export interface CustomDCFResult {
   equityValuePerShare: number;
   freeCashFlowT1: number;
   operatingCashFlowPercentage: number;
+  // Add the missing property
+  cashAndCashEquivalents: number;
 }
 
 // DCF Sensitivity Analysis data structure

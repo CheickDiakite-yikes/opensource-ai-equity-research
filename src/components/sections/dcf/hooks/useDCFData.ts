@@ -22,10 +22,10 @@ export const useDCFData = (symbol: string, financials: any[]) => {
   } = useDCFAssumptions(symbol);
   
   const {
-    customDCFResult,
+    dcfResult,
     projectedData,
-    isCalculating,
-    dcfError,
+    isLoading: isCalculating,
+    error: dcfError,
     usingMockData,
     setUsingMockData,
     calculateDCFWithAIAssumptions
@@ -66,14 +66,14 @@ export const useDCFData = (symbol: string, financials: any[]) => {
   // Determine whether to use mock data
   const shouldUseMockData = 
     isCalculating || 
-    (dcfError && !customDCFResult) || 
-    !customDCFResult || 
+    (dcfError && !dcfResult) || 
+    !dcfResult || 
     usingMockData;
 
   // Determine which data to use (real or mock)
   const dcfData: FormattedDCFData = shouldUseMockData
     ? mockDCFData
-    : prepareDCFData(customDCFResult, assumptions, projectedData, mockDCFData.sensitivity);
+    : prepareDCFData(dcfResult, assumptions, projectedData, mockDCFData.sensitivity);
 
   return {
     dcfData,
