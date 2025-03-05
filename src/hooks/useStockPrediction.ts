@@ -1,6 +1,8 @@
 
 // This file is now a re-export from the refactored module
-import { useStockPrediction, PredictionHistoryEntry } from "./stock-prediction";
+import { useStockPrediction } from "./stock-prediction";
+import type { PredictionHistoryEntry } from "./stock-prediction";
 
-export { useStockPrediction, PredictionHistoryEntry };
+export type { PredictionHistoryEntry };
+export { useStockPrediction };
 export default useStockPrediction;
