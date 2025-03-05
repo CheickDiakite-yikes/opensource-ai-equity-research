@@ -157,11 +157,11 @@ export const downloadReportAsHTML = (report: ResearchReport) => {
       </div>`;
   }
   
-  // Add Disclaimer
+  // Add updated Disclaimer with more comprehensive text
   content += `
     <div class="disclaimer">
       <h2>Disclaimer</h2>
-      <p>This report is generated using AI and should not be the sole basis for investment decisions. Always conduct your own research and consult with a financial advisor.</p>
+      <p>This equity research report has been generated using DiDi's proprietary artificial intelligence system and is provided for informational purposes only. The analysis, opinions, and recommendations contained herein do not constitute financial, investment, or professional advice, nor an offer or solicitation to buy or sell securities. DiDi does not guarantee the accuracy, completeness, or reliability of the content, and shall not be liable for any errors, omissions, or losses arising from its use. Investors must conduct their own independent analysis and consult qualified financial advisors before making any investment decisions.</p>
     </div>`;
   
   // Generate full HTML with CSS styling
