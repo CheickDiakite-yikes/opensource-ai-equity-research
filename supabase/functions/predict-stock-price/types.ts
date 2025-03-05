@@ -17,8 +17,9 @@ export interface StockPrediction {
 export interface FormattedData {
   symbol: string;
   currentPrice: number;
-  financialSummary: any;
-  technicalIndicators: any;
-  newsSummary: any;
+  financialSummary: Record<string, any>;
+  technicalIndicators: Record<string, any>;
+  newsSummary: Record<string, any>;
   quickMode?: boolean;
+  industry?: string;
 }

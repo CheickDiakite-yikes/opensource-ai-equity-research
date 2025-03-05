@@ -93,7 +93,7 @@ const CompanyCard = ({ company, onSelect }: CompanyCardProps) => {
   const calculatePredictionDifference = () => {
     if (!quote?.price || !predictedPrice) return null;
     
-    // CRITICAL FIX: Calculate percentage difference properly and ensure non-zero value
+    // Calculate percentage difference properly and ensure non-zero value
     const priceDiff = ((predictedPrice - quote.price) / quote.price) * 100;
     
     // Format the difference to ensure we show at least 2 decimal places 

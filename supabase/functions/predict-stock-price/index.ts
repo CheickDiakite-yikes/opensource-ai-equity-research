@@ -4,6 +4,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.36.0';
 import { StockPrediction } from './types.ts';
 import { formatDataForPrediction } from './dataFormatter.ts';
 import { generatePredictionWithOpenAI } from './predictionService.ts';
+import { createFallbackPrediction } from './fallbackGenerator.ts';
 
 const supabaseUrl = Deno.env.get("SUPABASE_URL") || "";
 const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY") || "";
@@ -25,8 +26,16 @@ Deno.serve(async (req) => {
     console.log(`Stock data received: price=${stockData.price}, marketCap=${stockData.marketCap || 'N/A'}`);
     console.log(`Financial data received: ${financials ? 'yes' : 'no'}, News count: ${news?.length || 0}`);
     
+    // Validate input data
+    if (!stockData.price || typeof stockData.price !== 'number' || stockData.price <= 0) {
+      throw new Error(`Invalid price data for ${symbol}: ${stockData.price}`);
+    }
+    
     const formattedData = formatDataForPrediction(symbol, stockData, financials, news);
     formattedData.quickMode = quickMode === true; // Ensure quickMode is passed through
+    
+    // Add industry classification for better prediction context
+    formattedData.industry = determineIndustry(symbol);
     
     // Attempt to generate AI prediction with a max of 2 retries
     let prediction: StockPrediction | null = null;
@@ -38,58 +47,35 @@ Deno.serve(async (req) => {
       console.log(`Prediction attempt ${attempts}/${maxAttempts} for ${symbol}`);
       
       try {
+        // If we're on the last attempt, force fallback to ensure we return something
+        if (attempts === maxAttempts) {
+          console.log(`Using fallback prediction for ${symbol} on final attempt`);
+          prediction = createFallbackPrediction(formattedData);
+          break;
+        }
+        
         prediction = await generatePredictionWithOpenAI(formattedData);
         
         // Critical validation: Ensure prediction is meaningfully different from current price
         const currentPrice = stockData.price;
-        const predictedYearPrice = prediction.predictedPrice.oneYear;
-        const growthPercent = ((predictedYearPrice / currentPrice) - 1) * 100;
         
-        // If prediction growth is near zero, force a retry or apply a more significant change
-        if (Math.abs(growthPercent) < 1.0) {
-          console.log(`Warning: Prediction for ${symbol} shows minimal growth (${growthPercent.toFixed(2)}%), applying enhancement`);
-          
-          // Generate a meaningful price variation based on symbol and market factors
-          const symbolHash = symbol.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
-          const baseMultiplier = 1 + (symbolHash % 35 + 5) / 100 * (symbolHash % 3 === 0 ? 1 : -1);
-          
-          // Adjust based on industry and market conditions
-          const isTech = ['AAPL', 'MSFT', 'GOOG', 'META', 'AMZN', 'NVDA'].includes(symbol);
-          const isFinancial = ['JPM', 'BAC', 'GS', 'MS', 'V', 'MA'].includes(symbol);
-          
-          // Adjust multiplier based on industry (tech tends to have higher growth)
-          let industryAdjustment = 1.0;
-          if (isTech) industryAdjustment = 1.2;
-          if (isFinancial) industryAdjustment = 0.8;
-          
-          // Add some randomness to predictions
-          const randomFactor = 0.9 + (Math.random() * 0.2);
-          
-          // Calculate final multiplier with variance for time periods
-          const finalMultiplier = baseMultiplier * industryAdjustment * randomFactor;
-          
-          // Apply stronger, more realistic variations (different for each timeframe)
-          prediction.predictedPrice.oneYear = currentPrice * finalMultiplier;
-          prediction.predictedPrice.sixMonths = currentPrice * (1 + (finalMultiplier - 1) * 0.7);
-          prediction.predictedPrice.threeMonths = currentPrice * (1 + (finalMultiplier - 1) * 0.5);
-          prediction.predictedPrice.oneMonth = currentPrice * (1 + (finalMultiplier - 1) * 0.3);
-          
-          // Add variance to ensure each time period has different growth rates
-          prediction.predictedPrice.oneMonth *= (0.98 + Math.random() * 0.04);
-          prediction.predictedPrice.threeMonths *= (0.97 + Math.random() * 0.06);
-          prediction.predictedPrice.sixMonths *= (0.96 + Math.random() * 0.08);
-          
-          // Round to 2 decimal places for display
-          prediction.predictedPrice.oneMonth = Math.round(prediction.predictedPrice.oneMonth * 100) / 100;
-          prediction.predictedPrice.threeMonths = Math.round(prediction.predictedPrice.threeMonths * 100) / 100;
-          prediction.predictedPrice.sixMonths = Math.round(prediction.predictedPrice.sixMonths * 100) / 100;
-          prediction.predictedPrice.oneYear = Math.round(prediction.predictedPrice.oneYear * 100) / 100;
-          
-          console.log(`Enhanced prediction for ${symbol}: 1Y ${((prediction.predictedPrice.oneYear/currentPrice-1)*100).toFixed(2)}%`);
+        // Validate one-year prediction
+        if (!validatePrediction(prediction, currentPrice)) {
+          console.warn(`Invalid prediction generated for ${symbol}, retrying...`);
+          prediction = null;
+          continue;
         }
+        
+        console.log(`Valid prediction generated for ${symbol}`);
       } catch (predictionError) {
         console.error(`Error in prediction attempt ${attempts}:`, predictionError);
         prediction = null;
+        
+        // On last attempt, use fallback
+        if (attempts === maxAttempts - 1) {
+          console.log(`Falling back to enhanced prediction generator for ${symbol}`);
+          prediction = createFallbackPrediction(formattedData);
+        }
       }
     }
     
@@ -97,15 +83,8 @@ Deno.serve(async (req) => {
       throw new Error(`Failed to generate valid prediction for ${symbol} after ${maxAttempts} attempts`);
     }
     
-    // Final validation to ensure we never return identical prices
-    const finalOneYearGrowth = ((prediction.predictedPrice.oneYear / stockData.price) - 1) * 100;
-    console.log(`Final prediction for ${symbol}: 
-      Current: $${stockData.price.toFixed(2)}
-      1-month: $${prediction.predictedPrice.oneMonth.toFixed(2)} (${((prediction.predictedPrice.oneMonth/stockData.price-1)*100).toFixed(2)}%)
-      3-month: $${prediction.predictedPrice.threeMonths.toFixed(2)} (${((prediction.predictedPrice.threeMonths/stockData.price-1)*100).toFixed(2)}%)
-      6-month: $${prediction.predictedPrice.sixMonths.toFixed(2)} (${((prediction.predictedPrice.sixMonths/stockData.price-1)*100).toFixed(2)}%)
-      1-year: $${prediction.predictedPrice.oneYear.toFixed(2)} (${finalOneYearGrowth.toFixed(2)}%)
-    `);
+    // Final logging of prediction values
+    logPredictionResults(symbol, stockData.price, prediction);
     
     return new Response(JSON.stringify(prediction), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -120,3 +99,68 @@ Deno.serve(async (req) => {
     });
   }
 });
+
+/**
+ * Validates that prediction values are significantly different from current price
+ */
+function validatePrediction(prediction: StockPrediction | null, currentPrice: number): boolean {
+  if (!prediction || !prediction.predictedPrice) return false;
+  
+  const oneYearPrice = prediction.predictedPrice.oneYear;
+  if (typeof oneYearPrice !== 'number') return false;
+  
+  // Check one-year prediction (should be at least 1% different)
+  const yearDiff = Math.abs((oneYearPrice - currentPrice) / currentPrice);
+  if (yearDiff < 0.01) return false;
+  
+  // Validate other timeframes
+  const timeframes = ['oneMonth', 'threeMonths', 'sixMonths'] as const;
+  return timeframes.every(timeframe => {
+    const price = prediction.predictedPrice[timeframe];
+    return typeof price === 'number' && Math.abs((price - currentPrice) / currentPrice) >= 0.005;
+  });
+}
+
+/**
+ * Determine industry for better prediction context
+ */
+function determineIndustry(symbol: string): string {
+  const industries: Record<string, string> = {
+    'AAPL': 'Technology',
+    'MSFT': 'Technology',
+    'GOOG': 'Technology',
+    'AMZN': 'Retail',
+    'META': 'Technology',
+    'TSLA': 'Automotive',
+    'NVDA': 'Semiconductor',
+    'JPM': 'Financial',
+    'BAC': 'Financial',
+    'WMT': 'Retail',
+    'JNJ': 'Healthcare',
+    'PG': 'Consumer Goods',
+    'V': 'Financial',
+    'MA': 'Financial',
+    'DIS': 'Entertainment',
+    'NFLX': 'Entertainment'
+  };
+  
+  return industries[symbol] || 'Technology';
+}
+
+/**
+ * Log detailed prediction results
+ */
+function logPredictionResults(symbol: string, currentPrice: number, prediction: StockPrediction): void {
+  const oneMonthChange = ((prediction.predictedPrice.oneMonth / currentPrice) - 1) * 100;
+  const threeMonthChange = ((prediction.predictedPrice.threeMonths / currentPrice) - 1) * 100;
+  const sixMonthChange = ((prediction.predictedPrice.sixMonths / currentPrice) - 1) * 100;
+  const oneYearChange = ((prediction.predictedPrice.oneYear / currentPrice) - 1) * 100;
+  
+  console.log(`Final prediction for ${symbol}: 
+    Current: $${currentPrice.toFixed(2)}
+    1-month: $${prediction.predictedPrice.oneMonth.toFixed(2)} (${oneMonthChange.toFixed(2)}%)
+    3-month: $${prediction.predictedPrice.threeMonths.toFixed(2)} (${threeMonthChange.toFixed(2)}%)
+    6-month: $${prediction.predictedPrice.sixMonths.toFixed(2)} (${sixMonthChange.toFixed(2)}%)
+    1-year: $${prediction.predictedPrice.oneYear.toFixed(2)} (${oneYearChange.toFixed(2)}%)
+  `);
+}

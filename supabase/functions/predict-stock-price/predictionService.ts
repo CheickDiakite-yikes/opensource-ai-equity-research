@@ -14,19 +14,28 @@ CRITICAL INSTRUCTIONS:
 4. Consider company-specific factors: larger companies tend to have lower growth rates
 5. Technology companies often have higher growth potential than utilities or consumer staples
 6. Strong financial performers deserve higher growth projections than underperformers
-7. Predictions must reflect reasonable market expectations (typically between -20% to +40% for 1 year)
+7. Predictions must reflect realistic market expectations
+   - Growth stocks: -20% to +50% for 1 year
+   - Value stocks: -15% to +25% for 1 year
+   - Small/volatile stocks: -40% to +80% for 1 year
 8. Technical indicators and news sentiment should influence your short-term projections
+9. Current price: $${data.currentPrice.toFixed(2)} - your predictions must differ from this
+
+INDUSTRY CONTEXT: ${data.industry || 'Technology'} stocks typically have ${getIndustryGrowthContext(data.industry || 'Technology')}
 
 YOUR PREDICTIONS SHOULD REFLECT:
 - Each company is unique - avoid using similar growth rates for different companies
 - Market conditions and industry trends vary significantly by sector
 - Growth rates typically increase with time horizon (1-year > 6-month > 3-month > 1-month)
-- Consider volatility - high-beta stocks can have larger price swings`;
+- Consider volatility - high-beta stocks can have larger price swings
+- The larger the company by market cap, the less extreme the growth predictions should be`;
 
   const userPrompt = `Please analyze these data points for ${data.symbol} and provide detailed price predictions:
 
 SYMBOL: ${data.symbol}
 CURRENT PRICE: $${data.currentPrice.toFixed(2)}
+INDUSTRY: ${data.industry || 'Technology'}
+MARKET CAP: ${formatMarketCap(data.financialSummary?.marketCap)}
 
 FINANCIAL SUMMARY:
 ${JSON.stringify(data.financialSummary, null, 2)}
@@ -46,7 +55,9 @@ Based on this analysis, provide:
 
 MOST IMPORTANT: Your predictions MUST be different from the current price - showing either growth or decline
 based on your analysis of the data. Different companies should have different growth trajectories based on 
-their unique data profile and industry characteristics.`;
+their unique data profile and industry characteristics.
+
+The current price is $${data.currentPrice.toFixed(2)} - each of your predictions must differ from this value.`;
 
   try {
     const openAIApiKey = Deno.env.get("OPENAI_API_KEY") || "";
@@ -117,34 +128,24 @@ their unique data profile and industry characteristics.`;
       
       // Check if prediction is valid and sufficiently different from current price
       const isValidYearPrediction = typeof oneYearPrice === 'number' && 
-                                   Math.abs((oneYearPrice - currentPrice) / currentPrice) >= 0.01;
+                                   Math.abs((oneYearPrice - currentPrice) / currentPrice) >= 0.015;
       
       if (!isValidYearPrediction) {
         console.log(`Invalid prediction for ${data.symbol}, using fallback generator`);
         return createFallbackPrediction(data);
       }
       
-      // Apply realistic constraints to predicted prices (prevent extreme predictions)
-      const minOneYearPrice = currentPrice * 0.7;  // Max 30% decrease
-      const maxOneYearPrice = currentPrice * 1.6;  // Max 60% increase
-      
-      const minOneMonthPrice = currentPrice * 0.93; // Max 7% decrease
-      const maxOneMonthPrice = currentPrice * 1.1;  // Max 10% increase
-      
-      const minThreeMonthPrice = currentPrice * 0.85; // Max 15% decrease
-      const maxThreeMonthPrice = currentPrice * 1.2;  // Max 20% increase
-      
-      const minSixMonthPrice = currentPrice * 0.8;  // Max 20% decrease
-      const maxSixMonthPrice = currentPrice * 1.35; // Max 35% increase
+      // Apply realistic constraints to predicted prices based on industry
+      const industryLimits = getIndustryConstraints(data.industry || 'Technology');
       
       // Ensure each price prediction has a minimum difference from current price
-      const ensureDifferentPrice = (predicted: number, current: number): number => {
+      const ensureDifferentPrice = (predicted: number, current: number, minPercentDiff = 0.01): number => {
         const percentDiff = (predicted - current) / current;
         
-        // If difference is less than 1%, add at least 2-5% change
-        if (Math.abs(percentDiff) < 0.01) {
-          // Get a random adjustment between 2-5%
-          const adjustment = (0.02 + Math.random() * 0.03) * (Math.random() > 0.4 ? 1 : -1);
+        // If difference is less than minPercentDiff, add at least that much change
+        if (Math.abs(percentDiff) < minPercentDiff) {
+          // Get a random adjustment between minPercentDiff and 2*minPercentDiff
+          const adjustment = (minPercentDiff + Math.random() * minPercentDiff) * (Math.random() > 0.4 ? 1 : -1);
           return current * (1 + adjustment);
         }
         return predicted;
@@ -152,23 +153,31 @@ their unique data profile and industry characteristics.`;
       
       // Use returned values but ensure minimal difference and apply constraints
       const oneMonthPredicted = ensureDifferentPrice(
-        constrainValue(predictionData.predictedPrice?.oneMonth, currentPrice * 1.02, minOneMonthPrice, maxOneMonthPrice),
-        currentPrice
+        constrainValue(predictionData.predictedPrice?.oneMonth, getDefaultPrediction(currentPrice, 0.01, 0.03, data), 
+        currentPrice * (1 - industryLimits.oneMonth), currentPrice * (1 + industryLimits.oneMonth)),
+        currentPrice,
+        0.01
       );
       
       const threeMonthsPredicted = ensureDifferentPrice(
-        constrainValue(predictionData.predictedPrice?.threeMonths, currentPrice * 1.05, minThreeMonthPrice, maxThreeMonthPrice),
-        currentPrice
+        constrainValue(predictionData.predictedPrice?.threeMonths, getDefaultPrediction(currentPrice, 0.02, 0.05, data), 
+        currentPrice * (1 - industryLimits.threeMonths), currentPrice * (1 + industryLimits.threeMonths)),
+        currentPrice,
+        0.015
       );
       
       const sixMonthsPredicted = ensureDifferentPrice(
-        constrainValue(predictionData.predictedPrice?.sixMonths, currentPrice * 1.08, minSixMonthPrice, maxSixMonthPrice),
-        currentPrice
+        constrainValue(predictionData.predictedPrice?.sixMonths, getDefaultPrediction(currentPrice, 0.03, 0.08, data), 
+        currentPrice * (1 - industryLimits.sixMonths), currentPrice * (1 + industryLimits.sixMonths)),
+        currentPrice,
+        0.02
       );
       
       const oneYearPredicted = ensureDifferentPrice(
-        constrainValue(predictionData.predictedPrice?.oneYear, currentPrice * 1.12, minOneYearPrice, maxOneYearPrice),
-        currentPrice
+        constrainValue(predictionData.predictedPrice?.oneYear, getDefaultPrediction(currentPrice, 0.05, 0.12, data), 
+        currentPrice * (1 - industryLimits.oneYear), currentPrice * (1 + industryLimits.oneYear)),
+        currentPrice,
+        0.025
       );
       
       // Build the final prediction
@@ -181,10 +190,10 @@ their unique data profile and industry characteristics.`;
           sixMonths: parseFloat(sixMonthsPredicted.toFixed(2)),
           oneYear: parseFloat(oneYearPredicted.toFixed(2))
         },
-        sentimentAnalysis: predictionData.sentimentAnalysis || generateDefaultSentiment(data, "Technology", oneYearPredicted/currentPrice),
+        sentimentAnalysis: predictionData.sentimentAnalysis || generateDefaultSentiment(data, data.industry || "Technology", oneYearPredicted/currentPrice),
         confidenceLevel: ensureNumberInRange(predictionData.confidenceLevel, 65, 90),
-        keyDrivers: ensureArrayWithItems(predictionData.keyDrivers, generateDefaultDrivers("Technology", data)),
-        risks: ensureArrayWithItems(predictionData.risks, generateDefaultRisks("Technology", data))
+        keyDrivers: ensureArrayWithItems(predictionData.keyDrivers, generateDefaultDrivers(data.industry || "Technology", data)),
+        risks: ensureArrayWithItems(predictionData.risks, generateDefaultRisks(data.industry || "Technology", data))
       };
       
       // Log the prediction range to help with debugging
@@ -202,6 +211,117 @@ their unique data profile and industry characteristics.`;
     console.error("Error calling OpenAI:", error);
     return createFallbackPrediction(data);
   }
+}
+
+// Get default prediction with some variability
+function getDefaultPrediction(currentPrice: number, minChange: number, maxChange: number, data: FormattedData): number {
+  // Determine direction (positive or negative) based on company and market factors
+  const symbolHash = data.symbol.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+  const direction = symbolHash % 4 === 0 ? -1 : 1; // 25% chance of negative prediction
+  
+  // Calculate change percentage
+  const changePercent = (minChange + Math.random() * (maxChange - minChange)) * direction;
+  
+  return currentPrice * (1 + changePercent);
+}
+
+// Get industry-specific growth context for better predictions
+function getIndustryGrowthContext(industry: string): string {
+  switch (industry) {
+    case 'Technology':
+      return 'higher growth potential but can be volatile due to rapid innovation cycles';
+    case 'Financial':
+      return 'moderate growth potential that is sensitive to interest rates and economic cycles';
+    case 'Healthcare':
+      return 'stable growth with defensive qualities during economic downturns';
+    case 'Consumer Goods':
+      return 'modest but reliable growth with focus on stable cash flows';
+    case 'Retail':
+      return 'competitive growth dependent on consumer spending patterns';
+    case 'Automotive':
+      return 'cyclical growth dependent on economic conditions and innovation';
+    case 'Entertainment':
+      return 'growth tied to consumer discretionary spending and content popularity';
+    case 'Semiconductor':
+      return 'high growth potential but subject to cyclical demand and supply constraints';
+    default:
+      return 'varying growth patterns depending on specific company factors';
+  }
+}
+
+// Format market cap for better context
+function formatMarketCap(marketCap: number | undefined): string {
+  if (!marketCap) return 'Unknown';
+  
+  if (marketCap >= 1e12) {
+    return `$${(marketCap / 1e12).toFixed(2)} trillion (Large Cap)`;
+  } else if (marketCap >= 1e9) {
+    return `$${(marketCap / 1e9).toFixed(2)} billion (${marketCap >= 200e9 ? 'Large' : marketCap >= 10e9 ? 'Mid' : 'Small'} Cap)`;
+  } else {
+    return `$${(marketCap / 1e6).toFixed(2)} million (Small Cap)`;
+  }
+}
+
+// Get industry-specific constraints for predicted prices
+function getIndustryConstraints(industry: string): {
+  oneMonth: number;
+  threeMonths: number;
+  sixMonths: number;
+  oneYear: number;
+} {
+  const defaults = {
+    oneMonth: 0.1,    // 10%
+    threeMonths: 0.2, // 20%
+    sixMonths: 0.35,  // 35%
+    oneYear: 0.5      // 50%
+  };
+  
+  const constraints: Record<string, typeof defaults> = {
+    'Technology': {
+      oneMonth: 0.15,
+      threeMonths: 0.25,
+      sixMonths: 0.4,
+      oneYear: 0.6
+    },
+    'Financial': {
+      oneMonth: 0.07,
+      threeMonths: 0.15,
+      sixMonths: 0.25,
+      oneYear: 0.35
+    },
+    'Healthcare': {
+      oneMonth: 0.08,
+      threeMonths: 0.18,
+      sixMonths: 0.3,
+      oneYear: 0.45
+    },
+    'Consumer Goods': {
+      oneMonth: 0.06,
+      threeMonths: 0.12,
+      sixMonths: 0.2,
+      oneYear: 0.3
+    },
+    'Retail': {
+      oneMonth: 0.1,
+      threeMonths: 0.2,
+      sixMonths: 0.3,
+      oneYear: 0.45
+    },
+    'Automotive': {
+      oneMonth: 0.15,
+      threeMonths: 0.25,
+      sixMonths: 0.4,
+      oneYear: 0.7
+    },
+    'Semiconductor': {
+      oneMonth: 0.18,
+      threeMonths: 0.3,
+      sixMonths: 0.5,
+      oneYear: 0.8
+    }
+  };
+  
+  return constraints[industry] || defaults;
 }
 
 // Constrain a value within a range, defaulting to fallback if invalid

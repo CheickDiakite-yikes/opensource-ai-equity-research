@@ -12,7 +12,7 @@ export async function fetchWithRetry(
   
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
-      console.log(`Fetching ${url} (attempt ${attempt}/${maxRetries})`);
+      console.log(`Fetching ${url.replace(/apikey=[^&]+/, "apikey=API_KEY_HIDDEN")} (attempt ${attempt}/${maxRetries})`);
       const response = await fetch(url, options);
       
       // Check if response is OK
@@ -36,7 +36,7 @@ export async function fetchWithRetry(
     
     // Wait before retrying, with exponential backoff
     if (attempt < maxRetries) {
-      const delay = retryDelay * Math.pow(2, attempt - 1);
+      const delay = retryDelay * Math.pow(1.5, attempt - 1);
       console.log(`Waiting ${delay}ms before retry...`);
       await new Promise(resolve => setTimeout(resolve, delay));
     }
