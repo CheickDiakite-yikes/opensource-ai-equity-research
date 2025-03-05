@@ -1,6 +1,6 @@
 
-import { ResearchReport } from "./reportTypes";
-import { parseGrowthRate } from "./dataFormatter";
+import { ResearchReport } from "./reportTypes.ts";
+import { parseGrowthRate } from "./dataFormatter.ts";
 
 // Create default sections if OpenAI fails to generate them
 export function createDefaultSections(data: any) {
