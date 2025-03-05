@@ -69,6 +69,8 @@ export const prepareMockDCFData = (financials: any[], currentPrice: number): For
   // Calculate upside percentage
   const upside = ((intrinsicValue - currentPrice) / currentPrice) * 100;
   
+  const currentYear = new Date().getFullYear();
+  
   const mockData: FormattedDCFData = {
     intrinsicValue,
     currentPrice,
@@ -82,39 +84,49 @@ export const prepareMockDCFData = (financials: any[], currentPrice: number): For
     sensitivity: createSensitivityData(currentPrice),
     projections: [
       {
-        year: new Date().getFullYear() + 1,
+        year: currentYear + 1 + "",
         revenue: currentPrice * 400000000,
         ebit: currentPrice * 120000000,
         ebitda: currentPrice * 145000000,
         freeCashFlow: currentPrice * 110000000,
+        operatingCashFlow: currentPrice * 125000000,
+        capitalExpenditure: currentPrice * 15000000
       },
       {
-        year: new Date().getFullYear() + 2,
+        year: currentYear + 2 + "",
         revenue: currentPrice * 420000000,
         ebit: currentPrice * 128000000,
         ebitda: currentPrice * 153000000,
         freeCashFlow: currentPrice * 117000000,
+        operatingCashFlow: currentPrice * 132000000,
+        capitalExpenditure: currentPrice * 15500000
       },
       {
-        year: new Date().getFullYear() + 3,
+        year: currentYear + 3 + "",
         revenue: currentPrice * 442000000,
         ebit: currentPrice * 136500000,
         ebitda: currentPrice * 161000000,
         freeCashFlow: currentPrice * 124000000,
+        operatingCashFlow: currentPrice * 140000000,
+        capitalExpenditure: currentPrice * 16000000
       },
       {
-        year: new Date().getFullYear() + 4,
+        year: currentYear + 4 + "",
         revenue: currentPrice * 465000000,
         ebit: currentPrice * 145000000,
         ebitda: currentPrice * 170000000,
         freeCashFlow: currentPrice * 132000000,
+        operatingCashFlow: currentPrice * 148000000,
+        capitalExpenditure: currentPrice * 16500000
       },
       {
-        year: new Date().getFullYear() + 5,
+        year: currentYear + 5 + "",
         revenue: currentPrice * 489000000,
         ebit: currentPrice * 154000000,
         ebitda: currentPrice * 179000000,
         freeCashFlow: currentPrice * 140000000,
+        operatingCashFlow: currentPrice * 157000000,
+        capitalExpenditure: currentPrice * 17000000
       }
     ]
   };

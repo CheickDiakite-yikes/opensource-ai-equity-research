@@ -1,22 +1,44 @@
+
 import React from "react";
 import { useParams } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useResearchReportData } from "@/components/reports/useResearchReportData";
 import { useReportGeneration } from "@/components/reports/useReportGeneration";
 import StockOverview from "@/components/StockOverview";
-import FinancialTabContent from "@/components/sections/FinancialTabContent";
-import NewsTabContent from "@/components/sections/NewsTabContent";
-import DocumentsTabContent from "@/components/sections/DocumentsTabContent";
-import DCFTabContent from "@/components/sections/DCFTabContent";
-import ReportTabContent from "@/components/sections/ReportTabContent";
-import PredictionTabContent from "@/components/sections/PredictionTabContent";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertTriangle } from "lucide-react";
+import DCFTabContent from "@/components/sections/DCFTabContent";
 
-const StockView = () => {
-  const { symbol } = useParams<{ symbol: string }>();
-  const normalizedSymbol = symbol?.toUpperCase() || "";
+// Placeholder components until proper versions are created
+const FinancialTabContent = ({ symbol, income, balance, cashflow, ratios, isLoading }: any) => (
+  <div>Financial data for {symbol}</div>
+);
+
+const NewsTabContent = ({ symbol, news, isLoading }: any) => (
+  <div>News for {symbol}</div>
+);
+
+const DocumentsTabContent = ({ symbol, transcripts, filings, isLoading }: any) => (
+  <div>Documents for {symbol}</div>
+);
+
+const ReportTabContent = ({ symbol, profile, report, isGenerating, onGenerate, reportType, setReportType }: any) => (
+  <div>Report for {symbol}</div>
+);
+
+const PredictionTabContent = ({ symbol, prediction, isPredicting, onPredict, quote }: any) => (
+  <div>Prediction for {symbol}</div>
+);
+
+interface StockViewProps {
+  symbol?: string;
+  onClear?: () => void;
+}
+
+const StockView: React.FC<StockViewProps> = ({ symbol: propSymbol, onClear }) => {
+  const { symbol: urlSymbol } = useParams<{ symbol: string }>();
+  const normalizedSymbol = propSymbol || urlSymbol?.toUpperCase() || "";
   
   const {
     isLoading,
@@ -66,7 +88,7 @@ const StockView = () => {
       <StockOverview symbol={normalizedSymbol} />
       
       {showDataWarning && (
-        <Alert variant="warning" className="mb-6">
+        <Alert variant="default" className="mb-6">
           <AlertTriangle className="h-4 w-4" />
           <AlertDescription>
             Limited financial data available for {normalizedSymbol}. Some features may not work properly.

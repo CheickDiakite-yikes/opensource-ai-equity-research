@@ -7,7 +7,6 @@ import {
   FormattedDCFData,
   DCFAssumptionsSummary
 } from "@/types/ai-analysis/dcfTypes";
-import { createMockSensitivityAnalysis } from "./mockDCFGenerator";
 
 /**
  * Create formatted DCF data from API results
