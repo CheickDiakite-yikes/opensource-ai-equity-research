@@ -148,7 +148,7 @@ export const downloadReportAsHTML = (report: ResearchReport) => {
       <div class="section rating-details">
         <h2>Rating and Recommendation</h2>
         ${report.ratingDetails.ratingScale ? 
-          `<p><strong>Rating Scale:</strong> ${report.ratingDetails.ratingScale}</p>` : ''
+          `<p><strong>Rating Scale:</strong> Our recommendations include: Buy, Sell, Hold, Overweight, and Underweight</p>` : ''
         }
         <p><strong>Recommendation:</strong> ${report.recommendation}</p>
         ${report.ratingDetails.ratingJustification ? 
@@ -328,3 +328,4 @@ export const downloadReportAsHTML = (report: ResearchReport) => {
     description: "Research report has been downloaded as HTML.",
   });
 };
+
