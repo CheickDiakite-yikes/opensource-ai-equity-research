@@ -2,9 +2,10 @@
 import React from "react";
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
 import { formatCurrency } from "@/utils/financial/formatUtils";
+import { DCFSensitivityData } from "@/types/ai-analysis/dcfTypes";
 
 export interface SensitivityAnalysisTableProps {
-  sensitivityData: any[][];
+  sensitivityData: DCFSensitivityData;
   currentPrice: number;
 }
 
@@ -24,18 +25,18 @@ const SensitivityAnalysisTable: React.FC<SensitivityAnalysisTableProps> = ({
           <TableHeader>
             <TableRow>
               <TableHead className="w-[100px]">Growth↓ Discount→</TableHead>
-              {sensitivityData[0]?.map((_, colIndex) => (
-                <TableHead key={`head-${colIndex}`} className="text-center">
-                  {(7 + colIndex).toFixed(1)}%
+              {sensitivityData.headers.slice(1).map((header, index) => (
+                <TableHead key={`head-${index}`} className="text-center">
+                  {header}
                 </TableHead>
               ))}
             </TableRow>
           </TableHeader>
           <TableBody>
-            {sensitivityData?.map((row, rowIndex) => (
+            {sensitivityData.rows.map((row, rowIndex) => (
               <TableRow key={`row-${rowIndex}`}>
-                <TableCell className="font-medium">{(2 + rowIndex).toFixed(1)}%</TableCell>
-                {row.map((value, colIndex) => {
+                <TableCell className="font-medium">{row.growth}</TableCell>
+                {row.values.map((value, colIndex) => {
                   const isHighlighted = 
                     Math.abs(value - currentPrice) < currentPrice * 0.1;
                     
