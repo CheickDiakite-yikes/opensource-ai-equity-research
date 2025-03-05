@@ -16,3 +16,18 @@ export interface StockPrediction {
   keyDrivers: string[];
   risks: string[];
 }
+
+/**
+ * Growth Insight
+ */
+export interface GrowthInsight {
+  id: string;
+  symbol: string;
+  title: string;
+  description: string;
+  impact: "positive" | "negative" | "neutral";
+  confidence: number;
+  source?: string;
+  category?: string;
+  timeframe?: "short-term" | "medium-term" | "long-term";
+}

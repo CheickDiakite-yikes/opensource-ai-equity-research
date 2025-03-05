@@ -1,4 +1,3 @@
-
 /**
  * OpenAI API for research report generation
  */
@@ -155,24 +154,32 @@ function parseResearchReport(reportText: string, symbol: string, companyName: st
     sections: [],
     // Add the required properties based on the updated ResearchReport type
     ratingDetails: {
-      ratingScale: "Buy / Hold / Sell",
-      ratingJustification: "Based on fundamental and technical analysis."
+      overallRating: "Strong Buy",
+      financialStrength: "A+",
+      growthOutlook: "Positive",
+      valuationAttractiveness: "Undervalued",
+      competitivePosition: "Market Leader",
+      ratingScale: "Scale details here...",
+      ratingJustification: "Justification details here..."
     },
     scenarioAnalysis: {
       bullCase: {
-        price: "N/A",
-        probability: "25",
-        drivers: ["Positive market conditions"]
+        price: "$250",
+        description: "In an optimistic scenario, we expect significant revenue growth...",
+        probability: "30%",
+        drivers: ["Accelerated cloud adoption", "Market share gains", "Margin expansion"]
       },
       baseCase: {
-        price: "N/A",
-        probability: "50",
-        drivers: ["Expected market conditions"]
+        price: "$200",
+        description: "Our base case assumes continued steady growth...",
+        probability: "50%",
+        drivers: ["Consistent cloud growth", "Stable margins", "New product adoption"]
       },
       bearCase: {
-        price: "N/A",
-        probability: "25",
-        drivers: ["Negative market conditions"]
+        price: "$150",
+        description: "In a pessimistic scenario, growth could slow due to...",
+        probability: "20%",
+        drivers: ["Increased competition", "Margin pressure", "Slowing enterprise spending"]
       }
     },
     catalysts: {
