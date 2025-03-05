@@ -41,24 +41,18 @@ export const useDCFCalculation = (symbol: string) => {
         return { success: false };
       }
       
-      // First, check if result exists
-      if (!result) {
-        console.warn("No result returned from DCF calculation");
-        return { success: false };
+      // First, check if result exists and is an object with 'success' property
+      if (result && typeof result === 'object' && 'success' in result) {
+        return result;
       }
       
-      // Then check if it's an object with 'success' property
-      if (typeof result === 'object' && result !== null) {
-        if ('success' in result) {
-          return result;
-        }
-        
-        // If result exists and is an object but doesn't have success property,
-        // wrap it in a success object
+      // If result exists and is an object but doesn't have success property,
+      // wrap it in a success object
+      if (result && typeof result === 'object') {
         return { success: true };
       }
       
-      // If result is not an object, return a failure object
+      // If result is not an object or is null, return a failure object
       return { success: false };
     } catch (err) {
       console.error("Error calculating DCF with AI assumptions:", err);

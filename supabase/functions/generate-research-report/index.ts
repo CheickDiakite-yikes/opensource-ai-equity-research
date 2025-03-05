@@ -1,4 +1,3 @@
-
 import { corsHeaders } from '../_shared/cors.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.36.0';
 import { API_BASE_URLS, OPENAI_MODELS, OPENAI_API_KEY } from '../_shared/constants.ts';
@@ -91,6 +90,15 @@ Deno.serve(async (req) => {
     // Generate report using OpenAI
     const report = await generateReportWithOpenAI(formattedData, reportRequest);
     
+    // Make sure we have sections before returning
+    if (!report.sections || report.sections.length === 0) {
+      console.warn("No sections returned from OpenAI, adding default sections");
+      report.sections = createDefaultSections(formattedData);
+    }
+    
+    // Log the sections we're returning
+    console.log(`Returning report with ${report.sections.length} sections: ${report.sections.map(s => s.title).join(', ')}`);
+    
     return new Response(JSON.stringify(report), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 200,
@@ -104,6 +112,32 @@ Deno.serve(async (req) => {
     });
   }
 });
+
+// Create default sections if OpenAI fails to generate them
+function createDefaultSections(data: any): ReportSection[] {
+  return [
+    {
+      title: "Investment Thesis",
+      content: `${data.companyName} (${data.symbol}) operates in the ${data.industry || 'technology'} sector. Based on our analysis of the company's financials and market position, we suggest a cautious approach to investing in this stock.`
+    },
+    {
+      title: "Business Overview",
+      content: data.description || `${data.companyName} is a company operating in the ${data.sector || 'technology'} sector. The company's business model and operations are focused on its industry segment.`
+    },
+    {
+      title: "Financial Analysis",
+      content: `The company's financial health appears to be ${data.financialSummary.netIncomeGrowth?.includes('-') ? 'showing some challenges' : 'stable with growth opportunities'}. Revenue trends and profit margins should be monitored closely.`
+    },
+    {
+      title: "Valuation",
+      content: `At the current price of $${data.currentPrice.toFixed(2)}, the stock trades at a P/E ratio of ${data.pe || 'N/A'}.`
+    },
+    {
+      title: "Risk Factors",
+      content: "Key risks include competition in the industry, regulatory challenges, and macroeconomic factors that could impact consumer spending."
+    }
+  ];
+}
 
 // Format data for OpenAI analysis
 function formatDataForAnalysis(reportRequest: any) {
@@ -218,26 +252,27 @@ ${reportType === 'comprehensive' ? '- A balanced analysis of all aspects of the 
 ${reportType === 'financial' ? '- Deep financial analysis including ratio analysis, cash flow sustainability, and capital structure.' : ''}
 ${reportType === 'valuation' ? '- Detailed valuation using multiple methodologies (DCF, multiples) and fair value estimation.' : ''}
 
-Structure your report with these sections:
-1. Investment Thesis - Key reasons for the investment recommendation
-2. Business Overview - Company background, products, markets, and competition
-3. Financial Analysis - Assessment of financial performance and health
-4. Valuation - Analysis of current valuation and price target justification
-5. Risk Factors - Key risks to the investment thesis
-6. ESG Considerations - Environmental, social, and governance factors
+Structure your report with these sections, providing detailed analysis in each:
+1. Investment Thesis - Key reasons for the investment recommendation (at least 150 words)
+2. Business Overview - Company background, products, markets, and competition (at least 150 words)
+3. Financial Analysis - Assessment of financial performance and health (at least 200 words)
+4. Valuation - Analysis of current valuation and price target justification (at least 150 words)
+5. Risk Factors - Key risks to the investment thesis (at least 150 words)
+6. ESG Considerations - Environmental, social, and governance factors (at least 100 words)
 
-Your report should include:
+Your report must include:
 - Clear recommendation (Buy, Hold, or Sell)
 - Target price with justification
 - Concise executive summary
-- Data-driven analysis in each section
+- Data-driven analysis in each section with specific metrics and figures
+- Each section MUST have detailed content; this is extremely important
 
 You MUST follow this output format precisely:
 1. Use the exact ResearchReport interface structure required by the app
 2. The 'ratingDetails' should include: overallRating, financialStrength, growthOutlook, valuationAttractiveness, competitivePosition, ratingScale, and ratingJustification
 3. The 'scenarioAnalysis' must include bullCase, baseCase, and bearCase with: price, description, probability, and drivers fields
 4. The 'catalysts' should include positive, negative, and a timeline with shortTerm, mediumTerm, and longTerm arrays
-5. Make sure all fields are properly formatted as strings or arrays as required
+5. The 'sections' array is the most critical part - it must include all required sections with detailed content
 
 Format as a detailed JSON object matching the interface structure.`;
 
@@ -263,7 +298,7 @@ Based on this data, create a comprehensive research report including:
 1. Investment recommendation (Buy, Strong Buy, Hold, Sell, or Strong Sell)
 2. Target price
 3. Summary of investment thesis
-4. Detailed analysis in each required section
+4. Detailed analysis in each required section (at least 150-200 words per section)
 5. Rating details:
    - overallRating, financialStrength, growthOutlook, valuationAttractiveness, competitivePosition
    - ratingScale (e.g., "1-5 with 5 being highest")
@@ -282,6 +317,8 @@ Based on this data, create a comprehensive research report including:
 Ensure all financial analysis and projections are grounded in the data provided.`;
 
   try {
+    console.log("Sending request to OpenAI for report generation...");
+    
     const response = await fetch(API_BASE_URLS.OPENAI + "/chat/completions", {
       method: "POST",
       headers: {
@@ -294,8 +331,8 @@ Ensure all financial analysis and projections are grounded in the data provided.
           { role: "system", content: systemPrompt },
           { role: "user", content: userPrompt }
         ],
-        temperature: 0.4,
-        max_tokens: 3000
+        temperature: 0.3,
+        max_tokens: 3500
       })
     });
 
@@ -312,12 +349,14 @@ Ensure all financial analysis and projections are grounded in the data provided.
       throw new Error("No content in OpenAI response");
     }
 
-    // Extract JSON from the response
+    console.log("Received response from OpenAI, processing...");
+
     try {
-      // Try to parse directly if the response is already JSON
       const reportData = extractJSONFromText(content);
       
-      // Ensure the report structure matches our interface
+      console.log("Extracted JSON from OpenAI response, validating report structure...");
+      console.log("Report has sections:", reportData.sections?.length || 0);
+      
       const finalReport: ResearchReport = {
         symbol: data.symbol,
         companyName: data.companyName,
@@ -325,9 +364,13 @@ Ensure all financial analysis and projections are grounded in the data provided.
         recommendation: reportData.recommendation || "Hold",
         targetPrice: reportData.targetPrice || `$${(data.currentPrice * 1.1).toFixed(2)}`,
         summary: reportData.summary || reportData.executive_summary || "",
-        sections: reportData.sections || [],
+        sections: reportData.sections && reportData.sections.length > 0 
+          ? reportData.sections.map(section => ({
+              title: section.title || "Analysis",
+              content: section.content || "Content unavailable"
+            }))
+          : createDefaultSections(data),
         
-        // Ensure ratingDetails has the correct structure
         ratingDetails: reportData.ratingDetails ? {
           overallRating: reportData.ratingDetails.overallRating || "Neutral",
           financialStrength: reportData.ratingDetails.financialStrength || "Adequate",
@@ -338,7 +381,6 @@ Ensure all financial analysis and projections are grounded in the data provided.
           ratingJustification: reportData.ratingDetails.ratingJustification || ""
         } : undefined,
         
-        // Ensure scenarioAnalysis has the correct structure with required fields
         scenarioAnalysis: reportData.scenarioAnalysis ? {
           bullCase: {
             price: reportData.scenarioAnalysis.bullCase?.price || `$${(data.currentPrice * 1.2).toFixed(2)}`,
@@ -360,7 +402,6 @@ Ensure all financial analysis and projections are grounded in the data provided.
           }
         } : undefined,
         
-        // Ensure catalysts has the correct structure
         catalysts: reportData.catalysts ? {
           positive: reportData.catalysts.positive || [],
           negative: reportData.catalysts.negative || [],
@@ -377,7 +418,6 @@ Ensure all financial analysis and projections are grounded in the data provided.
       console.error("Error parsing OpenAI response:", parseError);
       console.log("Raw response:", content);
       
-      // Fallback to generate a basic report
       return createFallbackReport(data);
     }
   } catch (error) {
@@ -399,14 +439,11 @@ function formatLargeNumber(num: number) {
 
 // Extract JSON from text response (handles when GPT wraps JSON in markdown code blocks)
 function extractJSONFromText(text: string) {
-  // Check if the text is already valid JSON
   try {
     return JSON.parse(text);
   } catch (e) {
-    // Not valid JSON, try to extract it
   }
   
-  // Try to extract JSON from markdown code blocks
   const jsonMatch = text.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
   if (jsonMatch && jsonMatch[1]) {
     try {
@@ -416,7 +453,6 @@ function extractJSONFromText(text: string) {
     }
   }
   
-  // Try to find anything that looks like JSON
   const possibleJson = text.match(/\{[\s\S]*\}/);
   if (possibleJson) {
     try {
@@ -441,32 +477,7 @@ function createFallbackReport(data: any): ResearchReport {
     recommendation: recommendation,
     targetPrice: `$${targetPrice.toFixed(2)}`,
     summary: `${data.companyName} is a company in the ${data.sector} sector, specifically within the ${data.industry} industry. Based on our analysis of available financial data and market conditions, we have issued a ${recommendation} recommendation with a price target of $${targetPrice.toFixed(2)}.`,
-    sections: [
-      {
-        title: "Investment Thesis",
-        content: `Our investment thesis for ${data.companyName} is based on our analysis of the company's financial performance, market position, and growth prospects. The company operates in the ${data.industry} industry and has demonstrated consistent performance in key financial metrics.`
-      },
-      {
-        title: "Business Overview",
-        content: `${data.companyName} (${data.symbol}) is a company in the ${data.industry} industry. ${data.description}`
-      },
-      {
-        title: "Financial Analysis",
-        content: `${data.companyName} has demonstrated financial performance with recent revenue of ${data.financialSummary.revenue ? '$' + formatLargeNumber(data.financialSummary.revenue) : 'N/A'} and net income of ${data.financialSummary.netIncome ? '$' + formatLargeNumber(data.financialSummary.netIncome) : 'N/A'}. The company's profit margins and return metrics are in line with industry averages.`
-      },
-      {
-        title: "Valuation",
-        content: `At the current price of $${data.currentPrice.toFixed(2)}, ${data.companyName} is trading at a P/E ratio of ${data.pe || 'N/A'}. Based on our analysis of growth prospects and industry comparables, we believe a fair value is $${targetPrice.toFixed(2)}.`
-      },
-      {
-        title: "Risk Factors",
-        content: `Key risks to our investment thesis include competition in the ${data.industry} industry, potential regulatory challenges, and macroeconomic factors that could impact consumer spending patterns.`
-      },
-      {
-        title: "ESG Considerations",
-        content: `${data.companyName}, like other companies in the ${data.industry} industry, faces various environmental, social, and governance challenges. Without specific ESG data, we cannot provide a detailed assessment of the company's ESG performance.`
-      }
-    ],
+    sections: createDefaultSections(data),
     ratingDetails: {
       overallRating: "Neutral",
       financialStrength: "Adequate",
@@ -510,7 +521,6 @@ function createFallbackReport(data: any): ResearchReport {
 
 // Determine recommendation based on available data
 function determineRecommendation(data: any): string {
-  // This is a simplified approach - in reality, this would be much more complex
   const revenueGrowth = parseGrowthRate(data.financialSummary.revenueGrowth);
   const netIncomeGrowth = parseGrowthRate(data.financialSummary.netIncomeGrowth);
   

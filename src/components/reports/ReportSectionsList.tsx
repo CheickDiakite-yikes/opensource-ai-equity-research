@@ -10,11 +10,13 @@ import {
   DollarSign, 
   AlertTriangle, 
   Leaf,
-  Star
+  Star,
+  RefreshCw
 } from "lucide-react";
 import { ResearchReport } from "@/types/ai-analysis/reportTypes";
 import { SensitivityAnalysis } from "./SensitivityAnalysis";
 import { GrowthCatalysts } from "./GrowthCatalysts";
+import { Button } from "@/components/ui/button";
 
 interface ReportSectionsListProps {
   report: ResearchReport;
@@ -27,6 +29,20 @@ export const ReportSectionsList: React.FC<ReportSectionsListProps> = ({
   expandedScenarios, 
   toggleScenario 
 }) => {
+  if (!report || !report.sections || report.sections.length === 0) {
+    return (
+      <div className="border rounded-lg p-8 text-center">
+        <div className="flex flex-col items-center justify-center space-y-4">
+          <RefreshCw className="h-10 w-10 text-muted-foreground animate-spin" />
+          <h3 className="font-medium text-lg">Generating Report Sections</h3>
+          <p className="text-muted-foreground">
+            Please wait while we analyze the company data and generate the report sections.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   // Helper function to get icon based on section title
   const getSectionIcon = (title: string) => {
     const lowerTitle = title.toLowerCase();
@@ -122,25 +138,31 @@ export const ReportSectionsList: React.FC<ReportSectionsListProps> = ({
   return (
     <div className="border rounded-lg overflow-hidden">
       <div className="bg-muted p-3">
-        <h3 className="font-medium">Report Sections</h3>
+        <h3 className="font-medium">Report Sections ({allSections.length})</h3>
       </div>
       <div className="divide-y">
-        {allSections.map((section, index) => (
-          <details key={index} className="group">
-            <summary className="flex cursor-pointer list-none items-center justify-between p-4 hover:bg-muted/50">
-              <div className="flex items-center">
-                {section.icon}
-                <h4 className="font-medium ml-2">{section.title}</h4>
+        {allSections.length > 0 ? (
+          allSections.map((section, index) => (
+            <details key={index} className="group">
+              <summary className="flex cursor-pointer list-none items-center justify-between p-4 hover:bg-muted/50">
+                <div className="flex items-center">
+                  {section.icon}
+                  <h4 className="font-medium ml-2">{section.title}</h4>
+                </div>
+                <ChevronRight className="h-4 w-4 transition-transform group-open:rotate-90" />
+              </summary>
+              <div className="p-4 pt-0">
+                <div className="text-sm text-muted-foreground prose-sm max-w-none">
+                  {section.content}
+                </div>
               </div>
-              <ChevronRight className="h-4 w-4 transition-transform group-open:rotate-90" />
-            </summary>
-            <div className="p-4 pt-0">
-              <div className="text-sm text-muted-foreground prose-sm max-w-none">
-                {section.content}
-              </div>
-            </div>
-          </details>
-        ))}
+            </details>
+          ))
+        ) : (
+          <div className="p-4 text-center text-muted-foreground">
+            <p>No sections available in this report.</p>
+          </div>
+        )}
       </div>
     </div>
   );

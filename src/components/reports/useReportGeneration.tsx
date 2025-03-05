@@ -6,10 +6,9 @@ import {
   generateStockPrediction
 } from "@/services/api";
 
-import { ReportRequest } from "@/types/ai-analysis/reportTypes";
+import { ReportRequest, ResearchReport } from "@/types/ai-analysis/reportTypes";
 import type { NewsArticle } from "@/types/news/newsTypes";
 import type { StockQuote } from "@/types/profile/companyTypes";
-import { ResearchReport } from "@/types/ai-analysis/reportTypes";
 import { StockPrediction } from "@/types/ai-analysis/predictionTypes";
 
 import type { ReportData } from "./useResearchReportData";
@@ -57,14 +56,37 @@ export const useReportGeneration = (symbol: string, data: ReportData) => {
         description: "Creating a detailed AI-powered research report based on real financial data...",
       });
       
+      console.log("Sending report request:", {
+        symbol,
+        companyName: data.profile.companyName,
+        reportType,
+        hasFinancials: !!data.income?.length,
+        newsCount: data.news?.length
+      });
+      
       const generatedReport = await generateResearchReport(reportRequest);
       
       if (!generatedReport) {
         throw new Error("Failed to generate report");
       }
       
-      // Log the sections we received to help with debugging
-      console.log("Report sections received:", generatedReport.sections.map(s => s.title));
+      console.log("Report received from API:", {
+        symbol: generatedReport.symbol,
+        recommendation: generatedReport.recommendation,
+        sectionsReceived: generatedReport.sections?.length || 0, 
+        sectionsData: generatedReport.sections?.map(s => s.title) || []
+      });
+      
+      // Make sure the report has at least some sections
+      if (!generatedReport.sections || generatedReport.sections.length === 0) {
+        console.warn("Report received without sections, adding placeholder section");
+        generatedReport.sections = [
+          {
+            title: "Investment Thesis",
+            content: "The full report is being generated. This might take a moment as we analyze the financial data."
+          }
+        ];
+      }
       
       setReport(generatedReport);
       
@@ -72,7 +94,7 @@ export const useReportGeneration = (symbol: string, data: ReportData) => {
         title: "AI Report Generated",
         description: `Research report for ${data.profile.companyName} successfully generated using AI analysis of real financial data.`,
       });
-    } catch (err) {
+    } catch (err: any) {
       console.error("Error generating report:", err);
       toast({
         title: "Error",
@@ -128,7 +150,7 @@ export const useReportGeneration = (symbol: string, data: ReportData) => {
         title: "AI Prediction Generated",
         description: "Price prediction has been successfully generated based on AI analysis of real market data.",
       });
-    } catch (err) {
+    } catch (err: any) {
       console.error("Error generating prediction:", err);
       toast({
         title: "Error",

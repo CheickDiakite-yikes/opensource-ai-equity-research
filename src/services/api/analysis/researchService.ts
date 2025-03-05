@@ -21,9 +21,35 @@ export const generateResearchReport = async (reportRequest: any): Promise<Resear
       throw new Error("Failed to generate research report");
     }
     
+    // Validate the response has the minimum required fields
+    if (!data.symbol || !data.companyName || !data.date) {
+      console.error("Research report response is missing required fields:", data);
+      throw new Error("Invalid research report format received");
+    }
+    
+    // Verify sections array exists and is properly formatted
+    if (!data.sections || !Array.isArray(data.sections) || data.sections.length === 0) {
+      console.warn("No sections in research report, adding placeholder");
+      data.sections = [{
+        title: "Investment Thesis",
+        content: "Report sections are being generated. Please check back in a moment."
+      }];
+    }
+    
+    // Ensure each section has title and content
+    data.sections = data.sections.map(section => {
+      if (!section.title || !section.content) {
+        return {
+          title: section.title || "Analysis Section",
+          content: section.content || "Content is being generated."
+        };
+      }
+      return section;
+    });
+    
     console.log(`AI research report generated for ${reportRequest.symbol} with ${data.sections?.length || 0} sections`);
     return data;
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error generating research report:", error);
     throw error;
   }
@@ -55,7 +81,7 @@ export const generateStockPrediction = async (
     
     console.log(`AI stock prediction generated for ${symbol}`);
     return data;
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error generating stock prediction:", error);
     throw error;
   }

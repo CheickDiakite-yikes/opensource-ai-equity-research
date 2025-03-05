@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import LoadingSkeleton from "@/components/LoadingSkeleton";
 import ErrorDisplay from "@/components/reports/ErrorDisplay";
 import ResearchReportContent from "@/components/reports/ResearchReportContent";
@@ -31,14 +31,21 @@ const ResearchReportGenerator = ({ symbol }: ResearchReportGeneratorProps) => {
   } = useReportGeneration(symbol, data);
 
   // Debug report structure if available
-  if (report) {
-    console.log("Report data available:", {
-      hasRatingDetails: !!report.ratingDetails,
-      hasScenarioAnalysis: !!report.scenarioAnalysis,
-      hasCatalysts: !!report.catalysts,
-      sections: report.sections.map(s => s.title)
-    });
-  }
+  useEffect(() => {
+    if (report) {
+      console.log("Report data available:", {
+        symbol: report.symbol,
+        companyName: report.companyName,
+        recommendation: report.recommendation,
+        targetPrice: report.targetPrice,
+        hasRatingDetails: !!report.ratingDetails,
+        hasScenarioAnalysis: !!report.scenarioAnalysis,
+        hasCatalysts: !!report.catalysts,
+        sections: report.sections.map(s => s.title),
+        sectionCount: report.sections.length
+      });
+    }
+  }, [report]);
 
   if (isLoading) {
     return <LoadingSkeleton />;
