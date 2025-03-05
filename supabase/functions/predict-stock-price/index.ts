@@ -28,7 +28,9 @@ Deno.serve(async (req) => {
     
     const prediction = await generatePredictionWithOpenAI(formattedData);
     
-    console.log(`AI stock prediction generated for ${symbol}`);
+    // Log prediction summary for debugging
+    const oneYearGrowth = ((prediction.predictedPrice.oneYear / stockData.price) - 1) * 100;
+    console.log(`AI prediction for ${symbol}: 1-year projection: ${oneYearGrowth.toFixed(2)}% growth`);
     
     return new Response(JSON.stringify(prediction), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

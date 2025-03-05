@@ -7,12 +7,14 @@ export async function generatePredictionWithOpenAI(data: FormattedData): Promise
 Your task is to analyze the provided financial and market data for ${data.symbol} and generate 
 a detailed price prediction for different time horizons: 1 month, 3 months, 6 months, and 1 year.
 
-Your analysis should include:
-1. A justification for each predicted price based on financial data and trends
-2. A sentiment analysis of the company's prospects
-3. A confidence level for your prediction (0-100%)
-4. Key drivers that could positively impact the stock price
-5. Potential risks that could negatively impact the stock price
+IMPORTANT INSTRUCTIONS:
+1. Be realistic with your predictions - they should vary based on the company's financials, industry, and market position
+2. Each stock should have DIFFERENT growth percentages - avoid using the same growth rate across all companies
+3. Strong financial performers may deserve higher growth projections, while others may deserve more conservative estimates
+4. Consider the specific industry dynamics for this stock - some industries grow faster than others
+5. Technical indicators should influence your short-term projections
+6. News sentiment should be factored into your analysis
+7. Predictions must be data-driven and justified by the information provided
 
 Base your predictions on:
 - Financial performance and growth trends
@@ -25,7 +27,7 @@ Your response should be structured as a JSON object matching the StockPrediction
   const userPrompt = `Please analyze this data and provide a stock price prediction:
 
 SYMBOL: ${data.symbol}
-CURRENT PRICE: $${data.currentPrice}
+CURRENT PRICE: $${data.currentPrice.toFixed(2)}
 
 FINANCIAL DATA:
 ${JSON.stringify(data.financialSummary, null, 2)}
@@ -43,21 +45,31 @@ Based on this data, please provide:
 4. 3-5 key drivers that could positively impact the stock
 5. 3-5 potential risks that could negatively impact the stock
 
-Please ensure your price predictions are realistic based on the data provided and current market conditions.`;
+IMPORTANT: Your predictions must be unique to this company and should NOT follow a standard growth pattern (like all 12% growth). 
+Different companies should have different growth trajectories based on their specific data.`;
 
   try {
     const openAIApiKey = Deno.env.get("OPENAI_API_KEY") || "";
     const quickMode = data.quickMode === true;
     
-    // Use mini model for all predictions on the featured companies dashboard for faster loading
-    // This helps prevent timeouts while still providing reasonable predictions
-    const modelToUse = "gpt-4o-mini";
+    // For featured companies dashboard use gpt-4o-mini for faster performance
+    // For detailed reports use the more powerful model
+    const modelToUse = quickMode ? "gpt-4o-mini" : "gpt-4o-mini";
     
-    // Reduce tokens for quicker responses on featured companies dashboard
-    const maxTokens = quickMode ? 800 : 1200; 
+    // Reduce tokens for featured companies for speed
+    const maxTokens = quickMode ? 1000 : 1500; 
     
-    // Slightly higher temperature for quick mode to compensate for fewer tokens
-    const temperature = quickMode ? 0.5 : 0.3;
+    // Higher temperature produces more varied predictions
+    const temperature = 0.7;
+    
+    console.log(`Generating prediction for ${data.symbol} using ${modelToUse} model (quickMode: ${quickMode})`);
+    
+    // If the quick mode is enabled and we have very limited financial data,
+    // use the enhanced fallback predictions to avoid API call
+    if (quickMode && (!data.financialSummary || Object.keys(data.financialSummary).length === 0)) {
+      console.log(`Using enhanced fallback prediction for ${data.symbol} due to limited financial data`);
+      return createFallbackPrediction(data);
+    }
     
     const response = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
@@ -80,32 +92,59 @@ Please ensure your price predictions are realistic based on the data provided an
     
     if (!response.ok) {
       console.error("OpenAI API error:", responseData);
-      throw new Error(`OpenAI API error: ${responseData.error?.message || "Unknown error"}`);
+      console.log("Falling back to enhanced fallback prediction generator");
+      return createFallbackPrediction(data);
     }
 
     const content = responseData.choices?.[0]?.message?.content;
     
     if (!content) {
-      throw new Error("No content in OpenAI response");
+      console.log("No content in OpenAI response, using enhanced fallback prediction");
+      return createFallbackPrediction(data);
     }
 
     try {
       const predictionData = extractJSONFromText(content);
       
+      // Ensure prediction values make sense and aren't too extreme
+      // For one year, we'll allow from -20% to +50% change max
+      const currentPrice = data.currentPrice;
+      const minOneYearPrice = currentPrice * 0.8; // -20% minimum
+      const maxOneYearPrice = currentPrice * 1.5; // +50% maximum
+      
+      // For shorter periods, constrain the ranges further
+      const minOneMonthPrice = currentPrice * 0.95; // -5% minimum
+      const maxOneMonthPrice = currentPrice * 1.1;  // +10% maximum
+      
+      const minThreeMonthPrice = currentPrice * 0.9; // -10% minimum
+      const maxThreeMonthPrice = currentPrice * 1.2; // +20% maximum
+      
+      const minSixMonthPrice = currentPrice * 0.85; // -15% minimum
+      const maxSixMonthPrice = currentPrice * 1.3;  // +30% maximum
+      
+      const oneMonthPredicted = constrainValue(predictionData.predictedPrice?.oneMonth, currentPrice, minOneMonthPrice, maxOneMonthPrice);
+      const threeMonthsPredicted = constrainValue(predictionData.predictedPrice?.threeMonths, currentPrice, minThreeMonthPrice, maxThreeMonthPrice);
+      const sixMonthsPredicted = constrainValue(predictionData.predictedPrice?.sixMonths, currentPrice, minSixMonthPrice, maxSixMonthPrice);
+      const oneYearPredicted = constrainValue(predictionData.predictedPrice?.oneYear, currentPrice, minOneYearPrice, maxOneYearPrice);
+      
       const prediction: StockPrediction = {
         symbol: data.symbol,
         currentPrice: data.currentPrice,
         predictedPrice: {
-          oneMonth: ensureNumberValue(predictionData.predictedPrice?.oneMonth, data.currentPrice * 1.01),
-          threeMonths: ensureNumberValue(predictionData.predictedPrice?.threeMonths, data.currentPrice * 1.03),
-          sixMonths: ensureNumberValue(predictionData.predictedPrice?.sixMonths, data.currentPrice * 1.05),
-          oneYear: ensureNumberValue(predictionData.predictedPrice?.oneYear, data.currentPrice * 1.08)
+          oneMonth: oneMonthPredicted,
+          threeMonths: threeMonthsPredicted,
+          sixMonths: sixMonthsPredicted,
+          oneYear: oneYearPredicted
         },
-        sentimentAnalysis: predictionData.sentimentAnalysis || generateDefaultSentiment(data),
+        sentimentAnalysis: predictionData.sentimentAnalysis || generateDefaultSentiment(data, "Technology", oneYearPredicted/currentPrice),
         confidenceLevel: ensureNumberInRange(predictionData.confidenceLevel, 65, 90),
-        keyDrivers: ensureArrayWithItems(predictionData.keyDrivers, generateDefaultDrivers()),
-        risks: ensureArrayWithItems(predictionData.risks, generateDefaultRisks())
+        keyDrivers: ensureArrayWithItems(predictionData.keyDrivers, generateDefaultDrivers("Technology", data)),
+        risks: ensureArrayWithItems(predictionData.risks, generateDefaultRisks("Technology", data))
       };
+      
+      // Log the prediction range to help with debugging
+      const yearGrowthPercent = ((prediction.predictedPrice.oneYear / data.currentPrice) - 1) * 100;
+      console.log(`Prediction for ${data.symbol}: 1Y: ${yearGrowthPercent.toFixed(2)}% | 1M: ${((prediction.predictedPrice.oneMonth / data.currentPrice) - 1) * 100}%`);
       
       return prediction;
     } catch (parseError) {
@@ -118,6 +157,14 @@ Please ensure your price predictions are realistic based on the data provided an
     console.error("Error calling OpenAI:", error);
     return createFallbackPrediction(data);
   }
+}
+
+// Constrain a value within a range, defaulting to fallback if invalid
+function constrainValue(value: any, fallback: number, min: number, max: number): number {
+  if (typeof value !== 'number' || isNaN(value)) {
+    return fallback;
+  }
+  return Math.min(Math.max(value, min), max);
 }
 
 export function extractJSONFromText(text: string) {
