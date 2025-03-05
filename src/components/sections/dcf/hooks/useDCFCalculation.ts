@@ -35,9 +35,9 @@ export const useDCFCalculation = (symbol: string) => {
       console.log("Calculating DCF with AI-generated parameters:", params);
       const result = await calculateCustomDCF(params);
       
-      // Check if result exists and is an object with the success property
+      // Check if result exists and is an object
       if (result && typeof result === 'object') {
-        // If result has a success property, return it
+        // Check if it has a success property
         if ('success' in result) {
           return result;
         }
@@ -46,7 +46,7 @@ export const useDCFCalculation = (symbol: string) => {
         return { success: true };
       }
       
-      // If result is falsy, return a failure object
+      // If result is falsy or not an object, return a failure object
       return { success: false };
     } catch (err) {
       console.error("Error calculating DCF with AI assumptions:", err);
