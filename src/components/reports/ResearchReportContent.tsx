@@ -1,9 +1,10 @@
+
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { FileText, AlertCircle } from "lucide-react";
 import ReportGeneratorForm from "@/components/reports/ReportGeneratorForm";
 import ReportTabs from "@/components/reports/ReportTabs";
-import { ReportData, DataLoadingStatus } from "@/hooks/research/types";
+import { ReportData } from "./useResearchReportData";
 import { ResearchReport } from "@/types/ai-analysis/reportTypes";
 import { StockPrediction } from "@/types/ai-analysis/predictionTypes";
 import { motion } from "framer-motion";
