@@ -40,9 +40,8 @@ export const useDCFCalculation = (symbol: string) => {
         return { success: false };
       }
       
-      // Then check if it's an object
-      if (typeof result === 'object') {
-        // Now it's safe to check for the 'success' property
+      // Then check if it's an object with the success property
+      if (typeof result === 'object' && result !== null) {
         if ('success' in result) {
           return result;
         }
@@ -52,7 +51,7 @@ export const useDCFCalculation = (symbol: string) => {
         return { success: true };
       }
       
-      // If result is not an object, return a failure object
+      // If result is not an object or null, return a failure object
       return { success: false };
     } catch (err) {
       console.error("Error calculating DCF with AI assumptions:", err);
