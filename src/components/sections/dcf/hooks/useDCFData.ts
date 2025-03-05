@@ -11,8 +11,10 @@ export const useDCFData = (symbol: string, financials: any[]) => {
   const [hasAttemptedFetch, setHasAttemptedFetch] = useState(false);
   const [errors, setErrors] = useState<string[]>([]);
   
-  // Get the current price from financials or use a fallback
-  const currentPrice = financials[0]?.price || 100;
+  // Get the current price from financials
+  const currentPrice = financials && financials.length > 0 
+    ? financials.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())[0]?.price || 100
+    : 100;
   
   // Mock DCF data as fallback
   const mockDCFData = prepareMockDCFData(financials);
@@ -51,7 +53,7 @@ export const useDCFData = (symbol: string, financials: any[]) => {
       console.error("Error calculating DCF with AI assumptions:", err);
       toast({
         title: "Error",
-        description: "Failed to calculate DCF. Using estimated values instead.",
+        description: "Failed to calculate DCF with AI assumptions. Trying standard DCF instead.",
         variant: "destructive",
       });
     }

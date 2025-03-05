@@ -71,7 +71,15 @@ export const convertAssumptionsToParams = (
 
 // Prepare mock DCF data for when real data is not available
 export const prepareMockDCFData = (financials: any[]) => {
-  const currentPrice = financials[0]?.price || 100;
+  // Find the latest financial data to use for mock calculations
+  const latestFinancial = financials && financials.length > 0 
+    ? financials.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())[0]
+    : null;
+  
+  const currentPrice = latestFinancial?.price || 100;
+  const revenue = latestFinancial?.revenue || 10000;
+  const operatingIncome = latestFinancial?.operatingIncome || 2000;
+  const netIncome = latestFinancial?.netIncome || 1500;
   
   return {
     intrinsicValue: currentPrice * 1.15, // More realistic mock value (15% upside)
@@ -82,10 +90,10 @@ export const prepareMockDCFData = (financials: any[]) => {
       taxRate: "21%"
     },
     projections: [1, 2, 3, 4, 5].map(year => ({
-      year: `Year ${year}`,
-      revenue: financials[0]?.revenue ? (financials[0].revenue * Math.pow(1.085, year)) : 10000 * Math.pow(1.085, year),
-      ebit: financials[0]?.operatingIncome ? (financials[0].operatingIncome * Math.pow(1.09, year)) : 2000 * Math.pow(1.09, year),
-      fcf: financials[0]?.netIncome ? (financials[0].netIncome * 0.8 * Math.pow(1.075, year)) : 1500 * Math.pow(1.075, year)
+      year: `${new Date().getFullYear() + year - 1}`,
+      revenue: revenue * Math.pow(1.085, year),
+      ebit: operatingIncome * Math.pow(1.09, year),
+      fcf: netIncome * 0.8 * Math.pow(1.075, year)
     })),
     sensitivity: {
       headers: ["", "9.0%", "9.5%", "10.0%", "10.5%", "11.0%"],
@@ -102,29 +110,35 @@ export const prepareMockDCFData = (financials: any[]) => {
 
 // Prepare DCF data from custom DCF result
 export const prepareDCFData = (
-  customDCFResult: CustomDCFResult,
+  customDCFResult: CustomDCFResult | null,
   assumptions: AIDCFSuggestion | null,
   projectedData: any[],
   mockSensitivity: any
 ) => {
+  // Return mock data if DCF result is null
+  if (!customDCFResult) {
+    return prepareMockDCFData([{ price: 100 }]);
+  }
+  
   // Ensure we have valid data for the intrinsic value
   const intrinsicValue = parseFloat(customDCFResult.equityValuePerShare.toString());
   
   // Use calculated/reasonable values or fallback to defaults
-  const growthRateInitial = (assumptions?.assumptions.revenueGrowthPct || 0.085) * 100;
-  const growthRateTerminal = (assumptions?.assumptions.longTermGrowthRatePct || 0.03) * 100;
+  const growthRateInitial = (assumptions?.assumptions.revenueGrowthPct || customDCFResult.revenuePercentage / 100 || 0.085) * 100;
+  const growthRateTerminal = (assumptions?.assumptions.longTermGrowthRatePct || customDCFResult.longTermGrowthRate || 0.03) * 100;
   const taxRate = (customDCFResult.taxRate || 0.21) * 100;
+  const waccPercent = (customDCFResult.wacc || 0.095) * 100;
   
   return {
     intrinsicValue: isNaN(intrinsicValue) || intrinsicValue <= 0 ? 100 : intrinsicValue,
     assumptions: {
       growthRate: `${growthRateInitial.toFixed(1)}% (first 5 years), ${growthRateTerminal.toFixed(1)}% (terminal)`,
-      discountRate: `${(customDCFResult.wacc * 100).toFixed(2)}%`,
+      discountRate: `${waccPercent.toFixed(2)}%`,
       terminalMultiple: "DCF Model",
       taxRate: `${taxRate.toFixed(1)}%`
     },
     projections: projectedData.map((yearData, index) => ({
-      year: `Year ${index + 1}`,
+      year: yearData.year || `Year ${index + 1}`,
       revenue: yearData.revenue || 0,
       ebit: yearData.ebit || 0,
       fcf: yearData.freeCashFlow || 0

@@ -70,13 +70,13 @@ serve(async (req) => {
         }
         break;
       case "custom-levered":
-        // Custom Levered DCF endpoint
+        // Custom Levered DCF endpoint - use the correct stable endpoint
         apiUrl = `https://financialmodelingprep.com/api/v3/valuation/discounted-levered-cash-flow/${symbol}?`;
         
         // Add all provided parameters to query string
         if (params) {
           Object.entries(params).forEach(([key, value]) => {
-            if (key !== 'symbol' && value !== undefined) {
+            if (key !== 'symbol' && value !== undefined && value !== null) {
               apiUrl += `&${key}=${value}`;
             }
           });
@@ -84,13 +84,13 @@ serve(async (req) => {
         break;
       case "advanced":
       default:
-        // Custom DCF Advanced endpoint (default)
+        // Custom DCF Advanced endpoint (default) - use the correct stable endpoint
         apiUrl = `https://financialmodelingprep.com/api/v3/valuation/discounted-cash-flow/${symbol}?`;
         
         // Add all provided parameters to query string
         if (params) {
           Object.entries(params).forEach(([key, value]) => {
-            if (key !== 'symbol' && value !== undefined) {
+            if (key !== 'symbol' && value !== undefined && value !== null) {
               apiUrl += `&${key}=${value}`;
             }
           });
@@ -110,7 +110,6 @@ serve(async (req) => {
     // Check if we have a cached response (cached on the client side)
     const headerObj = req.headers;
     const ifNoneMatch = headerObj.get('if-none-match');
-    const ifModifiedSince = headerObj.get('if-modified-since');
     
     // Calculate ETag based on the request parameters
     const requestETag = `W/"dcf-${symbol}-${type}-${JSON.stringify(params || {})}"`;
@@ -155,7 +154,7 @@ serve(async (req) => {
           if (item.freeCashFlow === undefined || item.freeCashFlow === 0) {
             const operatingCashFlow = item.operatingCashFlow || 0;
             const capitalExpenditure = item.capitalExpenditure || 0;
-            item.freeCashFlow = operatingCashFlow - capitalExpenditure;
+            item.freeCashFlow = operatingCashFlow - Math.abs(capitalExpenditure);
           }
         });
       }

@@ -64,10 +64,15 @@ export const fetchLeveredDCF = async (symbol: string, limit?: number): Promise<a
   try {
     console.log(`Fetching levered DCF for ${symbol}`);
     
+    const params: any = {};
+    if (limit && !isNaN(limit)) {
+      params.limit = limit;
+    }
+    
     const data = await invokeSupabaseFunction('get-custom-dcf', { 
       symbol,
       type: DCFType.LEVERED,
-      params: { limit }
+      params
     });
     
     return data;
@@ -90,7 +95,6 @@ export const fetchCustomDCF = async (
     
     // Format parameters for the FMP API
     const apiParams: any = {
-      symbol,
       revenueGrowthPct: params.revenueGrowthPct,
       ebitdaPct: params.ebitdaPct,
       capitalExpenditurePct: params.capitalExpenditurePct,
@@ -110,6 +114,13 @@ export const fetchCustomDCF = async (
       riskFreeRate: params.riskFreeRate,
       beta: params.beta
     };
+    
+    // Remove any undefined or null values to prevent API errors
+    Object.keys(apiParams).forEach(key => {
+      if (apiParams[key] === undefined || apiParams[key] === null || isNaN(apiParams[key])) {
+        delete apiParams[key];
+      }
+    });
     
     const data = await invokeSupabaseFunction<any>('get-custom-dcf', { 
       symbol, 
@@ -167,7 +178,7 @@ export const fetchCustomDCF = async (
       pvLfcf: item.pvLfcf || 0,
       sumPvLfcf: item.sumPvLfcf || 0,
       longTermGrowthRate: item.longTermGrowthRate || 0,
-      freeCashFlow: item.freeCashFlow || 0,
+      freeCashFlow: item.freeCashFlow || (item.operatingCashFlow ? item.operatingCashFlow - Math.abs(item.capitalExpenditure || 0) : 0),
       terminalValue: item.terminalValue || 0,
       presentTerminalValue: item.presentTerminalValue || 0,
       enterpriseValue: item.enterpriseValue || 0,
@@ -178,60 +189,9 @@ export const fetchCustomDCF = async (
       operatingCashFlowPercentage: item.operatingCashFlowPercentage || 0
     }));
     
-    // If the array is empty, we'll return a default mock result
+    // If the array is empty, we'll throw an error rather than using mock data
     if (transformedData.length === 0) {
-      console.warn("DCF API returned empty array, generating mock data");
-      
-      // Mock data for development/fallback
-      const mockDCF: CustomDCFResult = {
-        year: new Date().getFullYear().toString(),
-        symbol: symbol,
-        revenue: 100000000000,
-        revenuePercentage: 8.5,
-        ebitda: 31270000000,
-        ebitdaPercentage: 31.27,
-        ebit: 30000000000,
-        ebitPercentage: 30,
-        depreciation: 5000000000,
-        capitalExpenditure: 3060000000,
-        capitalExpenditurePercentage: 3.06,
-        price: params.symbol === "AAPL" ? 186.4 : 100,
-        beta: params.beta,
-        dilutedSharesOutstanding: 15408095000,
-        costofDebt: params.costOfDebt,
-        taxRate: params.taxRate,
-        afterTaxCostOfDebt: params.costOfDebt * (1 - params.taxRate),
-        riskFreeRate: params.riskFreeRate,
-        marketRiskPremium: params.marketRiskPremium,
-        costOfEquity: params.costOfEquity,
-        totalDebt: 106629000000,
-        totalEquity: 56950000000,
-        totalCapital: 163579000000,
-        debtWeighting: 0.65,
-        equityWeighting: 0.35,
-        wacc: 0.105,
-        operatingCashFlow: 28860000000,
-        pvLfcf: 25000000000,
-        sumPvLfcf: 100000000000,
-        longTermGrowthRate: params.longTermGrowthRate,
-        freeCashFlow: 25800000000,
-        terminalValue: 500000000000,
-        presentTerminalValue: 300000000000,
-        enterpriseValue: 400000000000,
-        netDebt: 76686000000,
-        equityValue: 323314000000,
-        equityValuePerShare: params.symbol === "AAPL" ? 209.83 : 120,
-        freeCashFlowT1: 27000000000,
-        operatingCashFlowPercentage: 28.86
-      };
-      
-      toast({
-        title: "Using estimated values",
-        description: "The DCF API returned no data. Using estimated values for demonstration.",
-        variant: "default",
-      });
-      
-      return [mockDCF];
+      throw new Error("DCF calculation returned no data");
     }
     
     return transformedData;
