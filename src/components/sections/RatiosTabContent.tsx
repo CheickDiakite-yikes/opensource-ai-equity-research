@@ -1,13 +1,11 @@
 
-import React, { useState, useEffect } from "react";
+import React from "react";
 import { motion } from "framer-motion";
 import { Card, CardHeader, CardContent, CardTitle } from "@/components/ui/card";
 import RatioCard from "@/components/cards/RatioCard";
 import TTMCard from "@/components/cards/TTMCard";
 import ProfitabilityChart from "@/components/charts/ProfitabilityChart";
-import { toast } from "@/components/ui/use-toast";
-import { fetchKeyRatiosTTM } from "@/services/api";
-import { RatioData, TTMData } from "@/types/financialDataTypes";
+import { RatioData } from "@/types/financialDataTypes";
 
 interface RatiosTabContentProps {
   ratioData: RatioData[];
