@@ -47,7 +47,7 @@ const CompanyCard = ({ company, onSelect }: CompanyCardProps) => {
     retry: 2,
   });
   
-  // Use the prediction hook with autoFetch enabled
+  // Use the prediction hook with autoFetch enabled - set quick mode to true for faster predictions
   const { 
     prediction, 
     isLoading: isPredictionLoading, 
@@ -93,18 +93,20 @@ const CompanyCard = ({ company, onSelect }: CompanyCardProps) => {
   const calculatePredictionDifference = () => {
     if (!quote?.price || !predictedPrice) return null;
     
-    // CRITICAL FIX: Make sure the calculation is correct and always produces a non-zero value
+    // CRITICAL FIX: Calculate percentage difference properly and ensure non-zero value
     const priceDiff = ((predictedPrice - quote.price) / quote.price) * 100;
     
-    // Ensure we never show 0.00% by applying a minimum absolute value of 0.01%
-    const adjustedPriceDiff = Math.abs(priceDiff) < 0.01 ? 
-      (priceDiff >= 0 ? 0.01 : -0.01) : 
-      priceDiff;
+    // Format the difference to ensure we show at least 2 decimal places 
+    // and guarantee we never show exactly 0.00% even for tiny differences
+    const formattedDiff = Math.abs(priceDiff) < 0.01 
+      ? (priceDiff >= 0 ? "+0.01%" : "-0.01%")
+      : (priceDiff >= 0 ? `+${priceDiff.toFixed(2)}%` : `${priceDiff.toFixed(2)}%`);
       
-    const isPositive = adjustedPriceDiff > 0;
+    const isPositive = priceDiff >= 0;
     
     return {
-      value: isPositive ? `+${adjustedPriceDiff.toFixed(2)}%` : `${adjustedPriceDiff.toFixed(2)}%`,
+      value: formattedDiff,
+      rawValue: priceDiff,
       color: isPositive ? "bg-blue-500/20 text-blue-600" : "bg-red-500/20 text-red-600"
     };
   };
@@ -191,7 +193,10 @@ const CompanyCard = ({ company, onSelect }: CompanyCardProps) => {
               )}
               
               {predictionDiff ? (
-                <div className={`px-2.5 py-1.5 rounded-md ${predictionDiff.color} text-sm font-medium`}>
+                <div 
+                  className={`px-2.5 py-1.5 rounded-md ${predictionDiff.color} text-sm font-medium`}
+                  title={`AI predicts a ${Math.abs(predictionDiff.rawValue).toFixed(2)}% ${predictionDiff.rawValue >= 0 ? 'increase' : 'decrease'} in 1 year`}
+                >
                   {predictionDiff.value}
                 </div>
               ) : (

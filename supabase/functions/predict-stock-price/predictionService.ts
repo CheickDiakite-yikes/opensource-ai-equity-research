@@ -3,51 +3,50 @@ import { StockPrediction, FormattedData } from "./types.ts";
 import { generateDefaultSentiment, generateDefaultDrivers, generateDefaultRisks, createFallbackPrediction } from "./fallbackGenerator.ts";
 
 export async function generatePredictionWithOpenAI(data: FormattedData): Promise<StockPrediction> {
-  const systemPrompt = `You are a financial analyst specializing in stock price predictions. 
-Your task is to analyze the provided financial and market data for ${data.symbol} and generate 
-a detailed price prediction for different time horizons: 1 month, 3 months, 6 months, and 1 year.
+  const systemPrompt = `You are a senior financial analyst specializing in stock market predictions. 
+Your task is to analyze the provided data for ${data.symbol} and generate realistic price predictions
+for 1 month, 3 months, 6 months, and 1 year time horizons.
 
-IMPORTANT INSTRUCTIONS:
-1. Be realistic with your predictions - they should vary based on the company's financials, industry, and market position
-2. Each stock should have DIFFERENT growth percentages - avoid using the same growth rate across all companies
-3. Strong financial performers may deserve higher growth projections, while others may deserve more conservative estimates
-4. Consider the specific industry dynamics for this stock - some industries grow faster than others
-5. Technical indicators should influence your short-term projections
-6. News sentiment should be factored into your analysis
-7. Predictions must be data-driven and justified by the information provided
+CRITICAL INSTRUCTIONS:
+1. Each prediction MUST be DIFFERENT from the current price - identical predictions are not acceptable
+2. Different time horizons should show logical progression (more variance for longer timeframes)
+3. Companies in different industries should have different growth trajectories
+4. Consider company-specific factors: larger companies tend to have lower growth rates
+5. Technology companies often have higher growth potential than utilities or consumer staples
+6. Strong financial performers deserve higher growth projections than underperformers
+7. Predictions must reflect reasonable market expectations (typically between -20% to +40% for 1 year)
+8. Technical indicators and news sentiment should influence your short-term projections
 
-Base your predictions on:
-- Financial performance and growth trends
-- Technical indicators and price action
-- Market sentiment from news articles
-- Industry and sector dynamics
+YOUR PREDICTIONS SHOULD REFLECT:
+- Each company is unique - avoid using similar growth rates for different companies
+- Market conditions and industry trends vary significantly by sector
+- Growth rates typically increase with time horizon (1-year > 6-month > 3-month > 1-month)
+- Consider volatility - high-beta stocks can have larger price swings`;
 
-Your response should be structured as a JSON object matching the StockPrediction interface.`;
-
-  const userPrompt = `Please analyze this data and provide a stock price prediction:
+  const userPrompt = `Please analyze these data points for ${data.symbol} and provide detailed price predictions:
 
 SYMBOL: ${data.symbol}
 CURRENT PRICE: $${data.currentPrice.toFixed(2)}
 
-FINANCIAL DATA:
+FINANCIAL SUMMARY:
 ${JSON.stringify(data.financialSummary, null, 2)}
 
 TECHNICAL INDICATORS:
 ${JSON.stringify(data.technicalIndicators, null, 2)}
 
-RECENT NEWS:
+NEWS SENTIMENT:
 ${JSON.stringify(data.newsSummary, null, 2)}
 
-Based on this data, please provide:
-1. Price predictions for 1 month, 3 months, 6 months, and 1 year
-2. Sentiment analysis summary
+Based on this analysis, provide:
+1. Realistic price predictions for 1 month, 3 months, 6 months, and 1 year
+2. Sentiment analysis (bullish, neutral, or bearish with explanation)
 3. Confidence level (0-100%)
-4. 3-5 key drivers that could positively impact the stock
-5. 3-5 potential risks that could negatively impact the stock
+4. 3-5 key growth drivers specific to this company
+5. 3-5 potential risks specific to this company
 
-MOST IMPORTANT: Your predictions must be unique to this company and should NOT follow a standard growth pattern. 
-Different companies should have different growth trajectories based on their specific data.
-NEVER return the current price as the predicted price - they should be different values.`;
+MOST IMPORTANT: Your predictions MUST be different from the current price - showing either growth or decline
+based on your analysis of the data. Different companies should have different growth trajectories based on 
+their unique data profile and industry characteristics.`;
 
   try {
     const openAIApiKey = Deno.env.get("OPENAI_API_KEY") || "";
@@ -61,7 +60,7 @@ NEVER return the current price as the predicted price - they should be different
     const maxTokens = quickMode ? 1000 : 1500; 
     
     // Higher temperature produces more varied predictions
-    const temperature = 0.9; // Increased from 0.7 to get more varied results
+    const temperature = 0.95; // Increased from 0.7 to get more varied results
     
     console.log(`Generating prediction for ${data.symbol} using ${modelToUse} model (quickMode: ${quickMode})`);
     
@@ -69,9 +68,10 @@ NEVER return the current price as the predicted price - they should be different
     // 1. If quick mode is enabled and we have limited financial data
     // 2. If we are in the development environment
     const isDevMode = Deno.env.get("ENVIRONMENT") === "development";
+    const hasLimitedData = !data.financialSummary || Object.keys(data.financialSummary).length === 0;
     
-    if ((quickMode && (!data.financialSummary || Object.keys(data.financialSummary).length === 0)) || isDevMode) {
-      console.log(`Using enhanced fallback prediction for ${data.symbol}`);
+    if ((quickMode && hasLimitedData) || isDevMode) {
+      console.log(`Using enhanced fallback prediction for ${data.symbol} (limited data: ${hasLimitedData}, dev mode: ${isDevMode})`);
       return createFallbackPrediction(data);
     }
     
@@ -110,54 +110,76 @@ NEVER return the current price as the predicted price - they should be different
     try {
       const predictionData = extractJSONFromText(content);
       
-      // CRITICAL FIX: Verify we don't have the same values for current and predicted prices
-      // If any predicted prices match the current price exactly, use the fallback generator
+      // CRITICAL VALIDATION: We must never return the same predicted price as current price
+      // Make sure all predicted prices differ from current price by at least 1%
       const currentPrice = data.currentPrice;
-      if (predictionData.predictedPrice?.oneYear === currentPrice || 
-          !predictionData.predictedPrice?.oneYear) {
-        console.log(`Prediction for ${data.symbol} has same price as current, using fallback`);
+      const oneYearPrice = predictionData.predictedPrice?.oneYear;
+      
+      // Check if prediction is valid and sufficiently different from current price
+      const isValidYearPrediction = typeof oneYearPrice === 'number' && 
+                                   Math.abs((oneYearPrice - currentPrice) / currentPrice) >= 0.01;
+      
+      if (!isValidYearPrediction) {
+        console.log(`Invalid prediction for ${data.symbol}, using fallback generator`);
         return createFallbackPrediction(data);
       }
       
-      // Ensure prediction values make sense and aren't too extreme
-      // For one year, we'll allow from -20% to +50% change max
-      const minOneYearPrice = currentPrice * 0.8; // -20% minimum
-      const maxOneYearPrice = currentPrice * 1.5; // +50% maximum
+      // Apply realistic constraints to predicted prices (prevent extreme predictions)
+      const minOneYearPrice = currentPrice * 0.7;  // Max 30% decrease
+      const maxOneYearPrice = currentPrice * 1.6;  // Max 60% increase
       
-      // For shorter periods, constrain the ranges further
-      const minOneMonthPrice = currentPrice * 0.95; // -5% minimum
-      const maxOneMonthPrice = currentPrice * 1.1;  // +10% maximum
+      const minOneMonthPrice = currentPrice * 0.93; // Max 7% decrease
+      const maxOneMonthPrice = currentPrice * 1.1;  // Max 10% increase
       
-      const minThreeMonthPrice = currentPrice * 0.9; // -10% minimum
-      const maxThreeMonthPrice = currentPrice * 1.2; // +20% maximum
+      const minThreeMonthPrice = currentPrice * 0.85; // Max 15% decrease
+      const maxThreeMonthPrice = currentPrice * 1.2;  // Max 20% increase
       
-      const minSixMonthPrice = currentPrice * 0.85; // -15% minimum
-      const maxSixMonthPrice = currentPrice * 1.3;  // +30% maximum
+      const minSixMonthPrice = currentPrice * 0.8;  // Max 20% decrease
+      const maxSixMonthPrice = currentPrice * 1.35; // Max 35% increase
       
-      const oneMonthPredicted = constrainValue(predictionData.predictedPrice?.oneMonth, currentPrice * 1.02, minOneMonthPrice, maxOneMonthPrice);
-      const threeMonthsPredicted = constrainValue(predictionData.predictedPrice?.threeMonths, currentPrice * 1.05, minThreeMonthPrice, maxThreeMonthPrice);
-      const sixMonthsPredicted = constrainValue(predictionData.predictedPrice?.sixMonths, currentPrice * 1.08, minSixMonthPrice, maxSixMonthPrice);
-      const oneYearPredicted = constrainValue(predictionData.predictedPrice?.oneYear, currentPrice * 1.12, minOneYearPrice, maxOneYearPrice);
-      
-      // CRITICAL FIX: Ensure we NEVER return the exact same value as current price
-      // Add a small random variation if they happen to be the same
+      // Ensure each price prediction has a minimum difference from current price
       const ensureDifferentPrice = (predicted: number, current: number): number => {
-        if (Math.abs(predicted - current) < 0.01) {
-          // Add random variation between 3% and 8%
-          const randomFactor = 1 + (0.03 + Math.random() * 0.05) * (Math.random() > 0.2 ? 1 : -1);
-          return current * randomFactor;
+        const percentDiff = (predicted - current) / current;
+        
+        // If difference is less than 1%, add at least 2-5% change
+        if (Math.abs(percentDiff) < 0.01) {
+          // Get a random adjustment between 2-5%
+          const adjustment = (0.02 + Math.random() * 0.03) * (Math.random() > 0.4 ? 1 : -1);
+          return current * (1 + adjustment);
         }
         return predicted;
       };
       
+      // Use returned values but ensure minimal difference and apply constraints
+      const oneMonthPredicted = ensureDifferentPrice(
+        constrainValue(predictionData.predictedPrice?.oneMonth, currentPrice * 1.02, minOneMonthPrice, maxOneMonthPrice),
+        currentPrice
+      );
+      
+      const threeMonthsPredicted = ensureDifferentPrice(
+        constrainValue(predictionData.predictedPrice?.threeMonths, currentPrice * 1.05, minThreeMonthPrice, maxThreeMonthPrice),
+        currentPrice
+      );
+      
+      const sixMonthsPredicted = ensureDifferentPrice(
+        constrainValue(predictionData.predictedPrice?.sixMonths, currentPrice * 1.08, minSixMonthPrice, maxSixMonthPrice),
+        currentPrice
+      );
+      
+      const oneYearPredicted = ensureDifferentPrice(
+        constrainValue(predictionData.predictedPrice?.oneYear, currentPrice * 1.12, minOneYearPrice, maxOneYearPrice),
+        currentPrice
+      );
+      
+      // Build the final prediction
       const prediction: StockPrediction = {
         symbol: data.symbol,
         currentPrice: data.currentPrice,
         predictedPrice: {
-          oneMonth: ensureDifferentPrice(oneMonthPredicted, currentPrice),
-          threeMonths: ensureDifferentPrice(threeMonthsPredicted, currentPrice),
-          sixMonths: ensureDifferentPrice(sixMonthsPredicted, currentPrice),
-          oneYear: ensureDifferentPrice(oneYearPredicted, currentPrice)
+          oneMonth: parseFloat(oneMonthPredicted.toFixed(2)),
+          threeMonths: parseFloat(threeMonthsPredicted.toFixed(2)),
+          sixMonths: parseFloat(sixMonthsPredicted.toFixed(2)),
+          oneYear: parseFloat(oneYearPredicted.toFixed(2))
         },
         sentimentAnalysis: predictionData.sentimentAnalysis || generateDefaultSentiment(data, "Technology", oneYearPredicted/currentPrice),
         confidenceLevel: ensureNumberInRange(predictionData.confidenceLevel, 65, 90),
@@ -166,8 +188,8 @@ NEVER return the current price as the predicted price - they should be different
       };
       
       // Log the prediction range to help with debugging
-      const yearGrowthPercent = ((prediction.predictedPrice.oneYear / data.currentPrice) - 1) * 100;
-      console.log(`Prediction for ${data.symbol}: 1Y: ${yearGrowthPercent.toFixed(2)}% | 1M: ${((prediction.predictedPrice.oneMonth / data.currentPrice) - 1) * 100}%`);
+      const yearGrowthPercent = ((prediction.predictedPrice.oneYear / currentPrice) - 1) * 100;
+      console.log(`OpenAI prediction for ${data.symbol}: 1Y: ${yearGrowthPercent.toFixed(2)}% | 1M: ${((prediction.predictedPrice.oneMonth / currentPrice) - 1) * 100}%`);
       
       return prediction;
     } catch (parseError) {
