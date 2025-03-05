@@ -1,59 +1,91 @@
 
 import React from "react";
-import { motion } from "framer-motion";
-import { Card, CardHeader, CardContent, CardTitle } from "@/components/ui/card";
-import RatioCard from "@/components/cards/RatioCard";
-import TTMCard from "@/components/cards/TTMCard";
-import ProfitabilityChart from "@/components/charts/ProfitabilityChart";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import TTMRatioDisplay from "./ratios/TTMRatioDisplay";
 
-interface RatiosTabContentProps {
-  ratioData: any[];
-  symbol?: string;
+interface RatioData {
+  year: string;
+  peRatio: number;
+  pbRatio: number;
+  roe: number;
+  roa: number;
+  currentRatio: number;
+  debtEquity: number;
+  grossMargin: number;
+  netMargin: number;
 }
 
-const container = {
-  hidden: { opacity: 0 },
-  show: {
-    opacity: 1,
-    transition: {
-      staggerChildren: 0.1
-    }
-  }
-};
+interface RatiosTabContentProps {
+  symbol: string;
+  ratioData: RatioData[];
+}
 
-const item = {
-  hidden: { opacity: 0, y: 20 },
-  show: { opacity: 1, y: 0 }
-};
+const RatiosTabContent: React.FC<RatiosTabContentProps> = ({ symbol, ratioData }) => {
+  // Group the ratio data by year
+  const groupedData = ratioData.reduce((acc: Record<string, RatioData>, item) => {
+    acc[item.year] = item;
+    return acc;
+  }, {});
 
-const RatiosTabContent: React.FC<RatiosTabContentProps> = ({ ratioData, symbol = "" }) => {
+  // Sort years in descending order
+  const years = Object.keys(groupedData).sort((a, b) => parseInt(b) - parseInt(a));
+
   return (
-    <motion.div 
-      variants={container}
-      initial="hidden"
-      animate="show"
-      className="mt-4 space-y-8"
-    >
-      <motion.div 
-        variants={container} 
-        className="grid grid-cols-1 md:grid-cols-4 gap-4"
-      >
-        {ratioData.slice(0, 3).map((ratio, index) => (
-          <motion.div key={index} variants={item}>
-            <RatioCard data={ratio} />
-          </motion.div>
+    <div className="space-y-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {years.slice(0, 3).map((year) => (
+          <Card key={year}>
+            <CardHeader>
+              <CardTitle>{year}</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">P/E Ratio</span>
+                <span className="font-medium">{groupedData[year].peRatio.toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">P/B Ratio</span>
+                <span className="font-medium">{groupedData[year].pbRatio.toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">ROE</span>
+                <span className="font-medium">{groupedData[year].roe.toFixed(2)}%</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">ROA</span>
+                <span className="font-medium">{groupedData[year].roa.toFixed(2)}%</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Current Ratio</span>
+                <span className="font-medium">{groupedData[year].currentRatio.toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Debt/Equity</span>
+                <span className="font-medium">{groupedData[year].debtEquity.toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Gross Margin</span>
+                <span className="font-medium">{groupedData[year].grossMargin.toFixed(2)}%</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Net Margin</span>
+                <span className="font-medium">{groupedData[year].netMargin.toFixed(2)}%</span>
+              </div>
+            </CardContent>
+          </Card>
         ))}
-        {symbol && (
-          <motion.div variants={item}>
-            <TTMCard symbol={symbol} />
-          </motion.div>
-        )}
-      </motion.div>
-      
-      <motion.div variants={item} transition={{ delay: 0.3 }}>
-        <ProfitabilityChart data={ratioData} />
-      </motion.div>
-    </motion.div>
+        
+        {/* Add TTM Ratio Display Component */}
+        <TTMRatioDisplay symbol={symbol} />
+      </div>
+
+      <div className="mt-8">
+        <h3 className="text-xl font-semibold mb-4">Profitability Trends</h3>
+        <div className="h-80 w-full">
+          {/* Your existing chart component for profitability trends */}
+        </div>
+      </div>
+    </div>
   );
 };
 

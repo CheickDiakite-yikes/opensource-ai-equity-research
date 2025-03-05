@@ -14,8 +14,12 @@ export const prepareMockDCFData = (financials: any[]): FormattedDCFData => {
   const mockProjections = createMockProjections(financialMetrics);
   const mockSensitivity = createMockSensitivityAnalysis(currentPrice);
   
+  const intrinsicValue = calculateMockIntrinsicValue(financialMetrics, currentPrice);
+  
   return {
-    intrinsicValue: calculateMockIntrinsicValue(financialMetrics, currentPrice),
+    intrinsicValue,
+    currentPrice,
+    upside: ((intrinsicValue / currentPrice - 1) * 100).toFixed(2) + '%',
     assumptions: {
       growthRate: "8.5% (first 5 years), 3% (terminal)",
       discountRate: "9.5%",
@@ -76,11 +80,11 @@ export const createMockSensitivityAnalysis = (currentPrice: number): DCFSensitiv
   return {
     headers: ["", "8.5%", "9.0%", "9.5%", "10.0%", "10.5%"],
     rows: [
-      { growth: "2.0%", values: [currentPrice * 1.20, currentPrice * 1.15, currentPrice * 1.10, currentPrice * 1.05, currentPrice * 1.00] },
-      { growth: "2.5%", values: [currentPrice * 1.25, currentPrice * 1.20, currentPrice * 1.15, currentPrice * 1.10, currentPrice * 1.05] },
-      { growth: "3.0%", values: [currentPrice * 1.30, currentPrice * 1.25, currentPrice * 1.20, currentPrice * 1.15, currentPrice * 1.10] },
-      { growth: "3.5%", values: [currentPrice * 1.35, currentPrice * 1.30, currentPrice * 1.25, currentPrice * 1.20, currentPrice * 1.15] },
-      { growth: "4.0%", values: [currentPrice * 1.40, currentPrice * 1.35, currentPrice * 1.30, currentPrice * 1.25, currentPrice * 1.20] }
+      { growth: "2.0%", values: [(currentPrice * 1.20).toString(), (currentPrice * 1.15).toString(), (currentPrice * 1.10).toString(), (currentPrice * 1.05).toString(), (currentPrice * 1.00).toString()] },
+      { growth: "2.5%", values: [(currentPrice * 1.25).toString(), (currentPrice * 1.20).toString(), (currentPrice * 1.15).toString(), (currentPrice * 1.10).toString(), (currentPrice * 1.05).toString()] },
+      { growth: "3.0%", values: [(currentPrice * 1.30).toString(), (currentPrice * 1.25).toString(), (currentPrice * 1.20).toString(), (currentPrice * 1.15).toString(), (currentPrice * 1.10).toString()] },
+      { growth: "3.5%", values: [(currentPrice * 1.35).toString(), (currentPrice * 1.30).toString(), (currentPrice * 1.25).toString(), (currentPrice * 1.20).toString(), (currentPrice * 1.15).toString()] },
+      { growth: "4.0%", values: [(currentPrice * 1.40).toString(), (currentPrice * 1.35).toString(), (currentPrice * 1.30).toString(), (currentPrice * 1.25).toString(), (currentPrice * 1.20).toString()] }
     ]
   };
 };

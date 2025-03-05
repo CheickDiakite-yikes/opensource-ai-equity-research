@@ -27,14 +27,14 @@ export const useDCFCalculation = (symbol: string) => {
       if (!assumptions) {
         console.warn("No AI assumptions available for DCF calculation, using mock data");
         setUsingMockData(true);
-        return { success: false };
+        return { success: false, dcfResult: null };
       }
       
       const params = convertAssumptionsToParams(assumptions, symbol, financials);
       
       console.log("Calculating DCF with AI-generated parameters:", params);
-      await calculateCustomDCF(params);
-      return { success: true };
+      const result = await calculateCustomDCF(params);
+      return { success: true, dcfResult: result?.dcfResult || null };
     } catch (err) {
       console.error("Error calculating DCF with AI assumptions:", err);
       setUsingMockData(true);
@@ -45,7 +45,7 @@ export const useDCFCalculation = (symbol: string) => {
         variant: "default",
       });
       
-      return { success: false, error: err };
+      return { success: false, error: err, dcfResult: null };
     }
   }, [symbol, calculateCustomDCF]);
 
