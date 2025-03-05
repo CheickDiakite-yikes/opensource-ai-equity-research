@@ -9,9 +9,10 @@ import { DCFType } from "@/services/api/analysis/dcfService";
 interface DCFTabContentProps {
   financials: any[];
   symbol: string;
+  quoteData?: any; // Add quote data prop
 }
 
-const DCFTabContent: React.FC<DCFTabContentProps> = ({ financials, symbol }) => {
+const DCFTabContent: React.FC<DCFTabContentProps> = ({ financials, symbol, quoteData }) => {
   const [activeTab, setActiveTab] = useState<string>("automatic");
   const [dcfModel, setDcfModel] = useState<DCFType>(DCFType.CUSTOM_ADVANCED);
   
@@ -55,7 +56,8 @@ const DCFTabContent: React.FC<DCFTabContentProps> = ({ financials, symbol }) => 
     error 
   } = useCustomDCF(symbol);
   
-  const currentPrice = financials[0]?.price || 100;
+  // Use current price from quote data if available, otherwise from financials
+  const currentPrice = quoteData?.price || financials[0]?.price || 175.00;
   
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -121,7 +123,11 @@ const DCFTabContent: React.FC<DCFTabContentProps> = ({ financials, symbol }) => 
         </TabsList>
         
         <TabsContent value="automatic" className="space-y-6">
-          <AutomaticDCFSection financials={financials} symbol={symbol} />
+          <AutomaticDCFSection 
+            financials={financials} 
+            symbol={symbol} 
+            quoteData={quoteData} 
+          />
         </TabsContent>
         
         <TabsContent value="custom" className="space-y-6">

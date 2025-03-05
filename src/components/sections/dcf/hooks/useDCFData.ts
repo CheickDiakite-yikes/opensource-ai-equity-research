@@ -7,9 +7,9 @@ import { getCurrentPrice } from "../utils/priceUtils";
 import { prepareMockDCFData, prepareDCFData } from "../utils/dcfDataUtils";
 import { FormattedDCFData } from "@/types/ai-analysis/dcfTypes";
 
-export const useDCFData = (symbol: string, financials: any[]) => {
-  // Get the current price
-  const currentPrice = getCurrentPrice(financials);
+export const useDCFData = (symbol: string, financials: any[], quoteData?: any) => {
+  // Get the current price, using quote data when available
+  const currentPrice = getCurrentPrice(financials, quoteData);
   
   // Custom hooks for different concerns
   const { 
@@ -34,7 +34,7 @@ export const useDCFData = (symbol: string, financials: any[]) => {
   const { errors } = useDCFErrors(assumptionsError, dcfError);
   
   // Mock DCF data as fallback
-  const mockDCFData = prepareMockDCFData(financials);
+  const mockDCFData = prepareMockDCFData(financials, currentPrice);
 
   // When assumptions change or on initial load, fetch DCF data
   useEffect(() => {
