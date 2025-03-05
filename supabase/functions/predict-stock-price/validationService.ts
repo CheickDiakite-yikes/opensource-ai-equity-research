@@ -6,7 +6,7 @@ export function validatePrediction(predictionData: any, currentPrice: number): b
   if (!predictionData || !predictionData.predictedPrice) return false;
   
   const oneYearPrice = predictionData.predictedPrice.oneYear;
-  if (typeof oneYearPrice !== 'number') return false;
+  if (typeof oneYearPrice !== 'number' || isNaN(oneYearPrice)) return false;
   
   // Check one-year prediction (should be at least 1% different)
   const yearDiff = Math.abs((oneYearPrice - currentPrice) / currentPrice);
@@ -16,7 +16,7 @@ export function validatePrediction(predictionData: any, currentPrice: number): b
   const timeframes = ['oneMonth', 'threeMonths', 'sixMonths'] as const;
   return timeframes.every(timeframe => {
     const price = predictionData.predictedPrice[timeframe];
-    return typeof price === 'number' && Math.abs((price - currentPrice) / currentPrice) >= 0.005;
+    return typeof price === 'number' && !isNaN(price) && Math.abs((price - currentPrice) / currentPrice) >= 0.005;
   });
 }
 
@@ -28,6 +28,15 @@ export function validateConsistency(prediction: any, historicalPredictions: any[
   
   // Get the most recent prediction
   const mostRecent = historicalPredictions[0];
+  
+  // Ensure we have valid values
+  if (!prediction?.predictedPrice?.oneYear || !mostRecent?.one_year_price || 
+      typeof prediction.predictedPrice.oneYear !== 'number' || 
+      typeof mostRecent.one_year_price !== 'number' ||
+      isNaN(prediction.predictedPrice.oneYear) || 
+      isNaN(mostRecent.one_year_price)) {
+    return true; // Skip validation if values are not valid numbers
+  }
   
   // Calculate the 1-year growth rates
   const newGrowthRate = (prediction.predictedPrice.oneYear / currentPrice) - 1;

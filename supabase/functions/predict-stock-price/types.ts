@@ -22,12 +22,12 @@ export interface PredictionHistoryEntry {
   three_month_price: number;
   six_month_price: number;
   one_year_price: number;
-  sentiment_analysis: string;
-  confidence_level: number;
-  key_drivers: string[];
-  risks: string[];
+  sentiment_analysis: string | null;
+  confidence_level: number | null;
+  key_drivers: string[] | any; // Accept any JSON type from database
+  risks: string[] | any; // Accept any JSON type from database
   prediction_date: string;
-  metadata: Record<string, any>;
+  metadata: Record<string, any> | null;
 }
 
 export interface FormattedData {
