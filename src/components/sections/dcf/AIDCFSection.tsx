@@ -6,7 +6,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Sparkles, AlertTriangle, BarChart3 } from "lucide-react";
 import { fetchAIDCF, AIDCFResult } from "@/services/api/analysis/dcf/aiDCFService";
-import { formatCurrency, formatPercent } from "@/utils/financial/formatUtils";
+import { formatCurrency, formatPercentage } from "@/utils/financial/formatUtils";
 
 interface AIDCFSectionProps {
   symbol: string;
@@ -109,7 +109,7 @@ const AIDCFSection: React.FC<AIDCFSectionProps> = ({ symbol, currentPrice }) => 
                       <span className={`ml-2 px-2 py-1 rounded-md text-sm ${
                         result.upside > 0 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
                       }`}>
-                        {result.upside > 0 ? '↑' : '↓'} {formatPercent(Math.abs(result.upside) / 100)}
+                        {result.upside > 0 ? '↑' : '↓'} {formatPercentage(Math.abs(result.upside) / 100)}
                       </span>
                     )}
                   </div>
@@ -123,15 +123,15 @@ const AIDCFSection: React.FC<AIDCFSectionProps> = ({ symbol, currentPrice }) => 
                   <ul className="mt-2 space-y-1 text-sm">
                     <li className="flex justify-between">
                       <span className="text-gray-600">Growth Rate:</span>
-                      <span className="font-medium">{formatPercent(result.assumptions.averageRevenueGrowth)}</span>
+                      <span className="font-medium">{formatPercentage(result.assumptions.averageRevenueGrowth)}</span>
                     </li>
                     <li className="flex justify-between">
                       <span className="text-gray-600">WACC:</span>
-                      <span className="font-medium">{formatPercent(result.assumptions.wacc)}</span>
+                      <span className="font-medium">{formatPercentage(result.assumptions.wacc)}</span>
                     </li>
                     <li className="flex justify-between">
                       <span className="text-gray-600">Terminal Growth:</span>
-                      <span className="font-medium">{formatPercent(result.assumptions.terminalGrowth)}</span>
+                      <span className="font-medium">{formatPercentage(result.assumptions.terminalGrowth)}</span>
                     </li>
                   </ul>
                 </div>

@@ -6,7 +6,6 @@ export {
   fetchCustomLeveredDCF,
   fetchStandardDCF,
   fetchLeveredDCF,
-  transformDCFResponse,
   formatDCFParameters,
   DCFType
 } from './dcf';
