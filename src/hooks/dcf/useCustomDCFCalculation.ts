@@ -11,6 +11,7 @@ export const useCustomDCFCalculation = (symbol: string) => {
   const [result, setResult] = useState<CustomDCFResult | null>(null);
   const [projectedData, setProjectedData] = useState<YearlyDCFData[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [rawResponse, setRawResponse] = useState<any>(null);
   
   // Import standard DCF for fallback
   const { calculateStandardDCF } = useStandardDCF(symbol);
@@ -32,6 +33,10 @@ export const useCustomDCFCalculation = (symbol: string) => {
         } else {
           apiResult = await fetchCustomDCF(symbol, paramsWithSymbol, type);
         }
+        
+        // Store the raw API response
+        setRawResponse(apiResult);
+        
       } catch (err) {
         console.error(`Error with ${type} DCF, trying standard DCF as fallback:`, err);
         // If custom DCF fails, try standard DCF
@@ -58,7 +63,13 @@ export const useCustomDCFCalculation = (symbol: string) => {
         setResult(dcfResult);
         setProjectedData(yearly);
         
-        if (!isMockData) {
+        if (isMockData) {
+          toast({
+            title: "Using Estimated DCF Values",
+            description: "We're displaying estimated values. Real API data unavailable.",
+            variant: "default",
+          });
+        } else {
           toast({
             title: "DCF Calculation Complete",
             description: `Intrinsic value per share: $${dcfResult.equityValuePerShare.toFixed(2)}`,
@@ -109,6 +120,7 @@ export const useCustomDCFCalculation = (symbol: string) => {
     result,
     projectedData,
     isCalculating,
-    error
+    error,
+    rawResponse
   };
 };

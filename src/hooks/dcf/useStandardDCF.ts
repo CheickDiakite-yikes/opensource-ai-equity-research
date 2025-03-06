@@ -10,6 +10,7 @@ export const useStandardDCF = (symbol: string) => {
   const [result, setResult] = useState<CustomDCFResult | null>(null);
   const [projectedData, setProjectedData] = useState<YearlyDCFData[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [rawResponse, setRawResponse] = useState<any>(null);
 
   const calculateStandardDCF = async () => {
     try {
@@ -19,6 +20,9 @@ export const useStandardDCF = (symbol: string) => {
       console.log("Fetching standard DCF for", symbol);
       
       const apiResult = await fetchStandardDCF(symbol);
+      
+      // Store the raw API response
+      setRawResponse(apiResult);
       
       if (apiResult && Array.isArray(apiResult) && apiResult.length > 0) {
         console.log("Received standard DCF results:", apiResult);
@@ -38,10 +42,19 @@ export const useStandardDCF = (symbol: string) => {
         const yearly = createProjectedData(apiResult);
         setProjectedData(yearly);
         
-        toast({
-          title: "DCF Calculation Complete",
-          description: `Intrinsic value per share: $${dcfResult.equityValuePerShare.toFixed(2)}`,
-        });
+        // Check if using mock data and adjust notification
+        if (dcfResult.mockData) {
+          toast({
+            title: "Using Estimated DCF Values",
+            description: "We're displaying estimated DCF values. Real API data unavailable.",
+            variant: "default",
+          });
+        } else {
+          toast({
+            title: "DCF Calculation Complete",
+            description: `Intrinsic value per share: $${dcfResult.equityValuePerShare.toFixed(2)}`,
+          });
+        }
         
         return { dcfResult, yearly };
       } else {
@@ -80,6 +93,7 @@ export const useStandardDCF = (symbol: string) => {
     result,
     projectedData,
     isCalculating,
-    error
+    error,
+    rawResponse
   };
 };

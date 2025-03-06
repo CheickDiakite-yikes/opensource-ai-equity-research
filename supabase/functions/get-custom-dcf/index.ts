@@ -3,7 +3,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { corsHeaders } from "../_shared/cors.ts";
 import { buildDcfApiUrl } from "./dcfUrlBuilder.ts";
 import { getCacheHeaders } from "./cacheUtils.ts";
-import { createErrorResponse, parseRequestParams, validateRequest } from "./requestHandler.ts";
+import { createErrorResponse, parseRequestParams, validateRequest, createRealCompanyMockData } from "./requestHandler.ts";
 import { fetchWithRetry } from "./fetchUtils.ts";
 
 serve(async (req) => {
@@ -48,27 +48,12 @@ serve(async (req) => {
       
       // Handle empty responses
       if (Array.isArray(data) && data.length === 0) {
-        // Return mock data for empty responses instead of throwing an error
-        console.log(`No DCF data found for symbol: ${symbol}, returning mock data`);
+        // Return more realistic mock data instead of generic mock
+        console.log(`No DCF data found for symbol: ${symbol}, returning realistic mock data`);
+        const mockData = createRealCompanyMockData(symbol);
+        
         return new Response(
-          JSON.stringify([{
-            symbol: symbol,
-            date: new Date().toISOString().split('T')[0],
-            stockPrice: 100,
-            dcf: 115,
-            equityValuePerShare: 115,
-            wacc: 0.095,
-            longTermGrowthRate: 0.03,
-            freeCashFlow: 5000000000,
-            revenue: 20000000000,
-            ebitda: 8000000000,
-            operatingCashFlow: 6000000000,
-            capitalExpenditure: -1000000000,
-            taxRate: 0.21,
-            terminalValue: 75000000000,
-            ebit: 5000000000,
-            mockData: true
-          }]),
+          JSON.stringify(mockData),
           { 
             headers: { 
               ...corsHeaders, 
@@ -101,27 +86,12 @@ serve(async (req) => {
       );
     } catch (fetchError) {
       console.error(`Error fetching from FMP API: ${fetchError}`);
-      // Return mock data with error status
+      // Return mock data with error status but using more realistic data
+      const mockData = createRealCompanyMockData(symbol);
+      mockData[0].error = fetchError.message;
+      
       return new Response(
-        JSON.stringify([{
-          symbol: symbol,
-          date: new Date().toISOString().split('T')[0],
-          stockPrice: 100,
-          dcf: 115,
-          equityValuePerShare: 115,
-          wacc: 0.095,
-          longTermGrowthRate: 0.03,
-          freeCashFlow: 5000000000,
-          revenue: 20000000000,
-          ebitda: 8000000000,
-          operatingCashFlow: 6000000000,
-          capitalExpenditure: -1000000000,
-          taxRate: 0.21,
-          terminalValue: 75000000000,
-          ebit: 5000000000,
-          mockData: true,
-          error: fetchError.message
-        }]),
+        JSON.stringify(mockData),
         { 
           headers: { 
             ...corsHeaders, 

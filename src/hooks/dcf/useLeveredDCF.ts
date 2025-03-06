@@ -11,6 +11,7 @@ export const useLeveredDCF = (symbol: string) => {
   const [result, setResult] = useState<CustomDCFResult | null>(null);
   const [projectedData, setProjectedData] = useState<YearlyDCFData[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [rawResponse, setRawResponse] = useState<any>(null);
   
   // Import standard DCF for fallback
   const { calculateStandardDCF } = useStandardDCF(symbol);
@@ -24,22 +25,35 @@ export const useLeveredDCF = (symbol: string) => {
       
       const apiResult = await fetchLeveredDCF(symbol, limit || 10);
       
+      // Store the raw API response
+      setRawResponse(apiResult);
+      
       if (apiResult && Array.isArray(apiResult) && apiResult.length > 0) {
         console.log("Received levered DCF results:", apiResult);
         
         // Use the first item as our main DCF result
         const dcfResult = apiResult[0];
         
+        // Check if using mock data
+        if (dcfResult.mockData) {
+          console.warn("Using mock DCF data for", symbol);
+          toast({
+            title: "Using Estimated DCF Values",
+            description: "We're displaying estimated values. Real API data unavailable.",
+            variant: "default",
+          });
+        } else {
+          toast({
+            title: "Levered DCF Calculation Complete",
+            description: `Intrinsic value per share: $${dcfResult.equityValuePerShare.toFixed(2)}`,
+          });
+        }
+        
         setResult(dcfResult);
         
         // Create projected data
         const yearly = createProjectedData(apiResult);
         setProjectedData(yearly);
-        
-        toast({
-          title: "Levered DCF Calculation Complete",
-          description: `Intrinsic value per share: $${dcfResult.equityValuePerShare.toFixed(2)}`,
-        });
         
         return { dcfResult, yearly };
       } else {
@@ -77,6 +91,7 @@ export const useLeveredDCF = (symbol: string) => {
     result,
     projectedData,
     isCalculating,
-    error
+    error,
+    rawResponse
   };
 };

@@ -1,12 +1,13 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import AutomaticDCFSection from "./dcf/AutomaticDCFSection";
 import CustomDCFSection from "./dcf/CustomDCFSection";
 import { useCustomDCF } from "@/hooks/dcf/useCustomDCF";
 import { DCFType } from "@/services/api/analysis/dcf";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Calculator, Sliders, TrendingUp, Lock } from "lucide-react";
+import { Calculator, Sliders, TrendingUp, Lock, AlertTriangle } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface DCFTabContentProps {
   financials: any[];
@@ -16,19 +17,20 @@ interface DCFTabContentProps {
 const DCFTabContent: React.FC<DCFTabContentProps> = ({ financials, symbol }) => {
   const [activeTab, setActiveTab] = useState<string>("automatic");
   const [dcfModel, setDcfModel] = useState<DCFType>(DCFType.CUSTOM_ADVANCED);
+  const [apiResponseDebug, setApiResponseDebug] = useState<any>(null);
   
   // Custom DCF inputs state with improved default values
   const [customParams, setCustomParams] = useState({
-    // Growth parameters (as decimals)
-    revenueGrowth: "10.5",
+    // Growth parameters (percentages)
+    revenueGrowth: "8.5",  // Updated to match FMP default values
     ebitdaMargin: "30.0",
-    capexPercent: "3.0", 
-    taxRate: "24.0",
+    capexPercent: "5.0",   // Updated to be more realistic
+    taxRate: "21.0",       // Updated to match current corporate tax rate
     
     // Working capital parameters
     depreciationAndAmortizationPercent: "3.5",
     cashAndShortTermInvestmentsPercent: "23.0",
-    receivablesPercent: "15.0", 
+    receivablesPercent: "15.0",
     inventoriesPercent: "1.5",
     payablesPercent: "16.0",
     ebitPercent: "27.0",
@@ -36,8 +38,8 @@ const DCFTabContent: React.FC<DCFTabContentProps> = ({ financials, symbol }) => 
     sellingGeneralAndAdministrativeExpensesPercent: "6.5",
     
     // Rate parameters
-    longTermGrowthRate: "3.0",
-    costOfEquity: "9.5",
+    longTermGrowthRate: "4.0",  // Updated to match the screenshot value
+    costOfEquity: "9.7",        // Updated to match the WACC from screenshot
     costOfDebt: "3.5",
     marketRiskPremium: "4.7",
     riskFreeRate: "3.6",
@@ -54,10 +56,26 @@ const DCFTabContent: React.FC<DCFTabContentProps> = ({ financials, symbol }) => 
     customDCFResult, 
     projectedData,
     isCalculating, 
-    error 
+    error,
+    rawApiResponse  // Added to capture raw API responses for debugging
   } = useCustomDCF(symbol);
   
   const currentPrice = financials[0]?.price || 100;
+  
+  useEffect(() => {
+    // Store the raw API response for debugging
+    if (rawApiResponse) {
+      console.log("Raw DCF API Response:", rawApiResponse);
+      setApiResponseDebug(rawApiResponse);
+    }
+  }, [rawApiResponse]);
+  
+  // Automatically calculate standard DCF when component mounts
+  useEffect(() => {
+    if (symbol) {
+      calculateStandardDCF();
+    }
+  }, [symbol]);
   
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -124,6 +142,16 @@ const DCFTabContent: React.FC<DCFTabContentProps> = ({ financials, symbol }) => 
         </CardContent>
       </Card>
       
+      {customDCFResult?.mockData && (
+        <Alert variant="warning" className="bg-amber-50 border-amber-200">
+          <AlertTriangle className="h-4 w-4 text-amber-500" />
+          <AlertDescription className="text-amber-800">
+            <strong>Using mock data:</strong> The DCF calculation is currently using estimated values instead of real API data.
+            This may be due to API rate limits or data availability issues. The displayed values are approximations.
+          </AlertDescription>
+        </Alert>
+      )}
+      
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="grid w-full grid-cols-2 mb-6">
           <TabsTrigger value="automatic" className="flex items-center justify-center py-3">
@@ -159,6 +187,20 @@ const DCFTabContent: React.FC<DCFTabContentProps> = ({ financials, symbol }) => 
           />
         </TabsContent>
       </Tabs>
+      
+      {apiResponseDebug && (
+        <Card className="bg-gray-50 border-gray-200 mt-4">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium">API Response Debug Information</CardTitle>
+            <CardDescription className="text-xs">Raw data from the DCF API for troubleshooting</CardDescription>
+          </CardHeader>
+          <CardContent className="pt-0">
+            <div className="bg-gray-100 p-3 rounded text-xs font-mono overflow-auto max-h-60">
+              <pre>{JSON.stringify(apiResponseDebug, null, 2)}</pre>
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 };

@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from "react";
-import { DCFType } from "@/services/api/analysis/dcfService";
+import { DCFType } from "@/services/api/analysis/dcf";
 import { CustomDCFParams, CustomDCFResult, YearlyDCFData } from "@/types/ai-analysis/dcfTypes";
 import { useStandardDCF } from "./useStandardDCF";
 import { useLeveredDCF } from "./useLeveredDCF";
@@ -10,11 +10,39 @@ export const useCustomDCF = (symbol: string) => {
   const [customDCFResult, setCustomDCFResult] = useState<CustomDCFResult | null>(null);
   const [projectedData, setProjectedData] = useState<YearlyDCFData[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [rawApiResponse, setRawApiResponse] = useState<any>(null);
   
   // Import specialized DCF hooks
-  const { calculateStandardDCF, isCalculating: isCalculatingStandard, error: standardError, result: standardResult } = useStandardDCF(symbol);
-  const { calculateLeveredDCF, isCalculating: isCalculatingLevered, error: leveredError, result: leveredResult } = useLeveredDCF(symbol);
-  const { calculateCustomDCF: calculateCustomDCFInternal, isCalculating: isCalculatingCustom, error: customError, result: customResult } = useCustomDCFCalculation(symbol);
+  const { 
+    calculateStandardDCF, 
+    isCalculating: isCalculatingStandard, 
+    error: standardError, 
+    result: standardResult,
+    rawResponse: standardRawResponse
+  } = useStandardDCF(symbol);
+  
+  const { 
+    calculateLeveredDCF, 
+    isCalculating: isCalculatingLevered, 
+    error: leveredError, 
+    result: leveredResult,
+    rawResponse: leveredRawResponse
+  } = useLeveredDCF(symbol);
+  
+  const { 
+    calculateCustomDCF: calculateCustomDCFInternal, 
+    isCalculating: isCalculatingCustom, 
+    error: customError, 
+    result: customResult,
+    rawResponse: customRawResponse
+  } = useCustomDCFCalculation(symbol);
+  
+  // Update raw API response whenever any of the hooks provide new data
+  useEffect(() => {
+    if (standardRawResponse) setRawApiResponse(standardRawResponse);
+    else if (leveredRawResponse) setRawApiResponse(leveredRawResponse);
+    else if (customRawResponse) setRawApiResponse(customRawResponse);
+  }, [standardRawResponse, leveredRawResponse, customRawResponse]);
   
   // Combine calculation state from all hooks
   const isCalculating = isCalculatingStandard || isCalculatingLevered || isCalculatingCustom;
@@ -63,6 +91,7 @@ export const useCustomDCF = (symbol: string) => {
     customDCFResult,
     projectedData,
     isCalculating,
-    error
+    error,
+    rawApiResponse
   };
 };
