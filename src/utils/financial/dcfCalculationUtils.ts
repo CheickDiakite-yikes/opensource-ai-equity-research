@@ -1,8 +1,33 @@
 
 import { DCFInputs, CustomDCFResult } from "@/types/ai-analysis/dcfTypes";
+import { supabase } from "@/integrations/supabase/client";
 
 export const calculateCustomDCF = async (symbol: string, customInputs?: Partial<DCFInputs>): Promise<Response> => {
   try {
+    // First, check if we have a cached result in Supabase
+    const cacheKey = `dcf:${symbol}:${JSON.stringify(customInputs || {})}`;
+    
+    try {
+      const { data: cachedResult, error: cacheError } = await supabase
+        .from('api_cache')
+        .select('data')
+        .eq('cache_key', cacheKey)
+        .gt('expires_at', new Date().toISOString())
+        .maybeSingle();
+      
+      if (!cacheError && cachedResult?.data) {
+        console.log(`Using cached DCF calculation for ${symbol}`);
+        
+        // Return cached data with the mock header to indicate it's from cache
+        return new Response(JSON.stringify(cachedResult.data), {
+          headers: { 'Content-Type': 'application/json', 'X-Cache-Hit': 'true' }
+        });
+      }
+    } catch (cacheErr) {
+      console.error("Error checking DCF cache:", cacheErr);
+      // Continue with fresh calculation
+    }
+    
     // Prepare the API request parameters
     const params = new URLSearchParams();
     params.append('symbol', symbol);
@@ -36,6 +61,7 @@ export const calculateCustomDCF = async (symbol: string, customInputs?: Partial<
             // Check if it's a percentage value (e.g., 3.5 for 3.5%)
             if (typeof value === 'number' && value > 0.2) {
               paramValue = value / 100;
+              console.log(`Converting ${key} from ${value} to ${paramValue}`);
             }
           }
           
@@ -44,7 +70,7 @@ export const calculateCustomDCF = async (symbol: string, customInputs?: Partial<
       });
     }
     
-    // Call the DCF API endpoint - use the correct stable API endpoint
+    // Call the DCF API endpoint through our Supabase Edge Function
     const apiUrl = `/api/dcf?${params.toString()}`;
     console.log("Calling DCF API with params:", apiUrl);
     
@@ -68,7 +94,43 @@ export const calculateCustomDCF = async (symbol: string, customInputs?: Partial<
       console.log('Using mock DCF data due to API limitations');
     }
     
-    return response;
+    // Get the JSON data
+    const data = await response.json();
+    
+    // Cache the successful result in Supabase for future requests
+    if (!isMockData && data) {
+      try {
+        const expiresAt = new Date();
+        expiresAt.setHours(expiresAt.getHours() + 24); // Cache for 24 hours
+        
+        const { error: insertError } = await supabase
+          .from('api_cache')
+          .upsert({
+            cache_key: cacheKey,
+            data: data,
+            expires_at: expiresAt.toISOString(),
+            metadata: { 
+              symbol,
+              customInputs: customInputs || {},
+              fetched_at: new Date().toISOString(),
+              is_mock: false
+            }
+          }, { onConflict: 'cache_key' });
+        
+        if (insertError) {
+          console.error("Error caching DCF result:", insertError);
+        }
+      } catch (cacheErr) {
+        console.error("Error caching DCF result:", cacheErr);
+      }
+    }
+    
+    return new Response(JSON.stringify(data), {
+      headers: { 
+        'Content-Type': 'application/json',
+        'X-Mock-Data': isMockData ? 'true' : 'false'
+      }
+    });
   } catch (error) {
     console.error("Error calculating DCF:", error);
     

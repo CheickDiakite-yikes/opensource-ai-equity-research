@@ -45,7 +45,17 @@ serve(async (req) => {
       params = {};
       url.searchParams.forEach((value, key) => {
         if (key !== 'symbol' && key !== 'type') {
-          params[key] = value;
+          // Convert percentage values to decimals for specific parameters
+          if (['longTermGrowthRate', 'costOfEquity', 'costOfDebt', 'marketRiskPremium', 'riskFreeRate'].includes(key)) {
+            // If value is provided as a percentage (e.g., 5 for 5%), convert to decimal (0.05)
+            if (!isNaN(parseFloat(value)) && parseFloat(value) > 0.2) {
+              params[key] = (parseFloat(value) / 100).toString();
+            } else {
+              params[key] = value;
+            }
+          } else {
+            params[key] = value;
+          }
         }
       });
     } else {
@@ -54,6 +64,18 @@ serve(async (req) => {
       symbol = body.symbol;
       params = body.params || {};
       type = body.type || "advanced";
+      
+      // Convert percentage values to decimals for specific parameters
+      if (params) {
+        ['longTermGrowthRate', 'costOfEquity', 'costOfDebt', 'marketRiskPremium', 'riskFreeRate'].forEach(key => {
+          if (params[key] !== undefined && params[key] !== null) {
+            // Convert from percentage to decimal if needed
+            if (typeof params[key] === 'number' && params[key] > 0.2) {
+              params[key] = params[key] / 100;
+            }
+          }
+        });
+      }
     }
     
     if (!symbol) {
@@ -64,6 +86,7 @@ serve(async (req) => {
     }
     
     console.log(`Processing DCF request for ${symbol}, type: ${type}`);
+    console.log("Parameters:", params);
     
     // Determine which endpoint to use based on the DCF type
     let apiUrl = "";
@@ -85,12 +108,12 @@ serve(async (req) => {
         break;
       case "custom-levered":
         // Custom Levered DCF endpoint - using the stable endpoint
-        apiUrl = `${API_BASE_URLS.FMP_STABLE}/custom-levered-discounted-cash-flow?symbol=${symbol}`;
+        apiUrl = `${API_BASE_URLS.FMP}/v4/advanced/custom-levered-discounted-cash-flow?symbol=${symbol}`;
         break;
       case "advanced":
       default:
         // Custom DCF Advanced endpoint - using the stable endpoint
-        apiUrl = `${API_BASE_URLS.FMP_STABLE}/custom-discounted-cash-flow?symbol=${symbol}`;
+        apiUrl = `${API_BASE_URLS.FMP}/v4/advanced/custom-discounted-cash-flow?symbol=${symbol}`;
         break;
     }
     
@@ -188,6 +211,9 @@ serve(async (req) => {
     }
     
     console.log(`Received DCF data for ${symbol}, type: ${type}`);
+    
+    // Store the successful result in Supabase for future reference
+    // (note: this would require database access, which we'll implement separately)
     
     // Return the DCF data with appropriate caching headers
     return new Response(

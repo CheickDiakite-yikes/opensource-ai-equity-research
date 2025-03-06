@@ -37,6 +37,7 @@ export const formatDCFParameters = (params: Record<string, any>): Record<string,
       // If value is provided as a percentage (e.g., 3.5 for 3.5%), convert to decimal (0.035)
       if (typeof apiParams[key] === 'number' && apiParams[key] > 0.2) {
         apiParams[key] = apiParams[key] / 100;
+        console.log(`Converted ${key} from ${params[key]} to ${apiParams[key]}`);
       }
     }
   });

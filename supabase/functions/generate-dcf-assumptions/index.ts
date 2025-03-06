@@ -1,430 +1,338 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import "https://deno.land/x/xhr@0.1.0/mod.ts";
+import { corsHeaders } from "../_shared/cors.ts";
+import { FMP_API_KEY, API_BASE_URLS } from "../_shared/constants.ts";
+import { OPENAI_API_KEY } from "../_shared/constants.ts";
 
-// Define CORS headers
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+// Cache control headers
+const cacheHeaders = {
+  'Cache-Control': 'public, max-age=3600',
+  'Vary': 'Origin, Accept-Encoding',
 };
 
-// Handle the request
 serve(async (req) => {
   // Handle CORS preflight requests
-  if (req.method === "OPTIONS") {
-    return new Response(null, {
-      headers: corsHeaders,
-    });
+  if (req.method === 'OPTIONS') {
+    return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const openaiApiKey = Deno.env.get("OPENAI_API_KEY");
-    const fmpApiKey = Deno.env.get("FMP_API_KEY");
-    
-    if (!openaiApiKey) {
-      throw new Error("OPENAI_API_KEY is not set");
-    }
-    
-    if (!fmpApiKey) {
-      throw new Error("FMP_API_KEY is not set");
-    }
-
-    // Parse request body
+    // Parse request data
     const { symbol, refreshCache = false } = await req.json();
     
     if (!symbol) {
-      throw new Error("Symbol is required");
+      return new Response(
+        JSON.stringify({ error: "Missing required parameter", details: "Symbol is required" }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
+      );
     }
+
+    console.log(`Processing AI DCF assumptions for ${symbol}, refreshCache=${refreshCache}`);
     
-    console.log(`Processing DCF assumptions for ${symbol}, refreshCache: ${refreshCache}`);
+    // Check if we have OpenAI API key
+    if (!OPENAI_API_KEY) {
+      console.error("OPENAI_API_KEY not set in environment variables");
+      return new Response(
+        JSON.stringify({ error: "API key not configured", details: "OPENAI_API_KEY environment variable is missing" }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
+      );
+    }
+
+    // Fetch financial data from FMP API
+    const financialData = await fetchFinancialData(symbol);
     
-    // Check cache if not forcing refresh
-    if (!refreshCache) {
-      const cacheResult = await checkCache(symbol);
-      if (cacheResult) {
-        console.log(`Using cached DCF assumptions for ${symbol}`);
-        return new Response(JSON.stringify(cacheResult), {
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
+    if (!financialData) {
+      return new Response(
+        JSON.stringify({ error: "Failed to fetch financial data", details: `Could not retrieve data for ${symbol}` }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
+      );
+    }
+
+    // Generate AI assumptions
+    const assumptions = await generateAIAssumptions(symbol, financialData);
+    
+    // Return the AI-generated DCF assumptions
+    return new Response(
+      JSON.stringify(assumptions),
+      { 
+        headers: { 
+          ...corsHeaders, 
+          'Content-Type': 'application/json',
+          ...cacheHeaders
+        } 
       }
-    }
+    );
     
-    // Fetch company profile and financial data
-    const profile = await fetchCompanyProfile(symbol, fmpApiKey);
-    const incomeStatements = await fetchIncomeStatements(symbol, fmpApiKey);
-    const balanceSheets = await fetchBalanceSheets(symbol, fmpApiKey);
-    const cashFlows = await fetchCashFlows(symbol, fmpApiKey);
-    const ratios = await fetchFinancialRatios(symbol, fmpApiKey);
-    
-    // Prepare data for analysis
-    const companyData = {
-      profile,
-      incomeStatements: incomeStatements.slice(0, 3), // Last 3 years
-      balanceSheets: balanceSheets.slice(0, 3), // Last 3 years
-      cashFlows: cashFlows.slice(0, 3), // Last 3 years
-      financialRatios: ratios.slice(0, 3), // Last 3 years
-    };
-    
-    // Generate AI-powered assumptions
-    const assumptions = await generateAssumptions(symbol, companyData, openaiApiKey);
-    
-    // Cache the results
-    await cacheResults(symbol, assumptions);
-    
-    return new Response(JSON.stringify(assumptions), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
   } catch (error) {
-    console.error(`Error generating DCF assumptions:`, error);
+    console.error("Error generating DCF assumptions:", error);
+    
+    // Generate mock assumptions as fallback
+    const mockAssumptions = createMockAssumptions(error instanceof Error ? error.message : String(error));
     
     return new Response(
-      JSON.stringify({
-        error: error.message || "Failed to generate DCF assumptions",
-      }),
-      {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      JSON.stringify(mockAssumptions),
+      { 
+        headers: { 
+          ...corsHeaders, 
+          'Content-Type': 'application/json',
+          'X-Mock-Data': 'true'
+        } 
       }
     );
   }
 });
 
-// Check if we have cached results for this symbol
-async function checkCache(symbol: string) {
+// Fetch financial data from FMP API
+async function fetchFinancialData(symbol: string) {
   try {
-    // This would normally connect to a database, but for simplicity
-    // we're just mocking it for now
-    // In a real implementation, check if the cached entry exists and is not expired
-    return null; // No cache found, returning null
-  } catch (error) {
-    console.error(`Error checking cache:`, error);
-    return null;
-  }
-}
-
-// Cache the generated assumptions
-async function cacheResults(symbol: string, assumptions: any) {
-  try {
-    // This would normally connect to a database to store the results
-    console.log(`Caching DCF assumptions for ${symbol}`);
-    // Implementation would go here
-  } catch (error) {
-    console.error(`Error caching results:`, error);
-  }
-}
-
-// Fetch company profile from FMP API
-async function fetchCompanyProfile(symbol: string, apiKey: string) {
-  try {
-    const response = await fetch(
-      `https://financialmodelingprep.com/api/v3/profile/${symbol}?apikey=${apiKey}`
-    );
+    // Fetch income statements
+    const incomeUrl = `${API_BASE_URLS.FMP}/income-statement/${symbol}?limit=5&apikey=${FMP_API_KEY}`;
+    console.log(`Fetching income statement for ${symbol}`);
     
-    if (!response.ok) {
-      throw new Error(`Failed to fetch company profile: ${response.statusText}`);
+    const incomeResponse = await fetch(incomeUrl);
+    if (!incomeResponse.ok) {
+      console.error(`Error fetching income statement: ${incomeResponse.status}`);
+      throw new Error(`Failed to fetch income statement for ${symbol}`);
     }
     
-    const data = await response.json();
-    return data[0] || null;
+    const incomeData = await incomeResponse.json();
+    
+    if (!Array.isArray(incomeData) || incomeData.length === 0) {
+      console.error("Empty income statement data");
+      throw new Error("No income statement data available");
+    }
+    
+    // Fetch cash flow statements
+    const cashFlowUrl = `${API_BASE_URLS.FMP}/cash-flow-statement/${symbol}?limit=5&apikey=${FMP_API_KEY}`;
+    console.log(`Fetching cash flow statement for ${symbol}`);
+    
+    const cashFlowResponse = await fetch(cashFlowUrl);
+    if (!cashFlowResponse.ok) {
+      console.error(`Error fetching cash flow statement: ${cashFlowResponse.status}`);
+      // Continue even if we can't get cash flow data
+    }
+    
+    let cashFlowData = [];
+    try {
+      cashFlowData = await cashFlowResponse.json();
+    } catch (e) {
+      console.error("Error parsing cash flow data", e);
+      // Continue with empty cash flow data
+    }
+    
+    // Combine the data
+    return {
+      income: incomeData,
+      cashFlow: Array.isArray(cashFlowData) ? cashFlowData : []
+    };
+    
   } catch (error) {
-    console.error(`Error fetching company profile:`, error);
+    console.error("Error fetching financial data:", error);
     throw error;
   }
 }
 
-// Fetch income statements from FMP API
-async function fetchIncomeStatements(symbol: string, apiKey: string) {
+// Generate AI-based DCF assumptions
+async function generateAIAssumptions(symbol: string, financialData: any) {
   try {
-    const response = await fetch(
-      `https://financialmodelingprep.com/api/v3/income-statement/${symbol}?limit=5&apikey=${apiKey}`
-    );
+    // Extract relevant financial data for the model
+    const revenueData = financialData.income.map((stmt: any) => ({
+      date: stmt.date || stmt.calendarYear,
+      revenue: stmt.revenue,
+      grossProfit: stmt.grossProfit,
+      netIncome: stmt.netIncome,
+      ebitda: stmt.ebitda,
+    }));
     
-    if (!response.ok) {
-      throw new Error(`Failed to fetch income statements: ${response.statusText}`);
+    // Extract cash flow data if available
+    const cashFlowData = financialData.cashFlow.map((stmt: any) => ({
+      date: stmt.date || stmt.calendarYear,
+      operatingCashFlow: stmt.operatingCashFlow,
+      capitalExpenditure: stmt.capitalExpenditure,
+      freeCashFlow: stmt.freeCashFlow,
+    }));
+
+    // Determine average growth rates
+    let revenueGrowth = 0;
+    let ebitdaGrowth = 0;
+    
+    if (revenueData.length > 1) {
+      const growthRates = [];
+      
+      for (let i = 0; i < revenueData.length - 1; i++) {
+        const current = revenueData[i];
+        const previous = revenueData[i + 1];
+        
+        if (current.revenue && previous.revenue) {
+          const growth = (current.revenue - previous.revenue) / previous.revenue;
+          growthRates.push(growth);
+        }
+      }
+      
+      if (growthRates.length > 0) {
+        revenueGrowth = growthRates.reduce((sum, rate) => sum + rate, 0) / growthRates.length;
+      }
     }
     
-    return await response.json();
-  } catch (error) {
-    console.error(`Error fetching income statements:`, error);
-    throw error;
-  }
-}
-
-// Fetch balance sheets from FMP API
-async function fetchBalanceSheets(symbol: string, apiKey: string) {
-  try {
-    const response = await fetch(
-      `https://financialmodelingprep.com/api/v3/balance-sheet-statement/${symbol}?limit=5&apikey=${apiKey}`
-    );
-    
-    if (!response.ok) {
-      throw new Error(`Failed to fetch balance sheets: ${response.statusText}`);
-    }
-    
-    return await response.json();
-  } catch (error) {
-    console.error(`Error fetching balance sheets:`, error);
-    throw error;
-  }
-}
-
-// Fetch cash flow statements from FMP API
-async function fetchCashFlows(symbol: string, apiKey: string) {
-  try {
-    const response = await fetch(
-      `https://financialmodelingprep.com/api/v3/cash-flow-statement/${symbol}?limit=5&apikey=${apiKey}`
-    );
-    
-    if (!response.ok) {
-      throw new Error(`Failed to fetch cash flows: ${response.statusText}`);
-    }
-    
-    return await response.json();
-  } catch (error) {
-    console.error(`Error fetching cash flows:`, error);
-    throw error;
-  }
-}
-
-// Fetch financial ratios from FMP API
-async function fetchFinancialRatios(symbol: string, apiKey: string) {
-  try {
-    const response = await fetch(
-      `https://financialmodelingprep.com/api/v3/ratios/${symbol}?limit=5&apikey=${apiKey}`
-    );
-    
-    if (!response.ok) {
-      throw new Error(`Failed to fetch financial ratios: ${response.statusText}`);
-    }
-    
-    return await response.json();
-  } catch (error) {
-    console.error(`Error fetching financial ratios:`, error);
-    throw error;
-  }
-}
-
-// Generate DCF assumptions using OpenAI
-async function generateAssumptions(symbol: string, companyData: any, apiKey: string) {
-  try {
-    console.log(`Generating DCF assumptions with AI for ${symbol}`);
-    
-    // Calculate some financial metrics to help the AI
-    const latestIncome = companyData.incomeStatements[0];
-    const previousIncome = companyData.incomeStatements[1];
-    
-    const latestBalance = companyData.balanceSheets[0];
-    const latestCashFlow = companyData.cashFlows[0];
-    const latestRatios = companyData.financialRatios[0];
-    
-    // Calculate growth rates and ratios
-    const revenueGrowth = previousIncome ? 
-      (latestIncome.revenue - previousIncome.revenue) / previousIncome.revenue : 0.05;
-    
-    const ebitdaMargin = latestIncome.ebitda / latestIncome.revenue;
-    const ebitMargin = latestIncome.ebit / latestIncome.revenue;
-    
-    // Prepare prompt for OpenAI
+    // Prepare the prompt for OpenAI
     const prompt = `
-As a financial analyst, I need you to determine accurate DCF model parameters for ${symbol} (${companyData.profile?.companyName || symbol}).
-
-Based on the following financial data, provide me with precise decimal values (not percentages) for DCF parameters:
-
-Company Profile:
-- Industry: ${companyData.profile?.industry || "N/A"}
-- Sector: ${companyData.profile?.sector || "N/A"}
-- Beta: ${companyData.profile?.beta || "N/A"}
-- Market Cap: ${companyData.profile?.mktCap || "N/A"}
-
-Recent Financial Performance:
-- Revenue: ${latestIncome?.revenue || "N/A"}
-- Revenue Growth Rate: ${(revenueGrowth * 100).toFixed(2)}%
-- EBITDA: ${latestIncome?.ebitda || "N/A"} (${(ebitdaMargin * 100).toFixed(2)}% margin)
-- EBIT: ${latestIncome?.ebit || "N/A"} (${(ebitMargin * 100).toFixed(2)}% margin)
-- Net Income: ${latestIncome?.netIncome || "N/A"}
-- Operating Cash Flow: ${latestCashFlow?.operatingCashFlow || "N/A"}
-- Capital Expenditure: ${latestCashFlow?.capitalExpenditure || "N/A"}
-- Current Tax Rate: ${latestIncome?.incomeTaxExpense / latestIncome?.incomeBeforeTax || "N/A"}
-
-I need you to provide ONLY the following parameters as decimal values (not percentages):
-
-1. revenueGrowthPct: [decimal]
-2. ebitdaPct: [decimal]
-3. depreciationAndAmortizationPct: [decimal]
-4. cashAndShortTermInvestmentsPct: [decimal]
-5. receivablesPct: [decimal]
-6. inventoriesPct: [decimal]
-7. payablesPct: [decimal]
-8. ebitPct: [decimal]
-9. capitalExpenditurePct: [decimal]
-10. operatingCashFlowPct: [decimal]
-11. sellingGeneralAndAdministrativeExpensesPct: [decimal]
-12. taxRatePct: [decimal]
-13. longTermGrowthRatePct: [decimal] (in decimal form, typically 0.02-0.04)
-14. costOfEquityPct: [decimal] (in decimal form, typically 0.08-0.12)
-15. costOfDebtPct: [decimal] (in decimal form, typically 0.03-0.06)
-16. marketRiskPremiumPct: [decimal] (in decimal form, typically 0.04-0.06)
-17. riskFreeRatePct: [decimal] (in decimal form, typically 0.03-0.05)
-18. beta: [decimal] (typically 0.5-2.0)
-
-Also provide a brief explanation of your reasoning.
-
-Respond ONLY with a JSON object containing these parameters and your explanation.
+      I have the following historical financial data for company ${symbol}:
+      
+      Revenue Data:
+      ${JSON.stringify(revenueData, null, 2)}
+      
+      Cash Flow Data:
+      ${JSON.stringify(cashFlowData, null, 2)}
+      
+      Based on this data, please provide reasonable assumptions for a DCF valuation with the following parameters:
+      1. revenueGrowthPct (annual growth rate as decimal, e.g., 0.085 for 8.5%)
+      2. ebitdaMarginPct (EBITDA margin as decimal, e.g., 0.30 for 30%)
+      3. capitalExpenditurePct (CapEx as % of revenue, as decimal)
+      4. taxRatePct (Effective tax rate as decimal)
+      5. longTermGrowthRatePct (Terminal growth rate as decimal, typically 2-3%)
+      6. costOfEquityPct (Required return for equity holders as decimal)
+      7. costOfDebtPct (Cost of debt as decimal)
+      8. marketRiskPremiumPct (Equity risk premium as decimal)
+      9. riskFreeRatePct (Risk free rate as decimal)
+      10. beta (Company's beta)
+      
+      Return your answer in valid JSON only, with the following structure:
+      {
+        "explanation": "Briefly explain your reasoning",
+        "assumptions": {
+          "revenueGrowthPct": number,
+          "ebitdaMarginPct": number,
+          "capitalExpenditurePct": number,
+          "taxRatePct": number,
+          "longTermGrowthRatePct": number,
+          "costOfEquityPct": number,
+          "costOfDebtPct": number,
+          "marketRiskPremiumPct": number,
+          "riskFreeRatePct": number,
+          "beta": number
+        }
+      }
     `;
+
+    console.log("Calling OpenAI to generate DCF assumptions");
     
-    // Make request to OpenAI
+    // Call OpenAI API
     const response = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": `Bearer ${apiKey}`
+        "Authorization": `Bearer ${OPENAI_API_KEY}`
       },
       body: JSON.stringify({
         model: "gpt-4o-mini",
         messages: [
-          { role: "system", content: "You are a financial expert specialized in DCF valuation models." },
-          { role: "user", content: prompt }
+          {
+            role: "system",
+            content: "You are a financial analyst specializing in DCF valuations. Provide realistic assumptions based on historical data."
+          },
+          {
+            role: "user",
+            content: prompt
+          }
         ],
-        temperature: 0.3,
+        temperature: 0.2
       })
     });
-    
+
     if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`OpenAI API error: ${response.status} ${errorText}`);
+      console.error(`OpenAI API Error: ${response.status}`);
+      throw new Error("Failed to generate AI assumptions");
+    }
+
+    const result = await response.json();
+    const content = result.choices?.[0]?.message?.content;
+    
+    if (!content) {
+      throw new Error("Empty response from OpenAI");
     }
     
-    const data = await response.json();
-    const aiResponse = data.choices[0]?.message?.content;
-    
-    if (!aiResponse) {
-      throw new Error("No response from OpenAI");
-    }
-    
-    // Parse the AI response as JSON
+    // Parse the JSON response
     let parsedResponse;
     try {
-      // Extract JSON from the response (in case AI adds extra text)
-      const jsonMatch = aiResponse.match(/(\{[\s\S]*\})/);
-      const jsonStr = jsonMatch ? jsonMatch[0] : aiResponse;
-      parsedResponse = JSON.parse(jsonStr);
-    } catch (error) {
-      console.error("Failed to parse AI response:", error);
-      console.log("AI response:", aiResponse);
+      // Extract the JSON from the response (in case it returns markdown or additional text)
+      const jsonMatch = content.match(/```json\n([\s\S]*?)\n```/) || content.match(/{[\s\S]*}/);
+      const jsonContent = jsonMatch ? jsonMatch[0] : content;
       
-      // Fallback to default values if parsing fails
-      parsedResponse = getDefaultAssumptions(symbol, companyData);
+      parsedResponse = JSON.parse(jsonContent);
+    } catch (e) {
+      console.error("Error parsing OpenAI response:", e, "Raw response:", content);
+      throw new Error("Failed to parse AI response");
     }
     
-    // Validate and normalize parameters
-    const assumptions = normalizeParameters(parsedResponse, companyData);
-    
-    // Create the final response object
-    const result = {
+    // Create final result
+    const aiAssumptions = {
       symbol,
+      company: symbol, // Replace with actual company name if available
       timestamp: new Date().toISOString(),
       expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(), // 24 hours from now
-      assumptions,
-      explanation: parsedResponse.explanation || "Generated based on historical financial data analysis.",
+      explanation: parsedResponse.explanation || "AI-generated DCF assumptions based on historical financial data",
+      assumptions: {
+        revenueGrowthPct: parsedResponse.assumptions.revenueGrowthPct || revenueGrowth || 0.085,
+        ebitdaMarginPct: parsedResponse.assumptions.ebitdaMarginPct || 0.30,
+        capitalExpenditurePct: parsedResponse.assumptions.capitalExpenditurePct || 0.05,
+        taxRatePct: parsedResponse.assumptions.taxRatePct || 0.21,
+        longTermGrowthRatePct: parsedResponse.assumptions.longTermGrowthRatePct || 0.03,
+        costOfEquityPct: parsedResponse.assumptions.costOfEquityPct || 0.10,
+        costOfDebtPct: parsedResponse.assumptions.costOfDebtPct || 0.05,
+        marketRiskPremiumPct: parsedResponse.assumptions.marketRiskPremiumPct || 0.05,
+        riskFreeRatePct: parsedResponse.assumptions.riskFreeRatePct || 0.04,
+        beta: parsedResponse.assumptions.beta || 1.2,
+        // Add additional fields to match our core data structure
+        depreciationAndAmortizationPct: parsedResponse.assumptions.depreciationAndAmortizationPct || 0.05,
+        cashAndShortTermInvestmentsPct: parsedResponse.assumptions.cashAndShortTermInvestmentsPct || 0.15,
+        receivablesPct: parsedResponse.assumptions.receivablesPct || 0.12,
+        inventoriesPct: parsedResponse.assumptions.inventoriesPct || 0.08,
+        payablesPct: parsedResponse.assumptions.payablesPct || 0.10,
+        ebitPct: parsedResponse.assumptions.ebitPct || 0.25,
+        operatingCashFlowPct: parsedResponse.assumptions.operatingCashFlowPct || 0.25,
+        sellingGeneralAndAdministrativeExpensesPct: parsedResponse.assumptions.sellingGeneralAndAdministrativeExpensesPct || 0.15
+      }
     };
     
-    return result;
+    console.log(`Generated AI DCF assumptions for ${symbol}`, aiAssumptions);
+    return aiAssumptions;
+    
   } catch (error) {
-    console.error(`Error generating assumptions with AI:`, error);
-    
-    // Return default values if AI generation fails
-    return {
-      symbol,
-      timestamp: new Date().toISOString(),
-      expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(), // 24 hours from now
-      assumptions: getDefaultAssumptions(symbol, companyData).parameters,
-      explanation: "Generated using default industry parameters due to error in AI analysis.",
-    };
+    console.error("Error generating AI assumptions:", error);
+    throw error;
   }
 }
 
-// Normalize parameters to ensure they are within reasonable ranges
-function normalizeParameters(aiResponse: any, companyData: any) {
-  // Extract the parameters from the AI response
-  const params = aiResponse.parameters || aiResponse;
-  
-  // Default beta from company data if available
-  const defaultBeta = companyData.profile?.beta || 1.2;
-  
-  // Normalize and validate each parameter
-  return {
-    revenueGrowthPct: clamp(params.revenueGrowthPct, 0.02, 0.3),
-    ebitdaMarginPct: clamp(params.ebitdaPct, 0.05, 0.5),
-    capitalExpenditurePct: clamp(params.capitalExpenditurePct, 0.01, 0.2),
-    taxRatePct: clamp(params.taxRatePct, 0.1, 0.4),
-    
-    depreciationAndAmortizationPct: clamp(params.depreciationAndAmortizationPct, 0.01, 0.2),
-    cashAndShortTermInvestmentsPct: clamp(params.cashAndShortTermInvestmentsPct, 0.05, 0.5),
-    receivablesPct: clamp(params.receivablesPct, 0.05, 0.3),
-    inventoriesPct: clamp(params.inventoriesPct, 0.01, 0.3),
-    payablesPct: clamp(params.payablesPct, 0.05, 0.3),
-    ebitPct: clamp(params.ebitPct, 0.05, 0.4),
-    operatingCashFlowPct: clamp(params.operatingCashFlowPct, 0.05, 0.4),
-    sellingGeneralAndAdministrativeExpensesPct: clamp(params.sellingGeneralAndAdministrativeExpensesPct, 0.05, 0.3),
-    
-    longTermGrowthRatePct: clamp(params.longTermGrowthRatePct, 0.02, 0.05),
-    costOfEquityPct: clamp(params.costOfEquityPct, 0.07, 0.15),
-    costOfDebtPct: clamp(params.costOfDebtPct, 0.02, 0.08),
-    marketRiskPremiumPct: clamp(params.marketRiskPremiumPct, 0.04, 0.07),
-    riskFreeRatePct: clamp(params.riskFreeRatePct, 0.02, 0.05),
-    
-    beta: params.beta || defaultBeta,
-  };
-}
-
-// Helper function to clamp values to a range
-function clamp(value: number, min: number, max: number): number {
-  if (isNaN(value) || value === null || value === undefined) {
-    return (min + max) / 2; // Default to the middle of the range
-  }
-  return Math.max(min, Math.min(max, value));
-}
-
-// Get default assumptions if AI generation fails
-function getDefaultAssumptions(symbol: string, companyData: any) {
-  const profile = companyData.profile || {};
-  const beta = profile.beta || 1.2;
-  
-  // Determine industry/sector-specific defaults based on profile
-  const isTech = profile.sector === "Technology" || profile.industry?.includes("Tech");
-  const isFinancial = profile.sector === "Financial Services" || profile.industry?.includes("Bank");
-  const isHealthcare = profile.sector === "Healthcare" || profile.industry?.includes("Health");
-  
-  // Adjust growth rates based on sector
-  let revenueGrowth = 0.08; // Default
-  if (isTech) revenueGrowth = 0.12;
-  if (isFinancial) revenueGrowth = 0.05;
-  if (isHealthcare) revenueGrowth = 0.09;
+// Create mock assumptions for fallback
+function createMockAssumptions(errorMessage: string) {
+  const currentDate = new Date();
   
   return {
-    parameters: {
-      revenueGrowthPct: revenueGrowth,
-      ebitdaMarginPct: 0.25,
-      capitalExpenditurePct: 0.03,
+    symbol: "N/A",
+    company: "Unknown Company",
+    timestamp: currentDate.toISOString(),
+    expiresAt: new Date(currentDate.getTime() + 24 * 60 * 60 * 1000).toISOString(),
+    explanation: `Using default assumptions due to an error: ${errorMessage}`,
+    assumptions: {
+      revenueGrowthPct: 0.085,
+      ebitdaMarginPct: 0.3127,
+      capitalExpenditurePct: 0.0306,
       taxRatePct: 0.21,
-      
-      depreciationAndAmortizationPct: 0.035,
-      cashAndShortTermInvestmentsPct: 0.15,
-      receivablesPct: 0.12,
-      inventoriesPct: 0.08,
-      payablesPct: 0.1,
-      ebitPct: 0.22,
-      operatingCashFlowPct: 0.2,
-      sellingGeneralAndAdministrativeExpensesPct: 0.15,
-      
       longTermGrowthRatePct: 0.03,
-      costOfEquityPct: 0.09,
-      costOfDebtPct: 0.04,
-      marketRiskPremiumPct: 0.05,
-      riskFreeRatePct: 0.035,
-      
-      beta: beta,
+      costOfEquityPct: 0.0951,
+      costOfDebtPct: 0.0364,
+      marketRiskPremiumPct: 0.0472,
+      riskFreeRatePct: 0.0364,
+      beta: 1.244,
+      depreciationAndAmortizationPct: 0.0345,
+      cashAndShortTermInvestmentsPct: 0.2344,
+      receivablesPct: 0.1533,
+      inventoriesPct: 0.0155,
+      payablesPct: 0.1614,
+      ebitPct: 0.2781,
+      operatingCashFlowPct: 0.2886,
+      sellingGeneralAndAdministrativeExpensesPct: 0.0662
     },
-    explanation: "Using industry-standard default assumptions adjusted for the company's sector."
+    isMock: true
   };
 }
