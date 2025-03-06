@@ -9,3 +9,6 @@ export {
   formatDCFParameters,
   DCFType
 } from './dcf';
+
+// Export AI DCF service functions
+export { fetchAIDCF } from './dcf/aiDCFService';

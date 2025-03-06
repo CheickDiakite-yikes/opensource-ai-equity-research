@@ -4,10 +4,15 @@ import { toast } from "@/components/ui/use-toast";
 
 export interface AIDCFResult {
   ticker: string;
+  companyName?: string;
+  sector?: string;
+  industry?: string;
   assumptions: {
     averageRevenueGrowth: number;
     wacc: number;
     terminalGrowth: number;
+    beta?: number;
+    taxRate?: number;
   };
   projectedFCFs: number[];
   terminalValue: number;
@@ -20,6 +25,23 @@ export interface AIDCFResult {
   upside: number | null;
   timestamp: string;
   aiGenerated: boolean;
+  industryComparison?: {
+    revenueGrowth: { company: number; industry: number; difference: string };
+    profitMargin: { company: number; industry: number; difference: string };
+    debtRatio: { company: number; industry: number; difference: string };
+  };
+  scenarioAnalysis?: {
+    base: { growthRate: number; wacc: number; intrinsicValue: number };
+    bullish: { growth: number; wacc: number; intrinsicValue: number };
+    bearish: { growth: number; wacc: number; intrinsicValue: number };
+  };
+  keyMetrics?: {
+    pe: number;
+    marketCap: number;
+    lastDividend: number;
+    volume: number;
+    exchange: string;
+  };
 }
 
 /**

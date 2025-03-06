@@ -24,6 +24,9 @@ async function fetchDCFData(symbol: string) {
     
     const profile = profileData[0];
     const currentPrice = profile.price;
+    const companyName = profile.companyName;
+    const sector = profile.sector;
+    const industry = profile.industry;
     
     // Step 2: Fetch historical financials to analyze growth trends
     const financialsUrl = `${FMP_BASE_URL}/v3/income-statement/${symbol}?limit=5&apikey=${FMP_API_KEY}`;
@@ -101,24 +104,87 @@ async function fetchDCFData(symbol: string) {
     
     const dcfResult = dcfData[0];
     
-    // Calculate projected FCFs from the result
+    // Calculate projected FCFs from the result (yearly for 5 years)
     const projectedFCFs = [];
     for (let i = 1; i <= 5; i++) {
       // Simple projection based on growth rate
       const fcf = dcfResult.freeCashFlow * Math.pow(1 + averageRevenueGrowth, i);
-      projectedFCFs.push(fcf);
+      projectedFCFs.push(parseFloat(fcf.toFixed(2)));
     }
     
     // Calculate upside/downside percentage
     const intrinsicValuePerShare = dcfResult.equityValuePerShare;
     const upside = currentPrice > 0 ? ((intrinsicValuePerShare - currentPrice) / currentPrice) * 100 : null;
     
+    // Step 8: Get industry peers for comparison
+    const peersUrl = `${FMP_BASE_URL}/v4/stock_peers?symbol=${symbol}&apikey=${FMP_API_KEY}`;
+    const peersResponse = await fetch(peersUrl);
+    const peersData = await peersResponse.json();
+    
+    // Step 9: Get industry metrics for comparison if peers exist
+    let industryComparison = null;
+    if (peersData && peersData.length > 0 && peersData[0].peersList && peersData[0].peersList.length > 0) {
+      const peers = peersData[0].peersList.slice(0, 5);
+      
+      // Calculate industry averages
+      const industryMetricsUrl = `${FMP_BASE_URL}/v3/key-metrics/${peers.join(',')}?limit=1&apikey=${FMP_API_KEY}`;
+      const industryMetricsResponse = await fetch(industryMetricsUrl);
+      const industryMetricsData = await industryMetricsResponse.json();
+      
+      if (industryMetricsData && industryMetricsData.length > 0) {
+        const industryRevenueGrowth = industryMetricsData.reduce((sum, item) => sum + (item.revenueGrowth || 0), 0) / industryMetricsData.length;
+        const industryProfitMargin = industryMetricsData.reduce((sum, item) => sum + (item.netProfitMargin || 0), 0) / industryMetricsData.length;
+        const industryDebtRatio = industryMetricsData.reduce((sum, item) => sum + (item.debtToAssets || 0), 0) / industryMetricsData.length;
+        
+        // Compare company metrics to industry averages
+        const companyMetrics = metricsData && metricsData.length > 0 ? metricsData[0] : null;
+        if (companyMetrics) {
+          industryComparison = {
+            revenueGrowth: { 
+              company: companyMetrics.revenueGrowth || 0, 
+              industry: industryRevenueGrowth,
+              difference: formatDifference(companyMetrics.revenueGrowth - industryRevenueGrowth)
+            },
+            profitMargin: { 
+              company: companyMetrics.netProfitMargin || 0, 
+              industry: industryProfitMargin,
+              difference: formatDifference(companyMetrics.netProfitMargin - industryProfitMargin)
+            },
+            debtRatio: { 
+              company: companyMetrics.debtToAssets || 0, 
+              industry: industryDebtRatio,
+              difference: formatDifference(companyMetrics.debtToAssets - industryDebtRatio)
+            }
+          };
+        }
+      }
+    }
+    
+    // Calculate additional metrics for sensitivity analysis
+    const bullishScenario = {
+      growth: averageRevenueGrowth * 1.2,
+      wacc: wacc * 0.9,
+      intrinsicValue: intrinsicValuePerShare * 1.25
+    };
+    
+    const bearishScenario = {
+      growth: averageRevenueGrowth * 0.8,
+      wacc: wacc * 1.1,
+      intrinsicValue: intrinsicValuePerShare * 0.75
+    };
+    
+    // Return the comprehensive DCF result
     return {
       ticker: symbol,
+      companyName,
+      sector,
+      industry,
       assumptions: {
         averageRevenueGrowth: averageRevenueGrowth,
         wacc: dcfResult.wacc,
-        terminalGrowth: terminalGrowth
+        terminalGrowth: terminalGrowth,
+        beta: beta,
+        taxRate: taxRate > 0 && taxRate < 1 ? taxRate : 0.21
       },
       projectedFCFs: projectedFCFs,
       terminalValue: dcfResult.terminalValue,
@@ -130,13 +196,40 @@ async function fetchDCFData(symbol: string) {
       currentPrice: currentPrice,
       upside: upside,
       timestamp: new Date().toISOString(),
-      aiGenerated: true
+      aiGenerated: true,
+      industryComparison,
+      scenarioAnalysis: {
+        base: {
+          growthRate: averageRevenueGrowth,
+          wacc: wacc,
+          intrinsicValue: intrinsicValuePerShare
+        },
+        bullish: bullishScenario,
+        bearish: bearishScenario
+      },
+      keyMetrics: {
+        pe: profile.pe,
+        marketCap: profile.mktCap,
+        lastDividend: profile.lastDiv,
+        volume: profile.volAvg,
+        exchange: profile.exchange
+      }
     };
     
   } catch (error) {
     console.error(`Error in AI-DCF calculation for ${symbol}:`, error);
     throw error;
   }
+}
+
+// Helper function to format comparison differences
+function formatDifference(diff: number): string {
+  if (diff > 0) {
+    return `+${diff.toFixed(2)}% better than industry`;
+  } else if (diff < 0) {
+    return `${diff.toFixed(2)}% worse than industry`;
+  }
+  return "on par with industry";
 }
 
 // Edge function handler
