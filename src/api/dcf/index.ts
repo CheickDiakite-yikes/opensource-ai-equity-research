@@ -1,113 +1,130 @@
 
-/**
- * DCF API Handler
- * 
- * This file handles DCF calculation requests by proxying them to the Supabase
- * function that communicates with the FMP API.
- */
-
-import { invokeSupabaseFunction } from "@/services/api/base";
-
-export interface DCFParams {
-  symbol: string;
-  type?: string;
-  [key: string]: any;
-}
+// DCF API utilities
+import { withRetry } from "@/services/api/base";
 
 /**
- * Handler for DCF calculation requests
+ * Fetch DCF calculation from FMP API
  */
-export const handleDCFRequest = async (params: DCFParams): Promise<any> => {
+export const fetchDCF = async (url: string): Promise<any> => {
   try {
-    const { symbol, type = 'advanced', ...customParams } = params;
-    
-    if (!symbol) {
-      throw new Error("Symbol is required for DCF calculation");
-    }
-    
-    console.log(`DCF API: Processing request for ${symbol}, type: ${type}`);
-    
-    // Call the Supabase function for DCF calculation
-    const data = await invokeSupabaseFunction<any>('get-custom-dcf', {
-      symbol,
-      type,
-      params: customParams
+    // Use withRetry for better resilience
+    const response = await withRetry(async () => {
+      console.log(`Fetching DCF data from: ${url}`);
+      const res = await fetch(url);
+      
+      if (!res.ok) {
+        throw new Error(`API returned status ${res.status}: ${await res.text()}`);
+      }
+      return res;
     });
     
-    // Check if we received a valid response
-    if (!data) {
-      throw new Error("No data returned from DCF calculation");
-    }
-    
-    // For empty array responses, throw an error
-    if (Array.isArray(data) && data.length === 0) {
-      throw new Error(`No DCF data available for ${symbol}`);
-    }
-    
-    return {
-      ok: true,
-      json: () => Promise.resolve(data),
-      headers: new Headers({
-        'content-type': 'application/json'
-      }),
-      status: 200
-    };
+    const data = await response.json();
+    return data;
   } catch (error) {
-    console.error("Error in DCF calculation:", error);
-    
-    // Return a Response-like object with error information
-    return {
-      ok: false,
-      text: () => Promise.resolve(error.message || "Unknown error"),
-      headers: new Headers({
-        'content-type': 'text/plain'
-      }),
-      status: 500
-    };
+    console.error("Error fetching DCF:", error);
+    throw error;
   }
 };
 
 /**
- * Process a Request object for DCF calculation
+ * Get DCF calculation from FMP
  */
-export const processDCFRequest = async (request: Request): Promise<Response> => {
-  try {
-    const url = new URL(request.url);
-    const params: DCFParams = { symbol: "" };
-    
-    // Extract parameters from URL
-    url.searchParams.forEach((value, key) => {
-      params[key] = value;
-    });
-    
-    // Validate required parameters
-    if (!params.symbol) {
-      return new Response(
-        JSON.stringify({ error: "Symbol is required" }),
-        { status: 400, headers: { 'Content-Type': 'application/json' } }
-      );
-    }
-    
-    // Call the handler
-    const result = await handleDCFRequest(params);
-    
-    if (result.ok) {
-      return new Response(
-        JSON.stringify(await result.json()),
-        { status: 200, headers: { 'Content-Type': 'application/json' } }
-      );
-    } else {
-      return new Response(
-        JSON.stringify({ error: await result.text() }),
-        { status: result.status, headers: { 'Content-Type': 'application/json' } }
-      );
-    }
-  } catch (error) {
-    console.error("Error processing DCF request:", error);
-    
+export const getDCF = async (req: Request): Promise<Response> => {
+  const url = new URL(req.url);
+  const params = url.searchParams;
+  
+  // Extract symbol from parameters (required)
+  const symbol = params.get("symbol");
+  if (!symbol) {
     return new Response(
-      JSON.stringify({ error: error.message || "Unknown error" }),
-      { status: 500, headers: { 'Content-Type': 'application/json' } }
+      JSON.stringify({ error: "Symbol parameter is required" }),
+      { status: 400, headers: { "Content-Type": "application/json" } }
     );
   }
+  
+  // Construct FMP API URL
+  const FMP_API_KEY = import.meta.env.VITE_FMP_API_KEY;
+  if (!FMP_API_KEY) {
+    return new Response(
+      JSON.stringify({ error: "API key not configured" }),
+      { status: 500, headers: { "Content-Type": "application/json" } }
+    );
+  }
+  
+  try {
+    let fmpEndpoint;
+    
+    // Extract type parameter with default "advanced"
+    const type = params.get("type") || "advanced";
+    
+    // Choose endpoint based on type
+    switch (type) {
+      case "levered":
+        fmpEndpoint = `https://financialmodelingprep.com/api/v3/levered-discounted-cash-flow/${symbol}?apikey=${FMP_API_KEY}`;
+        break;
+      case "standard":
+        fmpEndpoint = `https://financialmodelingprep.com/api/v3/discounted-cash-flow/${symbol}?apikey=${FMP_API_KEY}`;
+        break;
+      case "custom-levered":
+        fmpEndpoint = `https://financialmodelingprep.com/stable/custom-levered-discounted-cash-flow?symbol=${symbol}&apikey=${FMP_API_KEY}`;
+        break;
+      case "advanced":
+      default:
+        fmpEndpoint = `https://financialmodelingprep.com/stable/custom-discounted-cash-flow?symbol=${symbol}&apikey=${FMP_API_KEY}`;
+        break;
+    }
+    
+    // Add other parameters if provided
+    url.searchParams.forEach((value, key) => {
+      if (key !== "symbol" && key !== "type") {
+        fmpEndpoint += `&${key}=${value}`;
+      }
+    });
+    
+    // Make the API request
+    const data = await fetchDCF(fmpEndpoint);
+    
+    // Return data as JSON
+    return new Response(
+      JSON.stringify(data),
+      { headers: { "Content-Type": "application/json" } }
+    );
+  } catch (error) {
+    console.error("Error in DCF API:", error);
+    
+    // Return error as JSON
+    return new Response(
+      JSON.stringify({ 
+        error: "Failed to calculate DCF", 
+        details: error instanceof Error ? error.message : String(error)
+      }),
+      { status: 500, headers: { "Content-Type": "application/json" } }
+    );
+  }
+};
+
+/**
+ * Handle DCF API requests
+ */
+export const onRequest: PagesFunction = async (context) => {
+  const req = context.request;
+  
+  if (req.method === "OPTIONS") {
+    return new Response(null, {
+      headers: {
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "GET, OPTIONS",
+        "Access-Control-Allow-Headers": "Content-Type, Accept",
+      },
+    });
+  }
+  
+  if (req.method === "GET") {
+    return getDCF(req);
+  }
+  
+  return new Response(
+    JSON.stringify({ error: "Method not allowed" }),
+    { status: 405, headers: { "Content-Type": "application/json" } }
+  );
 };

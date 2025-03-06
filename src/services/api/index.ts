@@ -1,71 +1,27 @@
 
-// Re-export all API services
-export * from './profileService';
-export * from './financialService';
+// Services API index
+// Re-export all service functions from the individual modules
+
+// Market data services
 export * from './marketDataService';
-export * from './analysisService';
-export * from './documentsService';
-export * from './base';  // Export base utilities including withRetry
 
-// Composite functions
-import { fetchStockProfile, fetchStockQuote } from './profileService';
-import { fetchIncomeStatements, fetchBalanceSheets, fetchCashFlowStatements, fetchKeyRatios } from './financialService';
-import { fetchHistoricalPrices, fetchCompanyNews, fetchCompanyPeers } from './marketDataService';
-import { 
-  fetchEarningsTranscripts, 
-  fetchSECFilings, 
-  triggerDocumentCaching 
-} from './documentsService';
-import {
-  generateResearchReport,
-  generateStockPrediction,
-  analyzeGrowthInsights,
-  fetchCustomDCF,
-  fetchAIDCFAssumptions
-} from './analysisService';
-
-/**
- * Get all financial data for a symbol
- */
-export const getAllFinancialData = async (symbol: string) => {
-  const profile = await fetchStockProfile(symbol);
-  const quote = await fetchStockQuote(symbol);
-  const incomeStatements = await fetchIncomeStatements(symbol);
-  const balanceSheets = await fetchBalanceSheets(symbol);
-  const cashFlowStatements = await fetchCashFlowStatements(symbol);
-  const keyRatios = await fetchKeyRatios(symbol);
-  const historicalPrices = await fetchHistoricalPrices(symbol);
-  const news = await fetchCompanyNews(symbol);
-  const peers = await fetchCompanyPeers(symbol);
-  const earningsTranscripts = await fetchEarningsTranscripts(symbol);
-  const secFilings = await fetchSECFilings(symbol);
-
-  // Trigger background caching of company documents
-  // This happens asynchronously and doesn't affect the response time
-  if (profile) {
-    triggerDocumentCaching(symbol);
-  }
-
-  return {
-    profile,
-    quote,
-    incomeStatements,
-    balanceSheets,
-    cashFlowStatements,
-    keyRatios,
-    historicalPrices,
-    news,
-    peers,
-    earningsTranscripts,
-    secFilings
-  };
-};
-
-// Re-export all analysis functions
+// Profile services - explicitly export to avoid conflicts
 export {
-  generateResearchReport,
-  generateStockPrediction,
-  analyzeGrowthInsights,
-  fetchCustomDCF,
-  fetchAIDCFAssumptions
-} from './analysisService';
+  fetchCompanyProfile,
+  fetchCompanyRating,
+  fetchCompanyOutlook,
+  // Export with different name to avoid conflict
+  fetchCompanyPeers as fetchPeerCompanies
+} from './profileService';
+
+// Financial data services
+export * from './financialService';
+
+// Document services
+export * from './documentsService';
+
+// Analysis services
+export * from './analysisService';
+
+// Enhanced API services
+export * from './enhancedApiService';
