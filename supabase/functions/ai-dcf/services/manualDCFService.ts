@@ -89,7 +89,7 @@ export function calculateManualDCF(symbol: any, profile: any, financials: any[],
     
     // Calculate upside/downside percentage
     const currentPrice = profile.price || 0;
-    const upside = currentPrice > 0 ? ((intrinsicValuePerShare - currentPrice) / currentPrice) * 100 : null;
+    const upside = currentPrice > 0 ? ((intrinsicValuePerShare - currentPrice) / currentPrice) * 100 : 0;
     
     // Create industry comparison (estimated)
     const netIncomeRatio = latestIncome.netIncomeRatio || 0.1;

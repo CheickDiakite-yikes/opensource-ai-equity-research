@@ -77,7 +77,7 @@ export const fetchAIDCF = async (symbol: string): Promise<AIDCFResult> => {
     }
     
     // Validate the response to ensure it has all required fields
-    if (!response.assumptions || !response.projectedFCFs || !response.intrinsicValuePerShare) {
+    if (!response.assumptions || !response.projectedFCFs || response.intrinsicValuePerShare === undefined) {
       console.error(`Invalid AI-DCF response for ${symbol}:`, response);
       throw new Error("Invalid DCF data returned - missing required fields");
     }
@@ -85,6 +85,24 @@ export const fetchAIDCF = async (symbol: string): Promise<AIDCFResult> => {
     // Make sure any potential undefined fields are initialized with default values
     if (!response.keyMetrics) {
       response.keyMetrics = {};
+    }
+    
+    // Ensure all numeric values that will be formatted with toFixed() are actual numbers
+    if (response.upside === null || response.upside === undefined) {
+      response.upside = 0;
+    }
+    
+    if (response.currentPrice === null || response.currentPrice === undefined) {
+      response.currentPrice = 0;
+    }
+    
+    // Ensure scenario analysis exists
+    if (!response.scenarioAnalysis) {
+      response.scenarioAnalysis = {
+        base: { growthRate: response.assumptions.averageRevenueGrowth, wacc: response.assumptions.wacc, intrinsicValue: response.intrinsicValuePerShare },
+        bullish: { growth: response.assumptions.averageRevenueGrowth * 1.2, wacc: response.assumptions.wacc * 0.9, intrinsicValue: response.intrinsicValuePerShare * 1.2 },
+        bearish: { growth: response.assumptions.averageRevenueGrowth * 0.8, wacc: response.assumptions.wacc * 1.1, intrinsicValue: response.intrinsicValuePerShare * 0.8 }
+      };
     }
     
     console.log(`Received AI-DCF response for ${symbol}:`, response);
