@@ -6,17 +6,12 @@ import { StockProfile, StockQuote, CompanyExecutive, ExecutiveCompensation } fro
  */
 export const fetchStockProfile = async (symbol: string): Promise<StockProfile | null> => {
   try {
-    const { data, error } = await invokeSupabaseFunction<StockProfile[]>('get-stock-data', { 
+    const data = await invokeSupabaseFunction<StockProfile[]>('get-stock-data', { 
       symbol, 
       endpoint: 'profile' 
     });
     
-    if (error || !data) {
-      console.error("Error fetching stock profile:", error);
-      return null;
-    }
-    
-    if (!Array.isArray(data) || data.length === 0) return null;
+    if (!data || !Array.isArray(data) || data.length === 0) return null;
     return data[0] as StockProfile;
   } catch (error) {
     console.error("Error fetching stock profile:", error);
@@ -38,19 +33,10 @@ export const fetchStockQuote = async (symbol: string): Promise<StockQuote | null
         attempts++;
         console.log(`Attempt ${attempts}/${maxAttempts} to fetch stock quote for ${symbol}`);
         
-        const { data, error } = await invokeSupabaseFunction<StockQuote[]>('get-stock-data', { 
+        const data = await invokeSupabaseFunction<StockQuote[]>('get-stock-data', { 
           symbol, 
           endpoint: 'quote' 
         });
-        
-        if (error) {
-          console.error(`Error on attempt ${attempts} fetching stock quote:`, error);
-          if (attempts < maxAttempts) {
-            await new Promise(resolve => setTimeout(resolve, 1000 * attempts));
-            continue;
-          }
-          return createPlaceholderQuote(symbol);
-        }
         
         if (!data || !Array.isArray(data) || data.length === 0) {
           console.warn(`Empty quote data received for ${symbol}`);
@@ -92,17 +78,12 @@ export const fetchStockQuote = async (symbol: string): Promise<StockQuote | null
  */
 export const fetchStockRating = async (symbol: string): Promise<{ rating: string } | null> => {
   try {
-    const { data, error } = await invokeSupabaseFunction<{ rating: string }[]>('get-stock-data', { 
+    const data = await invokeSupabaseFunction<{ rating: string }[]>('get-stock-data', { 
       symbol, 
       endpoint: 'rating' 
     });
     
-    if (error || !data) {
-      console.error("Error fetching stock rating:", error);
-      return { rating: "N/A" };
-    }
-    
-    if (!Array.isArray(data) || data.length === 0) {
+    if (!data || !Array.isArray(data) || data.length === 0) {
       return { rating: "N/A" };
     }
     
@@ -177,17 +158,12 @@ export const fetchStockPriceChange = async (symbol: string): Promise<any> => {
  */
 export const fetchMarketCap = async (symbol: string): Promise<{ marketCap: number, date: string } | null> => {
   try {
-    const { data, error } = await invokeSupabaseFunction<any[]>('get-stock-data', { 
+    const data = await invokeSupabaseFunction<any[]>('get-stock-data', { 
       symbol, 
       endpoint: 'market-cap' 
     });
     
-    if (error || !data) {
-      console.error("Error fetching market cap:", error);
-      return null;
-    }
-    
-    if (!Array.isArray(data) || data.length === 0) return null;
+    if (!data || !Array.isArray(data) || data.length === 0) return null;
     return data[0];
   } catch (error) {
     console.error("Error fetching market cap:", error);
@@ -200,16 +176,11 @@ export const fetchMarketCap = async (symbol: string): Promise<{ marketCap: numbe
  */
 export const fetchHistoricalMarketCap = async (symbol: string, limit: number = 100): Promise<any[]> => {
   try {
-    const { data, error } = await invokeSupabaseFunction<any[]>('get-stock-data', { 
+    const data = await invokeSupabaseFunction<any[]>('get-stock-data', { 
       symbol, 
       endpoint: 'historical-market-cap',
       limit
     });
-    
-    if (error) {
-      console.error("Error fetching historical market cap:", error);
-      return [];
-    }
     
     return data || [];
   } catch (error) {
@@ -223,17 +194,12 @@ export const fetchHistoricalMarketCap = async (symbol: string, limit: number = 1
  */
 export const fetchSharesFloat = async (symbol: string): Promise<any | null> => {
   try {
-    const { data, error } = await invokeSupabaseFunction<any[]>('get-stock-data', { 
+    const data = await invokeSupabaseFunction<any[]>('get-stock-data', { 
       symbol, 
       endpoint: 'shares-float' 
     });
     
-    if (error || !data) {
-      console.error("Error fetching shares float:", error);
-      return null;
-    }
-    
-    if (!Array.isArray(data) || data.length === 0) return null;
+    if (!data || !Array.isArray(data) || data.length === 0) return null;
     return data[0];
   } catch (error) {
     console.error("Error fetching shares float:", error);
@@ -246,15 +212,10 @@ export const fetchSharesFloat = async (symbol: string): Promise<any | null> => {
  */
 export const fetchCompanyExecutives = async (symbol: string): Promise<CompanyExecutive[]> => {
   try {
-    const { data, error } = await invokeSupabaseFunction<CompanyExecutive[]>('get-stock-data', { 
+    const data = await invokeSupabaseFunction<CompanyExecutive[]>('get-stock-data', { 
       symbol, 
       endpoint: 'executives' 
     });
-    
-    if (error) {
-      console.error("Error fetching company executives:", error);
-      return [];
-    }
     
     return data || [];
   } catch (error) {
@@ -268,15 +229,10 @@ export const fetchCompanyExecutives = async (symbol: string): Promise<CompanyExe
  */
 export const fetchExecutiveCompensation = async (symbol: string): Promise<ExecutiveCompensation[]> => {
   try {
-    const { data, error } = await invokeSupabaseFunction<ExecutiveCompensation[]>('get-stock-data', { 
+    const data = await invokeSupabaseFunction<ExecutiveCompensation[]>('get-stock-data', { 
       symbol, 
       endpoint: 'executive-compensation' 
     });
-    
-    if (error) {
-      console.error("Error fetching executive compensation:", error);
-      return [];
-    }
     
     return data || [];
   } catch (error) {
@@ -290,15 +246,10 @@ export const fetchExecutiveCompensation = async (symbol: string): Promise<Execut
  */
 export const fetchCompanyNotes = async (symbol: string): Promise<any[]> => {
   try {
-    const { data, error } = await invokeSupabaseFunction<any[]>('get-stock-data', { 
+    const data = await invokeSupabaseFunction<any[]>('get-stock-data', { 
       symbol, 
       endpoint: 'company-notes' 
     });
-    
-    if (error) {
-      console.error("Error fetching company notes:", error);
-      return [];
-    }
     
     return data || [];
   } catch (error) {
@@ -312,17 +263,12 @@ export const fetchCompanyNotes = async (symbol: string): Promise<any[]> => {
  */
 export const fetchEmployeeCount = async (symbol: string): Promise<any | null> => {
   try {
-    const { data, error } = await invokeSupabaseFunction<any[]>('get-stock-data', { 
+    const data = await invokeSupabaseFunction<any[]>('get-stock-data', { 
       symbol, 
       endpoint: 'employee-count' 
     });
     
-    if (error || !data) {
-      console.error("Error fetching employee count:", error);
-      return null;
-    }
-    
-    if (!Array.isArray(data) || data.length === 0) return null;
+    if (!data || !Array.isArray(data) || data.length === 0) return null;
     return data[0];
   } catch (error) {
     console.error("Error fetching employee count:", error);
@@ -335,15 +281,10 @@ export const fetchEmployeeCount = async (symbol: string): Promise<any | null> =>
  */
 export const fetchHistoricalEmployeeCount = async (symbol: string): Promise<any[]> => {
   try {
-    const { data, error } = await invokeSupabaseFunction<any[]>('get-stock-data', { 
+    const data = await invokeSupabaseFunction<any[]>('get-stock-data', { 
       symbol, 
       endpoint: 'historical-employee-count' 
     });
-    
-    if (error) {
-      console.error("Error fetching historical employee count:", error);
-      return [];
-    }
     
     return data || [];
   } catch (error) {

@@ -7,30 +7,21 @@ import { supabase } from "@/integrations/supabase/client";
 export const invokeSupabaseFunction = async <T>(
   functionName: string,
   payload: object
-): Promise<{ data: T | null, error: Error | null }> => {
+): Promise<T> => {
   try {
-    console.log(`Invoking Supabase function ${functionName} with payload:`, payload);
-    
-    const result = await supabase.functions.invoke(functionName, {
+    const { data, error } = await supabase.functions.invoke(functionName, {
       body: payload,
     });
     
-    if (result.error) {
-      console.error(`Supabase function ${functionName} error:`, result.error);
-      return { 
-        data: null, 
-        error: new Error(result.error.message || `Failed to invoke ${functionName}`) 
-      };
+    if (error) {
+      console.error(`Supabase function ${functionName} error:`, error);
+      throw new Error(error.message);
     }
     
-    console.log(`Supabase function ${functionName} success:`, result.data);
-    return { data: result.data as T, error: null };
+    return data as T;
   } catch (err: any) {
-    console.error(`Exception invoking Supabase function ${functionName}:`, err);
-    return { 
-      data: null, 
-      error: err instanceof Error ? err : new Error(String(err)) 
-    };
+    console.error(`Failed to invoke Supabase function ${functionName}:`, err);
+    throw err;
   }
 };
 

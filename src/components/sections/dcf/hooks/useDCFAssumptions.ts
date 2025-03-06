@@ -22,8 +22,7 @@ export const useDCFAssumptions = (symbol: string) => {
         description: "Generating new AI-powered DCF assumptions...",
       });
       
-      // Force refresh with refreshCache=true
-      await refreshAssumptions(true);
+      await refreshAssumptions();
       setHasAttemptedFetch(false);
       
       toast({

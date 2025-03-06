@@ -12,7 +12,7 @@ export const getSECFilingDownloadLink = async (
   filingDate?: string
 ): Promise<string> => {
   try {
-    const { data, error } = await invokeSupabaseFunction<{ url: string, cached: boolean }>('download-sec-filing', {
+    const response = await invokeSupabaseFunction<{ url: string, cached: boolean }>('download-sec-filing', {
       filingId,
       url,
       symbol,
@@ -20,13 +20,8 @@ export const getSECFilingDownloadLink = async (
       filingDate
     });
     
-    if (error) {
-      console.error("Error getting SEC filing download link:", error);
-      return url;
-    }
-    
-    if (data && data.url) {
-      return data.url;
+    if (response && response.url) {
+      return response.url;
     }
     
     // Fallback to the original URL if the function fails

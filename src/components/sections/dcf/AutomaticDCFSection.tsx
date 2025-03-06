@@ -14,14 +14,9 @@ import { RefreshCw } from "lucide-react";
 interface AutomaticDCFSectionProps {
   financials: any[];
   symbol: string;
-  onSwitchToCustomDCF?: () => void;
 }
 
-const AutomaticDCFSection: React.FC<AutomaticDCFSectionProps> = ({ 
-  financials, 
-  symbol,
-  onSwitchToCustomDCF
-}) => {
+const AutomaticDCFSection: React.FC<AutomaticDCFSectionProps> = ({ financials, symbol }) => {
   const { 
     dcfData, 
     currentPrice, 
@@ -30,14 +25,10 @@ const AutomaticDCFSection: React.FC<AutomaticDCFSectionProps> = ({
     errors,
     assumptions,
     usingMockData,
-    handleRefreshAssumptions,
-    handleSwitchToCustomDCF
+    handleRefreshAssumptions
   } = useDCFData(symbol, financials);
   
   const isLoading = isCalculating || isLoadingAssumptions;
-  
-  // Use callback provided by parent if available, otherwise use the one from the hook
-  const switchToCustomDCF = onSwitchToCustomDCF || handleSwitchToCustomDCF;
   
   return (
     <div className="space-y-6">
@@ -61,10 +52,7 @@ const AutomaticDCFSection: React.FC<AutomaticDCFSectionProps> = ({
         usingMockData={usingMockData}
       />
       
-      <DCFErrorDisplay 
-        errors={errors} 
-        onCustomDCFClick={switchToCustomDCF}
-      />
+      <DCFErrorDisplay errors={errors} />
       
       {isLoading ? (
         <DCFLoadingIndicator 

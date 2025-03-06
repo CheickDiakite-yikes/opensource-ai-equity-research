@@ -12,9 +12,6 @@ export const useDCFData = (symbol: string, financials: any[]) => {
   // Get the current price
   const currentPrice = getCurrentPrice(financials);
   
-  // State for tracking tab changes
-  const [activeTab, setActiveTab] = useState("automatic");
-  
   // Custom hooks for different concerns
   const { 
     assumptions,
@@ -35,7 +32,7 @@ export const useDCFData = (symbol: string, financials: any[]) => {
     calculateDCFWithAIAssumptions
   } = useDCFCalculation(symbol);
   
-  const { errors, addError } = useDCFErrors(assumptionsError, dcfError);
+  const { errors } = useDCFErrors(assumptionsError, dcfError);
   
   // Mock DCF data as fallback
   const mockDCFData = createMockDCFData(financials);
@@ -48,40 +45,14 @@ export const useDCFData = (symbol: string, financials: any[]) => {
         title: "Calculating DCF",
         description: "Using AI-generated assumptions to calculate intrinsic value",
       });
-      
-      try {
-        calculateDCFWithAIAssumptions(assumptions, financials);
-      } catch (err) {
-        console.error("Error initiating DCF calculation:", err);
-        
-        // Explicitly handle potential API not found errors
-        if (err instanceof Error && err.message.includes("404")) {
-          addError(new Error("DCF API endpoint not found. The service may not be deployed or configured correctly."));
-        } else if (err instanceof Error) {
-          addError(new Error(`Error initiating DCF calculation: ${err.message}`));
-        } else {
-          addError(new Error(`Error initiating DCF calculation: ${String(err)}`));
-        }
-      }
-      
+      calculateDCFWithAIAssumptions(assumptions, financials);
       setHasAttemptedFetch(true);
     }
-  }, [symbol, assumptions, hasAttemptedFetch, calculateDCFWithAIAssumptions, financials, setHasAttemptedFetch, addError]);
-
-  // Handle switching to custom DCF tab
-  const handleSwitchToCustomDCF = useCallback(() => {
-    setActiveTab("custom");
-    // You would typically propagate this tab change to a parent component
-  }, []);
+  }, [symbol, assumptions, hasAttemptedFetch, calculateDCFWithAIAssumptions, financials, setHasAttemptedFetch]);
 
   // Handle refreshing assumptions and recalculating DCF
   const handleRefreshDCF = useCallback(async () => {
     try {
-      toast({
-        title: "Refreshing DCF Analysis",
-        description: "Fetching new AI-generated assumptions...",
-      });
-      
       const result = await handleRefreshAssumptions();
       
       if (result.success) {
@@ -99,13 +70,8 @@ export const useDCFData = (symbol: string, financials: any[]) => {
     } catch (err) {
       console.error("Error in refresh DCF flow:", err);
       setUsingMockData(true);
-      if (err instanceof Error) {
-        addError(new Error(`Error refreshing DCF: ${err.message}`));
-      } else {
-        addError(new Error(`Error refreshing DCF: ${String(err)}`));
-      }
     }
-  }, [handleRefreshAssumptions, assumptions, calculateDCFWithAIAssumptions, financials, setUsingMockData, addError]);
+  }, [handleRefreshAssumptions, assumptions, calculateDCFWithAIAssumptions, financials, setUsingMockData]);
 
   // Determine whether to use mock data
   const shouldUseMockData = 
@@ -127,9 +93,6 @@ export const useDCFData = (symbol: string, financials: any[]) => {
     errors,
     assumptions,
     usingMockData: shouldUseMockData,
-    handleRefreshAssumptions: handleRefreshDCF,
-    handleSwitchToCustomDCF,
-    activeTab,
-    setActiveTab
+    handleRefreshAssumptions: handleRefreshDCF
   };
 };

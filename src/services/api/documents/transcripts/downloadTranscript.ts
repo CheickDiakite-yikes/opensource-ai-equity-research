@@ -28,18 +28,13 @@ export const downloadEarningsTranscript = async (symbol: string, quarter: string
     // If not in database, fetch directly from our edge function
     console.log(`Transcript not in database, fetching from API for ${symbol} ${quarter} ${year}`);
     
-    const response = await withRetry(async () => {
-      const { data, error } = await invokeSupabaseFunction<any[]>('fetch-earnings-transcripts', { 
+    const response = await withRetry(() => 
+      invokeSupabaseFunction<any[]>('fetch-earnings-transcripts', { 
         symbol, 
         quarter,
         year
-      });
-      
-      if (error) throw error;
-      if (!data) throw new Error("No data returned from transcript API");
-      
-      return data;
-    });
+      })
+    );
     
     if (response && response.length > 0 && response[0].content) {
       const content = response[0].content;

@@ -12,14 +12,9 @@ export const generateResearchReport = async (reportRequest: any): Promise<Resear
   try {
     console.log(`Generating AI research report for ${reportRequest.symbol} (type: ${reportRequest.reportType || 'standard'})`);
     
-    const { data, error } = await invokeSupabaseFunction<ResearchReport>('generate-research-report', {
+    const data = await invokeSupabaseFunction<ResearchReport>('generate-research-report', {
       reportRequest
     });
-    
-    if (error) {
-      console.error("Error from Supabase function generate-research-report:", error);
-      throw error;
-    }
     
     if (!data) {
       console.error("No data returned from research report API");
@@ -80,18 +75,13 @@ export const generateStockPrediction = async (
   try {
     console.log(`Generating AI stock prediction for ${symbol}${quickMode ? ' (quick mode)' : ''}`);
     
-    const { data, error } = await invokeSupabaseFunction<StockPrediction>('predict-stock-price', {
+    const data = await invokeSupabaseFunction<StockPrediction>('predict-stock-price', {
       symbol,
       stockData: quote,
       financials,
       news,
       quickMode // Pass the quick mode flag to the edge function
     });
-    
-    if (error) {
-      console.error(`Error from Supabase function predict-stock-price:`, error);
-      throw error;
-    }
     
     if (!data) {
       console.error("No data returned from stock prediction API");

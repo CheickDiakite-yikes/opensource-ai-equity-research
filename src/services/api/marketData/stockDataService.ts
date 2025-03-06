@@ -1,4 +1,3 @@
-
 import { invokeSupabaseFunction } from "../base";
 import { HistoricalPriceData, NewsArticle, CompanyPeer } from "@/types";
 
@@ -7,17 +6,12 @@ import { HistoricalPriceData, NewsArticle, CompanyPeer } from "@/types";
  */
 export const fetchHistoricalPrices = async (symbol: string): Promise<HistoricalPriceData | null> => {
   try {
-    const { data, error } = await invokeSupabaseFunction<HistoricalPriceData>('get-stock-data', { 
+    const data = await invokeSupabaseFunction<HistoricalPriceData>('get-stock-data', { 
       symbol, 
       endpoint: 'historical-price' 
     });
     
-    if (error || !data) {
-      console.error("Error fetching historical prices:", error);
-      return null;
-    }
-    
-    if (!data.historical || !Array.isArray(data.historical)) return null;
+    if (!data || !data.historical || !Array.isArray(data.historical)) return null;
     return data;
   } catch (error) {
     console.error("Error fetching historical prices:", error);
@@ -30,17 +24,12 @@ export const fetchHistoricalPrices = async (symbol: string): Promise<HistoricalP
  */
 export const fetchCompanyNews = async (symbol: string): Promise<NewsArticle[]> => {
   try {
-    const { data, error } = await invokeSupabaseFunction<NewsArticle[]>('get-stock-data', { 
+    const data = await invokeSupabaseFunction<NewsArticle[]>('get-stock-data', { 
       symbol, 
       endpoint: 'news' 
     });
     
-    if (error || !data) {
-      console.error("Error fetching company news:", error);
-      return [];
-    }
-    
-    if (!Array.isArray(data)) return [];
+    if (!data || !Array.isArray(data)) return [];
     return data;
   } catch (error) {
     console.error("Error fetching company news:", error);
@@ -53,17 +42,12 @@ export const fetchCompanyNews = async (symbol: string): Promise<NewsArticle[]> =
  */
 export const fetchCompanyPeers = async (symbol: string): Promise<string[]> => {
   try {
-    const { data, error } = await invokeSupabaseFunction<CompanyPeer[]>('get-stock-data', { 
+    const data = await invokeSupabaseFunction<CompanyPeer[]>('get-stock-data', { 
       symbol, 
       endpoint: 'peers' 
     });
     
-    if (error || !data) {
-      console.error("Error fetching company peers:", error);
-      return [];
-    }
-    
-    if (!Array.isArray(data) || data.length === 0) return [];
+    if (!data || !Array.isArray(data) || data.length === 0) return [];
     
     const peerData = data[0] as CompanyPeer;
     return peerData.peersList || [];
