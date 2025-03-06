@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import AutomaticDCFSection from "./dcf/AutomaticDCFSection";
@@ -22,15 +21,12 @@ const DCFTabContent: React.FC<DCFTabContentProps> = ({ financials, symbol }) => 
   const [apiResponseDebug, setApiResponseDebug] = useState<any>(null);
   const [showDebugPanel, setShowDebugPanel] = useState<boolean>(false);
   
-  // Custom DCF inputs state with FMP default values
   const [customParams, setCustomParams] = useState({
-    // Growth parameters (percentages)
-    revenueGrowth: "8.5",  // Use FMP default values
+    revenueGrowth: "8.5",
     ebitdaMargin: "30.0",
     capexPercent: "5.0",   
-    taxRate: "21.0",       // Current corporate tax rate
+    taxRate: "21.0",
     
-    // Working capital parameters
     depreciationAndAmortizationPercent: "3.5",
     cashAndShortTermInvestmentsPercent: "23.0",
     receivablesPercent: "15.0",
@@ -40,18 +36,15 @@ const DCFTabContent: React.FC<DCFTabContentProps> = ({ financials, symbol }) => 
     operatingCashFlowPercent: "28.0",
     sellingGeneralAndAdministrativeExpensesPercent: "6.5",
     
-    // Rate parameters - as shown in the screenshot
     longTermGrowthRate: "4.0",  
     costOfEquity: "9.7",        
     costOfDebt: "3.5",
     marketRiskPremium: "4.7",
     riskFreeRate: "3.6",
     
-    // Other
     beta: "1.2"
   });
   
-  // Custom DCF calculation hook
   const { 
     calculateStandardDCF,
     calculateLeveredDCF,
@@ -66,14 +59,12 @@ const DCFTabContent: React.FC<DCFTabContentProps> = ({ financials, symbol }) => 
   const currentPrice = financials[0]?.price || 100;
   
   useEffect(() => {
-    // Store the raw API response for debugging
     if (rawApiResponse) {
       console.log("DCFTabContent - Raw DCF API Response:", rawApiResponse);
       setApiResponseDebug(rawApiResponse);
     }
   }, [rawApiResponse]);
   
-  // Automatically calculate levered DCF when component mounts
   useEffect(() => {
     if (symbol) {
       console.log(`DCFTabContent - Auto-calculating levered DCF for ${symbol}`);
@@ -97,13 +88,11 @@ const DCFTabContent: React.FC<DCFTabContentProps> = ({ financials, symbol }) => 
   const handleCalculateCustomDCF = () => {
     const params = {
       symbol,
-      // Growth parameters - convert percentages to proper decimal format where needed
       revenueGrowthPct: parseFloat(customParams.revenueGrowth),
       ebitdaPct: parseFloat(customParams.ebitdaMargin),
       capitalExpenditurePct: parseFloat(customParams.capexPercent),
       taxRate: parseFloat(customParams.taxRate),
       
-      // Working capital parameters
       depreciationAndAmortizationPct: parseFloat(customParams.depreciationAndAmortizationPercent),
       cashAndShortTermInvestmentsPct: parseFloat(customParams.cashAndShortTermInvestmentsPercent),
       receivablesPct: parseFloat(customParams.receivablesPercent),
@@ -113,18 +102,15 @@ const DCFTabContent: React.FC<DCFTabContentProps> = ({ financials, symbol }) => 
       operatingCashFlowPct: parseFloat(customParams.operatingCashFlowPercent),
       sellingGeneralAndAdministrativeExpensesPct: parseFloat(customParams.sellingGeneralAndAdministrativeExpensesPercent),
       
-      // Rate parameters - these need to be converted from percentage to decimal for the API
       longTermGrowthRate: parseFloat(customParams.longTermGrowthRate) / 100,
       costOfEquity: parseFloat(customParams.costOfEquity) / 100,
       costOfDebt: parseFloat(customParams.costOfDebt) / 100,
       marketRiskPremium: parseFloat(customParams.marketRiskPremium) / 100,
       riskFreeRate: parseFloat(customParams.riskFreeRate) / 100,
       
-      // Other
       beta: parseFloat(customParams.beta),
     };
     
-    // Pass the model type to the calculation function
     calculateCustomDCF(params, dcfModel);
   };
   
@@ -158,7 +144,7 @@ const DCFTabContent: React.FC<DCFTabContentProps> = ({ financials, symbol }) => 
       </Card>
       
       {customDCFResult?.mockData && (
-        <Alert variant="warning" className="bg-amber-50 border-amber-200">
+        <Alert className="bg-amber-50 border-amber-200">
           <AlertTriangle className="h-4 w-4 text-amber-500" />
           <AlertDescription className="text-amber-800">
             <strong>Using mock data:</strong> The DCF calculation is currently using estimated values instead of real API data.
