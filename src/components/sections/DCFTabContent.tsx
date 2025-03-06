@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useCustomDCF } from "@/hooks/dcf/useCustomDCF";
@@ -72,13 +73,13 @@ const DCFTabContent: React.FC<DCFTabContentProps> = ({ financials, symbol }) => 
   const handleCalculateCustomDCF = () => {
     const params = {
       symbol,
-      // Growth parameters - pass as decimals directly (e.g., 0.1094 = 10.94%)
+      // Growth parameters - convert percentages to proper decimal format where needed
       revenueGrowthPct: parseFloat(customParams.revenueGrowth),
       ebitdaPct: parseFloat(customParams.ebitdaMargin),
       capitalExpenditurePct: parseFloat(customParams.capexPercent),
       taxRate: parseFloat(customParams.taxRate),
       
-      // Working capital parameters - pass as decimals
+      // Working capital parameters
       depreciationAndAmortizationPct: parseFloat(customParams.depreciationAndAmortizationPercent),
       cashAndShortTermInvestmentsPct: parseFloat(customParams.cashAndShortTermInvestmentsPercent),
       receivablesPct: parseFloat(customParams.receivablesPercent),
@@ -88,19 +89,16 @@ const DCFTabContent: React.FC<DCFTabContentProps> = ({ financials, symbol }) => 
       operatingCashFlowPct: parseFloat(customParams.operatingCashFlowPercent),
       sellingGeneralAndAdministrativeExpensesPct: parseFloat(customParams.sellingGeneralAndAdministrativeExpensesPercent),
       
-      // Rate parameters - these are entered as whole numbers (e.g., 4) but need to be 
-      // sent as decimals for the API (e.g., 0.04)
-      longTermGrowthRate: parseFloat(customParams.longTermGrowthRate), // This will be converted in the API
-      costOfEquity: parseFloat(customParams.costOfEquity), // This will be converted in the API
-      costOfDebt: parseFloat(customParams.costOfDebt), // This will be converted in the API
-      marketRiskPremium: parseFloat(customParams.marketRiskPremium), // This will be converted in the API
-      riskFreeRate: parseFloat(customParams.riskFreeRate), // This will be converted in the API
+      // Rate parameters - these are already in proper format for the API
+      longTermGrowthRate: parseFloat(customParams.longTermGrowthRate) / 100, // Convert from percentage to decimal
+      costOfEquity: parseFloat(customParams.costOfEquity) / 100, // Convert from percentage to decimal
+      costOfDebt: parseFloat(customParams.costOfDebt) / 100, // Convert from percentage to decimal
+      marketRiskPremium: parseFloat(customParams.marketRiskPremium) / 100, // Convert from percentage to decimal
+      riskFreeRate: parseFloat(customParams.riskFreeRate) / 100, // Convert from percentage to decimal
       
       // Other
       beta: parseFloat(customParams.beta),
     };
-    
-    console.log("Sending DCF calculation parameters:", params);
     
     // Pass the model type to the calculation function
     calculateCustomDCF(params, dcfModel);

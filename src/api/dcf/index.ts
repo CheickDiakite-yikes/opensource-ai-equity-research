@@ -1,3 +1,4 @@
+
 /**
  * DCF API Handler
  * 
@@ -5,12 +6,7 @@
  * function that communicates with the FMP API.
  */
 
-import { 
-  invokeSupabaseFunction 
-} from "@/services/api/core/edgeFunctions";
-import { 
-  withRetry 
-} from "@/services/api/core/retryStrategy";
+import { invokeSupabaseFunction } from "@/services/api/base";
 
 export interface DCFParams {
   symbol: string;

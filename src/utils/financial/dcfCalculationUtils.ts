@@ -20,60 +20,19 @@ export const calculateCustomDCF = async (symbol: string, customInputs?: Partial<
         costOfDebt: 'costOfDebt',
         marketRiskPremium: 'marketRiskPremium',
         riskFreeRate: 'riskFreeRate',
-        beta: 'beta',
-        // Additional mapping for other parameters
-        depreciationAndAmortizationPercentage: 'depreciationAndAmortizationPct',
-        cashAndShortTermInvestmentsPercentage: 'cashAndShortTermInvestmentsPct',
-        receivablesPercentage: 'receivablesPct',
-        inventoriesPercentage: 'inventoriesPct',
-        payablesPercentage: 'payablePct',
-        ebitPercentage: 'ebitPct',
-        operatingCashFlowPercentage: 'operatingCashFlowPct',
-        sellingGeneralAndAdministrativeExpensesPercentage: 'sellingGeneralAndAdministrativeExpensesPct'
+        beta: 'beta'
       };
       
       Object.entries(customInputs).forEach(([key, value]) => {
         if (value !== undefined && value !== null) {
           // Use the mapped parameter name if available, otherwise use the original key
           const paramName = parameterMap[key] || key;
-          
-          // Convert parameters based on the FMP API expectations
-          if (key === 'longTermGrowthRate' || 
-              key === 'costOfEquity' || 
-              key === 'costOfDebt' || 
-              key === 'marketRiskPremium' || 
-              key === 'riskFreeRate') {
-            // These parameters should be passed as decimals (e.g., 4% -> 0.04)
-            const numValue = typeof value === 'number' ? value : parseFloat(String(value));
-            // If the value is entered as a percentage (e.g., 4), convert to decimal (0.04)
-            const decimalValue = numValue > 1 ? numValue / 100 : numValue;
-            params.append(paramName, decimalValue.toString());
-          } 
-          else if (key === 'revenuePercentage' ||
-                  key === 'ebitdaPercentage' ||
-                  key === 'capitalExpenditurePercentage' ||
-                  key === 'taxRate' ||
-                  key === 'depreciationAndAmortizationPercentage' ||
-                  key === 'cashAndShortTermInvestmentsPercentage' ||
-                  key === 'receivablesPercentage' ||
-                  key === 'inventoriesPercentage' ||
-                  key === 'payablesPercentage' ||
-                  key === 'ebitPercentage' ||
-                  key === 'operatingCashFlowPercentage' ||
-                  key === 'sellingGeneralAndAdministrativeExpensesPercentage') {
-            // These parameters should be passed as decimals directly without conversion
-            // They're already in decimal format in our UI (e.g., 0.1094 = 10.94%)
-            params.append(paramName, String(value));
-          } 
-          else {
-            // For other parameters, pass them as-is
-            params.append(paramName, String(value));
-          }
+          params.append(paramName, value.toString());
         }
       });
     }
     
-    // Call the DCF API endpoint
+    // Call the DCF API endpoint - use the correct stable API endpoint
     const apiUrl = `/api/dcf?${params.toString()}`;
     console.log("Calling DCF API with params:", apiUrl);
     

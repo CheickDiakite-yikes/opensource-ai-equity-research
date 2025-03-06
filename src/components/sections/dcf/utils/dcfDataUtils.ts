@@ -1,7 +1,5 @@
 
-// DCF Data Utilities
-
-// Import from individual modules
+// Re-export from individual modules for backward compatibility
 import { convertAssumptionsToParams } from './assumptionsConverter';
 import { createMockDCFData } from './mockDCFGenerator';
 import { prepareDCFData } from './dcfDataFormatter';

@@ -23,7 +23,7 @@ const MarketNews: React.FC<MarketNewsProps> = ({
     queryFn: async () => {
       console.log('Fetching general market news');
       
-      // Fetch general market news - fixed parameter order
+      // Fetch general market news
       const results = await fetchMarketNews(6, 'general');
       
       console.log(`Fetched ${results.length} market news articles`);
@@ -85,7 +85,7 @@ const MarketNews: React.FC<MarketNewsProps> = ({
             {newsData && newsData.length > 0 ? (
               newsData.slice(0, 6).map((article, index) => (
                 <NewsCard 
-                  key={`${article.headline || article.title || ''}-${index}`} 
+                  key={`${article.id || index}-${article.headline}`} 
                   article={article}
                 />
               ))

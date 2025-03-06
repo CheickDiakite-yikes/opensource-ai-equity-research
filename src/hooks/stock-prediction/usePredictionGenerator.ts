@@ -88,7 +88,7 @@ export const usePredictionGenerator = ({ symbol, quickMode }: PredictionGenerato
           console.error(`Error fetching financials for ${symbol}:`, err);
           return {};
         }),
-        fetchMarketNews(5, 'general').catch(err => { // Fixed parameter order
+        fetchMarketNews(5, 'general').catch(err => {
           console.error('Error fetching market news:', err);
           return [];
         })

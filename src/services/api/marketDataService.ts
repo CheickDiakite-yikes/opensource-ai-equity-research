@@ -1,11 +1,4 @@
 
-// Re-export market data-related functions
-export * from './marketData/indicesService';
-export * from './marketData/indicesDataService';
-export * from './marketData/newsService';
-export * from './marketData/stockDataService';
-
-/**
- * Fetch company news articles
- */
-export { fetchCompanyNews } from './marketData/newsService';
+// This file is a simple re-export of the modules in the marketData directory
+// to maintain backward compatibility
+export * from './marketData';

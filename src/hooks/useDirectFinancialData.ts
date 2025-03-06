@@ -39,7 +39,7 @@ export const useDirectFinancialData = (
         
         try {
           // Start with data from initialData
-          const newFinancials: DirectFinancialData = { ...directFinancials };
+          const newFinancials = { ...directFinancials };
           let dataImproved = false;
           
           // Try to fetch income statements if missing
@@ -117,7 +117,7 @@ export const useDirectFinancialData = (
     };
     
     fetchMissingData();
-  }, [symbol, initialData, directFinancials]);
+  }, [symbol, initialData]);
 
   // Function to manually retry fetching data
   const retryFetchingData = async (): Promise<boolean> => {
@@ -135,10 +135,10 @@ export const useDirectFinancialData = (
       
       // Update the direct financials state
       setDirectFinancials({
-        income: income,
-        balance: balance,
-        cashflow: cashflow,
-        ratios: ratios
+        income,
+        balance,
+        cashflow,
+        ratios
       });
       
       // Check if we got enough data

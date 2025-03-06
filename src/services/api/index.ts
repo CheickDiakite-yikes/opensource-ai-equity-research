@@ -1,48 +1,71 @@
 
-// Re-export api modules
-export * from './core/supabaseClient';
-export * from './core/edgeFunctions';
-export * from './core/caching';
-export * from './core/retryStrategy';
-export * from './core/maintenance';
-export * from './search/semanticSearch';
-export * from './documents/relatedDocuments';
-export * from './documents/metrics';
-
-// Re-export service modules
+// Re-export all API services
+export * from './profileService';
 export * from './financialService';
-export * from './documentsService';
-
-// Export marketDataService functions 
 export * from './marketDataService';
-// Rename fetchCompanyNews to avoid name collision
-export { fetchCompanyNews as fetchCompanyNewsArticles } from './marketData/newsService';
-// Rename fetchCompanyPeers from stockDataService to avoid name collision with profileService
-export { fetchCompanyPeers as fetchCompanyPeerSymbols } from './marketData/stockDataService';
+export * from './analysisService';
+export * from './documentsService';
+export * from './base';  // Export base utilities including withRetry
 
-// Export enhancedApiService
-export * from './enhancedApiService';
+// Composite functions
+import { fetchStockProfile, fetchStockQuote } from './profileService';
+import { fetchIncomeStatements, fetchBalanceSheets, fetchCashFlowStatements, fetchKeyRatios } from './financialService';
+import { fetchHistoricalPrices, fetchCompanyNews, fetchCompanyPeers } from './marketDataService';
+import { 
+  fetchEarningsTranscripts, 
+  fetchSECFilings, 
+  triggerDocumentCaching 
+} from './documentsService';
+import {
+  generateResearchReport,
+  generateStockPrediction,
+  analyzeGrowthInsights,
+  fetchCustomDCF,
+  fetchAIDCFAssumptions
+} from './analysisService';
 
-// Re-export analysis services
-export * from './analysis';
+/**
+ * Get all financial data for a symbol
+ */
+export const getAllFinancialData = async (symbol: string) => {
+  const profile = await fetchStockProfile(symbol);
+  const quote = await fetchStockQuote(symbol);
+  const incomeStatements = await fetchIncomeStatements(symbol);
+  const balanceSheets = await fetchBalanceSheets(symbol);
+  const cashFlowStatements = await fetchCashFlowStatements(symbol);
+  const keyRatios = await fetchKeyRatios(symbol);
+  const historicalPrices = await fetchHistoricalPrices(symbol);
+  const news = await fetchCompanyNews(symbol);
+  const peers = await fetchCompanyPeers(symbol);
+  const earningsTranscripts = await fetchEarningsTranscripts(symbol);
+  const secFilings = await fetchSECFilings(symbol);
 
-// Re-export the supabase client
-export { supabase } from './core/supabaseClient';
+  // Trigger background caching of company documents
+  // This happens asynchronously and doesn't affect the response time
+  if (profile) {
+    triggerDocumentCaching(symbol);
+  }
 
-// Export the main functions that were previously in base.ts
+  return {
+    profile,
+    quote,
+    incomeStatements,
+    balanceSheets,
+    cashFlowStatements,
+    keyRatios,
+    historicalPrices,
+    news,
+    peers,
+    earningsTranscripts,
+    secFilings
+  };
+};
+
+// Re-export all analysis functions
 export {
-  invokeSupabaseFunction,
-  getCachedOrFetchData,
-  withRetry,
-  runDatabaseMaintenance
-} from './core';
-
-// Export document functions
-export * from './documents';
-
-// Export profileService selectively, excluding fetchCompanyPeers
-export {
-  fetchStockProfile,
-  fetchStockQuote,
-  fetchStockRating
-} from './profileService';
+  generateResearchReport,
+  generateStockPrediction,
+  analyzeGrowthInsights,
+  fetchCustomDCF,
+  fetchAIDCFAssumptions
+} from './analysisService';

@@ -1,13 +1,6 @@
 
-// Re-export indicesService and stockDataService
-export * from './indicesService';
-// Export stockDataService selectively to avoid duplicates with newsService
-export { 
-  fetchHistoricalPrices,
-  fetchCompanyPeers,
-  fetchCompanyLogo 
-} from './stockDataService';
-export * from './indicesDataService';
-
-// Export newsService without duplicates
+// Re-export everything from the individual modules
 export * from './newsService';
+export * from './indicesService'; 
+export * from './stockDataService';
+export * from './indicesDataService';

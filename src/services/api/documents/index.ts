@@ -1,7 +1,9 @@
 
-// Re-export document-related modules
-export * from './filings';
+// Re-export transcript-related services
 export * from './transcripts';
-export * from './relatedDocuments';
-export * from './metrics';
+
+// Re-export filings-related services
+export * from './filings';
+
+// Export base utilities
 export * from './base';

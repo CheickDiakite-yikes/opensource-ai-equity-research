@@ -1,5 +1,5 @@
 
-import { invokeSupabaseFunction } from "../../core/edgeFunctions";
+import { invokeSupabaseFunction } from "../../base";
 
 /**
  * Get a direct download link for an SEC filing

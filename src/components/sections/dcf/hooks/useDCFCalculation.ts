@@ -45,63 +45,50 @@ export function useDCFCalculation(symbol: string) {
       
       console.log("Received DCF result:", dcfData);
       
-      // Check if we received a valid DCF result
+      // Add null check before accessing properties
       if (dcfData && typeof dcfData === 'object') {
-        // Map the API response to our CustomDCFResult type
         const dcfResult: CustomDCFResult = {
           year: dcfData.year || new Date().getFullYear().toString(),
           symbol: symbol,
-          // Revenue and growth metrics
+          equityValuePerShare: dcfData.equityValuePerShare || 0,
+          enterpriseValue: dcfData.enterpriseValue || 0,
+          equityValue: dcfData.equityValue || 0,
+          totalDebt: dcfData.totalDebt || 0,
+          cashAndCashEquivalents: dcfData.cashAndCashEquivalents || dcfData.totalCash || 0,
+          wacc: dcfData.wacc || 0.09,
+          taxRate: dcfData.taxRate || 0.21,
+          revenuePercentage: dcfData.revenuePercentage || 8.5,
+          longTermGrowthRate: dcfData.longTermGrowthRate || 0.03,
+          // Add all required properties from CustomDCFResult interface
           revenue: dcfData.revenue || 0,
-          revenuePercentage: dcfData.revenuePercentage || 0,
-          // EBITDA metrics
           ebitda: dcfData.ebitda || 0,
           ebitdaPercentage: dcfData.ebitdaPercentage || 0,
-          // EBIT metrics
           ebit: dcfData.ebit || 0,
           ebitPercentage: dcfData.ebitPercentage || 0,
-          // Depreciation
           depreciation: dcfData.depreciation || 0,
-          // Capital expenditure
           capitalExpenditure: dcfData.capitalExpenditure || 0,
           capitalExpenditurePercentage: dcfData.capitalExpenditurePercentage || 0,
-          // Stock info
           price: dcfData.price || 0,
           beta: dcfData.beta || 0,
           dilutedSharesOutstanding: dcfData.dilutedSharesOutstanding || 0,
-          // Debt and cost metrics
           costofDebt: dcfData.costofDebt || 0,
-          taxRate: dcfData.taxRate || 0,
           afterTaxCostOfDebt: dcfData.afterTaxCostOfDebt || 0,
-          // Risk metrics
           riskFreeRate: dcfData.riskFreeRate || 0,
           marketRiskPremium: dcfData.marketRiskPremium || 0,
           costOfEquity: dcfData.costOfEquity || 0,
-          // Capital structure
-          totalDebt: dcfData.totalDebt || 0,
           totalEquity: dcfData.totalEquity || 0,
           totalCapital: dcfData.totalCapital || 0,
           debtWeighting: dcfData.debtWeighting || 0,
           equityWeighting: dcfData.equityWeighting || 0,
-          // WACC and cash flow metrics
-          wacc: dcfData.wacc || 0,
           operatingCashFlow: dcfData.operatingCashFlow || 0,
-          operatingCashFlowPercentage: dcfData.operatingCashFlowPercentage || 0,
-          // DCF calculation components
           pvLfcf: dcfData.pvLfcf || 0,
           sumPvLfcf: dcfData.sumPvLfcf || 0,
-          longTermGrowthRate: dcfData.longTermGrowthRate || 0,
           freeCashFlow: dcfData.freeCashFlow || dcfData.ufcf || 0,
           terminalValue: dcfData.terminalValue || 0,
           presentTerminalValue: dcfData.presentTerminalValue || 0,
-          // Final valuation
-          enterpriseValue: dcfData.enterpriseValue || 0,
           netDebt: dcfData.netDebt || 0,
-          equityValue: dcfData.equityValue || 0,
-          equityValuePerShare: dcfData.equityValuePerShare || 0,
           freeCashFlowT1: dcfData.freeCashFlowT1 || 0,
-          // Cash and cash equivalents
-          cashAndCashEquivalents: dcfData.cashAndCashEquivalents || dcfData.totalCash || 0
+          operatingCashFlowPercentage: dcfData.operatingCashFlowPercentage || 0
         };
         
         setDcfResult(dcfResult);
@@ -110,13 +97,16 @@ export function useDCFCalculation(symbol: string) {
           description: `Intrinsic value per share: $${dcfResult.equityValuePerShare?.toFixed(2)}`,
         });
         
-        // Create projected cash flow data
-        // If we're using the FMP API, we need to generate the yearly projections ourselves
-        const generatedProjections = generateProjectedData(dcfResult);
-        setProjectedData(generatedProjections);
+        // Extract projected data if available
+        if (Array.isArray(dcfData.yearlyProjections) && dcfData.yearlyProjections.length > 0) {
+          setProjectedData(dcfData.yearlyProjections);
+        } else {
+          // Generate projected data based on growth assumptions if not provided
+          const generatedProjections = generateProjectedData(dcfResult);
+          setProjectedData(generatedProjections);
+        }
         
         setUsingMockData(false);
-        return true;
       } else {
         throw new Error("Invalid response format from DCF calculation");
       }
@@ -129,50 +119,34 @@ export function useDCFCalculation(symbol: string) {
         variant: "destructive",
       });
       setUsingMockData(true);
-      return false;
     } finally {
       setIsLoading(false);
     }
   }, [symbol]);
   
-  // Helper function to generate projected data based on growth assumptions
+  // Helper function to generate projected data if not provided
   const generateProjectedData = (result: CustomDCFResult): YearlyDCFData[] => {
     const currentYear = new Date().getFullYear();
     const projectionYears = 5;
-    
-    // Get growth rates from the DCF result
-    const revenueGrowthRate = result.revenuePercentage / 100;
-    const ebitdaGrowthRate = revenueGrowthRate; // Assuming EBITDA grows at the same rate as revenue
+    const growthRate = result.revenuePercentage / 100;
     
     return Array.from({ length: projectionYears }, (_, i) => {
       const year = (currentYear + i).toString();
-      const growthFactor = Math.pow(1 + revenueGrowthRate, i);
-      
-      // Calculate values for each year based on growth rates
-      const revenue = result.revenue * growthFactor;
-      const ebitda = result.ebitdaPercentage ? (revenue * (result.ebitdaPercentage / 100)) : (result.ebitda * growthFactor);
-      const ebit = result.ebitPercentage ? (revenue * (result.ebitPercentage / 100)) : (result.ebit * growthFactor);
-      const capitalExpenditure = result.capitalExpenditurePercentage ? 
-        (revenue * (result.capitalExpenditurePercentage / 100)) : 
-        (result.capitalExpenditure * growthFactor);
-      const operatingCashFlow = result.operatingCashFlowPercentage ? 
-        (revenue * (result.operatingCashFlowPercentage / 100)) : 
-        (result.operatingCashFlow * growthFactor);
-      const freeCashFlow = operatingCashFlow - Math.abs(capitalExpenditure);
+      const growthFactor = Math.pow(1 + growthRate, i);
       
       return {
         year,
-        revenue,
-        ebit,
-        ebitda,
-        freeCashFlow,
-        operatingCashFlow,
-        capitalExpenditure: -Math.abs(capitalExpenditure) // CapEx is typically negative in cash flow statements
+        revenue: result.revenue * growthFactor,
+        ebit: result.ebit * growthFactor,
+        ebitda: result.ebitda * growthFactor,
+        freeCashFlow: result.freeCashFlow * growthFactor,
+        operatingCashFlow: result.operatingCashFlow * growthFactor,
+        capitalExpenditure: result.capitalExpenditure * growthFactor
       };
     });
   };
   
-  // Function to calculate DCF with AI assumptions
+  // New function to calculate DCF with AI assumptions
   const calculateDCFWithAIAssumptions = useCallback((assumptions: any, financials: any[]) => {
     try {
       if (!assumptions || !assumptions.assumptions) {
@@ -181,31 +155,20 @@ export function useDCFCalculation(symbol: string) {
       
       // Extract values from AI assumptions and prepare inputs for DCF calculation
       const inputs: Partial<DCFInputs> = {
-        // Pass percentages as they are - they'll be converted in the calculation utility
-        revenuePercentage: assumptions.assumptions.revenueGrowthPct,
-        ebitdaPercentage: assumptions.assumptions.ebitdaMarginPct,
-        capitalExpenditurePercentage: assumptions.assumptions.capitalExpenditurePct,
+        revenuePercentage: assumptions.assumptions.revenueGrowthPct * 100,
+        ebitdaPercentage: assumptions.assumptions.ebitdaMarginPct * 100,
+        capitalExpenditurePercentage: assumptions.assumptions.capitalExpenditurePct * 100,
         taxRate: assumptions.assumptions.taxRatePct,
-        // Pass these as-is - they'll be converted to decimals as needed
-        longTermGrowthRate: assumptions.assumptions.longTermGrowthRatePct * 100, // Convert to whole number
+        longTermGrowthRate: assumptions.assumptions.longTermGrowthRatePct,
         beta: assumptions.assumptions.beta,
-        costOfEquity: assumptions.assumptions.costOfEquityPct * 100, // Convert to whole number
-        costOfDebt: assumptions.assumptions.costOfDebtPct * 100, // Convert to whole number
-        marketRiskPremium: assumptions.assumptions.marketRiskPremiumPct * 100, // Convert to whole number
-        riskFreeRate: assumptions.assumptions.riskFreeRatePct * 100, // Convert to whole number
-        // Additional parameters with corrected property names
-        depreciationAndAmortizationPercentage: assumptions.assumptions.depreciationAndAmortizationPct,
-        operatingCashFlowPercentage: assumptions.assumptions.operatingCashFlowPct,
-        ebitPercentage: assumptions.assumptions.ebitPct,
-        cashAndShortTermInvestmentsPercentage: assumptions.assumptions.cashAndShortTermInvestmentsPct,
-        receivablesPercentage: assumptions.assumptions.receivablesPct,
-        inventoriesPercentage: assumptions.assumptions.inventoriesPct,
-        payablesPercentage: assumptions.assumptions.payablePct,
-        sellingGeneralAndAdministrativeExpensesPercentage: assumptions.assumptions.sellingGeneralAndAdministrativeExpensesPct
+        costOfEquity: assumptions.assumptions.costOfEquityPct * 100,
+        costOfDebt: assumptions.assumptions.costOfDebtPct * 100,
+        marketRiskPremium: assumptions.assumptions.marketRiskPremiumPct * 100,
+        riskFreeRate: assumptions.assumptions.riskFreeRatePct * 100
       };
       
       console.log("Calculating DCF with AI-derived inputs:", inputs);
-      return calculateDCF(inputs);
+      calculateDCF(inputs);
     } catch (err) {
       console.error("Error in calculateDCFWithAIAssumptions:", err);
       toast({
@@ -214,7 +177,6 @@ export function useDCFCalculation(symbol: string) {
         variant: "destructive",
       });
       setUsingMockData(true);
-      return false;
     }
   }, [calculateDCF]);
 

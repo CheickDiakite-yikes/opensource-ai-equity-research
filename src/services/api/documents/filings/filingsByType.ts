@@ -1,6 +1,5 @@
 
-import { invokeSupabaseFunction } from "../../core/edgeFunctions";
-import { withRetry } from "../../core/retryStrategy";
+import { invokeSupabaseFunction, withRetry } from "../../base";
 import { SECFiling } from "@/types";
 
 /**
