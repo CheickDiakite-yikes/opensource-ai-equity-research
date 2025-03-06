@@ -17,7 +17,7 @@ const StockView: React.FC<StockViewProps> = ({ symbol, onClear }) => {
   const [searchParams] = useSearchParams();
   const [activeTab, setActiveTab] = useState<string>("overview");
   
-  // Check for tab parameter in URL
+  // Check for tab parameter in URL and set active tab
   useEffect(() => {
     const tabParam = searchParams.get("tab");
     if (tabParam && ["overview", "analysis", "report"].includes(tabParam)) {

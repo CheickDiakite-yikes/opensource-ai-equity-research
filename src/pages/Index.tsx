@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import Header from "@/components/layout/Header";
 import LandingView from "@/components/home/LandingView";
@@ -31,7 +30,6 @@ const Index = () => {
       setRecentSearches(JSON.parse(savedSearches));
     }
     
-    // Check if there's a symbol in the URL parameters
     const symbolParam = searchParams.get('symbol');
     if (symbolParam) {
       setSymbol(symbolParam);
@@ -54,7 +52,6 @@ const Index = () => {
     setRecentSearches(updatedSearches);
     localStorage.setItem('recentSearches', JSON.stringify(updatedSearches));
     
-    // Update URL with the symbol
     setSearchParams({ symbol: symbolUpperCase });
     
     setTimeout(() => {
@@ -80,7 +77,7 @@ const Index = () => {
     });
   };
 
-  const searchSymbol = (sym: string, targetTab: string = "overview") => {
+  const searchSymbol = (sym: string, targetTab: string = "report") => {
     setSymbol(sym);
     setSearchedSymbol(sym);
     
@@ -92,10 +89,9 @@ const Index = () => {
     setRecentSearches(updatedSearches);
     localStorage.setItem('recentSearches', JSON.stringify(updatedSearches));
     
-    // Update URL with the symbol and tab
     setSearchParams({ symbol: sym, tab: targetTab });
     
-    toast.success(`Loading data for ${sym}`, {
+    toast.success(`Loading research data for ${sym}`, {
       duration: 3000,
     });
   };

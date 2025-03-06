@@ -4,7 +4,6 @@ import { motion } from "framer-motion";
 import CompanyCard from "./CompanyCard";
 import SectionHeader from "./SectionHeader";
 import { AlertCircle } from "lucide-react";
-import { Button } from "@/components/ui/button";
 
 interface FeaturedCompaniesProps {
   featuredSymbols: { symbol: string, name: string }[];

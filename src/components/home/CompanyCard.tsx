@@ -4,7 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { motion } from "framer-motion";
 import { useCompanyCardData } from "@/hooks/useCompanyCardData";
 import { Button } from "@/components/ui/button";
-import { BarChart4 } from "lucide-react";
+import { FileText } from "lucide-react";
 
 // Import our new components
 import CompanyCardHeader from "./card-components/CompanyCardHeader";
@@ -86,8 +86,8 @@ const CompanyCard = ({ company, onSelect }: CompanyCardProps) => {
                 onSelect(company.symbol);
               }}
             >
-              <BarChart4 className="mr-2 h-4 w-4 text-blue-600 dark:text-blue-400" />
-              <span>View Analysis</span>
+              <FileText className="mr-2 h-4 w-4 text-blue-600 dark:text-blue-400" />
+              <span>View Research Report</span>
             </Button>
           </div>
         </CardContent>
