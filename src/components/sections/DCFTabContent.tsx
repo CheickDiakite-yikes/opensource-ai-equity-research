@@ -18,20 +18,20 @@ const DCFTabContent: React.FC<DCFTabContentProps> = ({ financials, symbol }) => 
   // Custom DCF inputs state - all parameters included and properly formatted
   const [customParams, setCustomParams] = useState({
     // Growth parameters (as decimals)
-    revenueGrowth: "0.1094",
-    ebitdaMargin: "0.3127",
-    capexPercent: "0.0306", 
-    taxRate: "0.2409",
+    revenueGrowth: "10.94",
+    ebitdaMargin: "31.27",
+    capexPercent: "3.06", 
+    taxRate: "24.09",
     
     // Working capital parameters (as decimals)
-    depreciationAndAmortizationPercent: "0.0345",
-    cashAndShortTermInvestmentsPercent: "0.2344",
-    receivablesPercent: "0.1533", 
-    inventoriesPercent: "0.0155",
-    payablesPercent: "0.1614",
-    ebitPercent: "0.2781",
-    operatingCashFlowPercent: "0.2886",
-    sellingGeneralAndAdministrativeExpensesPercent: "0.0662",
+    depreciationAndAmortizationPercent: "3.45",
+    cashAndShortTermInvestmentsPercent: "23.44",
+    receivablesPercent: "15.33", 
+    inventoriesPercent: "1.55",
+    payablesPercent: "16.14",
+    ebitPercent: "27.81",
+    operatingCashFlowPercent: "28.86",
+    sellingGeneralAndAdministrativeExpensesPercent: "6.62",
     
     // Rate parameters (as whole numbers)
     longTermGrowthRate: "4",

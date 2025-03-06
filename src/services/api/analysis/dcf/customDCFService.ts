@@ -2,45 +2,8 @@
 import { invokeSupabaseFunction } from "../../base";
 import { CustomDCFParams, CustomDCFResult } from "@/types/ai-analysis/dcfTypes";
 import { toast } from "@/components/ui/use-toast";
-import { DCFType } from "./types";
+import { DCFType, formatDCFParameters } from "./types";
 import { transformDCFResponse } from "./dataTransformer";
-
-/**
- * Format DCF parameters for the API request
- */
-export const formatDCFParameters = (params: CustomDCFParams): Record<string, any> => {
-  // Format parameters for the FMP API
-  const apiParams: Record<string, any> = {
-    // Convert to proper parameter names expected by FMP API
-    revenueGrowth: params.revenueGrowthPct,
-    ebitdaMargin: params.ebitdaPct,
-    capexPercent: params.capitalExpenditurePct,
-    taxRate: params.taxRate,
-    depreciationAndAmortizationPercent: params.depreciationAndAmortizationPct,
-    cashAndShortTermInvestmentsPercent: params.cashAndShortTermInvestmentsPct,
-    receivablesPercent: params.receivablesPct,
-    inventoriesPercent: params.inventoriesPct,
-    payablesPercent: params.payablesPct,
-    ebitPercent: params.ebitPct,
-    operatingCashFlowPercent: params.operatingCashFlowPct,
-    sellingGeneralAndAdministrativeExpensesPercent: params.sellingGeneralAndAdministrativeExpensesPct,
-    longTermGrowthRate: params.longTermGrowthRate,
-    costOfEquity: params.costOfEquity,
-    costOfDebt: params.costOfDebt,
-    marketRiskPremium: params.marketRiskPremium,
-    riskFreeRate: params.riskFreeRate,
-    beta: params.beta
-  };
-  
-  // Remove any undefined or null values to prevent API errors
-  Object.keys(apiParams).forEach(key => {
-    if (apiParams[key] === undefined || apiParams[key] === null || isNaN(apiParams[key])) {
-      delete apiParams[key];
-    }
-  });
-  
-  return apiParams;
-};
 
 /**
  * Handle DCF API response validation

@@ -1,8 +1,8 @@
 
 // Re-export all DCF service functions
 export * from './aiAssumptionsService';
-export * from './standardDCFService';  // This should now include fetchLeveredDCF
+export * from './standardDCFService';
 export { fetchCustomDCF, fetchCustomLeveredDCF } from './customDCFService';
-export { formatDCFParameters as formatDCFTypeParameters } from './types';
+export { formatDCFParameters } from './types';
 export * from './dataTransformer';
 export * from './types';

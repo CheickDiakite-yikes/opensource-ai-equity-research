@@ -20,6 +20,11 @@ export async function fetchWithRetry(
       const mergedOptions: RequestInit = {
         ...options,
         signal: controller.signal,
+        headers: {
+          'Accept': 'application/json',
+          'Cache-Control': 'no-cache',
+          ...(options.headers || {})
+        }
       };
       
       const response = await fetch(url, mergedOptions);

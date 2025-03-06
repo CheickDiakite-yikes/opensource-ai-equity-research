@@ -9,6 +9,38 @@ import {
 } from "@/types/ai-analysis/dcfTypes";
 
 /**
+ * Get current price from financial data
+ */
+export const getCurrentPrice = (financials: any[]): number => {
+  if (financials && financials.length > 0 && financials[0]?.price) {
+    return financials[0].price;
+  }
+  return 100.00; // Default fallback
+};
+
+/**
+ * Create mock DCF data when API fails
+ */
+export const createMockDCFData = (financials: any[]): FormattedDCFData => {
+  const currentPrice = getCurrentPrice(financials);
+  const intrinsicValue = currentPrice * 1.15; // 15% upside as default
+  
+  return {
+    intrinsicValue,
+    currentPrice,
+    upside: "+15.0%",
+    assumptions: {
+      growthRate: "8.5% (first 5 years), 3% (terminal)",
+      discountRate: "9.5%",
+      terminalMultiple: "15x",
+      taxRate: "21%"
+    },
+    projections: generateDefaultProjections(),
+    sensitivity: generateSensitivityAnalysis(intrinsicValue, 0.095)
+  };
+};
+
+/**
  * Create formatted DCF data from API results
  */
 export const prepareDCFData = (
@@ -127,15 +159,16 @@ const generateDefaultProjections = (): YearlyDCFData[] => {
   for (let i = 0; i < 5; i++) {
     const year = currentYear + i;
     const growthFactor = Math.pow(1.085, i);
+    const baseRevenue = 100000000;
     
     results.push({
       year: year.toString(),
-      revenue: 394328000000 * growthFactor,
-      ebit: 119437000000 * growthFactor,
-      ebitda: 139437000000 * growthFactor,
-      freeCashFlow: 99766000000 * growthFactor,
-      operatingCashFlow: 118879000000 * growthFactor,
-      capitalExpenditure: 11322000000 * growthFactor
+      revenue: baseRevenue * growthFactor,
+      ebit: baseRevenue * 0.25 * growthFactor,
+      ebitda: baseRevenue * 0.30 * growthFactor,
+      freeCashFlow: baseRevenue * 0.20 * growthFactor,
+      operatingCashFlow: baseRevenue * 0.25 * growthFactor,
+      capitalExpenditure: -baseRevenue * 0.08 * growthFactor
     });
   }
   
@@ -145,10 +178,10 @@ const generateDefaultProjections = (): YearlyDCFData[] => {
 /**
  * Generate sensitivity analysis based on the intrinsic value
  */
-const generateSensitivityAnalysis = (
+export const generateSensitivityAnalysis = (
   intrinsicValue: number,
   discountRate: number
-): DCFSensitivityData | null => {
+): DCFSensitivityData => {
   try {
     const baseDiscount = discountRate * 100;
     const growthRates = [2.0, 2.5, 3.0, 3.5, 4.0];
@@ -193,56 +226,21 @@ const generateSensitivityAnalysis = (
     
     return {
       headers: ['Growth/Discount', ...discountRates.map(rate => rate.toFixed(1) + '%')],
-      rows: rows
+      rows
     };
   } catch (error) {
     console.error("Error generating sensitivity analysis:", error);
-    return null;
+    
+    // Return a default sensitivity table
+    return {
+      headers: ['Growth/Discount', '9.5%', '10.0%', '10.5%'],
+      rows: [
+        { growth: '2.0%', values: [95.00, 94.00, 93.00] },
+        { growth: '2.5%', values: [95.25, 94.25, 93.25] },
+        { growth: '3.0%', values: [95.50, 94.50, 93.50] },
+        { growth: '3.5%', values: [95.75, 94.75, 93.75] },
+        { growth: '4.0%', values: [96.00, 95.00, 94.00] }
+      ]
+    };
   }
-};
-
-/**
- * Create mock DCF data for use when API data is unavailable
- */
-export const createMockDCFData = (financials: any[]): FormattedDCFData => {
-  const currentPrice = financials && financials.length > 0 ? financials[0]?.price || 100 : 100;
-  const intrinsicValue = currentPrice * 1.15; // 15% upside
-  
-  // Mock assumptions
-  const assumptions: DCFAssumptionsSummary = {
-    growthRate: "8.5% (first 5 years), 3% (terminal)",
-    discountRate: "9.5%",
-    terminalMultiple: "15x",
-    taxRate: "21%"
-  };
-  
-  // Mock projections
-  const projections = generateDefaultProjections();
-  
-  // Mock sensitivity analysis
-  const mockSensitivity: DCFSensitivityData = {
-    headers: ['Growth/Discount', '9.0%', '9.5%', '10.0%'],
-    rows: [
-      { growth: '2.0%', values: [95.00, 94.00, 93.00] },
-      { growth: '2.5%', values: [95.25, 94.25, 93.25] },
-      { growth: '3.0%', values: [95.50, 94.50, 93.50] },
-      { growth: '3.5%', values: [95.75, 94.75, 93.75] },
-      { growth: '4.0%', values: [96.00, 95.00, 94.00] }
-    ]
-  };
-  
-  return {
-    intrinsicValue,
-    currentPrice,
-    assumptions,
-    projections,
-    sensitivity: mockSensitivity
-  };
-};
-
-/**
- * Get current price from financials data
- */
-export const getCurrentPrice = (financials: any[]): number => {
-  return financials && financials.length > 0 ? financials[0]?.price || 100 : 100;
 };

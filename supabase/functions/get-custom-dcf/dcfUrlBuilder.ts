@@ -21,24 +21,18 @@ export const buildDcfApiUrl = (symbol: string, type: string, params: Record<stri
       apiUrl = `${API_BASE_URLS.FMP}/v3/levered-discounted-cash-flow/${upperSymbol}`;
       break;
     case "custom-levered":
-      apiUrl = `${API_BASE_URLS.FMP_STABLE}/custom-levered-discounted-cash-flow?symbol=${upperSymbol}`;
+      apiUrl = `${API_BASE_URLS.FMP_STABLE}/v4/advanced/discounted-cash-flow-model?symbol=${upperSymbol}&type=levered`;
       break;
     case "advanced":
     default:
-      apiUrl = `${API_BASE_URLS.FMP_STABLE}/custom-discounted-cash-flow?symbol=${upperSymbol}`;
+      apiUrl = `${API_BASE_URLS.FMP_STABLE}/v4/advanced/discounted-cash-flow-model?symbol=${upperSymbol}`;
       break;
   }
   
   // Add custom parameters for custom DCF endpoints
   if ((type === "advanced" || type === "custom-levered") && params) {
     Object.entries(params).forEach(([key, value]) => {
-      if (value !== undefined && value !== null && key !== 'symbol') {
-        // Convert percentage values to decimals if needed
-        if (['longTermGrowthRate', 'costOfEquity', 'costOfDebt', 'marketRiskPremium', 'riskFreeRate'].includes(key)) {
-          if (typeof value === 'string' && !isNaN(parseFloat(value)) && parseFloat(value) > 0.2) {
-            value = (parseFloat(value) / 100).toString();
-          }
-        }
+      if (value !== undefined && value !== null && key !== 'symbol' && key !== 'type') {
         apiUrl += `&${key}=${encodeURIComponent(value)}`;
       }
     });

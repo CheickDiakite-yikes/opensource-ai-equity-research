@@ -21,7 +21,7 @@ export const parseRequestParams = async (req: Request) => {
         params[key] = value;
       }
     });
-  } else {
+  } else if (req.method === 'POST') {
     try {
       const body = await req.json();
       symbol = body.symbol;

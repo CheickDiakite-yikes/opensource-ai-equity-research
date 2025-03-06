@@ -4,6 +4,7 @@ import { corsHeaders } from "../_shared/cors.ts";
 import { buildDcfApiUrl } from "./dcfUrlBuilder.ts";
 import { getCacheHeaders } from "./cacheUtils.ts";
 import { createErrorResponse, parseRequestParams, validateRequest } from "./requestHandler.ts";
+import { fetchWithRetry } from "./fetchUtils.ts";
 
 serve(async (req) => {
   // Handle CORS preflight requests
@@ -30,72 +31,49 @@ serve(async (req) => {
     const apiUrl = buildDcfApiUrl(symbol, type, params);
     console.log(`Calling FMP API: ${apiUrl.replace(/apikey=[^&]+/, 'API_KEY_HIDDEN')}`);
     
-    // Make the API request with retries
-    let response;
-    let retries = 3;
-    let success = false;
-    
-    while (retries > 0 && !success) {
-      try {
-        response = await fetch(apiUrl, {
-          headers: {
-            'Accept': 'application/json',
-            'Cache-Control': 'no-cache'
-          },
-          // Add timeout to prevent hanging requests
-          signal: AbortSignal.timeout(15000) // 15 second timeout
-        });
-        success = true;
-      } catch (fetchError) {
-        console.error(`Fetch attempt failed (${retries} retries left):`, fetchError);
-        retries--;
-        if (retries === 0) throw fetchError;
-        // Exponential backoff
-        await new Promise(r => setTimeout(r, 1000 * (4 - retries)));
+    // Make the API request with improved error handling
+    try {
+      const response = await fetchWithRetry(apiUrl);
+      
+      // Check content type to ensure it's JSON
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        const responseText = await response.text();
+        console.error(`FMP API returned non-JSON response: ${responseText.substring(0, 200)}...`);
+        throw new Error('Invalid response format from FMP API');
       }
-    }
-    
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error(`FMP API Error (${response.status}): ${errorText}`);
-      throw new Error(`FMP API Error (${response.status}): ${errorText}`);
-    }
-    
-    // Check content type to ensure it's JSON
-    const contentType = response.headers.get('content-type');
-    if (!contentType || !contentType.includes('application/json')) {
-      const responseText = await response.text();
-      console.error(`FMP API returned non-JSON response: ${responseText.substring(0, 200)}...`);
-      throw new Error('Invalid response format from FMP API');
-    }
-    
-    // Parse the API response
-    const data = await response.json();
-    
-    // Handle empty responses
-    if (Array.isArray(data) && data.length === 0) {
-      throw new Error(`No DCF data found for symbol: ${symbol}`);
-    }
-    
-    // Format the response based on type
-    let processedData = data;
-    if (type === 'standard' && !Array.isArray(data)) {
-      processedData = [data];
-    }
-    
-    console.log(`Successfully retrieved DCF data for ${symbol}`);
-    
-    // Return the DCF data with appropriate caching headers
-    return new Response(
-      JSON.stringify(processedData),
-      { 
-        headers: { 
-          ...corsHeaders, 
-          'Content-Type': 'application/json',
-          ...getCacheHeaders(type)
-        } 
+      
+      // Parse the API response
+      const data = await response.json();
+      
+      // Handle empty responses
+      if (Array.isArray(data) && data.length === 0) {
+        throw new Error(`No DCF data found for symbol: ${symbol}`);
       }
-    );
+      
+      // Format the response based on type
+      let processedData = data;
+      if (type === 'standard' && !Array.isArray(data)) {
+        processedData = [data];
+      }
+      
+      console.log(`Successfully retrieved DCF data for ${symbol}`);
+      
+      // Return the DCF data with appropriate caching headers
+      return new Response(
+        JSON.stringify(processedData),
+        { 
+          headers: { 
+            ...corsHeaders, 
+            'Content-Type': 'application/json',
+            ...getCacheHeaders(type)
+          } 
+        }
+      );
+    } catch (fetchError) {
+      console.error(`Error fetching from FMP API: ${fetchError}`);
+      throw new Error(`Failed to fetch DCF data: ${fetchError.message}`);
+    }
   } catch (error) {
     return createErrorResponse(error);
   }
