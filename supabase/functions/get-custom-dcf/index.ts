@@ -1,10 +1,9 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { corsHeaders } from "../_shared/cors.ts";
-import { parseRequestParams, validateRequest, createErrorResponse } from "./requestHandler.ts";
 import { buildDcfApiUrl } from "./dcfUrlBuilder.ts";
 import { getCacheHeaders } from "./cacheUtils.ts";
-import { fetchWithRetry } from "./fetchUtils.ts";
+import { createErrorResponse, parseRequestParams, validateRequest } from "./requestHandler.ts";
 
 serve(async (req) => {
   // Handle CORS preflight requests
@@ -13,14 +12,13 @@ serve(async (req) => {
   }
   
   try {
-    // Parse request parameters
-    const { symbol, params, type } = await parseRequestParams(req);
+    // Parse and validate request parameters
+    const { symbol, type, params } = await parseRequestParams(req);
     
     if (!symbol) {
       throw new Error("Symbol is required");
     }
     
-    // Validate request
     const validation = validateRequest(symbol);
     if (!validation.isValid) {
       return validation.response;
@@ -29,17 +27,33 @@ serve(async (req) => {
     console.log(`Processing DCF request for ${symbol}, type: ${type}`);
     
     // Build the API URL
-    const apiUrl = buildDcfApiUrl(symbol!, type!, params);
-    
+    const apiUrl = buildDcfApiUrl(symbol, type, params);
     console.log(`Calling FMP API: ${apiUrl.replace(/apikey=[^&]+/, 'API_KEY_HIDDEN')}`);
     
-    // Fetch data from FMP API with retries
-    const response = await fetchWithRetry(apiUrl, {
-      headers: {
-        'Accept': 'application/json',
-        'Cache-Control': 'no-cache'
+    // Make the API request with retries
+    let response;
+    let retries = 3;
+    let success = false;
+    
+    while (retries > 0 && !success) {
+      try {
+        response = await fetch(apiUrl, {
+          headers: {
+            'Accept': 'application/json',
+            'Cache-Control': 'no-cache'
+          },
+          // Add timeout to prevent hanging requests
+          signal: AbortSignal.timeout(15000) // 15 second timeout
+        });
+        success = true;
+      } catch (fetchError) {
+        console.error(`Fetch attempt failed (${retries} retries left):`, fetchError);
+        retries--;
+        if (retries === 0) throw fetchError;
+        // Exponential backoff
+        await new Promise(r => setTimeout(r, 1000 * (4 - retries)));
       }
-    }, 3);
+    }
     
     if (!response.ok) {
       const errorText = await response.text();
@@ -57,23 +71,19 @@ serve(async (req) => {
     
     // Parse the API response
     const data = await response.json();
-    console.log(`Raw API response type: ${typeof data}, is array: ${Array.isArray(data)}`);
     
-    // Process the response based on the type of DCF
-    let processedData = data;
-    
-    // For standard DCF which returns a single object, wrap it in an array for consistency
-    if (type === 'standard' && !Array.isArray(data) && typeof data === 'object') {
-      processedData = [data];
-      console.log('Wrapped single object response in array for consistency');
-    }
-    
-    // If we got an empty array, throw an error
-    if (Array.isArray(processedData) && processedData.length === 0) {
+    // Handle empty responses
+    if (Array.isArray(data) && data.length === 0) {
       throw new Error(`No DCF data found for symbol: ${symbol}`);
     }
     
-    console.log(`Received DCF data for ${symbol}, type: ${type}`);
+    // Format the response based on type
+    let processedData = data;
+    if (type === 'standard' && !Array.isArray(data)) {
+      processedData = [data];
+    }
+    
+    console.log(`Successfully retrieved DCF data for ${symbol}`);
     
     // Return the DCF data with appropriate caching headers
     return new Response(
@@ -82,12 +92,11 @@ serve(async (req) => {
         headers: { 
           ...corsHeaders, 
           'Content-Type': 'application/json',
-          ...getCacheHeaders(type!)
+          ...getCacheHeaders(type)
         } 
       }
     );
-    
   } catch (error) {
-    return createErrorResponse(error instanceof Error ? error : new Error(String(error)));
+    return createErrorResponse(error);
   }
 });

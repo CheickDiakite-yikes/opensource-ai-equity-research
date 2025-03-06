@@ -1,5 +1,5 @@
 
-import { CustomDCFParams, CustomDCFResult, YearlyDCFData } from "@/types/ai-analysis/dcfTypes";
+import { CustomDCFParams, YearlyDCFData } from "@/types/ai-analysis/dcfTypes";
 import { toast } from "@/components/ui/use-toast";
 
 /**

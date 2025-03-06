@@ -11,9 +11,9 @@ import { Button } from "@/components/ui/button";
 import { RefreshCw } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Info } from "lucide-react";
-import { createMockDCFData, prepareDCFData } from "./utils/dcfDataUtils";
+import { createMockDCFData, prepareDCFData } from "./utils/dcfDataFormatter";
 import { FormattedDCFData } from "@/types/ai-analysis/dcfTypes";
-import { getCurrentPrice } from "./utils/priceUtils";
+import { getCurrentPrice } from "./utils/dcfDataFormatter";
 
 interface AutomaticDCFSectionProps {
   financials: any[];

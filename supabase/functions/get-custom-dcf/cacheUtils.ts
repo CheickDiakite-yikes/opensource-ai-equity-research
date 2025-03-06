@@ -14,7 +14,7 @@ export const getCacheHeaders = (type: string) => {
       break;
     case 'custom-levered':
     case 'advanced':
-      // Cache custom DCF for shorter period (1 hour)
+      // Cache custom DCF for 1 hour
       cacheHeaders['Cache-Control'] = 'public, max-age=3600';
       break;
     default:

@@ -1,82 +1,112 @@
 
 /**
- * Format large numbers to a more readable format (e.g., 1,000,000 to $1M)
+ * Format currency values
  */
-export function formatCurrency(value: number | null | undefined): string {
-  if (value === null || value === undefined || Number.isNaN(value)) return 'N/A';
+export const formatCurrency = (value: number, options?: { 
+  currency?: string, 
+  minimumFractionDigits?: number,
+  maximumFractionDigits?: number,
+  compact?: boolean 
+}): string => {
+  if (value === undefined || value === null || isNaN(value)) {
+    return '$0.00';
+  }
+  
+  // Default options
+  const currency = options?.currency || 'USD';
+  const minimumFractionDigits = options?.minimumFractionDigits ?? 2;
+  const maximumFractionDigits = options?.maximumFractionDigits ?? 2;
+  
+  // Format based on magnitude
+  if (options?.compact === true || Math.abs(value) >= 1000000) {
+    return formatLargeNumber(value, {
+      style: 'currency',
+      currency
+    });
+  }
+  
+  // Regular currency formatting
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency,
+    minimumFractionDigits,
+    maximumFractionDigits
+  }).format(value);
+};
+
+/**
+ * Format large numbers with K, M, B, T suffixes
+ */
+export const formatLargeNumber = (value: number, options?: Intl.NumberFormatOptions): string => {
+  if (value === undefined || value === null || isNaN(value)) {
+    return '$0';
+  }
+  
+  // Default formatting options
+  const formatOptions: Intl.NumberFormatOptions = {
+    style: options?.style || 'decimal',
+    minimumFractionDigits: options?.minimumFractionDigits || 1,
+    maximumFractionDigits: options?.maximumFractionDigits || 1,
+    ...options
+  };
+  
+  // Determine the appropriate suffix and divisor
+  let suffix = '';
+  let divisor = 1;
   
   const absValue = Math.abs(value);
   
-  if (absValue >= 1_000_000_000) {
-    return `$${(value / 1_000_000_000).toFixed(2)}B`;
-  } else if (absValue >= 1_000_000) {
-    return `$${(value / 1_000_000).toFixed(2)}M`;
-  } else if (absValue >= 1_000) {
-    return `$${(value / 1_000).toFixed(2)}K`;
-  } else {
-    return `$${value.toFixed(2)}`;
+  if (absValue >= 1e12) {
+    // Trillions
+    suffix = 'T';
+    divisor = 1e12;
+  } else if (absValue >= 1e9) {
+    // Billions
+    suffix = 'B';
+    divisor = 1e9;
+  } else if (absValue >= 1e6) {
+    // Millions
+    suffix = 'M';
+    divisor = 1e6;
+  } else if (absValue >= 1e3) {
+    // Thousands
+    suffix = 'K';
+    divisor = 1e3;
   }
-}
+  
+  // Format the number
+  const formattedValue = new Intl.NumberFormat('en-US', formatOptions).format(value / divisor);
+  
+  return formattedValue + suffix;
+};
 
 /**
  * Format percentage values
  */
-export function formatPercentage(value: number | null | undefined): string {
-  if (value === null || value === undefined || Number.isNaN(value)) return 'N/A';
-  return `${value.toFixed(2)}%`;
-}
-
-/**
- * Format number with commas for thousands separator
- */
-export function formatNumber(value: number | null | undefined): string {
-  if (value === null || value === undefined || Number.isNaN(value)) return 'N/A';
-  return value.toLocaleString(undefined, { maximumFractionDigits: 2 });
-}
-
-/**
- * Format date from financial statements
- */
-export function formatDate(dateString: string): string {
-  try {
-    const date = new Date(dateString);
-    return date.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
-  } catch {
-    return dateString || 'N/A';
+export const formatPercentage = (value: number, minimumFractionDigits = 1, maximumFractionDigits = 2): string => {
+  if (value === undefined || value === null || isNaN(value)) {
+    return '0%';
   }
-}
+  
+  // Ensure value is displayed as percentage (multiply by 100 if it's in decimal form)
+  const displayValue = value > 1 ? value : value * 100;
+  
+  return new Intl.NumberFormat('en-US', {
+    style: 'percent',
+    minimumFractionDigits,
+    maximumFractionDigits,
+    // Need to divide by 100 since we're using percent style which automatically multiplies by 100
+    // and we might have already converted the value above if it was a decimal
+  }).format(displayValue / 100);
+};
 
 /**
- * Get a suggested color based on performance
+ * Format number with commas
  */
-export function getPerformanceColor(value: number, isPercentage: boolean = true): string {
-  // For percentages (growth rates, ratios expressed as percentages)
-  if (isPercentage) {
-    if (value >= 25) return '#22c55e'; // green-500
-    if (value >= 10) return '#4ade80'; // green-400
-    if (value >= 0) return '#86efac'; // green-300
-    if (value >= -10) return '#fca5a5'; // red-300
-    if (value >= -25) return '#f87171'; // red-400
-    return '#ef4444'; // red-500
-  } 
-  // For ratios and non-percentage values
-  else {
-    if (value >= 3) return '#22c55e'; // green-500
-    if (value >= 2) return '#4ade80'; // green-400
-    if (value >= 1) return '#86efac'; // green-300
-    if (value >= 0.5) return '#fca5a5'; // red-300
-    if (value >= 0.25) return '#f87171'; // red-400
-    return '#ef4444'; // red-500
+export const formatNumber = (value: number): string => {
+  if (value === undefined || value === null || isNaN(value)) {
+    return '0';
   }
-}
-
-/**
- * Determine the growth trend direction and strength
- */
-export function determineGrowthTrend(cagr: number): 'strong-positive' | 'positive' | 'neutral' | 'negative' | 'strong-negative' {
-  if (cagr >= 25) return 'strong-positive';
-  if (cagr >= 10) return 'positive';
-  if (cagr >= -5) return 'neutral';
-  if (cagr >= -15) return 'negative';
-  return 'strong-negative';
-}
+  
+  return new Intl.NumberFormat('en-US').format(value);
+};

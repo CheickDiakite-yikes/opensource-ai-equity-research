@@ -1,9 +1,8 @@
 
 import React from "react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { AlertTriangle } from "lucide-react";
+import { AlertTriangle, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { RefreshCw } from "lucide-react";
 
 interface DCFErrorDisplayProps {
   errors: string[];

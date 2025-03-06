@@ -6,39 +6,39 @@ import { FMP_API_KEY } from "../_shared/constants.ts";
  * Parse request parameters from GET or POST requests
  */
 export const parseRequestParams = async (req: Request) => {
-  let symbol, params, type;
+  let symbol = null;
+  let type = 'standard';
+  let params = {};
   
   if (req.method === 'GET') {
     const url = new URL(req.url);
     symbol = url.searchParams.get('symbol');
-    type = url.searchParams.get('type') || 'advanced';
+    type = url.searchParams.get('type') || 'standard';
     
     // Extract all other parameters for the API
-    params = {};
     url.searchParams.forEach((value, key) => {
       if (key !== 'symbol' && key !== 'type') {
         params[key] = value;
       }
     });
   } else {
-    // Parse the request body for POST requests
     try {
       const body = await req.json();
       symbol = body.symbol;
+      type = body.type || 'standard';
       params = body.params || {};
-      type = body.type || "advanced";
     } catch (error) {
       console.error("Error parsing request body:", error);
       throw new Error("Invalid request body: Could not parse JSON");
     }
   }
   
-  // Make sure we have a valid type
-  if (!type || !['standard', 'levered', 'custom-levered', 'advanced'].includes(type)) {
-    type = 'advanced';
+  // Normalize type to ensure it's one of our supported types
+  if (!['standard', 'levered', 'custom-levered', 'advanced'].includes(type)) {
+    type = 'standard';
   }
   
-  return { symbol, params, type };
+  return { symbol, type, params };
 };
 
 /**
@@ -70,20 +70,23 @@ export const validateRequest = (symbol: string | null) => {
 };
 
 /**
- * Create error response
+ * Create a standardized error response
  */
-export const createErrorResponse = (error: Error) => {
-  console.error("Error in get-custom-dcf function:", error);
+export const createErrorResponse = (error: unknown) => {
+  const errorMessage = error instanceof Error ? error.message : String(error);
+  console.error("Error in get-custom-dcf function:", errorMessage);
   
   return new Response(
     JSON.stringify({ 
-      error: error.message || "Failed to fetch DCF data",
-      details: "An error occurred while fetching DCF data from the FMP API"
+      error: errorMessage,
+      details: "An error occurred while fetching DCF data from the FMP API",
+      mockData: true
     }),
     { 
       headers: { 
         ...corsHeaders, 
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
+        'X-Mock-Data': 'true'
       },
       status: 500
     }

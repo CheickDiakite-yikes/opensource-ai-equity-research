@@ -1,6 +1,6 @@
 
 import React from "react";
-import { AIDCFSuggestion } from "@/types/ai-analysis/dcfTypes";
+import { Card } from "@/components/ui/card";
 import { formatCurrency, formatPercentage } from "@/utils/financial/formatUtils";
 
 export interface DCFValuationSummaryProps {

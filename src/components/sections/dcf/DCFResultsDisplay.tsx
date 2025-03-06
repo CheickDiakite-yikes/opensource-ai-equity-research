@@ -1,9 +1,9 @@
 
 import React from "react";
-import { CustomDCFResult, YearlyDCFData } from "@/types";
-import { formatCurrency, formatLargeNumber, formatPercentage } from "@/lib/utils";
+import { CustomDCFResult, YearlyDCFData } from "@/types/ai-analysis/dcfTypes";
+import { formatCurrency, formatLargeNumber, formatPercentage } from "@/utils/financial/formatUtils";
 import { ArrowUp, ArrowDown } from "lucide-react";
-import { DCFType } from "@/services/api/analysis/dcfService";
+import { DCFType } from "@/services/api/analysis/dcf/types";
 import {
   Table,
   TableBody,

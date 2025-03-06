@@ -7,7 +7,6 @@ import {
   FormattedDCFData,
   DCFAssumptionsSummary
 } from "@/types/ai-analysis/dcfTypes";
-import { createMockSensitivityAnalysis } from "./mockDCFGenerator";
 
 /**
  * Create formatted DCF data from API results
@@ -200,4 +199,50 @@ const generateSensitivityAnalysis = (
     console.error("Error generating sensitivity analysis:", error);
     return null;
   }
+};
+
+/**
+ * Create mock DCF data for use when API data is unavailable
+ */
+export const createMockDCFData = (financials: any[]): FormattedDCFData => {
+  const currentPrice = financials && financials.length > 0 ? financials[0]?.price || 100 : 100;
+  const intrinsicValue = currentPrice * 1.15; // 15% upside
+  
+  // Mock assumptions
+  const assumptions: DCFAssumptionsSummary = {
+    growthRate: "8.5% (first 5 years), 3% (terminal)",
+    discountRate: "9.5%",
+    terminalMultiple: "15x",
+    taxRate: "21%"
+  };
+  
+  // Mock projections
+  const projections = generateDefaultProjections();
+  
+  // Mock sensitivity analysis
+  const mockSensitivity: DCFSensitivityData = {
+    headers: ['Growth/Discount', '9.0%', '9.5%', '10.0%'],
+    rows: [
+      { growth: '2.0%', values: [95.00, 94.00, 93.00] },
+      { growth: '2.5%', values: [95.25, 94.25, 93.25] },
+      { growth: '3.0%', values: [95.50, 94.50, 93.50] },
+      { growth: '3.5%', values: [95.75, 94.75, 93.75] },
+      { growth: '4.0%', values: [96.00, 95.00, 94.00] }
+    ]
+  };
+  
+  return {
+    intrinsicValue,
+    currentPrice,
+    assumptions,
+    projections,
+    sensitivity: mockSensitivity
+  };
+};
+
+/**
+ * Get current price from financials data
+ */
+export const getCurrentPrice = (financials: any[]): number => {
+  return financials && financials.length > 0 ? financials[0]?.price || 100 : 100;
 };

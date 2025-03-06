@@ -2,11 +2,10 @@
 import React from "react";
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Info, RefreshCw, ArrowRight } from "lucide-react";
+import { Info, RefreshCw } from "lucide-react";
 import { motion } from "framer-motion";
-import { formatCurrency, formatLargeNumber, formatPercentage } from "@/lib/utils";
-import { CustomDCFResult, YearlyDCFData } from "@/types";
-import { DCFType } from "@/services/api/analysis/dcfService";
+import { CustomDCFResult, YearlyDCFData } from "@/types/ai-analysis/dcfTypes";
+import { DCFType } from "@/services/api/analysis/dcf/types";
 import DCFInputForm from "./DCFInputForm";
 import DCFResultsDisplay from "./DCFResultsDisplay";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";

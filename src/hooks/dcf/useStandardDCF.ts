@@ -47,7 +47,7 @@ export const useStandardDCF = (symbol: string) => {
       } else {
         console.error("Invalid or empty result from standard DCF:", apiResult);
         
-        setError("Failed to calculate DCF. Please try again later.");
+        setError("Failed to calculate DCF. Using estimated values for the calculation.");
         
         toast({
           title: "DCF Calculation Failed",
@@ -61,7 +61,7 @@ export const useStandardDCF = (symbol: string) => {
       const errorMessage = err instanceof Error ? err.message : 'Unknown error';
       console.error("Error calculating standard DCF:", errorMessage);
       
-      setError(`API error (get-custom-dcf): ${errorMessage}`);
+      setError(`Failed to retrieve DCF data: ${errorMessage}`);
       
       toast({
         title: "DCF Calculation Failed",
