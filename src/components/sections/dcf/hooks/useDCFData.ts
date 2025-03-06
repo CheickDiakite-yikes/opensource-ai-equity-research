@@ -56,6 +56,10 @@ export const useDCFData = (symbol: string, financials: any[]) => {
         // Explicitly handle potential API not found errors
         if (err instanceof Error && err.message.includes("404")) {
           addError(new Error("DCF API endpoint not found. The service may not be deployed or configured correctly."));
+        } else if (err instanceof Error) {
+          addError(new Error(`Error initiating DCF calculation: ${err.message}`));
+        } else {
+          addError(new Error(`Error initiating DCF calculation: ${String(err)}`));
         }
       }
       
@@ -89,8 +93,13 @@ export const useDCFData = (symbol: string, financials: any[]) => {
     } catch (err) {
       console.error("Error in refresh DCF flow:", err);
       setUsingMockData(true);
+      if (err instanceof Error) {
+        addError(new Error(`Error refreshing DCF: ${err.message}`));
+      } else {
+        addError(new Error(`Error refreshing DCF: ${String(err)}`));
+      }
     }
-  }, [handleRefreshAssumptions, assumptions, calculateDCFWithAIAssumptions, financials, setUsingMockData]);
+  }, [handleRefreshAssumptions, assumptions, calculateDCFWithAIAssumptions, financials, setUsingMockData, addError]);
 
   // Determine whether to use mock data
   const shouldUseMockData = 
