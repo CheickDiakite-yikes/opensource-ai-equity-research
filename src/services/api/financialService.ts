@@ -7,24 +7,30 @@ import {
   BalanceSheetTTM,
   CashFlowStatementTTM
 } from "@/types/financial/ttm";
+import { KeyRatioTTM as TypedKeyRatioTTM } from "@/types/financial/metrics/keyRatioTTM";
 
-// Define KeyRatioTTM interface
+// Define KeyRatioTTM interface that matches the one in types
 export interface KeyRatioTTM {
   symbol: string;
   date: string;
-  period: string;
+  period?: string;
   grossProfitMarginTTM: number;
   operatingProfitMarginTTM: number;
   netProfitMarginTTM: number;
   returnOnAssetsTTM: number;
   returnOnEquityTTM: number;
-  returnOnCapitalEmployedTTM: number;
+  returnOnCapitalEmployedTTM?: number;
+  debtToEquityRatioTTM: number;
   currentRatioTTM: number;
   quickRatioTTM: number;
-  cashRatioTTM: number;
-  debtToEquityTTM: number;
-  debtToAssetsTTM: number;
-  interestCoverageTTM: number;
+  cashRatioTTM?: number;
+  priceToEarningsRatioTTM: number;
+  priceToBookRatioTTM: number;
+  dividendYieldTTM: number;
+  dividendYieldPercentageTTM: number;
+  debtToEquityTTM?: number;
+  debtToAssetsTTM?: number;
+  interestCoverageTTM?: number;
   [key: string]: any;
 }
 

@@ -18,6 +18,8 @@ export * from './documentsService';
 export * from './marketDataService';
 // Rename fetchCompanyNews to avoid name collision
 export { fetchCompanyNews as fetchCompanyNewsArticles } from './marketData/newsService';
+// Rename fetchCompanyPeers to avoid name collision with profileService
+export { fetchCompanyPeers as fetchCompanyPeerSymbols } from './marketData/stockDataService';
 
 // Export enhancedApiService
 export * from './enhancedApiService';
