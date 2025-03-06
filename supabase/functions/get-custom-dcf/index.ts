@@ -7,8 +7,11 @@ import { createErrorResponse, parseRequestParams, validateRequest, createRealCom
 import { fetchWithRetry } from "./fetchUtils.ts";
 
 serve(async (req) => {
+  console.log(`DCF request received: ${req.method} ${new URL(req.url).pathname}`);
+  
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
+    console.log('Handling CORS preflight request');
     return new Response(null, { headers: corsHeaders });
   }
   
@@ -16,16 +19,17 @@ serve(async (req) => {
     // Parse and validate request parameters
     const { symbol, type, params } = await parseRequestParams(req);
     
+    console.log(`Processing DCF request for symbol: ${symbol}, type: ${type}, params:`, params);
+    
     if (!symbol) {
       throw new Error("Symbol is required");
     }
     
     const validation = validateRequest(symbol);
     if (!validation.isValid) {
+      console.error(`Invalid request: ${validation.response.status} - ${await validation.response.text()}`);
       return validation.response;
     }
-    
-    console.log(`Processing DCF request for ${symbol}, type: ${type}`);
     
     // Build the API URL
     const apiUrl = buildDcfApiUrl(symbol, type, params);
@@ -45,10 +49,15 @@ serve(async (req) => {
       
       // Parse the API response
       const data = await response.json();
+      console.log(`Received response data type: ${typeof data}, isArray: ${Array.isArray(data)}`);
+      
+      if (data && typeof data === 'object' && 'Error Message' in data) {
+        console.error(`FMP API returned error: ${data['Error Message']}`);
+        throw new Error(`API Error: ${data['Error Message']}`);
+      }
       
       // Handle empty responses
       if (Array.isArray(data) && data.length === 0) {
-        // Return more realistic mock data instead of generic mock
         console.log(`No DCF data found for symbol: ${symbol}, returning realistic mock data`);
         const mockData = createRealCompanyMockData(symbol);
         
@@ -71,7 +80,7 @@ serve(async (req) => {
         processedData = [data];
       }
       
-      console.log(`Successfully retrieved DCF data for ${symbol}`);
+      console.log(`Successfully retrieved DCF data for ${symbol}, returning ${Array.isArray(processedData) ? processedData.length : 1} records`);
       
       // Return the DCF data with appropriate caching headers
       return new Response(
@@ -85,7 +94,9 @@ serve(async (req) => {
         }
       );
     } catch (fetchError) {
-      console.error(`Error fetching from FMP API: ${fetchError}`);
+      console.error(`Error fetching from FMP API: ${fetchError.message}`);
+      console.error(fetchError.stack || 'No stack trace available');
+      
       // Return mock data with error status but using more realistic data
       const mockData = createRealCompanyMockData(symbol);
       mockData[0].error = fetchError.message;
@@ -103,6 +114,7 @@ serve(async (req) => {
       );
     }
   } catch (error) {
+    console.error(`Unhandled error in DCF function:`, error);
     return createErrorResponse(error);
   }
 });

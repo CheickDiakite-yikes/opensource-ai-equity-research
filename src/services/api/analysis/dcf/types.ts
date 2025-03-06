@@ -36,6 +36,10 @@ export const formatDCFParameters = (params: CustomDCFParams): Record<string, str
     if (value !== undefined && value !== null) {
       // Get the mapped parameter name, or use the original
       const apiParam = paramMap[key] || key;
+      
+      // Log parameter mapping for debugging
+      console.log(`Mapping parameter ${key} to API param ${apiParam} with value ${value}`);
+      
       formattedParams[apiParam] = String(value);
     }
   });
