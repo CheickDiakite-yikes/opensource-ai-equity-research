@@ -1,5 +1,32 @@
-
 import { supabase } from "@/integrations/supabase/client";
+
+/**
+ * Generic retry mechanism for API calls
+ */
+export const withRetry = async <T>(
+  fn: () => Promise<T>,
+  maxRetries: number = 2,
+  delay: number = 1000
+): Promise<T> => {
+  let lastError: Error;
+  
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      return await fn();
+    } catch (error) {
+      console.error(`Attempt ${attempt}/${maxRetries} failed:`, error);
+      lastError = error instanceof Error ? error : new Error(String(error));
+      
+      if (attempt < maxRetries) {
+        const waitTime = delay * Math.pow(2, attempt - 1);
+        console.log(`Waiting ${waitTime}ms before retry...`);
+        await new Promise(resolve => setTimeout(resolve, waitTime));
+      }
+    }
+  }
+  
+  throw lastError!;
+};
 
 /**
  * Invoke a Supabase Edge Function
