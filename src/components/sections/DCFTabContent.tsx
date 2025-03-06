@@ -6,8 +6,10 @@ import CustomDCFSection from "./dcf/CustomDCFSection";
 import { useCustomDCF } from "@/hooks/dcf/useCustomDCF";
 import { DCFType } from "@/services/api/analysis/dcf";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Calculator, Sliders, TrendingUp, Lock, AlertTriangle } from "lucide-react";
+import { Calculator, Sliders, TrendingUp, Lock, AlertTriangle, Bug } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 
 interface DCFTabContentProps {
   financials: any[];
@@ -16,16 +18,17 @@ interface DCFTabContentProps {
 
 const DCFTabContent: React.FC<DCFTabContentProps> = ({ financials, symbol }) => {
   const [activeTab, setActiveTab] = useState<string>("automatic");
-  const [dcfModel, setDcfModel] = useState<DCFType>(DCFType.CUSTOM_ADVANCED);
+  const [dcfModel, setDcfModel] = useState<DCFType>(DCFType.LEVERED);
   const [apiResponseDebug, setApiResponseDebug] = useState<any>(null);
+  const [showDebugPanel, setShowDebugPanel] = useState<boolean>(false);
   
-  // Custom DCF inputs state with improved default values
+  // Custom DCF inputs state with FMP default values
   const [customParams, setCustomParams] = useState({
     // Growth parameters (percentages)
-    revenueGrowth: "8.5",  // Updated to match FMP default values
+    revenueGrowth: "8.5",  // Use FMP default values
     ebitdaMargin: "30.0",
-    capexPercent: "5.0",   // Updated to be more realistic
-    taxRate: "21.0",       // Updated to match current corporate tax rate
+    capexPercent: "5.0",   
+    taxRate: "21.0",       // Current corporate tax rate
     
     // Working capital parameters
     depreciationAndAmortizationPercent: "3.5",
@@ -37,9 +40,9 @@ const DCFTabContent: React.FC<DCFTabContentProps> = ({ financials, symbol }) => 
     operatingCashFlowPercent: "28.0",
     sellingGeneralAndAdministrativeExpensesPercent: "6.5",
     
-    // Rate parameters
-    longTermGrowthRate: "4.0",  // Updated to match the screenshot value
-    costOfEquity: "9.7",        // Updated to match the WACC from screenshot
+    // Rate parameters - as shown in the screenshot
+    longTermGrowthRate: "4.0",  
+    costOfEquity: "9.7",        
     costOfDebt: "3.5",
     marketRiskPremium: "4.7",
     riskFreeRate: "3.6",
@@ -57,7 +60,7 @@ const DCFTabContent: React.FC<DCFTabContentProps> = ({ financials, symbol }) => 
     projectedData,
     isCalculating, 
     error,
-    rawApiResponse  // Added to capture raw API responses for debugging
+    rawApiResponse
   } = useCustomDCF(symbol);
   
   const currentPrice = financials[0]?.price || 100;
@@ -65,15 +68,16 @@ const DCFTabContent: React.FC<DCFTabContentProps> = ({ financials, symbol }) => 
   useEffect(() => {
     // Store the raw API response for debugging
     if (rawApiResponse) {
-      console.log("Raw DCF API Response:", rawApiResponse);
+      console.log("DCFTabContent - Raw DCF API Response:", rawApiResponse);
       setApiResponseDebug(rawApiResponse);
     }
   }, [rawApiResponse]);
   
-  // Automatically calculate standard DCF when component mounts
+  // Automatically calculate levered DCF when component mounts
   useEffect(() => {
     if (symbol) {
-      calculateStandardDCF();
+      console.log(`DCFTabContent - Auto-calculating levered DCF for ${symbol}`);
+      calculateLeveredDCF();
     }
   }, [symbol]);
   
@@ -138,6 +142,17 @@ const DCFTabContent: React.FC<DCFTabContentProps> = ({ financials, symbol }) => 
                 Estimate {symbol}'s intrinsic value based on projected future cash flows discounted to present value.
               </p>
             </div>
+            
+            <div className="flex items-center space-x-2">
+              <Switch 
+                id="debug-mode" 
+                checked={showDebugPanel}
+                onCheckedChange={setShowDebugPanel}
+              />
+              <Label htmlFor="debug-mode" className="text-sm text-blue-700 flex items-center">
+                <Bug className="h-3 w-3 mr-1" /> Debug Mode
+              </Label>
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -188,15 +203,35 @@ const DCFTabContent: React.FC<DCFTabContentProps> = ({ financials, symbol }) => 
         </TabsContent>
       </Tabs>
       
-      {apiResponseDebug && (
-        <Card className="bg-gray-50 border-gray-200 mt-4">
+      {showDebugPanel && apiResponseDebug && (
+        <Card className="bg-gray-50 border-gray-300 mt-4">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">API Response Debug Information</CardTitle>
+            <CardTitle className="text-sm font-medium flex items-center">
+              <Bug className="h-4 w-4 mr-2 text-gray-600" /> 
+              API Response Debug Information
+            </CardTitle>
             <CardDescription className="text-xs">Raw data from the DCF API for troubleshooting</CardDescription>
           </CardHeader>
           <CardContent className="pt-0">
             <div className="bg-gray-100 p-3 rounded text-xs font-mono overflow-auto max-h-60">
               <pre>{JSON.stringify(apiResponseDebug, null, 2)}</pre>
+            </div>
+            <div className="mt-2 text-xs text-gray-500">
+              <p>
+                <strong>API Endpoint:</strong> {DCFType.LEVERED === dcfModel ? 
+                  "v4/advanced_levered_discounted_cash_flow" : 
+                  DCFType.CUSTOM_LEVERED === dcfModel ? 
+                  "v4/advanced_levered_discounted_cash_flow (with custom params)" : 
+                  DCFType.CUSTOM_ADVANCED === dcfModel ? 
+                  "v4/advanced_discounted_cash_flow (with custom params)" : 
+                  "v3/discounted-cash-flow"}
+              </p>
+              <p>
+                <strong>Is Mock Data:</strong> {customDCFResult?.mockData ? "Yes" : "No"}
+              </p>
+              <p>
+                <strong>Timestamp:</strong> {new Date().toISOString()}
+              </p>
             </div>
           </CardContent>
         </Card>

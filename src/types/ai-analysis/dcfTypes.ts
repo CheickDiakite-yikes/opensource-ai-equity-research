@@ -98,10 +98,13 @@ export interface YearlyDCFData {
   capitalExpenditure: number;
 }
 
-// Updated to match the exact structure from the FMP API response
+// Updated to match the exact structure from the FMP API v4 responses
 export interface CustomDCFResult {
+  // Identification
   year: string;
   symbol: string;
+  
+  // Financial data
   revenue: number;
   revenuePercentage: number;
   ebitda: number;
@@ -111,35 +114,54 @@ export interface CustomDCFResult {
   depreciation: number;
   capitalExpenditure: number;
   capitalExpenditurePercentage: number;
+  
+  // Stock data
   price: number;
   beta: number;
   dilutedSharesOutstanding: number;
+  
+  // Cost of capital components
   costofDebt: number;
   taxRate: number;
   afterTaxCostOfDebt: number;
   riskFreeRate: number;
   marketRiskPremium: number;
   costOfEquity: number;
+  
+  // Capital structure
   totalDebt: number;
   totalEquity: number;
   totalCapital: number;
   debtWeighting: number;
   equityWeighting: number;
   wacc: number;
+  
+  // Cash flow data
   operatingCashFlow: number;
-  pvLfcf: number;
-  sumPvLfcf: number;
-  longTermGrowthRate: number;
+  operatingCashFlowPercentage: number;
+  pvLfcf?: number;
+  sumPvLfcf?: number;
   freeCashFlow: number;
+  freeCashFlowT1?: number;
+  
+  // Terminal value and enterprise value
+  longTermGrowthRate: number;
   terminalValue: number;
   presentTerminalValue: number;
   enterpriseValue: number;
+  
+  // Equity value calculation
   netDebt: number;
   equityValue: number;
   equityValuePerShare: number;
-  freeCashFlowT1: number;
-  operatingCashFlowPercentage: number;
-  cashAndCashEquivalents: number;
+  
+  // Balance sheet items
+  cashAndCashEquivalents?: number;
+  
+  // For error handling and mock data identification
+  mockData?: boolean;
+  error?: string;
+  dcf?: number; // For backward compatibility
 }
 
 // DCF Sensitivity Analysis data structure
