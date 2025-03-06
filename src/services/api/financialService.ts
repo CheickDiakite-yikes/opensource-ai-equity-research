@@ -1,13 +1,54 @@
-
 import { invokeSupabaseFunction } from "./core/edgeFunctions";
 import { withRetry } from "./core/retryStrategy";
 import { IncomeStatement, BalanceSheet, CashFlowStatement, KeyRatio } from "@/types";
 import { 
   IncomeStatementTTM,
   BalanceSheetTTM,
-  CashFlowStatementTTM,
-  KeyRatioTTM
+  CashFlowStatementTTM
 } from "@/types/financial/ttm";
+
+interface KeyRatioTTM {
+  symbol: string;
+  date: string;
+  period: string;
+  [key: string]: any;
+}
+
+/**
+ * Fetch all financial data for a company in parallel
+ */
+export const fetchAllFinancialData = async (symbol: string) => {
+  const [
+    incomeStatements,
+    balanceSheets,
+    cashFlowStatements,
+    keyRatios,
+    incomeStatementTTM,
+    balanceSheetTTM,
+    cashFlowTTM,
+    keyRatiosTTM
+  ] = await Promise.all([
+    fetchIncomeStatements(symbol).catch(() => []),
+    fetchBalanceSheets(symbol).catch(() => []),
+    fetchCashFlowStatements(symbol).catch(() => []),
+    fetchKeyRatios(symbol).catch(() => []),
+    fetchIncomeStatementTTM(symbol).catch(() => null),
+    fetchBalanceSheetTTM(symbol).catch(() => null),
+    fetchCashFlowStatementTTM(symbol).catch(() => null),
+    fetchKeyRatiosTTM(symbol).catch(() => null)
+  ]);
+
+  return {
+    income: incomeStatements,
+    balance: balanceSheets,
+    cashflow: cashFlowStatements,
+    ratios: keyRatios,
+    incomeTTM: incomeStatementTTM,
+    balanceTTM: balanceSheetTTM,
+    cashflowTTM: cashFlowTTM,
+    ratiosTTM: keyRatiosTTM
+  };
+};
 
 /**
  * Fetch income statements for a company

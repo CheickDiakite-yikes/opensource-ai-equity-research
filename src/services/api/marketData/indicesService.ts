@@ -1,5 +1,5 @@
 
-import { invokeSupabaseFunction } from "../base";
+import { invokeSupabaseFunction } from "../core/edgeFunctions";
 
 export interface MarketIndex {
   symbol: string;

@@ -1,6 +1,9 @@
 
-// Re-export everything from the individual modules
-export * from './newsService';
-export * from './indicesService'; 
+// Re-export indicesService and stockDataService
+export * from './indicesService';
 export * from './stockDataService';
 export * from './indicesDataService';
+
+// Export newsService without duplicates
+export * from './newsService';
+// Remove duplicate export of fetchCompanyNews (it will come from newsService)

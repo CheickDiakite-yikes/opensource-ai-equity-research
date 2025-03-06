@@ -1,5 +1,6 @@
 
-import { invokeSupabaseFunction, withRetry } from "../../core/retryStrategy";
+import { invokeSupabaseFunction } from "../../core/edgeFunctions";
+import { withRetry } from "../../core/retryStrategy";
 import { EarningsCall } from "@/types";
 import { triggerDocumentCaching } from "../base";
 

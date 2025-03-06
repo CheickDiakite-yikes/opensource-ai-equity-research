@@ -3,6 +3,17 @@ import { invokeSupabaseFunction } from "../core/edgeFunctions";
 import { withRetry } from "../core/retryStrategy";
 import { NewsArticle } from "@/types/news/newsTypes";
 
+// Define MarketNewsArticle type used in components
+export interface MarketNewsArticle extends NewsArticle {
+  headline?: string;
+  datetime?: number;
+  category?: string;
+  related?: string;
+  source?: string;
+  summary?: string;
+  site?: string;
+}
+
 /**
  * Fetch news for a specific company
  */
@@ -36,14 +47,14 @@ export const fetchCompanyNews = async (
  * Fetch general market news
  */
 export const fetchMarketNews = async (
-  category: string = 'general',
-  limit: number = 10
-): Promise<NewsArticle[]> => {
+  limit: number = 10,
+  category: string = 'general'
+): Promise<MarketNewsArticle[]> => {
   try {
     console.log(`Fetching market news for category ${category}`);
     
     const data = await withRetry(() => 
-      invokeSupabaseFunction<NewsArticle[]>('get-finnhub-news', {
+      invokeSupabaseFunction<MarketNewsArticle[]>('get-finnhub-news', {
         category,
         limit
       })

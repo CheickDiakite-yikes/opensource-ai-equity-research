@@ -8,7 +8,8 @@ import RecentSearches from "./RecentSearches";
 import HowToUse from "./HowToUse";
 import MarketPerformance from "./MarketPerformance";
 import MarketNews from "./MarketNews";
-import { fetchMarketIndices, fetchMarketNews } from "@/services/api/marketDataService";
+import { fetchMarketIndices } from "@/services/api/marketDataService";
+import { fetchMarketNews } from "@/services/api/marketData/newsService";
 import { toast } from "sonner";
 
 interface LandingViewProps {
@@ -56,7 +57,7 @@ const LandingView: React.FC<LandingViewProps> = ({
     const getMarketNews = async () => {
       try {
         setIsLoadingNews(true);
-        const news = await fetchMarketNews(6); // Fetch 6 news articles
+        const news = await fetchMarketNews(6, 'general'); // Fixed order: limit, category
         setMarketNews(news);
         console.log("Market news loaded:", news);
       } catch (error) {

@@ -1,4 +1,5 @@
-import { invokeSupabaseFunction } from "../base";
+
+import { invokeSupabaseFunction } from "../core/edgeFunctions";
 import { HistoricalPriceData, NewsArticle, CompanyPeer } from "@/types";
 
 /**

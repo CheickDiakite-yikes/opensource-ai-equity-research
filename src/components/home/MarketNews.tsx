@@ -23,7 +23,7 @@ const MarketNews: React.FC<MarketNewsProps> = ({
     queryFn: async () => {
       console.log('Fetching general market news');
       
-      // Fetch general market news
+      // Fetch general market news - fixed parameter order
       const results = await fetchMarketNews(6, 'general');
       
       console.log(`Fetched ${results.length} market news articles`);
