@@ -10,7 +10,6 @@ export * from './documents/relatedDocuments';
 export * from './documents/metrics';
 
 // Re-export service modules
-export * from './profileService';
 export * from './financialService';
 export * from './documentsService';
 
@@ -18,7 +17,7 @@ export * from './documentsService';
 export * from './marketDataService';
 // Rename fetchCompanyNews to avoid name collision
 export { fetchCompanyNews as fetchCompanyNewsArticles } from './marketData/newsService';
-// Rename fetchCompanyPeers to avoid name collision with profileService
+// Rename fetchCompanyPeers from stockDataService to avoid name collision with profileService
 export { fetchCompanyPeers as fetchCompanyPeerSymbols } from './marketData/stockDataService';
 
 // Export enhancedApiService
@@ -40,3 +39,10 @@ export {
 
 // Export document functions
 export * from './documents';
+
+// Export profileService selectively, excluding fetchCompanyPeers
+export {
+  fetchStockProfile,
+  fetchStockQuote,
+  fetchStockRating
+} from './profileService';
