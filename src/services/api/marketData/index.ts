@@ -6,4 +6,4 @@ export * from './indicesDataService';
 
 // Export newsService without duplicates
 export * from './newsService';
-// Remove duplicate export of fetchCompanyNews (it will come from newsService)
+// Don't re-export fetchCompanyNews from stockDataService since it's in newsService

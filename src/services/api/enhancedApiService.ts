@@ -1,6 +1,7 @@
 
 import { cacheService } from '../cache/cacheService';
-import { invokeSupabaseFunction, withRetry } from './core/edgeFunctions';
+import { invokeSupabaseFunction } from './core/edgeFunctions';
+import { withRetry } from './core/retryStrategy';
 import { toast } from "sonner";
 
 // Symbol-specific TTL values (in milliseconds)

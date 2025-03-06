@@ -1,3 +1,4 @@
+
 import { invokeSupabaseFunction } from "./core/edgeFunctions";
 import { withRetry } from "./core/retryStrategy";
 import { IncomeStatement, BalanceSheet, CashFlowStatement, KeyRatio } from "@/types";
@@ -7,10 +8,23 @@ import {
   CashFlowStatementTTM
 } from "@/types/financial/ttm";
 
-interface KeyRatioTTM {
+// Define KeyRatioTTM interface
+export interface KeyRatioTTM {
   symbol: string;
   date: string;
   period: string;
+  grossProfitMarginTTM: number;
+  operatingProfitMarginTTM: number;
+  netProfitMarginTTM: number;
+  returnOnAssetsTTM: number;
+  returnOnEquityTTM: number;
+  returnOnCapitalEmployedTTM: number;
+  currentRatioTTM: number;
+  quickRatioTTM: number;
+  cashRatioTTM: number;
+  debtToEquityTTM: number;
+  debtToAssetsTTM: number;
+  interestCoverageTTM: number;
   [key: string]: any;
 }
 

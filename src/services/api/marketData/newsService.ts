@@ -4,14 +4,21 @@ import { withRetry } from "../core/retryStrategy";
 import { NewsArticle } from "@/types/news/newsTypes";
 
 // Define MarketNewsArticle type used in components
-export interface MarketNewsArticle extends NewsArticle {
+export interface MarketNewsArticle {
+  id?: string;
+  symbol?: string;
+  publishedDate?: string;
+  title?: string;
   headline?: string;
   datetime?: number;
   category?: string;
   related?: string;
   source?: string;
   summary?: string;
+  text?: string;
   site?: string;
+  image?: string;
+  url?: string;
 }
 
 /**

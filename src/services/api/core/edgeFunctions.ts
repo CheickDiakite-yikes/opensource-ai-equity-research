@@ -1,6 +1,6 @@
-
 import { supabase } from "./supabaseClient";
 import { toast } from "sonner";
+import { withRetry } from "./retryStrategy";
 
 /**
  * Generic function to invoke a Supabase Edge Function
@@ -62,3 +62,6 @@ export const invokeSupabaseFunction = async <T>(
     throw err;
   }
 };
+
+// Re-export withRetry for backward compatibility
+export { withRetry };

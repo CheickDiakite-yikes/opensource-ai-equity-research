@@ -85,7 +85,7 @@ const MarketNews: React.FC<MarketNewsProps> = ({
             {newsData && newsData.length > 0 ? (
               newsData.slice(0, 6).map((article, index) => (
                 <NewsCard 
-                  key={`${article.id || index}-${article.headline}`} 
+                  key={`${article.headline || article.title || ''}-${index}`} 
                   article={article}
                 />
               ))

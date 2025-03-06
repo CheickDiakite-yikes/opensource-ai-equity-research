@@ -5,7 +5,12 @@
  * function that communicates with the FMP API.
  */
 
-import { invokeSupabaseFunction, withRetry } from '@/services/api/core/edgeFunctions';
+import { 
+  invokeSupabaseFunction 
+} from "@/services/api/core/edgeFunctions";
+import { 
+  withRetry 
+} from "@/services/api/core/retryStrategy";
 
 export interface DCFParams {
   symbol: string;

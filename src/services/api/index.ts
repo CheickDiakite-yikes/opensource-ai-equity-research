@@ -9,13 +9,14 @@ export * from './search/semanticSearch';
 export * from './documents/relatedDocuments';
 export * from './documents/metrics';
 
-// Re-export service modules (without specifying individual functions to avoid duplicates)
+// Re-export service modules
 export * from './profileService';
 export * from './financialService';
 export * from './documentsService';
 
-// Export marketDataService functions properly to avoid duplicates
+// Export marketDataService functions 
 export * from './marketDataService';
+// Rename fetchCompanyNews to avoid name collision
 export { fetchCompanyNews as fetchCompanyNewsArticles } from './marketData/newsService';
 
 // Export enhancedApiService
