@@ -12,5 +12,5 @@ export {
   fetchCompanyNews as fetchStockCompanyNews
 } from './stockDataService';
 
-// Add these exports to match imports from other files
+// Re-export these functions from profileService
 export { fetchStockQuote, fetchStockPriceChange } from '../profileService';

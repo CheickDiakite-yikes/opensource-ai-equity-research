@@ -9,8 +9,8 @@ export * from './marketDataService';
 export { 
   fetchStockProfile,
   fetchStockRating,
-  fetchEmployeeCount as fetchCompanyOutlook,
-  fetchCompanyNotes as fetchCompanyPeers
+  fetchEmployeeCount,
+  fetchCompanyNotes 
 } from './profileService';
 
 // Financial data services
@@ -30,3 +30,12 @@ export * from './enhancedApiService';
 
 // Export company news from marketData for proper import in other files
 export { fetchStockCompanyNews as fetchCompanyNews } from './marketData';
+
+// Re-export company peers for backwards compatibility
+export { fetchCompanyNotes as fetchCompanyPeers } from './profileService';
+
+// Re-export these functions for backward compatibility
+export { 
+  fetchStockProfile,
+  fetchStockRating 
+} from './profileService';

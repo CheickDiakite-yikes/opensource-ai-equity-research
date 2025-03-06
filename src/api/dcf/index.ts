@@ -1,3 +1,4 @@
+
 import { invokeSupabaseFunction } from "@/services/api/base";
 import { DCFResponse, DCFType } from "./types";
 
@@ -108,7 +109,7 @@ export const fetchDCFByType = async (
 /**
  * Process DCF API request
  */
-export const processDCFRequest = async (request: Request): Promise<any> => {
+export const processDCFRequest = async (request: Request): Promise<Response> => {
   try {
     const { symbol, type = DCFType.STANDARD, params } = await request.json();
     
