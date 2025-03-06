@@ -1,9 +1,12 @@
+
 import React, { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import AutomaticDCFSection from "./dcf/AutomaticDCFSection";
 import CustomDCFSection from "./dcf/CustomDCFSection";
 import { useCustomDCF } from "@/hooks/dcf/useCustomDCF";
-import { DCFType } from "@/services/api/analysis/dcfService";
+import { DCFType } from "@/services/api/analysis/dcf";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Calculator, Sliders, TrendingUp, Lock } from "lucide-react";
 
 interface DCFTabContentProps {
   financials: any[];
@@ -14,7 +17,7 @@ const DCFTabContent: React.FC<DCFTabContentProps> = ({ financials, symbol }) => 
   const [activeTab, setActiveTab] = useState<string>("automatic");
   const [dcfModel, setDcfModel] = useState<DCFType>(DCFType.CUSTOM_ADVANCED);
   
-  // Custom DCF inputs state
+  // Custom DCF inputs state with improved default values
   const [customParams, setCustomParams] = useState({
     // Growth parameters (as decimals)
     revenueGrowth: "10.5",
@@ -103,27 +106,41 @@ const DCFTabContent: React.FC<DCFTabContentProps> = ({ financials, symbol }) => 
     calculateCustomDCF(params, dcfModel);
   };
   
-  const handleCalculateStandardDCF = () => {
-    calculateStandardDCF();
-  };
-  
-  const handleCalculateLeveredDCF = () => {
-    calculateLeveredDCF();
-  };
-  
   return (
-    <div className="mt-4 space-y-6">
+    <div className="mt-6 space-y-6">
+      <Card className="bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-100">
+        <CardContent className="pt-6 pb-6">
+          <div className="flex flex-col md:flex-row items-start md:items-center gap-4">
+            <div className="p-3 rounded-full bg-blue-100 text-blue-700">
+              <Calculator className="h-6 w-6" />
+            </div>
+            <div className="flex-1">
+              <h3 className="text-lg font-semibold text-blue-900">Discounted Cash Flow Analysis</h3>
+              <p className="text-blue-700 mt-1">
+                Estimate {symbol}'s intrinsic value based on projected future cash flows discounted to present value.
+              </p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+      
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="grid w-full grid-cols-2 mb-6">
-          <TabsTrigger value="automatic">Automatic DCF</TabsTrigger>
-          <TabsTrigger value="custom">Custom DCF</TabsTrigger>
+          <TabsTrigger value="automatic" className="flex items-center justify-center py-3">
+            <TrendingUp className="h-4 w-4 mr-2" />
+            <span>Automatic DCF</span>
+          </TabsTrigger>
+          <TabsTrigger value="custom" className="flex items-center justify-center py-3">
+            <Sliders className="h-4 w-4 mr-2" />
+            <span>Custom DCF</span>
+          </TabsTrigger>
         </TabsList>
         
-        <TabsContent value="automatic" className="space-y-6">
+        <TabsContent value="automatic" className="space-y-6 animate-fade-in">
           <AutomaticDCFSection financials={financials} symbol={symbol} />
         </TabsContent>
         
-        <TabsContent value="custom" className="space-y-6">
+        <TabsContent value="custom" className="space-y-6 animate-fade-in">
           <CustomDCFSection 
             symbol={symbol}
             currentPrice={currentPrice}
@@ -135,8 +152,8 @@ const DCFTabContent: React.FC<DCFTabContentProps> = ({ financials, symbol }) => 
             onInputChange={handleInputChange}
             onSelectChange={handleSelectChange}
             onCalculate={handleCalculateCustomDCF}
-            onCalculateStandard={handleCalculateStandardDCF}
-            onCalculateLevered={handleCalculateLeveredDCF}
+            onCalculateStandard={calculateStandardDCF}
+            onCalculateLevered={calculateLeveredDCF}
             dcfModel={dcfModel}
             onModelChange={handleModelChange}
           />
