@@ -11,9 +11,9 @@ export const calculateCustomDCF = async (symbol: string, customInputs?: Partial<
     if (customInputs) {
       // Map our internal property names to the expected FMP API parameter names
       const parameterMap: Record<string, string> = {
-        revenuePercentage: 'revenueGrowthPct',
-        ebitdaPercentage: 'ebitdaPct',
-        capitalExpenditurePercentage: 'capitalExpenditurePct',
+        revenuePercentage: 'revenueGrowth',
+        ebitdaPercentage: 'ebitdaMargin',
+        capitalExpenditurePercentage: 'capexPercent',
         taxRate: 'taxRate',
         longTermGrowthRate: 'longTermGrowthRate',
         costOfEquity: 'costOfEquity',
@@ -32,9 +32,12 @@ export const calculateCustomDCF = async (symbol: string, customInputs?: Partial<
       });
     }
     
+    // Log the DCF API request parameters for debugging
+    console.log("DCF API Request Params:", Object.fromEntries(params.entries()));
+    
     // Call the DCF API endpoint - first try the API route
     let apiUrl = `/api/dcf?${params.toString()}`;
-    console.log("Calling DCF API with params:", apiUrl);
+    console.log("Calling DCF API with URL:", apiUrl);
     
     try {
       const response = await fetch(apiUrl, {
@@ -46,51 +49,63 @@ export const calculateCustomDCF = async (symbol: string, customInputs?: Partial<
       });
       
       if (!response.ok) {
+        console.error(`API route returned status: ${response.status}`);
+        const errorText = await response.text();
+        console.error(`Error response: ${errorText}`);
+        
         if (response.status === 404) {
           // If the API route returns 404, try the edge function directly
           console.log("API route not found, trying Supabase Edge Function directly");
           throw new Error("API route not found");
         }
         
-        const errorText = await response.text();
-        console.error(`DCF calculation failed with status: ${response.status}, Error: ${errorText}`);
-        throw new Error(`DCF calculation failed with status: ${response.status}`);
+        throw new Error(`DCF calculation failed with status: ${response.status}, Error: ${errorText}`);
       }
       
+      // Log success if the API worked
+      console.log("DCF API call successful");
       return response;
     } catch (err) {
       // If using the API route failed, try calling the Supabase Edge Function directly
-      if (err instanceof Error && (err.message.includes("404") || err.message.includes("not found"))) {
-        console.log("Trying direct Supabase Edge Function call to get-custom-dcf");
-        
-        // Import supabase client
-        const { supabase } = await import('@/integrations/supabase/client');
-        
-        // Call the Supabase Edge Function directly
-        const { data, error } = await supabase.functions.invoke('get-custom-dcf', {
-          body: {
-            symbol,
-            params: Object.fromEntries(params),
-            type: "advanced"
-          }
-        });
-        
-        if (error) {
-          console.error("Error calling Supabase Edge Function:", error);
-          throw new Error(`Supabase function error: ${error.message}`);
+      console.log("API route failed, trying direct Supabase Edge Function call");
+      
+      // Import supabase client
+      const { supabase } = await import('@/integrations/supabase/client');
+      
+      // Call the Supabase Edge Function directly with formatted parameters
+      const paramObject = Object.fromEntries(params);
+      console.log("Calling Supabase Edge Function with params:", paramObject);
+      
+      const { data, error } = await supabase.functions.invoke('get-custom-dcf', {
+        body: {
+          symbol,
+          params: paramObject,
+          type: "advanced"
         }
-        
-        // Return a mock Response object with the data
-        return new Response(JSON.stringify(data), {
-          headers: { 'Content-Type': 'application/json' }
-        });
+      });
+      
+      if (error) {
+        console.error("Error calling Supabase Edge Function:", error);
+        throw new Error(`Supabase function error: ${error.message}`);
       }
       
-      // Re-throw the original error if it wasn't a 404
-      throw err;
+      console.log("Supabase Edge Function response:", data);
+      
+      // Return a mock Response object with the data
+      return new Response(JSON.stringify(data), {
+        headers: { 'Content-Type': 'application/json' },
+        status: 200
+      });
     }
   } catch (error) {
     console.error("Error calculating DCF:", error);
-    throw error;
+    // Return an error response so we can handle it gracefully
+    return new Response(JSON.stringify({ 
+      error: error instanceof Error ? error.message : String(error),
+      detail: "Failed to calculate DCF values"
+    }), {
+      headers: { 'Content-Type': 'application/json' },
+      status: 500
+    });
   }
 };

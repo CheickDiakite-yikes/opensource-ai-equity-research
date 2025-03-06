@@ -7,7 +7,7 @@ import { toast } from "@/components/ui/use-toast";
 export const useAIDCFAssumptions = (symbol: string) => {
   const [assumptions, setAssumptions] = useState<AIDCFSuggestion | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<Error | null>(null);
 
   const fetchAssumptions = async (refresh = false) => {
     if (!symbol) return;
@@ -15,6 +15,8 @@ export const useAIDCFAssumptions = (symbol: string) => {
     try {
       setIsLoading(true);
       setError(null);
+      
+      console.log(`Fetching AI DCF assumptions for ${symbol}, refreshCache=${refresh}`);
       
       const data = await fetchAIDCFAssumptions(symbol, refresh);
       
@@ -24,25 +26,17 @@ export const useAIDCFAssumptions = (symbol: string) => {
         setAssumptions(validatedData);
         console.log("AI DCF assumptions loaded:", validatedData);
       } else {
-        setError("Failed to load AI DCF assumptions");
-        if (!refresh) {
-          // Only show toast if this is not a refresh attempt
-          toast({
-            title: "Warning",
-            description: `Could not load AI-powered DCF assumptions for ${symbol}.`,
-            variant: "destructive",
-          });
-        }
+        throw new Error("Failed to load AI DCF assumptions");
       }
     } catch (err) {
       console.error("Error in useAIDCFAssumptions:", err);
-      setError(err instanceof Error ? err.message : String(err));
+      setError(err instanceof Error ? err : new Error(String(err)));
       
       if (!refresh) {
         // Only show toast if this is not a refresh attempt
         toast({
-          title: "Error",
-          description: `Failed to load AI DCF assumptions: ${err instanceof Error ? err.message : 'Unknown error'}`,
+          title: "Warning",
+          description: `Could not load AI-powered DCF assumptions for ${symbol}. Using estimates instead.`,
           variant: "destructive",
         });
       }
@@ -131,8 +125,8 @@ export const useAIDCFAssumptions = (symbol: string) => {
     }
   }, [symbol]);
 
-  const refreshAssumptions = () => {
-    return fetchAssumptions(true);
+  const refreshAssumptions = (forceRefresh = false) => {
+    return fetchAssumptions(forceRefresh);
   };
 
   return {

@@ -4,7 +4,7 @@ import { useDCFAssumptions } from "./useDCFAssumptions";
 import { useDCFCalculation } from "./useDCFCalculation";
 import { useDCFErrors } from "./useDCFErrors";
 import { getCurrentPrice } from "../utils/priceUtils";
-import { createMockDCFData, prepareDCFData, handleDCFCalculationError } from "../utils/dcfDataUtils";
+import { createMockDCFData, prepareDCFData } from "../utils/dcfDataUtils";
 import { FormattedDCFData } from "@/types/ai-analysis/dcfTypes";
 import { toast } from "@/components/ui/use-toast";
 
@@ -53,6 +53,7 @@ export const useDCFData = (symbol: string, financials: any[]) => {
         calculateDCFWithAIAssumptions(assumptions, financials);
       } catch (err) {
         console.error("Error initiating DCF calculation:", err);
+        
         // Explicitly handle potential API not found errors
         if (err instanceof Error && err.message.includes("404")) {
           addError(new Error("DCF API endpoint not found. The service may not be deployed or configured correctly."));
@@ -76,6 +77,11 @@ export const useDCFData = (symbol: string, financials: any[]) => {
   // Handle refreshing assumptions and recalculating DCF
   const handleRefreshDCF = useCallback(async () => {
     try {
+      toast({
+        title: "Refreshing DCF Analysis",
+        description: "Fetching new AI-generated assumptions...",
+      });
+      
       const result = await handleRefreshAssumptions();
       
       if (result.success) {
