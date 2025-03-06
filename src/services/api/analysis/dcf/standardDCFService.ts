@@ -45,11 +45,11 @@ export const fetchStandardDCF = async (symbol: string): Promise<any> => {
 };
 
 /**
- * Fetch levered DCF calculation using v4 advanced levered endpoint
+ * Fetch levered DCF calculation
  */
 export const fetchLeveredDCF = async (symbol: string, limit?: number): Promise<any> => {
   try {
-    console.log(`Fetching v4 advanced levered DCF for ${symbol}`);
+    console.log(`Fetching levered DCF for ${symbol}`);
     
     const params: any = {};
     if (limit && !isNaN(limit)) {

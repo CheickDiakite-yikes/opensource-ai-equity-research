@@ -15,14 +15,13 @@ export const buildDcfApiUrl = (symbol: string, type: string, params: Record<stri
   // Determine which FMP endpoint to use based on DCF type
   switch (type) {
     case "standard":
-      apiUrl = `${API_BASE_URLS.FMP}/discounted-cash-flow/${upperSymbol}`;
+      apiUrl = `${API_BASE_URLS.FMP}/v3/discounted-cash-flow/${upperSymbol}`;
       break;
     case "levered":
-      // Update to use v4 advanced levered endpoint as shown in documentation
-      apiUrl = `${API_BASE_URLS.FMP}/v4/advanced_levered_discounted_cash_flow?symbol=${upperSymbol}`;
+      apiUrl = `${API_BASE_URLS.FMP}/v3/levered-discounted-cash-flow/${upperSymbol}`;
       break;
     case "custom-levered":
-      apiUrl = `${API_BASE_URLS.FMP}/v4/advanced_levered_discounted_cash_flow?symbol=${upperSymbol}`;
+      apiUrl = `${API_BASE_URLS.FMP}/v4/advanced_discounted_cash_flow?symbol=${upperSymbol}&type=levered`;
       break;
     case "advanced":
     default:
@@ -31,7 +30,7 @@ export const buildDcfApiUrl = (symbol: string, type: string, params: Record<stri
   }
   
   // Add custom parameters for custom DCF endpoints
-  if ((type === "advanced" || type === "levered" || type === "custom-levered") && params) {
+  if ((type === "advanced" || type === "custom-levered") && params) {
     Object.entries(params).forEach(([key, value]) => {
       if (value !== undefined && value !== null && key !== 'symbol' && key !== 'type') {
         apiUrl += `&${key}=${encodeURIComponent(value)}`;
@@ -45,8 +44,6 @@ export const buildDcfApiUrl = (symbol: string, type: string, params: Record<stri
   } else {
     apiUrl += `?apikey=${FMP_API_KEY}`;
   }
-  
-  console.log(`Built DCF API URL: ${apiUrl.replace(/apikey=[^&]+/, 'apikey=API_KEY_HIDDEN')}`);
   
   return apiUrl;
 };

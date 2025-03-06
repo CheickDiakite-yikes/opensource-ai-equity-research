@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import AutomaticDCFSection from "./dcf/AutomaticDCFSection";
@@ -142,7 +143,7 @@ const DCFTabContent: React.FC<DCFTabContentProps> = ({ financials, symbol }) => 
       </Card>
       
       {customDCFResult?.mockData && (
-        <Alert className="bg-amber-50 border-amber-200">
+        <Alert variant="warning" className="bg-amber-50 border-amber-200">
           <AlertTriangle className="h-4 w-4 text-amber-500" />
           <AlertDescription className="text-amber-800">
             <strong>Using mock data:</strong> The DCF calculation is currently using estimated values instead of real API data.

@@ -140,7 +140,6 @@ export interface CustomDCFResult {
   freeCashFlowT1: number;
   operatingCashFlowPercentage: number;
   cashAndCashEquivalents: number;
-  mockData?: boolean; // Added the mockData flag property
 }
 
 // DCF Sensitivity Analysis data structure

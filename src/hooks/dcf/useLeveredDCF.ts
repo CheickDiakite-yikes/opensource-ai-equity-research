@@ -21,13 +21,12 @@ export const useLeveredDCF = (symbol: string) => {
       setIsCalculating(true);
       setError(null);
       
-      console.log("Fetching levered DCF for", symbol, "using v4 advanced_levered_discounted_cash_flow endpoint");
+      console.log("Fetching levered DCF for", symbol);
       
       const apiResult = await fetchLeveredDCF(symbol, limit || 10);
       
       // Store the raw API response
       setRawResponse(apiResult);
-      console.log("Raw levered DCF API response:", apiResult);
       
       if (apiResult && Array.isArray(apiResult) && apiResult.length > 0) {
         console.log("Received levered DCF results:", apiResult);
@@ -41,6 +40,7 @@ export const useLeveredDCF = (symbol: string) => {
           toast({
             title: "Using Estimated DCF Values",
             description: "We're displaying estimated values. Real API data unavailable.",
+            variant: "default",
           });
         } else {
           toast({
@@ -71,7 +71,6 @@ export const useLeveredDCF = (symbol: string) => {
       }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Unknown error';
-      console.error("Error calculating levered DCF:", errorMessage);
       setError(`An error occurred during calculation: ${errorMessage}`);
       
       toast({
