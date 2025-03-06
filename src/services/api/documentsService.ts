@@ -1,25 +1,7 @@
 
-// Re-export everything from the documents folder
-export * from './documents';
-
-// Export the main document APIs
-export {
-  // Transcript APIs
-  fetchEarningsTranscripts,
-  fetchTranscriptDates,
-  fetchSymbolsWithTranscripts,
-  fetchLatestTranscripts,
-  generateTranscriptHighlights,
-  downloadEarningsTranscript,
-  
-  // SEC Filings APIs
-  fetchSECFilings,
-  fetchSECFilingsByFormType,
-  fetchLatestSECFilings,
-  fetchLatest8KFilings,
-  fetchSECCompanyProfile,
-  getSECFilingDownloadLink,
-  
-  // Caching API
-  triggerDocumentCaching
-} from './documents';
+// Re-export document-related functions
+export * from './documents/filings';
+export * from './documents/transcripts';
+export * from './documents/relatedDocuments';
+export * from './documents/metrics';
+export * from './documents/base';

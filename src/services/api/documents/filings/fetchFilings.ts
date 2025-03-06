@@ -1,4 +1,4 @@
-import { invokeSupabaseFunction, withRetry } from "../../base";
+import { invokeSupabaseFunction, withRetry } from "../../core/retryStrategy";
 import { SECFiling } from "@/types";
 import { supabase } from "@/integrations/supabase/client";
 import { triggerDocumentCaching } from "../base";

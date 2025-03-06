@@ -9,6 +9,16 @@ export * from './search/semanticSearch';
 export * from './documents/relatedDocuments';
 export * from './documents/metrics';
 
+// Re-export service modules
+export * from './profileService';
+export * from './financialService';
+export * from './documentsService';
+export * from './marketDataService';
+export * from './enhancedApiService';
+
+// Re-export analysis services
+export * from './analysis';
+
 // Re-export the supabase client
 export { supabase } from './core/supabaseClient';
 
@@ -19,3 +29,6 @@ export {
   withRetry,
   runDatabaseMaintenance
 } from './core';
+
+// Export document functions
+export * from './documents';

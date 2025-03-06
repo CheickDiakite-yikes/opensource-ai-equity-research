@@ -1,5 +1,5 @@
 
-import { invokeSupabaseFunction } from "../base";
+import { invokeSupabaseFunction } from "../core/edgeFunctions";
 import { ResearchReport } from "@/types/ai-analysis/reportTypes";
 import { StockPrediction } from "@/types/ai-analysis/predictionTypes";
 import { NewsArticle } from "@/types/news/newsTypes";

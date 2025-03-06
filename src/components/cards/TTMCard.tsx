@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from "react";
 import { Card, CardHeader, CardContent, CardTitle } from "@/components/ui/card";
 import { formatCurrency, formatPercentage } from "@/lib/utils";
-import { invokeSupabaseFunction } from "@/services/api/base";
+import { invokeSupabaseFunction } from "@/services/api/core/edgeFunctions";
 import { TTMData } from "@/types/financialDataTypes";
 
 interface TTMCardProps {

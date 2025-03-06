@@ -1,41 +1,42 @@
 
-import { invokeSupabaseFunction, withRetry } from "../../base";
+import { invokeSupabaseFunction } from "../../core/edgeFunctions";
+import { withRetry } from "../../core/retryStrategy";
 
 /**
- * Generate highlights from earnings transcript text using OpenAI
+ * Generate AI highlights from earnings call transcript content
  */
 export const generateTranscriptHighlights = async (
-  transcriptText: string,
-  metadata?: { symbol: string; quarter: string; year: string; date: string }
+  content: string,
+  metadata: {
+    symbol: string;
+    quarter: string;
+    year: string;
+    date: string;
+  }
 ): Promise<string[]> => {
   try {
-    if (!transcriptText || transcriptText.trim().length < 100) {
-      console.warn("Transcript text too short to generate highlights");
-      return [];
-    }
-    
-    const payload: any = { transcriptText };
-    
-    // Include metadata if available for caching
-    if (metadata) {
-      payload.symbol = metadata.symbol;
-      payload.quarter = metadata.quarter;
-      payload.year = metadata.year;
-      payload.date = metadata.date;
-    }
-    
-    const response = await withRetry(() => 
-      invokeSupabaseFunction<{ highlights: string[] }>('generate-transcript-highlights', payload)
+    console.log(`Generating highlights for ${metadata.symbol} ${metadata.quarter} ${metadata.year} transcript`);
+    const data = await withRetry(() => 
+      invokeSupabaseFunction<{ highlights: string[] }>('generate-transcript-highlights', {
+        content,
+        metadata
+      })
     );
     
-    if (!response || !response.highlights) {
-      console.warn("No highlights returned from API");
-      return [];
+    if (!data || !data.highlights || !Array.isArray(data.highlights)) {
+      console.warn(`No highlights generated for ${metadata.symbol} ${metadata.quarter} ${metadata.year} transcript`);
+      return [
+        "Could not generate highlights for this transcript",
+        "Please check back later or review the full transcript"
+      ];
     }
     
-    return response.highlights;
+    return data.highlights;
   } catch (error) {
-    console.error("Error generating transcript highlights:", error);
-    return [];
+    console.error(`Error generating transcript highlights:`, error);
+    return [
+      "Error generating highlights for this transcript",
+      error instanceof Error ? error.message : "Unknown error occurred"
+    ];
   }
 };

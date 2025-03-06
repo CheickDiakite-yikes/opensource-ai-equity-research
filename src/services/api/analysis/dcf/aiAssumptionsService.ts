@@ -1,5 +1,5 @@
 
-import { invokeSupabaseFunction } from "../../base";
+import { invokeSupabaseFunction } from "../../core/edgeFunctions";
 import { AIDCFSuggestion } from "@/types/ai-analysis/dcfTypes";
 
 /**

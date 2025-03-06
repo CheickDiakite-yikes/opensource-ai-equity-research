@@ -1,307 +1,214 @@
 
-import { invokeSupabaseFunction } from "./base";
+import { invokeSupabaseFunction } from "./core/edgeFunctions";
+import { withRetry } from "./core/retryStrategy";
+import { IncomeStatement, BalanceSheet, CashFlowStatement, KeyRatio } from "@/types";
 import { 
-  IncomeStatement, 
-  BalanceSheet, 
-  CashFlowStatement, 
-  KeyRatio, 
-  KeyMetric,
-  FinancialScore,
   IncomeStatementTTM,
   BalanceSheetTTM,
   CashFlowStatementTTM,
-  KeyRatioTTM,
-  KeyMetricTTM
-} from "@/types";
+  KeyRatioTTM
+} from "@/types/financial/ttm";
 
 /**
- * Fetch income statements
+ * Fetch income statements for a company
  */
-export const fetchIncomeStatements = async (
-  symbol: string, 
-  period: 'annual' | 'quarterly' = 'annual'
-): Promise<IncomeStatement[]> => {
+export const fetchIncomeStatements = async (symbol: string, limit: number = 5): Promise<IncomeStatement[]> => {
   try {
-    const data = await invokeSupabaseFunction<IncomeStatement[]>('get-stock-data', { 
-      symbol, 
-      endpoint: 'income-statement',
-      period: period === 'annual' ? 'FY' : 'Q'
-    });
+    console.log(`Fetching income statements for ${symbol}`);
     
-    if (!data || !Array.isArray(data)) return [];
+    const data = await withRetry(() => 
+      invokeSupabaseFunction<IncomeStatement[]>('get-stock-data', {
+        symbol,
+        endpoint: 'income-statement',
+        limit
+      })
+    , 2, 2000);
+    
+    if (!data || !Array.isArray(data) || data.length === 0) {
+      console.warn(`No income statement data found for ${symbol}`);
+      return [];
+    }
+    
     return data;
   } catch (error) {
-    console.error("Error fetching income statements:", error);
+    console.error(`Error fetching income statements for ${symbol}:`, error);
     return [];
   }
 };
 
 /**
- * Fetch income statement - TTM (Trailing Twelve Months)
+ * Fetch income statement TTM (trailing twelve months)
  */
 export const fetchIncomeStatementTTM = async (symbol: string): Promise<IncomeStatementTTM | null> => {
   try {
-    const data = await invokeSupabaseFunction<IncomeStatementTTM[]>('get-stock-data', { 
-      symbol, 
-      endpoint: 'income-statement-ttm' 
+    console.log(`Fetching income statement TTM for ${symbol}`);
+    
+    const data = await invokeSupabaseFunction<IncomeStatementTTM[]>('get-stock-data', {
+      symbol,
+      endpoint: 'income-statement-ttm'
     });
     
-    if (!data || !Array.isArray(data) || data.length === 0) return null;
+    if (!data || !Array.isArray(data) || data.length === 0) {
+      console.warn(`No income statement TTM data found for ${symbol}`);
+      return null;
+    }
+    
     return data[0];
   } catch (error) {
-    console.error("Error fetching TTM income statement:", error);
+    console.error(`Error fetching income statement TTM for ${symbol}:`, error);
     return null;
   }
 };
 
 /**
- * Fetch balance sheets
+ * Fetch balance sheets for a company
  */
-export const fetchBalanceSheets = async (
-  symbol: string,
-  period: 'annual' | 'quarterly' = 'annual'
-): Promise<BalanceSheet[]> => {
+export const fetchBalanceSheets = async (symbol: string, limit: number = 5): Promise<BalanceSheet[]> => {
   try {
-    const data = await invokeSupabaseFunction<BalanceSheet[]>('get-stock-data', { 
-      symbol, 
-      endpoint: 'balance-sheet',
-      period: period === 'annual' ? 'FY' : 'Q'
-    });
+    console.log(`Fetching balance sheets for ${symbol}`);
     
-    if (!data || !Array.isArray(data)) return [];
+    const data = await withRetry(() => 
+      invokeSupabaseFunction<BalanceSheet[]>('get-stock-data', {
+        symbol,
+        endpoint: 'balance-sheet',
+        limit
+      })
+    , 2, 2000);
+    
+    if (!data || !Array.isArray(data) || data.length === 0) {
+      console.warn(`No balance sheet data found for ${symbol}`);
+      return [];
+    }
+    
     return data;
   } catch (error) {
-    console.error("Error fetching balance sheets:", error);
+    console.error(`Error fetching balance sheets for ${symbol}:`, error);
     return [];
   }
 };
 
 /**
- * Fetch balance sheet - TTM (Trailing Twelve Months)
+ * Fetch balance sheet TTM (trailing twelve months)
  */
 export const fetchBalanceSheetTTM = async (symbol: string): Promise<BalanceSheetTTM | null> => {
   try {
-    const data = await invokeSupabaseFunction<BalanceSheetTTM[]>('get-stock-data', { 
-      symbol, 
-      endpoint: 'balance-sheet-ttm' 
+    console.log(`Fetching balance sheet TTM for ${symbol}`);
+    
+    const data = await invokeSupabaseFunction<BalanceSheetTTM[]>('get-stock-data', {
+      symbol,
+      endpoint: 'balance-sheet-ttm'
     });
     
-    if (!data || !Array.isArray(data) || data.length === 0) return null;
+    if (!data || !Array.isArray(data) || data.length === 0) {
+      console.warn(`No balance sheet TTM data found for ${symbol}`);
+      return null;
+    }
+    
     return data[0];
   } catch (error) {
-    console.error("Error fetching TTM balance sheet:", error);
+    console.error(`Error fetching balance sheet TTM for ${symbol}:`, error);
     return null;
   }
 };
 
 /**
- * Fetch cash flow statements
+ * Fetch cash flow statements for a company
  */
-export const fetchCashFlowStatements = async (
-  symbol: string,
-  period: 'annual' | 'quarterly' = 'annual'
-): Promise<CashFlowStatement[]> => {
+export const fetchCashFlowStatements = async (symbol: string, limit: number = 5): Promise<CashFlowStatement[]> => {
   try {
-    const data = await invokeSupabaseFunction<CashFlowStatement[]>('get-stock-data', { 
-      symbol, 
-      endpoint: 'cash-flow',
-      period: period === 'annual' ? 'FY' : 'Q'
-    });
+    console.log(`Fetching cash flow statements for ${symbol}`);
     
-    if (!data || !Array.isArray(data)) return [];
+    const data = await withRetry(() => 
+      invokeSupabaseFunction<CashFlowStatement[]>('get-stock-data', {
+        symbol,
+        endpoint: 'cash-flow',
+        limit
+      })
+    , 2, 2000);
+    
+    if (!data || !Array.isArray(data) || data.length === 0) {
+      console.warn(`No cash flow statement data found for ${symbol}`);
+      return [];
+    }
+    
     return data;
   } catch (error) {
-    console.error("Error fetching cash flow statements:", error);
+    console.error(`Error fetching cash flow statements for ${symbol}:`, error);
     return [];
   }
 };
 
 /**
- * Fetch cash flow statement - TTM (Trailing Twelve Months)
+ * Fetch cash flow statement TTM (trailing twelve months)
  */
 export const fetchCashFlowStatementTTM = async (symbol: string): Promise<CashFlowStatementTTM | null> => {
   try {
-    const data = await invokeSupabaseFunction<CashFlowStatementTTM[]>('get-stock-data', { 
-      symbol, 
-      endpoint: 'cash-flow-ttm' 
+    console.log(`Fetching cash flow statement TTM for ${symbol}`);
+    
+    const data = await invokeSupabaseFunction<CashFlowStatementTTM[]>('get-stock-data', {
+      symbol,
+      endpoint: 'cash-flow-ttm'
     });
     
-    if (!data || !Array.isArray(data) || data.length === 0) return null;
+    if (!data || !Array.isArray(data) || data.length === 0) {
+      console.warn(`No cash flow statement TTM data found for ${symbol}`);
+      return null;
+    }
+    
     return data[0];
   } catch (error) {
-    console.error("Error fetching TTM cash flow statement:", error);
+    console.error(`Error fetching cash flow statement TTM for ${symbol}:`, error);
     return null;
   }
 };
 
 /**
- * Fetch financial ratios
+ * Fetch key ratios for a company
  */
-export const fetchKeyRatios = async (
-  symbol: string,
-  period: 'annual' | 'quarterly' = 'annual'
-): Promise<KeyRatio[]> => {
+export const fetchKeyRatios = async (symbol: string, limit: number = 5): Promise<KeyRatio[]> => {
   try {
-    const data = await invokeSupabaseFunction<KeyRatio[]>('get-stock-data', { 
-      symbol, 
-      endpoint: 'ratios',
-      period: period === 'annual' ? 'FY' : 'Q'
-    });
+    console.log(`Fetching key ratios for ${symbol}`);
     
-    if (!data || !Array.isArray(data)) return [];
+    const data = await withRetry(() => 
+      invokeSupabaseFunction<KeyRatio[]>('get-stock-data', {
+        symbol,
+        endpoint: 'ratios',
+        limit
+      })
+    , 2, 2000);
+    
+    if (!data || !Array.isArray(data) || data.length === 0) {
+      console.warn(`No key ratio data found for ${symbol}`);
+      return [];
+    }
+    
     return data;
   } catch (error) {
-    console.error("Error fetching key ratios:", error);
+    console.error(`Error fetching key ratios for ${symbol}:`, error);
     return [];
   }
 };
 
 /**
- * Fetch financial ratios - TTM (Trailing Twelve Months)
+ * Fetch key ratios TTM (trailing twelve months)
  */
 export const fetchKeyRatiosTTM = async (symbol: string): Promise<KeyRatioTTM | null> => {
   try {
-    const data = await invokeSupabaseFunction<KeyRatioTTM[]>('get-stock-data', { 
-      symbol, 
-      endpoint: 'ratios-ttm' 
+    console.log(`Fetching key ratios TTM for ${symbol}`);
+    
+    const data = await invokeSupabaseFunction<KeyRatioTTM[]>('get-stock-data', {
+      symbol,
+      endpoint: 'ratios-ttm'
     });
     
-    if (!data || !Array.isArray(data) || data.length === 0) return null;
+    if (!data || !Array.isArray(data) || data.length === 0) {
+      console.warn(`No key ratios TTM data found for ${symbol}`);
+      return null;
+    }
+    
     return data[0];
   } catch (error) {
-    console.error("Error fetching TTM key ratios:", error);
+    console.error(`Error fetching key ratios TTM for ${symbol}:`, error);
     return null;
-  }
-};
-
-/**
- * Fetch key metrics
- */
-export const fetchKeyMetrics = async (
-  symbol: string,
-  period: 'annual' | 'quarterly' = 'annual'
-): Promise<KeyMetric[]> => {
-  try {
-    const data = await invokeSupabaseFunction<KeyMetric[]>('get-stock-data', { 
-      symbol, 
-      endpoint: 'key-metrics',
-      period: period === 'annual' ? 'FY' : 'Q'
-    });
-    
-    if (!data || !Array.isArray(data)) return [];
-    return data;
-  } catch (error) {
-    console.error("Error fetching key metrics:", error);
-    return [];
-  }
-};
-
-/**
- * Fetch key metrics - TTM (Trailing Twelve Months)
- */
-export const fetchKeyMetricsTTM = async (symbol: string): Promise<KeyMetricTTM | null> => {
-  try {
-    const data = await invokeSupabaseFunction<KeyMetricTTM[]>('get-stock-data', { 
-      symbol, 
-      endpoint: 'key-metrics-ttm' 
-    });
-    
-    if (!data || !Array.isArray(data) || data.length === 0) return null;
-    return data[0];
-  } catch (error) {
-    console.error("Error fetching TTM key metrics:", error);
-    return null;
-  }
-};
-
-/**
- * Fetch financial scores
- */
-export const fetchFinancialScores = async (symbol: string): Promise<FinancialScore[]> => {
-  try {
-    const data = await invokeSupabaseFunction<FinancialScore[]>('get-stock-data', { 
-      symbol, 
-      endpoint: 'financial-scores'
-    });
-    
-    if (!data || !Array.isArray(data)) return [];
-    return data;
-  } catch (error) {
-    console.error("Error fetching financial scores:", error);
-    return [];
-  }
-};
-
-/**
- * Fetch all financial data for a company in one call
- */
-export const fetchAllFinancialData = async (symbol: string): Promise<{
-  income: IncomeStatement[];
-  incomeTTM: IncomeStatementTTM | null;
-  balance: BalanceSheet[];
-  balanceTTM: BalanceSheetTTM | null;
-  cashflow: CashFlowStatement[];
-  cashflowTTM: CashFlowStatementTTM | null;
-  ratios: KeyRatio[];
-  ratiosTTM: KeyRatioTTM | null;
-  metrics: KeyMetric[];
-  metricsTTM: KeyMetricTTM | null;
-  scores: FinancialScore[];
-}> => {
-  try {
-    const [
-      income,
-      incomeTTM,
-      balance,
-      balanceTTM,
-      cashflow,
-      cashflowTTM,
-      ratios,
-      ratiosTTM,
-      metrics,
-      metricsTTM,
-      scores
-    ] = await Promise.all([
-      fetchIncomeStatements(symbol),
-      fetchIncomeStatementTTM(symbol),
-      fetchBalanceSheets(symbol),
-      fetchBalanceSheetTTM(symbol),
-      fetchCashFlowStatements(symbol),
-      fetchCashFlowStatementTTM(symbol),
-      fetchKeyRatios(symbol),
-      fetchKeyRatiosTTM(symbol),
-      fetchKeyMetrics(symbol),
-      fetchKeyMetricsTTM(symbol),
-      fetchFinancialScores(symbol)
-    ]);
-    
-    return {
-      income,
-      incomeTTM,
-      balance,
-      balanceTTM,
-      cashflow,
-      cashflowTTM,
-      ratios,
-      ratiosTTM,
-      metrics,
-      metricsTTM,
-      scores
-    };
-  } catch (error) {
-    console.error("Error fetching all financial data:", error);
-    return {
-      income: [],
-      incomeTTM: null,
-      balance: [],
-      balanceTTM: null,
-      cashflow: [],
-      cashflowTTM: null,
-      ratios: [],
-      ratiosTTM: null,
-      metrics: [],
-      metricsTTM: null,
-      scores: []
-    };
   }
 };

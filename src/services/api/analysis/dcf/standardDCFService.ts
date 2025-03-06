@@ -1,5 +1,5 @@
 
-import { invokeSupabaseFunction } from "../../base";
+import { invokeSupabaseFunction } from "../../core/edgeFunctions";
 import { DCFType } from "./types";
 
 /**

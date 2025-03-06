@@ -1,20 +1,23 @@
 
-import { invokeSupabaseFunction, withRetry } from "../../base";
-import { EarningsCall } from "@/types";
+import { invokeSupabaseFunction } from "../../core/edgeFunctions";
+import { withRetry } from "../../core/retryStrategy";
 
 /**
- * Get all available transcript dates for a symbol
+ * Get available transcript dates for a company
  */
-export const fetchTranscriptDates = async (symbol: string): Promise<{date: string, quarter: string, year: string}[]> => {
+export const fetchTranscriptDates = async (symbol: string): Promise<string[]> => {
   try {
-    const response = await withRetry(() => 
-      invokeSupabaseFunction<{dates: {date: string, quarter: string, year: string}[]}>(
-        'fetch-transcript-dates', 
-        { symbol }
-      )
+    console.log(`Fetching transcript dates for ${symbol}`);
+    const data = await withRetry(() => 
+      invokeSupabaseFunction<string[]>('fetch-transcript-dates', { symbol })
     );
     
-    return response.dates || [];
+    if (!data || !Array.isArray(data)) {
+      console.warn(`No transcript dates found for ${symbol}`);
+      return [];
+    }
+    
+    return data;
   } catch (error) {
     console.error(`Error fetching transcript dates for ${symbol}:`, error);
     return [];
@@ -22,39 +25,20 @@ export const fetchTranscriptDates = async (symbol: string): Promise<{date: strin
 };
 
 /**
- * Get all available symbols with transcripts
+ * Get all available transcript symbols
  */
-export const fetchSymbolsWithTranscripts = async (): Promise<{symbol: string, count: number}[]> => {
+export const fetchAvailableTranscriptSymbols = async (): Promise<string[]> => {
   try {
-    const response = await withRetry(() => 
-      invokeSupabaseFunction<{symbols: {symbol: string, count: number}[]}>(
-        'fetch-available-transcript-symbols', 
-        {}
-      )
-    );
+    const data = await invokeSupabaseFunction<string[]>('fetch-available-transcript-symbols', {});
     
-    return response.symbols || [];
-  } catch (error) {
-    console.error("Error fetching available transcript symbols:", error);
-    return [];
-  }
-};
-
-/**
- * Get latest earnings transcripts across all companies
- */
-export const fetchLatestTranscripts = async (limit: number = 20): Promise<EarningsCall[]> => {
-  try {
-    const response = await withRetry(() => 
-      invokeSupabaseFunction<EarningsCall[]>(
-        'fetch-latest-transcripts', 
-        { limit }
-      )
-    );
+    if (!data || !Array.isArray(data)) {
+      console.warn('No transcript symbols found');
+      return [];
+    }
     
-    return response || [];
+    return data;
   } catch (error) {
-    console.error(`Error fetching latest transcripts:`, error);
+    console.error('Error fetching available transcript symbols:', error);
     return [];
   }
 };

@@ -1,5 +1,6 @@
 
-import { invokeSupabaseFunction, withRetry } from "../../base";
+import { invokeSupabaseFunction } from "../../core/edgeFunctions";
+import { withRetry } from "../../core/retryStrategy";
 
 /**
  * Get SEC company profile by symbol

@@ -1,5 +1,5 @@
 
-import { invokeSupabaseFunction } from "../../base";
+import { invokeSupabaseFunction } from "../../core/edgeFunctions";
 import { CustomDCFParams, CustomDCFResult } from "@/types/ai-analysis/dcfTypes";
 import { toast } from "@/components/ui/use-toast";
 import { DCFType } from "./types";

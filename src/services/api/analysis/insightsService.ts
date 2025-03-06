@@ -1,5 +1,5 @@
 
-import { invokeSupabaseFunction } from "../base";
+import { invokeSupabaseFunction } from "../core/edgeFunctions";
 import { GrowthInsight } from "@/types/ai-analysis/predictionTypes";
 import { EarningsCall, SECFiling } from "@/types";
 

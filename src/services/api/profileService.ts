@@ -1,265 +1,106 @@
-import { invokeSupabaseFunction } from "./base";
-import { StockProfile, StockQuote, CompanyExecutive, ExecutiveCompensation } from "@/types";
+
+import { invokeSupabaseFunction } from "./core/edgeFunctions";
+import { withRetry } from "./core/retryStrategy";
+import { StockProfile, StockQuote } from "@/types";
 
 /**
- * Fetch stock profile data
+ * Fetch company profile data
  */
 export const fetchStockProfile = async (symbol: string): Promise<StockProfile | null> => {
   try {
-    const data = await invokeSupabaseFunction<StockProfile[]>('get-stock-data', { 
-      symbol, 
-      endpoint: 'profile' 
-    });
+    console.log(`Fetching stock profile for ${symbol}`);
     
-    if (!data || !Array.isArray(data) || data.length === 0) return null;
-    return data[0] as StockProfile;
+    const data = await withRetry(() => 
+      invokeSupabaseFunction<StockProfile>('get-stock-data', {
+        symbol,
+        endpoint: 'profile'
+      })
+    );
+    
+    if (!data) {
+      console.warn(`No profile data found for ${symbol}`);
+      return null;
+    }
+    
+    return data;
   } catch (error) {
-    console.error("Error fetching stock profile:", error);
+    console.error(`Error fetching stock profile for ${symbol}:`, error);
     return null;
   }
 };
 
 /**
- * Fetch stock quote data
+ * Fetch company quote data
  */
 export const fetchStockQuote = async (symbol: string): Promise<StockQuote | null> => {
   try {
-    // Track retry attempts in this closure to limit retry loops
-    let attempts = 0;
-    const maxAttempts = 2;
+    console.log(`Fetching stock quote for ${symbol}`);
     
-    while (attempts < maxAttempts) {
-      try {
-        attempts++;
-        console.log(`Attempt ${attempts}/${maxAttempts} to fetch stock quote for ${symbol}`);
-        
-        const data = await invokeSupabaseFunction<StockQuote[]>('get-stock-data', { 
-          symbol, 
-          endpoint: 'quote' 
-        });
-        
-        if (!data || !Array.isArray(data) || data.length === 0) {
-          console.warn(`Empty quote data received for ${symbol}`);
-          // If we got an empty array but no error, continue with retry
-          if (attempts < maxAttempts) {
-            await new Promise(resolve => setTimeout(resolve, 1000 * attempts));
-            continue;
-          }
-          
-          // Create placeholder on last attempt
-          return createPlaceholderQuote(symbol);
-        }
-        
-        return data[0] as StockQuote;
-      } catch (err) {
-        console.error(`Error on attempt ${attempts} fetching stock quote:`, err);
-        
-        // Only retry if we haven't hit max attempts
-        if (attempts < maxAttempts) {
-          await new Promise(resolve => setTimeout(resolve, 1000 * attempts));
-          continue;
-        }
-        
-        // Fallback to placeholder on final attempt failure
-        return createPlaceholderQuote(symbol);
-      }
+    const data = await withRetry(() => 
+      invokeSupabaseFunction<StockQuote>('get-stock-data', {
+        symbol,
+        endpoint: 'quote'
+      })
+    );
+    
+    if (!data) {
+      console.warn(`No quote data found for ${symbol}`);
+      return null;
     }
     
-    // This should never be reached due to the returns in the loop
-    return createPlaceholderQuote(symbol);
+    return data;
   } catch (error) {
-    console.error("Outer error fetching stock quote:", error);
-    return createPlaceholderQuote(symbol);
+    console.error(`Error fetching stock quote for ${symbol}:`, error);
+    return null;
   }
 };
 
 /**
- * Fetch stock rating data
+ * Fetch company peers
  */
-export const fetchStockRating = async (symbol: string): Promise<{ rating: string } | null> => {
+export const fetchCompanyPeers = async (symbol: string): Promise<string[]> => {
   try {
-    const data = await invokeSupabaseFunction<{ rating: string }[]>('get-stock-data', { 
-      symbol, 
-      endpoint: 'rating' 
-    });
+    console.log(`Fetching company peers for ${symbol}`);
     
-    if (!data || !Array.isArray(data) || data.length === 0) {
-      return { rating: "N/A" };
+    const data = await withRetry(() => 
+      invokeSupabaseFunction<string[]>('get-stock-data', {
+        symbol,
+        endpoint: 'peers'
+      })
+    );
+    
+    if (!data || !Array.isArray(data)) {
+      console.warn(`No peers found for ${symbol}`);
+      return [];
     }
     
-    return data[0];
+    return data;
   } catch (error) {
-    console.error("Error fetching stock rating:", error);
-    return { rating: "N/A" };
+    console.error(`Error fetching company peers for ${symbol}:`, error);
+    return [];
   }
 };
 
 /**
- * Create a placeholder quote object for fallback when API fails
+ * Fetch stock rating
  */
-const createPlaceholderQuote = (symbol: string): StockQuote => {
-  return {
-    symbol,
-    name: `${symbol} (Data Unavailable)`,
-    price: 0,
-    change: 0,
-    changesPercentage: 0,
-    dayLow: 0,
-    dayHigh: 0,
-    yearHigh: 0,
-    yearLow: 0,
-    marketCap: 0,
-    priceAvg50: 0,
-    priceAvg200: 0,
-    volume: 0,
-    avgVolume: 0,
-    exchange: "Unknown",
-    open: 0,
-    previousClose: 0,
-    eps: 0,
-    pe: 0,
-    earningsAnnouncement: null,
-    sharesOutstanding: 0,
-    timestamp: 0
-  };
-};
-
-/**
- * Fetch company market cap data
- */
-export const fetchMarketCap = async (symbol: string): Promise<{ marketCap: number, date: string } | null> => {
+export const fetchStockRating = async (symbol: string): Promise<{ rating: string, score: number } | null> => {
   try {
-    const data = await invokeSupabaseFunction<any[]>('get-stock-data', { 
-      symbol, 
-      endpoint: 'market-cap' 
+    console.log(`Fetching stock rating for ${symbol}`);
+    
+    const data = await invokeSupabaseFunction<{ rating: string, score: number }>('get-stock-data', {
+      symbol,
+      endpoint: 'rating'
     });
     
-    if (!data || !Array.isArray(data) || data.length === 0) return null;
-    return data[0];
+    if (!data || !data.rating) {
+      console.warn(`No rating data found for ${symbol}`);
+      return null;
+    }
+    
+    return data;
   } catch (error) {
-    console.error("Error fetching market cap:", error);
+    console.error(`Error fetching stock rating for ${symbol}:`, error);
     return null;
-  }
-};
-
-/**
- * Fetch historical market cap data
- */
-export const fetchHistoricalMarketCap = async (symbol: string, limit: number = 100): Promise<any[]> => {
-  try {
-    const data = await invokeSupabaseFunction<any[]>('get-stock-data', { 
-      symbol, 
-      endpoint: 'historical-market-cap',
-      limit
-    });
-    
-    return data || [];
-  } catch (error) {
-    console.error("Error fetching historical market cap:", error);
-    return [];
-  }
-};
-
-/**
- * Fetch shares float data
- */
-export const fetchSharesFloat = async (symbol: string): Promise<any | null> => {
-  try {
-    const data = await invokeSupabaseFunction<any[]>('get-stock-data', { 
-      symbol, 
-      endpoint: 'shares-float' 
-    });
-    
-    if (!data || !Array.isArray(data) || data.length === 0) return null;
-    return data[0];
-  } catch (error) {
-    console.error("Error fetching shares float:", error);
-    return null;
-  }
-};
-
-/**
- * Fetch company executives data
- */
-export const fetchCompanyExecutives = async (symbol: string): Promise<CompanyExecutive[]> => {
-  try {
-    const data = await invokeSupabaseFunction<CompanyExecutive[]>('get-stock-data', { 
-      symbol, 
-      endpoint: 'executives' 
-    });
-    
-    return data || [];
-  } catch (error) {
-    console.error("Error fetching company executives:", error);
-    return [];
-  }
-};
-
-/**
- * Fetch executive compensation data
- */
-export const fetchExecutiveCompensation = async (symbol: string): Promise<ExecutiveCompensation[]> => {
-  try {
-    const data = await invokeSupabaseFunction<ExecutiveCompensation[]>('get-stock-data', { 
-      symbol, 
-      endpoint: 'executive-compensation' 
-    });
-    
-    return data || [];
-  } catch (error) {
-    console.error("Error fetching executive compensation:", error);
-    return [];
-  }
-};
-
-/**
- * Fetch company notes data
- */
-export const fetchCompanyNotes = async (symbol: string): Promise<any[]> => {
-  try {
-    const data = await invokeSupabaseFunction<any[]>('get-stock-data', { 
-      symbol, 
-      endpoint: 'company-notes' 
-    });
-    
-    return data || [];
-  } catch (error) {
-    console.error("Error fetching company notes:", error);
-    return [];
-  }
-};
-
-/**
- * Fetch employee count data
- */
-export const fetchEmployeeCount = async (symbol: string): Promise<any | null> => {
-  try {
-    const data = await invokeSupabaseFunction<any[]>('get-stock-data', { 
-      symbol, 
-      endpoint: 'employee-count' 
-    });
-    
-    if (!data || !Array.isArray(data) || data.length === 0) return null;
-    return data[0];
-  } catch (error) {
-    console.error("Error fetching employee count:", error);
-    return null;
-  }
-};
-
-/**
- * Fetch historical employee count data
- */
-export const fetchHistoricalEmployeeCount = async (symbol: string): Promise<any[]> => {
-  try {
-    const data = await invokeSupabaseFunction<any[]>('get-stock-data', { 
-      symbol, 
-      endpoint: 'historical-employee-count' 
-    });
-    
-    return data || [];
-  } catch (error) {
-    console.error("Error fetching historical employee count:", error);
-    return [];
   }
 };
