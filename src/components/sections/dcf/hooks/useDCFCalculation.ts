@@ -1,3 +1,4 @@
+
 import { useState, useCallback } from "react";
 import { toast } from "@/components/ui/use-toast";
 import { calculateCustomDCF } from "@/utils/financial";
@@ -180,25 +181,27 @@ export function useDCFCalculation(symbol: string) {
       
       // Extract values from AI assumptions and prepare inputs for DCF calculation
       const inputs: Partial<DCFInputs> = {
-        revenuePercentage: assumptions.assumptions.revenueGrowthPct * 100,
-        ebitdaPercentage: assumptions.assumptions.ebitdaMarginPct * 100,
-        capitalExpenditurePercentage: assumptions.assumptions.capitalExpenditurePct * 100,
+        // Pass percentages as they are - they'll be converted in the calculation utility
+        revenuePercentage: assumptions.assumptions.revenueGrowthPct,
+        ebitdaPercentage: assumptions.assumptions.ebitdaMarginPct,
+        capitalExpenditurePercentage: assumptions.assumptions.capitalExpenditurePct,
         taxRate: assumptions.assumptions.taxRatePct,
-        longTermGrowthRate: assumptions.assumptions.longTermGrowthRatePct,
+        // Pass these as-is - they'll be converted to decimals as needed
+        longTermGrowthRate: assumptions.assumptions.longTermGrowthRatePct * 100, // Convert to whole number
         beta: assumptions.assumptions.beta,
-        costOfEquity: assumptions.assumptions.costOfEquityPct * 100,
-        costOfDebt: assumptions.assumptions.costOfDebtPct * 100,
-        marketRiskPremium: assumptions.assumptions.marketRiskPremiumPct * 100,
-        riskFreeRate: assumptions.assumptions.riskFreeRatePct * 100,
+        costOfEquity: assumptions.assumptions.costOfEquityPct * 100, // Convert to whole number
+        costOfDebt: assumptions.assumptions.costOfDebtPct * 100, // Convert to whole number
+        marketRiskPremium: assumptions.assumptions.marketRiskPremiumPct * 100, // Convert to whole number
+        riskFreeRate: assumptions.assumptions.riskFreeRatePct * 100, // Convert to whole number
         // Additional parameters with corrected property names
-        depreciationAndAmortizationPercentage: assumptions.assumptions.depreciationAndAmortizationPct * 100,
-        operatingCashFlowPercentage: assumptions.assumptions.operatingCashFlowPct * 100,
-        ebitPercentage: assumptions.assumptions.ebitPct * 100,
-        cashAndShortTermInvestmentsPercentage: assumptions.assumptions.cashAndShortTermInvestmentsPct * 100,
-        receivablesPercentage: assumptions.assumptions.receivablesPct * 100,
-        inventoriesPercentage: assumptions.assumptions.inventoriesPct * 100,
-        payablesPercentage: assumptions.assumptions.payablePct * 100,
-        sellingGeneralAndAdministrativeExpensesPercentage: assumptions.assumptions.sellingGeneralAndAdministrativeExpensesPct * 100
+        depreciationAndAmortizationPercentage: assumptions.assumptions.depreciationAndAmortizationPct,
+        operatingCashFlowPercentage: assumptions.assumptions.operatingCashFlowPct,
+        ebitPercentage: assumptions.assumptions.ebitPct,
+        cashAndShortTermInvestmentsPercentage: assumptions.assumptions.cashAndShortTermInvestmentsPct,
+        receivablesPercentage: assumptions.assumptions.receivablesPct,
+        inventoriesPercentage: assumptions.assumptions.inventoriesPct,
+        payablesPercentage: assumptions.assumptions.payablePct,
+        sellingGeneralAndAdministrativeExpensesPercentage: assumptions.assumptions.sellingGeneralAndAdministrativeExpensesPct
       };
       
       console.log("Calculating DCF with AI-derived inputs:", inputs);

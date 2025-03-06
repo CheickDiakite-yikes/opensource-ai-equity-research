@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { corsHeaders } from "../_shared/cors.ts";
 import { FMP_API_KEY, API_BASE_URLS } from "../_shared/constants.ts";
@@ -16,6 +15,33 @@ const getCacheHeaders = (type: string) => {
     'Cache-Control': `public, max-age=${maxAge}`,
     'Vary': 'Origin, Accept-Encoding',
   };
+};
+
+// Format the API query parameters properly
+const formatApiParams = (params: Record<string, any>) => {
+  const formattedParams: Record<string, string> = {};
+  
+  Object.entries(params).forEach(([key, value]) => {
+    if (value === undefined || value === null) return;
+    
+    // Special handling for rate parameters that need to be in decimal format
+    if (key === 'longTermGrowthRate' || 
+        key === 'costOfEquity' || 
+        key === 'costOfDebt' || 
+        key === 'marketRiskPremium' || 
+        key === 'riskFreeRate') {
+      // Ensure these are in decimal form (e.g., 0.04 not 4%)
+      const numValue = parseFloat(String(value));
+      // If the value is > 1, assume it's a percentage and convert to decimal
+      const decimalValue = numValue > 1 ? numValue / 100 : numValue;
+      formattedParams[key] = decimalValue.toString();
+    } else {
+      // For other parameters, keep as-is (already in proper decimal form)
+      formattedParams[key] = String(value);
+    }
+  });
+  
+  return formattedParams;
 };
 
 serve(async (req) => {
@@ -64,6 +90,11 @@ serve(async (req) => {
     }
     
     console.log(`Processing DCF request for ${symbol}, type: ${type}`);
+    console.log("Parameters received:", params);
+    
+    // Format parameters for the FMP API
+    const formattedParams = formatApiParams(params);
+    console.log("Formatted parameters:", formattedParams);
     
     // Determine which endpoint to use based on the DCF type
     let apiUrl = "";
@@ -80,7 +111,7 @@ serve(async (req) => {
         // Add optional limit parameter if provided
         if (params?.limit) {
           apiUrl += `?limit=${params.limit}`;
-          delete params.limit;
+          delete formattedParams.limit;
         }
         break;
       case "custom-levered":
@@ -95,10 +126,14 @@ serve(async (req) => {
     }
     
     // Add all provided parameters to query string for custom endpoints
-    if ((type === "advanced" || type === "custom-levered") && params) {
-      Object.entries(params).forEach(([key, value]) => {
+    if ((type === "advanced" || type === "custom-levered") && Object.keys(formattedParams).length > 0) {
+      // If the URL already has a query parameter (contains '?'), use '&' to add more
+      const separator = apiUrl.includes('?') ? '&' : '?';
+      
+      // Add each parameter to the URL
+      Object.entries(formattedParams).forEach(([key, value], index) => {
         if (value !== undefined && value !== null) {
-          apiUrl += `&${key}=${value}`;
+          apiUrl += `${index === 0 ? separator : '&'}${key}=${value}`;
         }
       });
     }
@@ -164,8 +199,8 @@ serve(async (req) => {
       }
       
       // Add all provided parameters to query string
-      if (params) {
-        Object.entries(params).forEach(([key, value]) => {
+      if (Object.keys(formattedParams).length > 0) {
+        Object.entries(formattedParams).forEach(([key, value]) => {
           if (value !== undefined && value !== null) {
             fallbackUrl += `&${key}=${value}`;
           }
