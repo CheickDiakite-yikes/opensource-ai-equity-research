@@ -21,15 +21,13 @@ export const buildDcfApiUrl = (symbol: string, type: string, params: Record<stri
       apiUrl = `${API_BASE_URLS.FMP}/v3/levered-discounted-cash-flow/${upperSymbol}`;
       break;
     case "custom-levered":
-      apiUrl = `${API_BASE_URLS.FMP}/v4/advanced_levered_discounted_cash_flow?symbol=${upperSymbol}`;
+      apiUrl = `${API_BASE_URLS.FMP}/v4/advanced_discounted_cash_flow?symbol=${upperSymbol}&type=levered`;
       break;
     case "advanced":
     default:
       apiUrl = `${API_BASE_URLS.FMP}/v4/advanced_discounted_cash_flow?symbol=${upperSymbol}`;
       break;
   }
-  
-  console.log(`Building DCF URL for type: ${type}, symbol: ${upperSymbol}`);
   
   // Add custom parameters for custom DCF endpoints
   if ((type === "advanced" || type === "custom-levered") && params) {
@@ -46,9 +44,6 @@ export const buildDcfApiUrl = (symbol: string, type: string, params: Record<stri
   } else {
     apiUrl += `?apikey=${FMP_API_KEY}`;
   }
-  
-  // Log the URL (with API key removed for security)
-  console.log(`Generated DCF API URL: ${apiUrl.replace(/apikey=[^&]+/, 'apikey=***')}`);
   
   return apiUrl;
 };
