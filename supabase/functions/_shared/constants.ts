@@ -6,7 +6,7 @@ export const FINNHUB_API_KEY = Deno.env.get('FINNHUB_API_KEY') || '';
 
 // Base URLs for APIs
 export const API_BASE_URLS = {
-  FMP: 'https://financialmodelingprep.com/api',
+  FMP: 'https://financialmodelingprep.com/api/v3',
   FMP_STABLE: 'https://financialmodelingprep.com/api/stable',
   FINNHUB: 'https://finnhub.io/api/v1',
 };

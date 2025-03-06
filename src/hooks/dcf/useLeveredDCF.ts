@@ -21,24 +21,22 @@ export const useLeveredDCF = (symbol: string) => {
       setIsCalculating(true);
       setError(null);
       
-      console.log(`useLeveredDCF - Starting calculation for ${symbol}`);
+      console.log("Fetching levered DCF for", symbol);
       
       const apiResult = await fetchLeveredDCF(symbol, limit || 10);
       
-      // Store the raw API response for debugging
+      // Store the raw API response
       setRawResponse(apiResult);
-      console.log(`useLeveredDCF - Raw API response for ${symbol}:`, apiResult);
       
       if (apiResult && Array.isArray(apiResult) && apiResult.length > 0) {
-        // Check if using mock data
-        const isMockData = apiResult[0].mockData === true;
-        console.log(`useLeveredDCF - Is using mock data? ${isMockData}`);
+        console.log("Received levered DCF results:", apiResult);
         
         // Use the first item as our main DCF result
         const dcfResult = apiResult[0];
         
-        if (isMockData) {
-          console.warn(`useLeveredDCF - Using mock DCF data for ${symbol}`);
+        // Check if using mock data
+        if (dcfResult.mockData) {
+          console.warn("Using mock DCF data for", symbol);
           toast({
             title: "Using Estimated DCF Values",
             description: "We're displaying estimated values. Real API data unavailable.",
@@ -53,14 +51,14 @@ export const useLeveredDCF = (symbol: string) => {
         
         setResult(dcfResult);
         
-        // Create projected data from the API result
+        // Create projected data
         const yearly = createProjectedData(apiResult);
         setProjectedData(yearly);
         
         return { dcfResult, yearly };
       } else {
-        console.error("useLeveredDCF - Invalid or empty result:", apiResult);
-        setError("Failed to calculate levered DCF. Using standard DCF instead.");
+        console.error("Invalid or empty result from levered DCF:", apiResult);
+        setError("Failed to calculate levered DCF. Please try again later.");
         
         toast({
           title: "Levered DCF Calculation Failed",
@@ -73,7 +71,6 @@ export const useLeveredDCF = (symbol: string) => {
       }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Unknown error';
-      console.error(`useLeveredDCF - Error during calculation: ${errorMessage}`);
       setError(`An error occurred during calculation: ${errorMessage}`);
       
       toast({

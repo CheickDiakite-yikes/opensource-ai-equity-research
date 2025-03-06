@@ -12,20 +12,16 @@ export const buildDcfApiUrl = (symbol: string, type: string, params: Record<stri
   const upperSymbol = symbol.toUpperCase();
   let apiUrl = "";
   
-  // Log the DCF type and params for debugging
-  console.log(`Building DCF URL for ${upperSymbol}, type: ${type}, params:`, params);
-  
   // Determine which FMP endpoint to use based on DCF type
   switch (type) {
     case "standard":
       apiUrl = `${API_BASE_URLS.FMP}/v3/discounted-cash-flow/${upperSymbol}`;
       break;
     case "levered":
-      // Update to use the v4 advanced_levered_discounted_cash_flow endpoint
-      apiUrl = `${API_BASE_URLS.FMP}/v4/advanced_levered_discounted_cash_flow?symbol=${upperSymbol}`;
+      apiUrl = `${API_BASE_URLS.FMP}/v3/levered-discounted-cash-flow/${upperSymbol}`;
       break;
     case "custom-levered":
-      apiUrl = `${API_BASE_URLS.FMP}/v4/advanced_levered_discounted_cash_flow?symbol=${upperSymbol}`;
+      apiUrl = `${API_BASE_URLS.FMP}/v4/advanced_discounted_cash_flow?symbol=${upperSymbol}&type=levered`;
       break;
     case "advanced":
     default:
@@ -33,10 +29,8 @@ export const buildDcfApiUrl = (symbol: string, type: string, params: Record<stri
       break;
   }
   
-  // Add custom parameters for API endpoints
-  if (params && Object.keys(params).length > 0) {
-    console.log(`Adding ${Object.keys(params).length} custom parameters to DCF URL`);
-    
+  // Add custom parameters for custom DCF endpoints
+  if ((type === "advanced" || type === "custom-levered") && params) {
     Object.entries(params).forEach(([key, value]) => {
       if (value !== undefined && value !== null && key !== 'symbol' && key !== 'type') {
         apiUrl += `&${key}=${encodeURIComponent(value)}`;
@@ -50,9 +44,6 @@ export const buildDcfApiUrl = (symbol: string, type: string, params: Record<stri
   } else {
     apiUrl += `?apikey=${FMP_API_KEY}`;
   }
-  
-  // Log the final URL (with API key hidden)
-  console.log(`Final DCF API URL: ${apiUrl.replace(/apikey=[^&]+/, 'apikey=***')}`);
   
   return apiUrl;
 };
