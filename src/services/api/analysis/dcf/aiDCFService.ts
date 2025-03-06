@@ -36,11 +36,11 @@ export interface AIDCFResult {
     bearish: { growth: number; wacc: number; intrinsicValue: number };
   };
   keyMetrics?: {
-    pe: number;
-    marketCap: number;
-    lastDividend: number;
-    volume: number;
-    exchange: string;
+    pe?: number;
+    marketCap?: number;
+    lastDividend?: number;
+    volume?: number;
+    exchange?: string;
   };
 }
 
@@ -74,6 +74,17 @@ export const fetchAIDCF = async (symbol: string): Promise<AIDCFResult> => {
     if (!response) {
       console.error(`No response from AI-DCF service for ${symbol}`);
       throw new Error("Failed to fetch AI-DCF data");
+    }
+    
+    // Validate the response to ensure it has all required fields
+    if (!response.assumptions || !response.projectedFCFs || !response.intrinsicValuePerShare) {
+      console.error(`Invalid AI-DCF response for ${symbol}:`, response);
+      throw new Error("Invalid DCF data returned - missing required fields");
+    }
+    
+    // Make sure any potential undefined fields are initialized with default values
+    if (!response.keyMetrics) {
+      response.keyMetrics = {};
     }
     
     console.log(`Received AI-DCF response for ${symbol}:`, response);
