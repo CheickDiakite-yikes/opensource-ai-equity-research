@@ -60,7 +60,16 @@ export const fetchAIDCF = async (symbol: string): Promise<AIDCFResult> => {
   try {
     console.log(`Requesting AI-powered DCF for ${symbol}`);
     
-    const response = await invokeSupabaseFunction<AIDCFResult>('ai-dcf', { symbol });
+    // Add a timeout of 30 seconds to prevent the request from hanging indefinitely
+    const timeoutPromise = new Promise<never>((_, reject) => {
+      setTimeout(() => reject(new Error("Request timed out after 30 seconds")), 30000);
+    });
+
+    // Race the actual request against the timeout
+    const response = await Promise.race([
+      invokeSupabaseFunction<AIDCFResult>('ai-dcf', { symbol }),
+      timeoutPromise
+    ]) as AIDCFResult;
     
     if (!response) {
       console.error(`No response from AI-DCF service for ${symbol}`);
@@ -73,12 +82,26 @@ export const fetchAIDCF = async (symbol: string): Promise<AIDCFResult> => {
   } catch (error) {
     console.error("Error fetching AI-DCF:", error);
     
+    // Provide more informative error messages based on the error type
+    let errorMessage = error instanceof Error ? error.message : "Failed to generate AI-powered DCF";
+    
+    // Handle specific error cases
+    if (errorMessage.includes("timed out")) {
+      errorMessage = "Request timed out. The DCF calculation may be taking too long. Please try again later.";
+    } else if (errorMessage.includes("No DCF data returned")) {
+      errorMessage = "The financial data provider couldn't generate a DCF model for this stock. This may happen for some smaller or recently listed companies.";
+    } else if (errorMessage.includes("404")) {
+      errorMessage = "The stock symbol provided could not be found. Please check the symbol and try again.";
+    } else if (errorMessage.includes("rate limit")) {
+      errorMessage = "API rate limit exceeded. Please wait a moment and try again.";
+    }
+    
     toast({
       title: "AI-DCF Error",
-      description: error instanceof Error ? error.message : "Failed to generate AI-powered DCF",
+      description: errorMessage,
       variant: "destructive",
     });
     
-    throw error;
+    throw new Error(errorMessage);
   }
 };
