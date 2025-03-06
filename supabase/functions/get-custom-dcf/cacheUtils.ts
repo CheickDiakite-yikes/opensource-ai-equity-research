@@ -1,17 +1,29 @@
 
 /**
- * Cache-control headers (per DCF type)
+ * Get appropriate cache headers for DCF responses
  */
 export const getCacheHeaders = (type: string) => {
-  let maxAge = 3600; // Default 1 hour cache
+  // Set different cache durations based on DCF type
+  let maxAgeSeconds = 0;
   
-  // Custom DCF types that use user-defined parameters shouldn't be cached as long
-  if (type === 'custom-levered' || type === 'advanced') {
-    maxAge = 300; // 5 minutes for custom DCF calculations
+  switch (type) {
+    case 'standard':
+    case 'levered':
+      // Cache standard and levered DCF for 6 hours
+      maxAgeSeconds = 21600;
+      break;
+    case 'custom-levered':
+    case 'advanced':
+      // Cache custom calculations for 1 day
+      maxAgeSeconds = 86400;
+      break;
+    default:
+      // Default to 1 hour
+      maxAgeSeconds = 3600;
   }
   
   return {
-    'Cache-Control': `public, max-age=${maxAge}`,
-    'Vary': 'Origin, Accept-Encoding',
+    'Cache-Control': `public, max-age=${maxAgeSeconds}`,
+    'Surrogate-Control': `max-age=${maxAgeSeconds}`,
   };
 };

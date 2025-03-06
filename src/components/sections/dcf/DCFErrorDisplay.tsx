@@ -8,7 +8,7 @@ interface DCFErrorDisplayProps {
 }
 
 const DCFErrorDisplay: React.FC<DCFErrorDisplayProps> = ({ errors }) => {
-  if (errors.length === 0) return null;
+  if (!errors || errors.length === 0) return null;
   
   return (
     <Alert variant="destructive" className="mb-4">
