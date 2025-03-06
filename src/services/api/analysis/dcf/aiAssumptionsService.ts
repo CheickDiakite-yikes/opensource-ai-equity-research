@@ -23,7 +23,8 @@ export const fetchAIDCFAssumptions = async (symbol: string, refreshCache = false
       
       if (!cacheError && cachedData && cachedData.data) {
         console.log(`Using cached DCF assumptions for ${symbol}`);
-        return cachedData.data as AIDCFSuggestion;
+        // Cast the data with a type assertion
+        return cachedData.data as unknown as AIDCFSuggestion;
       }
     }
     
@@ -42,11 +43,22 @@ export const fetchAIDCFAssumptions = async (symbol: string, refreshCache = false
     if (data) {
       const expirationDate = data.expiresAt || new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
       
+      // Convert AIDCFSuggestion to a generic Record type for Supabase insertion
+      const dataForInsert: Record<string, any> = {
+        symbol: data.symbol,
+        company: data.company,
+        timestamp: data.timestamp,
+        expiresAt: data.expiresAt,
+        assumptions: data.assumptions,
+        explanation: data.explanation,
+        industryComparison: data.industryComparison
+      };
+      
       const { error: insertError } = await supabase
         .from('api_cache')
         .insert({
           cache_key: `dcf_assumptions:${symbol}`,
-          data: data as unknown as Record<string, any>, // Convert to Json compatible type
+          data: dataForInsert,
           created_at: new Date().toISOString(),
           expires_at: expirationDate,
           metadata: { 
