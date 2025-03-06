@@ -1,4 +1,3 @@
-
 // Custom DCF Analysis Types
 export interface CustomDCFParams {
   symbol: string;
@@ -140,6 +139,7 @@ export interface CustomDCFResult {
   freeCashFlowT1: number;
   operatingCashFlowPercentage: number;
   cashAndCashEquivalents: number;
+  mockData?: boolean;
 }
 
 // DCF Sensitivity Analysis data structure
