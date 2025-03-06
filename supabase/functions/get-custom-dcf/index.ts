@@ -34,8 +34,9 @@ serve(async (req) => {
       );
     }
     
-    // If this is a GET request, parse the URL parameters
+    // Parse request parameters
     let symbol, params, type;
+    
     if (req.method === 'GET') {
       const url = new URL(req.url);
       symbol = url.searchParams.get('symbol');
@@ -45,37 +46,15 @@ serve(async (req) => {
       params = {};
       url.searchParams.forEach((value, key) => {
         if (key !== 'symbol' && key !== 'type') {
-          // Convert percentage values to decimals for specific parameters
-          if (['longTermGrowthRate', 'costOfEquity', 'costOfDebt', 'marketRiskPremium', 'riskFreeRate'].includes(key)) {
-            // If value is provided as a percentage (e.g., 5 for 5%), convert to decimal (0.05)
-            if (!isNaN(parseFloat(value)) && parseFloat(value) > 0.2) {
-              params[key] = (parseFloat(value) / 100).toString();
-            } else {
-              params[key] = value;
-            }
-          } else {
-            params[key] = value;
-          }
+          params[key] = value;
         }
       });
     } else {
-      // Parse the request body to get the symbol, params, and dcf type
+      // Parse the request body for POST requests
       const body = await req.json();
       symbol = body.symbol;
       params = body.params || {};
       type = body.type || "advanced";
-      
-      // Convert percentage values to decimals for specific parameters
-      if (params) {
-        ['longTermGrowthRate', 'costOfEquity', 'costOfDebt', 'marketRiskPremium', 'riskFreeRate'].forEach(key => {
-          if (params[key] !== undefined && params[key] !== null) {
-            // Convert from percentage to decimal if needed
-            if (typeof params[key] === 'number' && params[key] > 0.2) {
-              params[key] = params[key] / 100;
-            }
-          }
-        });
-      }
     }
     
     if (!symbol) {
@@ -86,9 +65,8 @@ serve(async (req) => {
     }
     
     console.log(`Processing DCF request for ${symbol}, type: ${type}`);
-    console.log("Parameters:", params);
     
-    // Determine which endpoint to use based on the DCF type
+    // Determine which FMP endpoint to use based on DCF type
     let apiUrl = "";
     
     switch (type) {
@@ -99,21 +77,15 @@ serve(async (req) => {
       case "levered":
         // Levered DCF endpoint
         apiUrl = `${API_BASE_URLS.FMP}/levered-discounted-cash-flow/${symbol}`;
-        
-        // Add optional limit parameter if provided
-        if (params?.limit) {
-          apiUrl += `?limit=${params.limit}`;
-          delete params.limit;
-        }
         break;
       case "custom-levered":
         // Custom Levered DCF endpoint - using the stable endpoint
-        apiUrl = `${API_BASE_URLS.FMP}/v4/advanced/custom-levered-discounted-cash-flow?symbol=${symbol}`;
+        apiUrl = `${API_BASE_URLS.FMP_STABLE}/v4/advanced/custom-levered-discounted-cash-flow?symbol=${symbol}`;
         break;
       case "advanced":
       default:
         // Custom DCF Advanced endpoint - using the stable endpoint
-        apiUrl = `${API_BASE_URLS.FMP}/v4/advanced/custom-discounted-cash-flow?symbol=${symbol}`;
+        apiUrl = `${API_BASE_URLS.FMP_STABLE}/v4/advanced/custom-discounted-cash-flow?symbol=${symbol}`;
         break;
     }
     
@@ -121,6 +93,12 @@ serve(async (req) => {
     if ((type === "advanced" || type === "custom-levered") && params) {
       Object.entries(params).forEach(([key, value]) => {
         if (value !== undefined && value !== null) {
+          // Convert percentage values to decimals if needed
+          if (['longTermGrowthRate', 'costOfEquity', 'costOfDebt', 'marketRiskPremium', 'riskFreeRate'].includes(key)) {
+            if (typeof value === 'string' && !isNaN(parseFloat(value)) && parseFloat(value) > 0.2) {
+              value = (parseFloat(value) / 100).toString();
+            }
+          }
           apiUrl += `&${key}=${value}`;
         }
       });
@@ -135,33 +113,17 @@ serve(async (req) => {
     
     console.log(`Calling FMP API: ${apiUrl.replace(FMP_API_KEY, 'API_KEY_HIDDEN')}`);
     
-    // Fetch data from FMP API
-    const response = await fetch(apiUrl, {
+    // Fetch data from FMP API with retries
+    const response = await fetchWithRetry(apiUrl, {
       headers: {
         'Accept': 'application/json'
       }
-    });
+    }, 3);
     
     if (!response.ok) {
       const errorText = await response.text();
       console.error(`FMP API Error (${response.status}): ${errorText}`);
-      
-      // Generate mock DCF data for fallback
-      const mockData = generateMockDCFData(symbol, type);
-      
-      console.log(`Using mock DCF data for ${symbol} due to API error`);
-      
-      return new Response(
-        JSON.stringify(mockData),
-        { 
-          headers: { 
-            ...corsHeaders, 
-            'Content-Type': 'application/json',
-            ...getCacheHeaders(type),
-            'X-Mock-Data': 'true'
-          }
-        }
-      );
+      throw new Error(`FMP API Error (${response.status}): ${errorText}`);
     }
     
     // Check content type to ensure it's JSON
@@ -169,45 +131,15 @@ serve(async (req) => {
     if (!contentType || !contentType.includes('application/json')) {
       const responseText = await response.text();
       console.error(`FMP API returned non-JSON response: ${responseText.substring(0, 200)}...`);
-      
-      // Generate mock DCF data for fallback
-      const mockData = generateMockDCFData(symbol, type);
-      
-      console.log(`Using mock DCF data for ${symbol} due to non-JSON response`);
-      
-      return new Response(
-        JSON.stringify(mockData),
-        { 
-          headers: { 
-            ...corsHeaders, 
-            'Content-Type': 'application/json',
-            ...getCacheHeaders(type),
-            'X-Mock-Data': 'true'
-          }
-        }
-      );
+      throw new Error('Invalid response format from FMP API');
     }
     
     // Parse the API response
     const data = await response.json();
     
-    // If we got an empty array, use mock data
+    // If we got an empty array, throw an error
     if (Array.isArray(data) && data.length === 0) {
-      const mockData = generateMockDCFData(symbol, type);
-      
-      console.log(`Using mock DCF data for ${symbol} due to empty response`);
-      
-      return new Response(
-        JSON.stringify(mockData),
-        { 
-          headers: { 
-            ...corsHeaders, 
-            'Content-Type': 'application/json',
-            ...getCacheHeaders(type),
-            'X-Mock-Data': 'true'
-          }
-        }
-      );
+      throw new Error(`No DCF data found for symbol: ${symbol}`);
     }
     
     console.log(`Received DCF data for ${symbol}, type: ${type}`);
@@ -227,69 +159,48 @@ serve(async (req) => {
   } catch (error) {
     console.error("Error in get-custom-dcf function:", error);
     
-    // Generate mock DCF data for fallback
-    const mockData = generateMockDCFData("UNKNOWN", "standard");
-    
+    // Return a clear error response
     return new Response(
-      JSON.stringify(mockData),
+      JSON.stringify({ 
+        error: error.message || "Failed to fetch DCF data",
+        details: "An error occurred while fetching DCF data from the FMP API"
+      }),
       { 
         headers: { 
           ...corsHeaders, 
-          'Content-Type': 'application/json',
-          'X-Mock-Data': 'true'
-        } 
+          'Content-Type': 'application/json'
+        },
+        status: 500
       }
     );
   }
 });
 
-// Function to generate mock DCF data when the API fails
-function generateMockDCFData(symbol: string, type: string) {
-  const currentYear = new Date().getFullYear();
-  const baseRevenue = 1000000000;
-  const baseEbit = baseRevenue * 0.25;
-  const baseEbitda = baseEbit * 1.2;
-  const baseFcf = baseEbit * 0.65;
-  const baseSharesOutstanding = 1000000;
+/**
+ * Fetch with retry functionality
+ */
+async function fetchWithRetry(
+  url: string,
+  options: RequestInit = {},
+  maxRetries: number = 3
+): Promise<Response> {
+  let lastError: Error | null = null;
   
-  // Generate 5 years of projected data
-  const mockData = [];
-  for (let i = 0; i < 5; i++) {
-    const growthFactor = Math.pow(1.08, i); // 8% annual growth
-    
-    mockData.push({
-      year: (currentYear + i).toString(),
-      symbol: symbol,
-      dcf: 100 + (10 * i), // Increasing DCF value
-      price: 100,
-      equityValuePerShare: 115 + (5 * i),
-      beta: 1.2,
-      dilutedSharesOutstanding: baseSharesOutstanding,
-      revenue: baseRevenue * growthFactor,
-      revenuePercentage: 8.5,
-      ebitda: baseEbitda * growthFactor,
-      ebitdaPercentage: 30,
-      ebit: baseEbit * growthFactor,
-      ebitPercentage: 25,
-      depreciation: baseEbitda * growthFactor * 0.1,
-      capitalExpenditure: baseRevenue * growthFactor * 0.08,
-      capitalExpenditurePercentage: 8,
-      totalDebt: baseRevenue * 0.3,
-      cashAndCashEquivalents: baseRevenue * 0.2,
-      totalEquity: baseRevenue * 0.7,
-      totalCapital: baseRevenue,
-      wacc: 0.095,
-      operatingCashFlow: baseFcf * growthFactor * 1.2,
-      operatingCashFlowPercentage: 28,
-      freeCashFlow: baseFcf * growthFactor,
-      taxRate: 0.21,
-      costofDebt: 0.04,
-      costOfEquity: 0.095,
-      riskFreeRate: 0.035,
-      marketRiskPremium: 0.05,
-      longTermGrowthRate: 0.03
-    });
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      const response = await fetch(url, options);
+      return response;
+    } catch (error) {
+      console.error(`Fetch error (attempt ${attempt}/${maxRetries}):`, error);
+      lastError = error instanceof Error ? error : new Error(String(error));
+      
+      if (attempt < maxRetries) {
+        // Wait before retrying with exponential backoff
+        const delay = 1000 * Math.pow(2, attempt - 1);
+        await new Promise(resolve => setTimeout(resolve, delay));
+      }
+    }
   }
   
-  return mockData;
+  throw lastError || new Error('Failed to fetch after multiple attempts');
 }

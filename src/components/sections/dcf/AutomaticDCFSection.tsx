@@ -1,15 +1,19 @@
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
-import { useDCFData } from "./hooks/useDCFData";
+import { useStandardDCF } from "@/hooks/dcf/useStandardDCF";
 import DCFValuationSummary from "./DCFValuationSummary";
 import SensitivityAnalysisTable from "./SensitivityAnalysisTable";
 import ProjectedCashFlowsTable from "./ProjectedCashFlowsTable";
 import DCFErrorDisplay from "./DCFErrorDisplay";
 import DCFLoadingIndicator from "./DCFLoadingIndicator";
-import AIAssumptionsAlert from "./AIAssumptionsAlert";
 import { Button } from "@/components/ui/button";
 import { RefreshCw } from "lucide-react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Info } from "lucide-react";
+import { createMockDCFData, prepareDCFData } from "./utils/dcfDataUtils";
+import { FormattedDCFData } from "@/types/ai-analysis/dcfTypes";
+import { getCurrentPrice } from "./utils/priceUtils";
 
 interface AutomaticDCFSectionProps {
   financials: any[];
@@ -17,47 +21,83 @@ interface AutomaticDCFSectionProps {
 }
 
 const AutomaticDCFSection: React.FC<AutomaticDCFSectionProps> = ({ financials, symbol }) => {
-  const { 
-    dcfData, 
-    currentPrice, 
-    isCalculating, 
-    isLoadingAssumptions,
-    errors,
-    assumptions,
-    usingMockData,
-    handleRefreshAssumptions
-  } = useDCFData(symbol, financials);
+  const [isInitialized, setIsInitialized] = useState(false);
   
-  const isLoading = isCalculating || isLoadingAssumptions;
+  // Get the current price
+  const currentPrice = getCurrentPrice(financials);
+  
+  // Use the standard DCF hook
+  const { 
+    calculateStandardDCF, 
+    result: dcfResult, 
+    projectedData, 
+    isCalculating, 
+    error 
+  } = useStandardDCF(symbol);
+  
+  // Mock DCF data as fallback
+  const mockDCFData = createMockDCFData(financials);
+  
+  // Initialize - calculate DCF on first load
+  useEffect(() => {
+    if (!isInitialized && symbol) {
+      calculateStandardDCF();
+      setIsInitialized(true);
+    }
+  }, [symbol, isInitialized, calculateStandardDCF]);
+  
+  // Determine whether to use mock data
+  const shouldUseMockData = isCalculating || !dcfResult;
+  
+  // Prepare the DCF data for display
+  const dcfData: FormattedDCFData = shouldUseMockData
+    ? mockDCFData
+    : prepareDCFData(
+        dcfResult, 
+        null, // No AI assumptions
+        projectedData, 
+        mockDCFData.sensitivity
+      );
+
+  // Handle refresh
+  const handleRefresh = () => {
+    calculateStandardDCF();
+  };
   
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h2 className="text-lg font-semibold">Automatic AI-Powered DCF Analysis</h2>
+        <h2 className="text-lg font-semibold">Automatic DCF Analysis</h2>
         <Button 
           variant="outline" 
           size="sm" 
-          onClick={handleRefreshAssumptions}
-          disabled={isLoading}
+          onClick={handleRefresh}
+          disabled={isCalculating}
         >
-          <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
+          <RefreshCw className={`h-4 w-4 mr-2 ${isCalculating ? 'animate-spin' : ''}`} />
           Refresh Analysis
         </Button>
       </div>
       
-      <AIAssumptionsAlert 
-        assumptions={assumptions} 
-        isLoading={isLoadingAssumptions} 
-        hasError={errors.length > 0}
-        usingMockData={usingMockData}
-      />
+      {/* Information Alert */}
+      <Alert className="bg-blue-50 border-blue-200">
+        <Info className="h-4 w-4 text-blue-500" />
+        <AlertTitle>FMP Standard DCF Model</AlertTitle>
+        <AlertDescription>
+          This DCF analysis uses the Financial Modeling Prep standard DCF calculation for {symbol}.
+          {error && " Currently showing estimated values due to data retrieval issues."}
+        </AlertDescription>
+      </Alert>
       
-      <DCFErrorDisplay errors={errors} />
+      {/* Error Display */}
+      {error && (
+        <DCFErrorDisplay errors={[error]} />
+      )}
       
-      {isLoading ? (
+      {isCalculating ? (
         <DCFLoadingIndicator 
           isLoading={isCalculating} 
-          isLoadingAssumptions={isLoadingAssumptions} 
+          isLoadingAssumptions={false} 
         />
       ) : (
         <div className="space-y-6">

@@ -19,6 +19,7 @@ export const fetchStandardDCF = async (symbol: string): Promise<any> => {
       throw new Error("Standard DCF calculation returned no data");
     }
     
+    console.log(`Successfully retrieved standard DCF data for ${symbol}:`, data);
     return data;
   } catch (error) {
     console.error("Error fetching standard DCF:", error);
@@ -49,6 +50,7 @@ export const fetchLeveredDCF = async (symbol: string, limit?: number): Promise<a
       throw new Error("Levered DCF calculation returned no data");
     }
     
+    console.log(`Successfully retrieved levered DCF data for ${symbol}:`, data);
     return data;
   } catch (error) {
     console.error("Error fetching levered DCF:", error);
