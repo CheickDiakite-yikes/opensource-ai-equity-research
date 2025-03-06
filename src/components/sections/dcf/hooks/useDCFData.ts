@@ -4,13 +4,16 @@ import { useDCFAssumptions } from "./useDCFAssumptions";
 import { useDCFCalculation } from "./useDCFCalculation";
 import { useDCFErrors } from "./useDCFErrors";
 import { getCurrentPrice } from "../utils/priceUtils";
-import { createMockDCFData, prepareDCFData } from "../utils/dcfDataUtils";
+import { createMockDCFData, prepareDCFData, handleDCFCalculationError } from "../utils/dcfDataUtils";
 import { FormattedDCFData } from "@/types/ai-analysis/dcfTypes";
 import { toast } from "@/components/ui/use-toast";
 
 export const useDCFData = (symbol: string, financials: any[]) => {
   // Get the current price
   const currentPrice = getCurrentPrice(financials);
+  
+  // State for tracking tab changes
+  const [activeTab, setActiveTab] = useState("automatic");
   
   // Custom hooks for different concerns
   const { 
@@ -32,7 +35,7 @@ export const useDCFData = (symbol: string, financials: any[]) => {
     calculateDCFWithAIAssumptions
   } = useDCFCalculation(symbol);
   
-  const { errors } = useDCFErrors(assumptionsError, dcfError);
+  const { errors, addError } = useDCFErrors(assumptionsError, dcfError);
   
   // Mock DCF data as fallback
   const mockDCFData = createMockDCFData(financials);
@@ -45,10 +48,26 @@ export const useDCFData = (symbol: string, financials: any[]) => {
         title: "Calculating DCF",
         description: "Using AI-generated assumptions to calculate intrinsic value",
       });
-      calculateDCFWithAIAssumptions(assumptions, financials);
+      
+      try {
+        calculateDCFWithAIAssumptions(assumptions, financials);
+      } catch (err) {
+        console.error("Error initiating DCF calculation:", err);
+        // Explicitly handle potential API not found errors
+        if (err instanceof Error && err.message.includes("404")) {
+          addError("DCF API endpoint not found. The service may not be deployed or configured correctly.");
+        }
+      }
+      
       setHasAttemptedFetch(true);
     }
-  }, [symbol, assumptions, hasAttemptedFetch, calculateDCFWithAIAssumptions, financials, setHasAttemptedFetch]);
+  }, [symbol, assumptions, hasAttemptedFetch, calculateDCFWithAIAssumptions, financials, setHasAttemptedFetch, addError]);
+
+  // Handle switching to custom DCF tab
+  const handleSwitchToCustomDCF = useCallback(() => {
+    setActiveTab("custom");
+    // You would typically propagate this tab change to a parent component
+  }, []);
 
   // Handle refreshing assumptions and recalculating DCF
   const handleRefreshDCF = useCallback(async () => {
@@ -93,6 +112,9 @@ export const useDCFData = (symbol: string, financials: any[]) => {
     errors,
     assumptions,
     usingMockData: shouldUseMockData,
-    handleRefreshAssumptions: handleRefreshDCF
+    handleRefreshAssumptions: handleRefreshDCF,
+    handleSwitchToCustomDCF,
+    activeTab,
+    setActiveTab
   };
 };

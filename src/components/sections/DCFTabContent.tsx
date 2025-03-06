@@ -4,7 +4,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useCustomDCF } from "@/hooks/dcf/useCustomDCF";
 import AutomaticDCFSection from "./dcf/AutomaticDCFSection";
 import CustomDCFSection from "./dcf/CustomDCFSection";
-import { DCFType } from "@/services/api/analysis/dcfService";
+import { DCFType } from "@/services/api/analysis/dcf/types";
 
 interface DCFTabContentProps {
   financials: any[];
@@ -112,6 +112,10 @@ const DCFTabContent: React.FC<DCFTabContentProps> = ({ financials, symbol }) => 
     calculateLeveredDCF();
   };
   
+  const handleSwitchToCustomDCF = () => {
+    setActiveTab("custom");
+  };
+  
   return (
     <div className="mt-4 space-y-6">
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
@@ -121,7 +125,11 @@ const DCFTabContent: React.FC<DCFTabContentProps> = ({ financials, symbol }) => 
         </TabsList>
         
         <TabsContent value="automatic" className="space-y-6">
-          <AutomaticDCFSection financials={financials} symbol={symbol} />
+          <AutomaticDCFSection 
+            financials={financials} 
+            symbol={symbol} 
+            onSwitchToCustomDCF={handleSwitchToCustomDCF}
+          />
         </TabsContent>
         
         <TabsContent value="custom" className="space-y-6">

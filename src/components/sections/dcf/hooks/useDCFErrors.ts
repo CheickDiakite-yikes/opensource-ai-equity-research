@@ -1,39 +1,36 @@
 
 import { useState, useEffect } from "react";
+import { handleDCFCalculationError } from "../utils/dcfDataUtils";
 
-export const useDCFErrors = (
-  assumptionsError: Error | null | string,
-  dcfError: Error | null | string
-) => {
+export const useDCFErrors = (assumptionsError: Error | null, dcfError: string | null) => {
   const [errors, setErrors] = useState<string[]>([]);
   
-  // Helper function to handle different error types
-  const formatError = (error: Error | string | null): string | null => {
-    if (!error) return null;
-    
-    if (typeof error === 'string') {
-      return error;
-    }
-    
-    return error.message || String(error);
+  // Add custom error method
+  const addError = (errorMessage: string) => {
+    setErrors(prev => {
+      // Don't add duplicate errors
+      if (prev.includes(errorMessage)) {
+        return prev;
+      }
+      return [...prev, errorMessage];
+    });
   };
-  
-  // Collect errors from different sources
+
+  // Update errors when assumption or DCF errors change
   useEffect(() => {
     const newErrors: string[] = [];
     
-    const assumptionsErrorStr = formatError(assumptionsError);
-    if (assumptionsErrorStr) {
-      newErrors.push(`AI Assumptions Error: ${assumptionsErrorStr}`);
+    if (assumptionsError) {
+      const errorMessage = handleDCFCalculationError(assumptionsError, 'AAPL');
+      newErrors.push(`Error fetching DCF assumptions: ${errorMessage}`);
     }
     
-    const dcfErrorStr = formatError(dcfError);
-    if (dcfErrorStr) {
-      newErrors.push(`DCF Calculation Error: ${dcfErrorStr}`);
+    if (dcfError) {
+      newErrors.push(`Error calculating DCF: ${dcfError}`);
     }
     
     setErrors(newErrors);
   }, [assumptionsError, dcfError]);
 
-  return { errors };
+  return { errors, addError };
 };
