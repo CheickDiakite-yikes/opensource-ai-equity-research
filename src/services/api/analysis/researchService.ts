@@ -1,5 +1,5 @@
 
-import { invokeSupabaseFunction } from "../base";
+import { invokeSupabaseFunction, withRetry } from "../base";
 import { ResearchReport } from "@/types/ai-analysis/reportTypes";
 import { StockPrediction } from "@/types/ai-analysis/predictionTypes";
 import { NewsArticle } from "@/types/news/newsTypes";
@@ -12,9 +12,12 @@ export const generateResearchReport = async (reportRequest: any): Promise<Resear
   try {
     console.log(`Generating AI research report for ${reportRequest.symbol} (type: ${reportRequest.reportType || 'standard'})`);
     
-    const data = await invokeSupabaseFunction<ResearchReport>('generate-research-report', {
-      reportRequest
-    });
+    // Use withRetry for better reliability
+    const data = await withRetry(async () => {
+      return await invokeSupabaseFunction<ResearchReport>('generate-research-report', {
+        reportRequest
+      });
+    }, 2, 2000); // 2 retries with 2s initial delay
     
     if (!data) {
       console.error("No data returned from research report API");
@@ -75,13 +78,15 @@ export const generateStockPrediction = async (
   try {
     console.log(`Generating AI stock prediction for ${symbol}${quickMode ? ' (quick mode)' : ''}`);
     
-    const data = await invokeSupabaseFunction<StockPrediction>('predict-stock-price', {
-      symbol,
-      stockData: quote,
-      financials,
-      news,
-      quickMode // Pass the quick mode flag to the edge function
-    });
+    const data = await withRetry(async () => {
+      return await invokeSupabaseFunction<StockPrediction>('predict-stock-price', {
+        symbol,
+        stockData: quote,
+        financials,
+        news,
+        quickMode // Pass the quick mode flag to the edge function
+      });
+    }, 1, 1000); // 1 retry with 1s delay
     
     if (!data) {
       console.error("No data returned from stock prediction API");

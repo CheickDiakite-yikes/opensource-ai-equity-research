@@ -25,6 +25,7 @@ const ResearchReportGenerator = ({ symbol }: ResearchReportGeneratorProps) => {
     report,
     prediction,
     reportType,
+    generationError,
     setReportType,
     handleGenerateReport,
     handlePredictPrice
@@ -79,6 +80,7 @@ const ResearchReportGenerator = ({ symbol }: ResearchReportGeneratorProps) => {
       report={report}
       prediction={prediction}
       isReportTooBasic={isReportTooBasic}
+      generationError={generationError}
     />
   );
 };

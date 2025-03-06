@@ -23,6 +23,7 @@ interface ResearchReportContentProps {
   report: ResearchReport | null;
   prediction: StockPrediction | null;
   isReportTooBasic?: boolean;
+  generationError?: string | null;
 }
 
 const ResearchReportContent: React.FC<ResearchReportContentProps> = ({
@@ -37,7 +38,8 @@ const ResearchReportContent: React.FC<ResearchReportContentProps> = ({
   onPredictPrice,
   report,
   prediction,
-  isReportTooBasic = false
+  isReportTooBasic = false,
+  generationError = null
 }) => {
   return (
     <div className="space-y-6">
@@ -68,6 +70,30 @@ const ResearchReportContent: React.FC<ResearchReportContentProps> = ({
                 <div className="flex">
                   <AlertCircle className="h-5 w-5 mr-2 flex-shrink-0" />
                   <p>Limited financial data available. Report accuracy may be affected.</p>
+                </div>
+              </motion.div>
+            )}
+            
+            {generationError && (
+              <motion.div 
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md text-red-800 text-sm"
+              >
+                <div className="flex">
+                  <AlertCircle className="h-5 w-5 mr-2 flex-shrink-0" />
+                  <div>
+                    <p className="font-medium">Error generating report</p>
+                    <p className="mt-1">{generationError}</p>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="mt-2 text-xs"
+                      onClick={onGenerateReport}
+                    >
+                      <RefreshCw className="mr-1 h-3 w-3" /> Try again
+                    </Button>
+                  </div>
                 </div>
               </motion.div>
             )}

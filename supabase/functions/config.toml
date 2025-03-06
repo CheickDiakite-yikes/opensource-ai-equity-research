@@ -1,0 +1,6 @@
+
+project_id = "rnpcygrrxeeqphdjuesh"
+[api]
+enabled = true
+[functions.generate-research-report]
+verify_jwt = false

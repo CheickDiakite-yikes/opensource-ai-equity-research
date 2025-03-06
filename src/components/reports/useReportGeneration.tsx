@@ -19,6 +19,7 @@ export const useReportGeneration = (symbol: string, data: ReportData) => {
   const [report, setReport] = useState<ResearchReport | null>(null);
   const [prediction, setPrediction] = useState<StockPrediction | null>(null);
   const [reportType, setReportType] = useState<string>("comprehensive");
+  const [generationError, setGenerationError] = useState<string | null>(null);
 
   const handleGenerateReport = async () => {
     try {
@@ -32,6 +33,7 @@ export const useReportGeneration = (symbol: string, data: ReportData) => {
       }
       
       setIsGenerating(true);
+      setGenerationError(null);
       
       const reportRequest: ReportRequest = {
         symbol,
@@ -68,7 +70,7 @@ export const useReportGeneration = (symbol: string, data: ReportData) => {
       const generatedReport = await generateResearchReport(reportRequest);
       
       if (!generatedReport) {
-        throw new Error("Failed to generate report");
+        throw new Error("Failed to generate report - no data returned");
       }
       
       console.log("Report received from API:", {
@@ -108,6 +110,7 @@ export const useReportGeneration = (symbol: string, data: ReportData) => {
       });
     } catch (err: any) {
       console.error("Error generating report:", err);
+      setGenerationError(err.message);
       toast({
         title: "Error",
         description: `Failed to generate report: ${err.message}`,
@@ -180,6 +183,7 @@ export const useReportGeneration = (symbol: string, data: ReportData) => {
     report,
     prediction,
     reportType,
+    generationError,
     setReportType,
     handleGenerateReport,
     handlePredictPrice

@@ -1,6 +1,6 @@
 
 import { corsHeaders } from '../_shared/cors.ts';
-import { API_BASE_URLS, OPENAI_MODELS, OPENAI_API_KEY } from '../_shared/constants.ts';
+import { OPENAI_API_KEY } from '../_shared/constants.ts';
 import { formatDataForAnalysis } from '../_shared/report-utils/dataFormatter.ts';
 import { generateReportWithOpenAI } from '../_shared/report-utils/openAIGenerator.ts';
 import { 
@@ -8,12 +8,8 @@ import {
   enhanceSectionContent, 
   ensureCompleteReportStructure 
 } from '../_shared/report-utils/fallbackReportGenerator.ts';
-import { ResearchReport } from '../_shared/report-utils/reportTypes.ts';
 
-const supabaseUrl = Deno.env.get("SUPABASE_URL") || "";
-const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY") || "";
-const openAIApiKey = Deno.env.get("OPENAI_API_KEY") || "";
-
+// Add proper error handling and logging
 Deno.serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -21,10 +17,13 @@ Deno.serve(async (req) => {
   }
   
   try {
+    console.log("Research report generation function called");
+    
     const { reportRequest } = await req.json();
     
     if (!reportRequest || !reportRequest.symbol) {
-      throw new Error('Missing required parameters');
+      console.error("Missing required parameters in request");
+      throw new Error('Missing required parameters: symbol is required');
     }
     
     console.log(`Generating AI research report for ${reportRequest.symbol} (type: ${reportRequest.reportType || 'standard'})`);
@@ -33,7 +32,8 @@ Deno.serve(async (req) => {
     const formattedData = formatDataForAnalysis(reportRequest);
     
     // Generate report using OpenAI
-    const report = await generateReportWithOpenAI(formattedData, reportRequest, openAIApiKey);
+    console.log("Sending data to OpenAI for processing");
+    const report = await generateReportWithOpenAI(formattedData, reportRequest, OPENAI_API_KEY);
     
     // Make sure we have sections before returning
     if (!report.sections || report.sections.length === 0) {
@@ -95,7 +95,6 @@ Deno.serve(async (req) => {
     
     // Log the sections we're returning
     console.log(`Returning report with ${report.sections.length} sections: ${report.sections.map(s => s.title).join(', ')}`);
-    console.log(`Section content lengths: ${report.sections.map(s => `${s.title}: ${s.content.length}`).join(', ')}`);
     
     // Ensure we have all required report details
     ensureCompleteReportStructure(report, formattedData);
