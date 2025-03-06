@@ -1,8 +1,24 @@
 
-import { NextApiRequest, NextApiResponse } from 'next';
 import { supabase } from '@/integrations/supabase/client';
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+// This is a placeholder API handler for potential future use with Express or similar
+// Currently not being used in the Vite application
+
+interface RequestData {
+  method: string;
+  query: {
+    symbol?: string;
+    type?: string;
+    [key: string]: any;
+  };
+}
+
+interface ResponseData {
+  status: (code: number) => ResponseData;
+  json: (data: any) => void;
+}
+
+export default async function handler(req: RequestData, res: ResponseData) {
   if (req.method !== 'GET') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
