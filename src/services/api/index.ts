@@ -1,10 +1,11 @@
-// Re-export all API services and utilities
+
+// Re-export all API services
 export * from './profileService';
 export * from './financialService';
 export * from './marketDataService';
 export * from './analysisService';
 export * from './documentsService';
-export * from './base';  // This now includes withRetry
+export * from './base';  // Export base utilities including withRetry
 
 // Composite functions
 import { fetchStockProfile, fetchStockQuote } from './profileService';

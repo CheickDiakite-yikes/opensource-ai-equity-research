@@ -33,16 +33,16 @@ export const fetchLeveredDCF = async (symbol: string, limit?: number): Promise<a
   try {
     console.log(`Fetching levered DCF for ${symbol}`);
     
-    const params: any = { 
-      symbol,
-      type: DCFType.LEVERED
-    };
-    
+    const params: any = {};
     if (limit && !isNaN(limit)) {
       params.limit = limit;
     }
     
-    const data = await invokeSupabaseFunction('get-custom-dcf', params);
+    const data = await invokeSupabaseFunction('get-custom-dcf', { 
+      symbol,
+      type: DCFType.LEVERED,
+      params
+    });
     
     if (!data || !Array.isArray(data) || data.length === 0) {
       console.error("Empty or invalid response from levered DCF API");
