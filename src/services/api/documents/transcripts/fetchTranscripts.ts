@@ -1,3 +1,4 @@
+
 import { invokeSupabaseFunction, withRetry } from "../../base";
 import { EarningsCall } from "@/types";
 import { supabase } from "@/integrations/supabase/client";
@@ -42,12 +43,20 @@ export const fetchEarningsTranscripts = async (symbol: string): Promise<Earnings
     
     // Otherwise, get from API with retry logic
     console.log(`Fetching transcripts from API for ${symbol}`);
-    const data = await withRetry(() => 
-      invokeSupabaseFunction<any[]>('fetch-earnings-transcripts', { 
+    const { data, error: fetchError } = await withRetry(async () => {
+      const result = await invokeSupabaseFunction<any[]>('fetch-earnings-transcripts', { 
         symbol,
         limit: 5
-      })
-    );
+      });
+      
+      if (result.error) throw result.error;
+      return result;
+    });
+    
+    if (fetchError || !data) {
+      console.error("Error fetching transcripts with retry:", fetchError);
+      return [];
+    }
     
     // Format the response to match our EarningsCall type
     const formattedData = data.map(transcript => ({

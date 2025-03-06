@@ -7,14 +7,21 @@ import { EarningsCall } from "@/types";
  */
 export const fetchTranscriptDates = async (symbol: string): Promise<{date: string, quarter: string, year: string}[]> => {
   try {
-    const response = await withRetry(() => 
-      invokeSupabaseFunction<{dates: {date: string, quarter: string, year: string}[]}>(
+    const { data, error } = await withRetry(async () => {
+      const result = await invokeSupabaseFunction<{dates: {date: string, quarter: string, year: string}[]}>(
         'fetch-transcript-dates', 
         { symbol }
-      )
-    );
+      );
+      if (result.error) throw result.error;
+      return result;
+    });
     
-    return response.dates || [];
+    if (error) {
+      console.error(`Error fetching transcript dates for ${symbol}:`, error);
+      return [];
+    }
+    
+    return data?.dates || [];
   } catch (error) {
     console.error(`Error fetching transcript dates for ${symbol}:`, error);
     return [];
@@ -26,14 +33,21 @@ export const fetchTranscriptDates = async (symbol: string): Promise<{date: strin
  */
 export const fetchSymbolsWithTranscripts = async (): Promise<{symbol: string, count: number}[]> => {
   try {
-    const response = await withRetry(() => 
-      invokeSupabaseFunction<{symbols: {symbol: string, count: number}[]}>(
+    const { data, error } = await withRetry(async () => {
+      const result = await invokeSupabaseFunction<{symbols: {symbol: string, count: number}[]}>(
         'fetch-available-transcript-symbols', 
         {}
-      )
-    );
+      );
+      if (result.error) throw result.error;
+      return result;
+    });
     
-    return response.symbols || [];
+    if (error) {
+      console.error("Error fetching available transcript symbols:", error);
+      return [];
+    }
+    
+    return data?.symbols || [];
   } catch (error) {
     console.error("Error fetching available transcript symbols:", error);
     return [];
@@ -45,14 +59,21 @@ export const fetchSymbolsWithTranscripts = async (): Promise<{symbol: string, co
  */
 export const fetchLatestTranscripts = async (limit: number = 20): Promise<EarningsCall[]> => {
   try {
-    const response = await withRetry(() => 
-      invokeSupabaseFunction<EarningsCall[]>(
+    const { data, error } = await withRetry(async () => {
+      const result = await invokeSupabaseFunction<EarningsCall[]>(
         'fetch-latest-transcripts', 
         { limit }
-      )
-    );
+      );
+      if (result.error) throw result.error;
+      return result;
+    });
     
-    return response || [];
+    if (error) {
+      console.error(`Error fetching latest transcripts:`, error);
+      return [];
+    }
+    
+    return data || [];
   } catch (error) {
     console.error(`Error fetching latest transcripts:`, error);
     return [];

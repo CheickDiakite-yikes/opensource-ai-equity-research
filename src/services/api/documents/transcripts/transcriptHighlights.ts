@@ -24,16 +24,23 @@ export const generateTranscriptHighlights = async (
       payload.date = metadata.date;
     }
     
-    const response = await withRetry(() => 
-      invokeSupabaseFunction<{ highlights: string[] }>('generate-transcript-highlights', payload)
-    );
+    const { data, error } = await withRetry(async () => {
+      const result = await invokeSupabaseFunction<{ highlights: string[] }>('generate-transcript-highlights', payload);
+      if (result.error) throw result.error;
+      return result;
+    });
     
-    if (!response || !response.highlights) {
+    if (error) {
+      console.error("Error generating highlights with retry:", error);
+      return [];
+    }
+    
+    if (!data || !data.highlights) {
       console.warn("No highlights returned from API");
       return [];
     }
     
-    return response.highlights;
+    return data.highlights;
   } catch (error) {
     console.error("Error generating transcript highlights:", error);
     return [];
