@@ -59,7 +59,7 @@ const DCFTabContent: React.FC<DCFTabContentProps> = ({ financials, symbol }) => 
     rawApiResponse  // Added to capture raw API responses for debugging
   } = useCustomDCF(symbol);
   
-  const currentPrice = financials[0]?.price || 100;
+  const currentPrice = financials?.length > 0 ? financials[0]?.price || 100 : 100;
   
   useEffect(() => {
     // Store the raw API response for debugging
