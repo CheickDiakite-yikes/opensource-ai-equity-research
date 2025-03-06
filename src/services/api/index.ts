@@ -7,10 +7,10 @@ export * from './marketDataService';
 
 // Profile services
 export { 
-  fetchStockProfile as fetchCompanyProfile,
-  fetchStockRating as fetchCompanyRating,
+  fetchStockProfile,
+  fetchStockRating,
   fetchEmployeeCount as fetchCompanyOutlook,
-  fetchCompanyNotes as fetchCompanyPeers 
+  fetchCompanyNotes as fetchCompanyPeers
 } from './profileService';
 
 // Financial data services
@@ -23,7 +23,10 @@ export * from './documentsService';
 export * from './analysisService';
 
 // Base service utils
-export { withRetry } from './base';
+export { withRetry, invokeSupabaseFunction } from './base';
 
 // Enhanced API services
 export * from './enhancedApiService';
+
+// Export company news from marketData for proper import in other files
+export { fetchStockCompanyNews as fetchCompanyNews } from './marketData';

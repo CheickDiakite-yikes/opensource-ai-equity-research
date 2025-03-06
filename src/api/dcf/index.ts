@@ -1,130 +1,148 @@
-
-// DCF API utilities
-import { withRetry } from "@/services/api/base";
+import { invokeSupabaseFunction } from "@/services/api/base";
+import { DCFResponse, DCFType } from "./types";
 
 /**
- * Fetch DCF calculation from FMP API
+ * Fetch DCF (Discounted Cash Flow) valuation for a stock
  */
-export const fetchDCF = async (url: string): Promise<any> => {
+export const fetchDCF = async (symbol: string): Promise<DCFResponse | null> => {
   try {
-    // Use withRetry for better resilience
-    const response = await withRetry(async () => {
-      console.log(`Fetching DCF data from: ${url}`);
-      const res = await fetch(url);
-      
-      if (!res.ok) {
-        throw new Error(`API returned status ${res.status}: ${await res.text()}`);
-      }
-      return res;
+    const data = await invokeSupabaseFunction<DCFResponse[]>('get-stock-data', { 
+      symbol, 
+      endpoint: 'dcf' 
     });
     
-    const data = await response.json();
-    return data;
+    if (!data || !Array.isArray(data) || data.length === 0) return null;
+    return data[0];
   } catch (error) {
     console.error("Error fetching DCF:", error);
-    throw error;
+    return null;
   }
 };
 
 /**
- * Get DCF calculation from FMP
+ * Fetch advanced DCF model with detailed assumptions
  */
-export const getDCF = async (req: Request): Promise<Response> => {
-  const url = new URL(req.url);
-  const params = url.searchParams;
-  
-  // Extract symbol from parameters (required)
-  const symbol = params.get("symbol");
-  if (!symbol) {
-    return new Response(
-      JSON.stringify({ error: "Symbol parameter is required" }),
-      { status: 400, headers: { "Content-Type": "application/json" } }
-    );
-  }
-  
-  // Construct FMP API URL
-  const FMP_API_KEY = import.meta.env.VITE_FMP_API_KEY;
-  if (!FMP_API_KEY) {
-    return new Response(
-      JSON.stringify({ error: "API key not configured" }),
-      { status: 500, headers: { "Content-Type": "application/json" } }
-    );
-  }
-  
+export const fetchAdvancedDCF = async (symbol: string): Promise<any | null> => {
   try {
-    let fmpEndpoint;
+    const data = await invokeSupabaseFunction<any[]>('get-stock-data', { 
+      symbol, 
+      endpoint: 'advanced-dcf' 
+    });
     
-    // Extract type parameter with default "advanced"
-    const type = params.get("type") || "advanced";
+    if (!data || !Array.isArray(data) || data.length === 0) return null;
+    return data[0];
+  } catch (error) {
+    console.error("Error fetching advanced DCF:", error);
+    return null;
+  }
+};
+
+/**
+ * Fetch levered DCF model
+ */
+export const fetchLeveredDCF = async (symbol: string): Promise<any | null> => {
+  try {
+    const data = await invokeSupabaseFunction<any[]>('get-stock-data', { 
+      symbol, 
+      endpoint: 'levered-dcf' 
+    });
     
-    // Choose endpoint based on type
+    if (!data || !Array.isArray(data) || data.length === 0) return null;
+    return data[0];
+  } catch (error) {
+    console.error("Error fetching levered DCF:", error);
+    return null;
+  }
+};
+
+/**
+ * Calculate custom DCF with user-provided parameters
+ */
+export const calculateCustomDCF = async (
+  symbol: string,
+  params: {
+    growthRate: number;
+    terminalRate: number;
+    discountRate: number;
+    forecastYears: number;
+    [key: string]: any;
+  }
+): Promise<any | null> => {
+  try {
+    const data = await invokeSupabaseFunction<any>('calculate-custom-dcf', { 
+      symbol,
+      params
+    });
+    
+    return data;
+  } catch (error) {
+    console.error("Error calculating custom DCF:", error);
+    return null;
+  }
+};
+
+/**
+ * Fetch DCF model based on type
+ */
+export const fetchDCFByType = async (
+  symbol: string, 
+  type: DCFType = DCFType.STANDARD
+): Promise<any | null> => {
+  try {
     switch (type) {
-      case "levered":
-        fmpEndpoint = `https://financialmodelingprep.com/api/v3/levered-discounted-cash-flow/${symbol}?apikey=${FMP_API_KEY}`;
-        break;
-      case "standard":
-        fmpEndpoint = `https://financialmodelingprep.com/api/v3/discounted-cash-flow/${symbol}?apikey=${FMP_API_KEY}`;
-        break;
-      case "custom-levered":
-        fmpEndpoint = `https://financialmodelingprep.com/stable/custom-levered-discounted-cash-flow?symbol=${symbol}&apikey=${FMP_API_KEY}`;
-        break;
-      case "advanced":
+      case DCFType.STANDARD:
+        return await fetchDCF(symbol);
+      case DCFType.LEVERED:
+        return await fetchLeveredDCF(symbol);
+      case DCFType.CUSTOM_ADVANCED:
+        return await fetchAdvancedDCF(symbol);
       default:
-        fmpEndpoint = `https://financialmodelingprep.com/stable/custom-discounted-cash-flow?symbol=${symbol}&apikey=${FMP_API_KEY}`;
-        break;
+        return await fetchDCF(symbol);
+    }
+  } catch (error) {
+    console.error(`Error fetching DCF of type ${type}:`, error);
+    return null;
+  }
+};
+
+/**
+ * Process DCF API request
+ */
+export const processDCFRequest = async (request: Request): Promise<any> => {
+  try {
+    const { symbol, type = DCFType.STANDARD, params } = await request.json();
+    
+    if (!symbol) {
+      return new Response(
+        JSON.stringify({ error: "Symbol is required" }),
+        { status: 400 }
+      );
     }
     
-    // Add other parameters if provided
-    url.searchParams.forEach((value, key) => {
-      if (key !== "symbol" && key !== "type") {
-        fmpEndpoint += `&${key}=${value}`;
-      }
-    });
+    let result;
     
-    // Make the API request
-    const data = await fetchDCF(fmpEndpoint);
+    if (type === DCFType.CUSTOM_LEVERED && params) {
+      result = await calculateCustomDCF(symbol, params);
+    } else {
+      result = await fetchDCFByType(symbol, type as DCFType);
+    }
     
-    // Return data as JSON
+    if (!result) {
+      return new Response(
+        JSON.stringify({ error: "Failed to fetch DCF data" }),
+        { status: 404 }
+      );
+    }
+    
     return new Response(
-      JSON.stringify(data),
-      { headers: { "Content-Type": "application/json" } }
+      JSON.stringify(result),
+      { status: 200 }
     );
   } catch (error) {
-    console.error("Error in DCF API:", error);
-    
-    // Return error as JSON
+    console.error("Error processing DCF request:", error);
     return new Response(
-      JSON.stringify({ 
-        error: "Failed to calculate DCF", 
-        details: error instanceof Error ? error.message : String(error)
-      }),
-      { status: 500, headers: { "Content-Type": "application/json" } }
+      JSON.stringify({ error: "Internal server error" }),
+      { status: 500 }
     );
   }
-};
-
-/**
- * Handle DCF API requests
- */
-export const onRequest = async (context: { request: Request }) => {
-  const req = context.request;
-  
-  if (req.method === "OPTIONS") {
-    return new Response(null, {
-      headers: {
-        "Access-Control-Allow-Origin": "*",
-        "Access-Control-Allow-Methods": "GET, OPTIONS",
-        "Access-Control-Allow-Headers": "Content-Type, Accept",
-      },
-    });
-  }
-  
-  if (req.method === "GET") {
-    return getDCF(req);
-  }
-  
-  return new Response(
-    JSON.stringify({ error: "Method not allowed" }),
-    { status: 405, headers: { "Content-Type": "application/json" } }
-  );
 };

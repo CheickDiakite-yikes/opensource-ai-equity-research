@@ -1,4 +1,5 @@
-import { useSupabaseClient } from "@supabase/auth-helpers-react";
+
+import { supabase } from "@/integrations/supabase/client";
 
 /**
  * Base function to invoke a Supabase function with error handling and retry logic.
@@ -7,8 +8,6 @@ export const invokeSupabaseFunction = async <T>(
   functionName: string,
   payload: object
 ): Promise<T> => {
-  const supabase = useSupabaseClient();
-  
   try {
     const { data, error } = await supabase.functions.invoke(functionName, {
       body: payload,
