@@ -80,12 +80,12 @@ serve(async (req) => {
         break;
       case "custom-levered":
         // Custom Levered DCF endpoint - using the stable endpoint
-        apiUrl = `${API_BASE_URLS.FMP_STABLE}/v4/advanced/custom-levered-discounted-cash-flow?symbol=${symbol}`;
+        apiUrl = `${API_BASE_URLS.FMP_STABLE}/custom-levered-discounted-cash-flow?symbol=${symbol}`;
         break;
       case "advanced":
       default:
         // Custom DCF Advanced endpoint - using the stable endpoint
-        apiUrl = `${API_BASE_URLS.FMP_STABLE}/v4/advanced/custom-discounted-cash-flow?symbol=${symbol}`;
+        apiUrl = `${API_BASE_URLS.FMP_STABLE}/custom-discounted-cash-flow?symbol=${symbol}`;
         break;
     }
     

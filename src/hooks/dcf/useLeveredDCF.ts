@@ -1,9 +1,10 @@
 
 import { useState } from "react";
-import { fetchLeveredDCF } from "@/services/api/analysis/dcfService";
+import { fetchLeveredDCF } from "@/services/api/analysis/dcf/standardDCFService";
 import { CustomDCFResult, YearlyDCFData } from "@/types/ai-analysis/dcfTypes";
-import { createProjectedData, createDefaultDCFResult, handleDCFError } from "./dcfCalculationUtils";
+import { createProjectedData } from "./dcfCalculationUtils";
 import { useStandardDCF } from "./useStandardDCF";
+import { toast } from "@/components/ui/use-toast";
 
 export const useLeveredDCF = (symbol: string) => {
   const [isCalculating, setIsCalculating] = useState(false);
@@ -26,8 +27,8 @@ export const useLeveredDCF = (symbol: string) => {
       if (apiResult && Array.isArray(apiResult) && apiResult.length > 0) {
         console.log("Received levered DCF results:", apiResult);
         
-        // Transform the data for our UI
-        const dcfResult = createDefaultDCFResult(symbol, apiResult);
+        // Use the first item as our main DCF result
+        const dcfResult = apiResult[0];
         
         setResult(dcfResult);
         
@@ -35,27 +36,37 @@ export const useLeveredDCF = (symbol: string) => {
         const yearly = createProjectedData(apiResult);
         setProjectedData(yearly);
         
+        toast({
+          title: "Levered DCF Calculation Complete",
+          description: `Intrinsic value per share: $${dcfResult.equityValuePerShare.toFixed(2)}`,
+        });
+        
         return { dcfResult, yearly };
       } else {
         console.error("Invalid or empty result from levered DCF:", apiResult);
         setError("Failed to calculate levered DCF. Please try again later.");
         
+        toast({
+          title: "Levered DCF Calculation Failed",
+          description: "Failed to calculate levered DCF. Using standard DCF instead.",
+          variant: "destructive",
+        });
+        
         // Fallback to standard DCF if levered fails
-        return await handleDCFError(
-          new Error("Empty or invalid levered DCF result"), 
-          calculateStandardDCF,
-          "calculating levered DCF"
-        );
+        return await calculateStandardDCF();
       }
     } catch (err) {
-      setError(`An error occurred during calculation: ${err instanceof Error ? err.message : 'Unknown error'}`);
+      const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+      setError(`An error occurred during calculation: ${errorMessage}`);
+      
+      toast({
+        title: "Levered DCF Calculation Failed",
+        description: "Using standard DCF as fallback.",
+        variant: "destructive",
+      });
       
       // Fallback to standard DCF if levered fails
-      return await handleDCFError(
-        err, 
-        calculateStandardDCF,
-        "calculating levered DCF"
-      );
+      return await calculateStandardDCF();
     } finally {
       setIsCalculating(false);
     }

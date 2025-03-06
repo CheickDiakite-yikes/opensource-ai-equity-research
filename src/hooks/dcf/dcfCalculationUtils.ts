@@ -1,4 +1,3 @@
-
 import { CustomDCFParams, CustomDCFResult, YearlyDCFData } from "@/types/ai-analysis/dcfTypes";
 import { toast } from "@/components/ui/use-toast";
 
@@ -9,18 +8,15 @@ export const createProjectedData = (
   result: any[], 
   params?: CustomDCFParams
 ): YearlyDCFData[] => {
-  const currentYear = new Date().getFullYear();
-  const projectionYears = Array.from({length: 5}, (_, i) => currentYear + i);
-  
   // If we have multiple years in the result, use them directly
   if (result && Array.isArray(result) && result.length > 1) {
     // API returned multiple years of data
     const yearly = result.map(item => ({
-      year: item.year,
+      year: item.year || new Date().getFullYear().toString(),
       revenue: item.revenue || 0,
       ebit: item.ebit || 0,
       ebitda: item.ebitda || 0,
-      freeCashFlow: item.freeCashFlow || (item.operatingCashFlow ? item.operatingCashFlow - Math.abs(item.capitalExpenditure || 0) : 0),
+      freeCashFlow: item.freeCashFlow || item.ufcf || (item.operatingCashFlow ? item.operatingCashFlow - Math.abs(item.capitalExpenditure || 0) : 0),
       operatingCashFlow: item.operatingCashFlow || 0,
       capitalExpenditure: item.capitalExpenditure || 0
     }));
@@ -34,6 +30,8 @@ export const createProjectedData = (
   } 
   
   // Only single year data or no data, project for next years
+  const currentYear = new Date().getFullYear();
+  const projectionYears = Array.from({length: 5}, (_, i) => currentYear + i);
   const baseItem = result && Array.isArray(result) && result.length > 0 ? result[0] : null;
   const revenueGrowth = params?.revenueGrowthPct || 
     (baseItem?.revenuePercentage ? baseItem.revenuePercentage / 100 : 0.085);
@@ -44,7 +42,7 @@ export const createProjectedData = (
     const baseRevenue = baseItem?.revenue || 100000000;
     const baseEbit = baseItem?.ebit || baseRevenue * 0.25; 
     const baseEbitda = baseItem?.ebitda || baseEbit * 1.2;
-    const baseFcf = baseItem?.freeCashFlow || baseEbit * 0.65;
+    const baseFcf = baseItem?.freeCashFlow || baseItem?.ufcf || baseEbit * 0.65;
     const baseOcf = baseItem?.operatingCashFlow || baseFcf * 1.2;
     const baseCapex = baseItem?.capitalExpenditure || baseRevenue * 0.08;
     
