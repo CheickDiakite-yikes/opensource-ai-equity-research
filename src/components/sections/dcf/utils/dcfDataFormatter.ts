@@ -186,10 +186,15 @@ const generateSensitivityAnalysis = (
       });
     });
     
+    // Create rows with proper structure matching the DCFSensitivityData interface
+    const rows = growthRates.map((rate, index) => ({
+      growth: rate.toFixed(1) + '%',
+      values: data[index]
+    }));
+    
     return {
-      growthRates,
-      discountRates: discountRates.map(rate => rate.toFixed(1) + '%'),
-      data
+      headers: ['Growth/Discount', ...discountRates.map(rate => rate.toFixed(1) + '%')],
+      rows: rows
     };
   } catch (error) {
     console.error("Error generating sensitivity analysis:", error);
