@@ -25,14 +25,14 @@ export interface AIDCFResult {
 /**
  * Fetch AI-powered DCF analysis for a given symbol
  */
-export const fetchAIDCF = async (symbol: string): Promise<AIDCFResult | null> => {
+export const fetchAIDCF = async (symbol: string): Promise<AIDCFResult> => {
   if (!symbol || symbol.trim() === "") {
     toast({
       title: "Symbol Required",
       description: "Please provide a valid stock symbol for DCF calculation",
       variant: "destructive",
     });
-    return null;
+    throw new Error("Symbol is required for AI-DCF calculation");
   }
   
   try {
@@ -57,6 +57,6 @@ export const fetchAIDCF = async (symbol: string): Promise<AIDCFResult | null> =>
       variant: "destructive",
     });
     
-    return null;
+    throw error;
   }
 };

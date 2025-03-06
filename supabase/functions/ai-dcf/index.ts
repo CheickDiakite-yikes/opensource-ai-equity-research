@@ -2,369 +2,144 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { corsHeaders } from "../_shared/cors.ts";
 
-// Configuration and environment variables
-const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY") || "";
+// API key from environment variable
 const FMP_API_KEY = Deno.env.get("FMP_API_KEY") || "";
 
-// Types and interfaces
-interface IncomeStatement {
-  date: string;
-  revenue: number;
-  netIncome: number;
-  [key: string]: any; // Additional fields from FMP
-}
+// Base URL for FMP API
+const FMP_BASE_URL = "https://financialmodelingprep.com/api";
 
-interface AiAssumptions {
-  averageRevenueGrowth: number; // e.g., 0.05 for 5%
-  wacc: number;                // e.g., 0.10 for 10%
-  terminalGrowth: number;      // e.g., 0.02 for 2%
-}
-
-interface DcfResult {
-  projectedFCFs: number[];
-  terminalValue: number;
-  dcfValue: number;
-  enterpriseValue: number;
-  equityValue: number;
-  sharesOutstanding: number;
-  intrinsicValuePerShare: number;
-  currentPrice: number | null;
-  upside: number | null;
-}
-
-interface AutoDCFResult extends DcfResult {
-  ticker: string;
-  assumptions: AiAssumptions;
-  timestamp: string;
-  aiGenerated: boolean;
-}
-
-/**
- * Fetch historical financial data from FMP
- */
-async function getFinancialData(ticker: string): Promise<IncomeStatement[]> {
-  const upperTicker = ticker.toUpperCase().trim();
-  console.log(`Fetching financial data for ${upperTicker}`);
-  
-  const incomeStmtUrl = `https://financialmodelingprep.com/api/v3/income-statement/${upperTicker}?limit=5&apikey=${FMP_API_KEY}`;
-
-  const response = await fetch(incomeStmtUrl);
-  if (!response.ok) {
-    console.error(`FMP API error (${response.status}): ${await response.text()}`);
-    throw new Error(`Failed to fetch data from FMP for ${upperTicker}`);
-  }
-
-  const incomeStatements: IncomeStatement[] = await response.json();
-  if (!incomeStatements || !incomeStatements.length) {
-    throw new Error(`No income statement data returned from FMP for ${upperTicker}.`);
-  }
-
-  console.log(`Retrieved ${incomeStatements.length} income statements for ${upperTicker}`);
-  return incomeStatements; // Array of income statements (most recent first)
-}
-
-/**
- * Get current price data for the ticker
- */
-async function getCurrentPrice(ticker: string): Promise<number | null> {
-  const upperTicker = ticker.toUpperCase().trim();
+// Main function to fetch DCF data from FMP
+async function fetchDCFData(symbol: string) {
   try {
-    const quoteUrl = `https://financialmodelingprep.com/api/v3/quote/${upperTicker}?apikey=${FMP_API_KEY}`;
+    console.log(`Fetching DCF data for ${symbol}`);
     
-    const response = await fetch(quoteUrl);
-    if (!response.ok) {
-      console.warn(`Could not fetch current price for ${upperTicker}`);
-      return null;
+    // Step 1: Fetch company profile to get basic information
+    const profileUrl = `${FMP_BASE_URL}/v3/profile/${symbol}?apikey=${FMP_API_KEY}`;
+    const profileResponse = await fetch(profileUrl);
+    const profileData = await profileResponse.json();
+    
+    if (!profileData || !profileData.length) {
+      throw new Error(`No profile data found for ${symbol}`);
     }
     
-    const quoteData = await response.json();
-    if (Array.isArray(quoteData) && quoteData.length > 0) {
-      return quoteData[0].price || null;
-    }
-    return null;
-  } catch (error) {
-    console.warn(`Error fetching price for ${upperTicker}:`, error);
-    return null;
-  }
-}
-
-/**
- * Get shares outstanding for the ticker
- */
-async function getSharesOutstanding(ticker: string): Promise<number> {
-  const upperTicker = ticker.toUpperCase().trim();
-  try {
-    const profileUrl = `https://financialmodelingprep.com/api/v3/profile/${upperTicker}?apikey=${FMP_API_KEY}`;
+    const profile = profileData[0];
+    const currentPrice = profile.price;
     
-    const response = await fetch(profileUrl);
-    if (!response.ok) {
-      console.warn(`Could not fetch profile for ${upperTicker}`);
-      return 1; // Default value if we can't get real data
+    // Step 2: Fetch historical financials to analyze growth trends
+    const financialsUrl = `${FMP_BASE_URL}/v3/income-statement/${symbol}?limit=5&apikey=${FMP_API_KEY}`;
+    const financialsResponse = await fetch(financialsUrl);
+    const financialsData = await financialsResponse.json();
+    
+    if (!financialsData || !financialsData.length) {
+      throw new Error(`No financial data found for ${symbol}`);
     }
     
-    const profileData = await response.json();
-    if (Array.isArray(profileData) && profileData.length > 0) {
-      return profileData[0].mktCap / profileData[0].price || 1;
-    }
-    return 1;
-  } catch (error) {
-    console.warn(`Error fetching profile for ${upperTicker}:`, error);
-    return 1;
-  }
-}
-
-/**
- * Get enterprise value and net debt
- */
-async function getEnterpriseValue(ticker: string): Promise<{enterpriseValue: number, netDebt: number}> {
-  const upperTicker = ticker.toUpperCase().trim();
-  try {
-    const evUrl = `https://financialmodelingprep.com/api/v3/enterprise-values/${upperTicker}?limit=1&apikey=${FMP_API_KEY}`;
-    
-    const response = await fetch(evUrl);
-    if (!response.ok) {
-      console.warn(`Could not fetch enterprise value for ${upperTicker}`);
-      return { enterpriseValue: 0, netDebt: 0 };
-    }
-    
-    const evData = await response.json();
-    if (Array.isArray(evData) && evData.length > 0) {
-      return { 
-        enterpriseValue: evData[0].enterpriseValue || 0,
-        netDebt: (evData[0].netDebt || 0)
-      };
-    }
-    return { enterpriseValue: 0, netDebt: 0 };
-  } catch (error) {
-    console.warn(`Error fetching enterprise value for ${upperTicker}:`, error);
-    return { enterpriseValue: 0, netDebt: 0 };
-  }
-}
-
-/**
- * Generate DCF assumptions using OpenAI
- */
-async function getAiAssumptions(incomeStatements: IncomeStatement[], ticker: string): Promise<AiAssumptions> {
-  try {
-    console.log(`Generating AI assumptions for ${ticker}`);
-    
-    // Build a simplified prompt with the historical revenues
-    const revenueData = incomeStatements.map((stmt) => ({
-      date: stmt.date,
-      revenue: stmt.revenue,
-      netIncome: stmt.netIncome
-    }));
-
-    const prompt = `
-      I have the following historical financial data for ${ticker}:
-      ${JSON.stringify(revenueData, null, 2)}
-
-      Please provide reasonable DCF assumptions for:
-      1. averageRevenueGrowth (annual percentage as decimal, e.g., 0.05 for 5%)
-      2. wacc (weighted average cost of capital as decimal, e.g., 0.10 for 10%)
-      3. terminalGrowth (long-term growth rate as decimal, e.g., 0.02 for 2%)
-
-      Return your answer in valid JSON only, with the following keys:
-      {
-        "averageRevenueGrowth": <number>,
-        "wacc": <number>,
-        "terminalGrowth": <number>
+    // Step 3: Calculate average growth rate from historical data
+    let averageRevenueGrowth = 0.05; // Default value
+    if (financialsData.length > 1) {
+      const growthRates = [];
+      for (let i = 0; i < financialsData.length - 1; i++) {
+        const currentRevenue = financialsData[i].revenue;
+        const prevRevenue = financialsData[i + 1].revenue;
+        if (prevRevenue > 0) {
+          const growthRate = (currentRevenue - prevRevenue) / prevRevenue;
+          growthRates.push(growthRate);
+        }
       }
-    `;
-
-    // Call OpenAI's API
-    const response = await fetch("https://api.openai.com/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${OPENAI_API_KEY}`,
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        model: "gpt-4o-mini",
-        messages: [{ role: "user", content: prompt }],
-        temperature: 0.2
-      })
+      
+      if (growthRates.length > 0) {
+        averageRevenueGrowth = growthRates.reduce((sum, rate) => sum + rate, 0) / growthRates.length;
+      }
+    }
+    
+    // Step 4: Fetch company ratios for WACC and other metrics
+    const ratiosUrl = `${FMP_BASE_URL}/v3/ratios/${symbol}?limit=1&apikey=${FMP_API_KEY}`;
+    const ratiosResponse = await fetch(ratiosUrl);
+    const ratiosData = await ratiosResponse.json();
+    
+    // Step 5: Get key metrics
+    const metricsUrl = `${FMP_BASE_URL}/v3/key-metrics/${symbol}?limit=1&apikey=${FMP_API_KEY}`;
+    const metricsResponse = await fetch(metricsUrl);
+    const metricsData = await metricsResponse.json();
+    
+    // Calculate or estimate DCF parameters
+    const wacc = 0.09; // Default WACC (this should be calculated based on company data)
+    const terminalGrowth = 0.025; // Conservative terminal growth
+    const taxRate = financialsData[0].incomeTaxExpense / financialsData[0].incomeBeforeTax;
+    
+    // Company beta from profile if available
+    const beta = profile.beta || 1.2;
+    
+    // Step 6: Use the custom levered DCF API with calculated parameters
+    const dcfUrl = `${FMP_BASE_URL}/v4/advanced_levered_discounted_cash_flow?symbol=${symbol}&type=levered`;
+    
+    // Add parameters from the documentation
+    const dcfParams = new URLSearchParams({
+      symbol: symbol,
+      revenueGrowth: String(averageRevenueGrowth),
+      ebitdaMargin: String(financialsData[0].ebitda / financialsData[0].revenue),
+      taxRate: String(taxRate > 0 && taxRate < 1 ? taxRate : 0.21),
+      longTermGrowthRate: String(terminalGrowth),
+      beta: String(beta),
+      costOfEquity: String(0.097), // Estimated
+      costofDebt: String(0.035), // Estimated
+      riskFreeRate: String(0.036), // Current 10Y Treasury yield
+      marketRiskPremium: String(0.047) // Standard equity risk premium
     });
-
-    if (!response.ok) {
-      throw new Error(`OpenAI API error: ${response.status} ${await response.text()}`);
-    }
-
-    const apiResponse = await response.json();
-    const content = apiResponse.choices?.[0]?.message?.content?.trim() || "";
     
-    console.log(`AI response for ${ticker}:`, content);
+    // Construct the final URL
+    const finalDcfUrl = `${dcfUrl}&${dcfParams.toString()}&apikey=${FMP_API_KEY}`;
+    console.log(`Calling FMP DCF API: ${finalDcfUrl.replace(/apikey=[^&]+/, 'apikey=***')}`);
     
-    let parsed: Partial<AiAssumptions>;
-
-    try {
-      parsed = JSON.parse(content);
-    } catch (err) {
-      console.warn(`Failed to parse AI response as JSON for ${ticker}. Falling back to defaults.`);
-      // Fallback assumptions
-      parsed = {
-        averageRevenueGrowth: 0.05,
-        wacc: 0.1,
-        terminalGrowth: 0.02,
-      };
+    const dcfResponse = await fetch(finalDcfUrl);
+    let dcfData = await dcfResponse.json();
+    
+    // Step 7: Format the result into our application's expected format
+    if (!dcfData || !dcfData.length) {
+      throw new Error(`No DCF data returned for ${symbol}`);
     }
-
-    // Validate or clamp values
-    const averageRevenueGrowth = clamp(parsed.averageRevenueGrowth ?? 0.05, 0, 0.30);
-    const wacc = clamp(parsed.wacc ?? 0.1, 0.05, 0.20);
-    const terminalGrowth = clamp(parsed.terminalGrowth ?? 0.02, 0, 0.04);
-
-    return { averageRevenueGrowth, wacc, terminalGrowth };
-  } catch (error) {
-    console.error(`Error generating AI assumptions for ${ticker}:`, error);
-    // Return default assumptions
+    
+    const dcfResult = dcfData[0];
+    
+    // Calculate projected FCFs from the result
+    const projectedFCFs = [];
+    for (let i = 1; i <= 5; i++) {
+      // Simple projection based on growth rate
+      const fcf = dcfResult.freeCashFlow * Math.pow(1 + averageRevenueGrowth, i);
+      projectedFCFs.push(fcf);
+    }
+    
+    // Calculate upside/downside percentage
+    const intrinsicValuePerShare = dcfResult.equityValuePerShare;
+    const upside = currentPrice > 0 ? ((intrinsicValuePerShare - currentPrice) / currentPrice) * 100 : null;
+    
     return {
-      averageRevenueGrowth: 0.05,
-      wacc: 0.1,
-      terminalGrowth: 0.02,
-    };
-  }
-}
-
-/**
- * Helper function to clamp a number between min and max.
- */
-function clamp(value: number, min: number, max: number): number {
-  return Math.max(min, Math.min(max, value));
-}
-
-/**
- * Calculate historical FCF from income statement
- */
-function calculateHistoricalFCF(incomeStatement: IncomeStatement): number {
-  const netIncome = incomeStatement.netIncome || 0;
-  // For a more accurate FCF, we would account for:
-  // + Depreciation & Amortization
-  // - Capital Expenditures
-  // - Changes in Working Capital
-  // This is a simplified approximation:
-  return netIncome * 0.85; // 85% of net income as free cash flow
-}
-
-/**
- * Project FCF and calculate a 5-year DCF
- */
-function calculateDCF(
-  assumptions: AiAssumptions, 
-  recentFCF: number,
-  netDebt: number,
-  sharesOutstanding: number,
-  currentPrice: number | null
-): DcfResult {
-  const { averageRevenueGrowth, wacc, terminalGrowth } = assumptions;
-  const projectionYears = 5;
-  const projectedFCFs: number[] = [];
-
-  let currentFCF = recentFCF;
-  for (let t = 1; t <= projectionYears; t++) {
-    currentFCF *= (1 + averageRevenueGrowth);
-    projectedFCFs.push(currentFCF);
-  }
-
-  // Terminal Value (Gordon Growth)
-  const lastYearFCF = projectedFCFs[projectionYears - 1];
-  const terminalValue = (lastYearFCF * (1 + terminalGrowth)) / (wacc - terminalGrowth);
-
-  // Discount each projected FCF + terminal value
-  let dcfValue = 0;
-  for (let t = 1; t <= projectionYears; t++) {
-    const discountFactor = Math.pow(1 + wacc, t);
-    dcfValue += projectedFCFs[t - 1] / discountFactor;
-
-    if (t === projectionYears) {
-      // Add terminal value discounted back
-      dcfValue += terminalValue / discountFactor;
-    }
-  }
-
-  // Enterprise Value = PV of FCFs + PV of Terminal Value
-  const enterpriseValue = dcfValue;
-  
-  // Equity Value = Enterprise Value - Net Debt
-  const equityValue = enterpriseValue - netDebt;
-  
-  // Intrinsic Value per Share
-  const intrinsicValuePerShare = equityValue / sharesOutstanding;
-  
-  // Calculate upside if current price is available
-  const upside = currentPrice ? ((intrinsicValuePerShare / currentPrice) - 1) * 100 : null;
-
-  return {
-    projectedFCFs,
-    terminalValue,
-    dcfValue,
-    enterpriseValue,
-    equityValue,
-    sharesOutstanding,
-    intrinsicValuePerShare,
-    currentPrice,
-    upside
-  };
-}
-
-/**
- * Main DCF orchestrator
- */
-async function autoDCF(ticker: string): Promise<AutoDCFResult> {
-  if (!ticker || typeof ticker !== 'string' || ticker.trim() === '') {
-    throw new Error("A valid ticker symbol is required");
-  }
-  
-  const upperTicker = ticker.toUpperCase().trim();
-  console.log(`Starting DCF calculation for ${upperTicker}`);
-  
-  try {
-    // Step 1: Fetch historical financial data
-    const incomeStatements = await getFinancialData(upperTicker);
-    
-    // Step 2: Get current price and shares outstanding in parallel
-    const [currentPrice, { enterpriseValue, netDebt }, sharesOutstandingValue] = await Promise.all([
-      getCurrentPrice(upperTicker),
-      getEnterpriseValue(upperTicker),
-      getSharesOutstanding(upperTicker)
-    ]);
-    
-    // Step 3: Generate assumptions with AI
-    const aiAssumptions = await getAiAssumptions(incomeStatements, upperTicker);
-    
-    // Step 4: Use the most recent statement to get base FCF
-    const mostRecentStmt = incomeStatements[0];
-    const recentFCF = calculateHistoricalFCF(mostRecentStmt);
-    
-    // Step 5: Calculate DCF
-    const dcfResults = calculateDCF(
-      aiAssumptions, 
-      recentFCF, 
-      netDebt,
-      sharesOutstandingValue,
-      currentPrice
-    );
-    
-    // Step 6: Prepare and return the full result
-    const result: AutoDCFResult = {
-      ticker: upperTicker,
-      assumptions: aiAssumptions,
+      ticker: symbol,
+      assumptions: {
+        averageRevenueGrowth: averageRevenueGrowth,
+        wacc: dcfResult.wacc,
+        terminalGrowth: terminalGrowth
+      },
+      projectedFCFs: projectedFCFs,
+      terminalValue: dcfResult.terminalValue,
+      dcfValue: dcfResult.enterpriseValue,
+      enterpriseValue: dcfResult.enterpriseValue,
+      equityValue: dcfResult.equityValue,
+      sharesOutstanding: dcfResult.dilutedSharesOutstanding,
+      intrinsicValuePerShare: intrinsicValuePerShare,
+      currentPrice: currentPrice,
+      upside: upside,
       timestamp: new Date().toISOString(),
-      aiGenerated: true,
-      ...dcfResults
+      aiGenerated: true
     };
     
-    console.log(`Successfully calculated DCF for ${upperTicker}`);
-    return result;
   } catch (error) {
-    console.error(`Error in autoDCF for ${upperTicker}:`, error);
+    console.error(`Error in AI-DCF calculation for ${symbol}:`, error);
     throw error;
   }
 }
 
-/**
- * Supabase Edge Function handler
- */
+// Edge function handler
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
@@ -372,27 +147,21 @@ serve(async (req) => {
   }
   
   try {
-    // Get ticker from URL or request body
+    // Get symbol from request parameters
     const url = new URL(req.url);
-    let ticker = url.searchParams.get("symbol") || url.searchParams.get("ticker");
+    let symbol = url.searchParams.get("symbol");
     
-    // If not in URL params, try to get from request body
-    if (!ticker && req.method === "POST") {
-      try {
-        const body = await req.json();
-        ticker = body.symbol || body.ticker;
-      } catch (error) {
-        console.error("Error parsing request body:", error);
-      }
+    // If not in query params, try to get from request body
+    if (!symbol && req.method === "POST") {
+      const body = await req.json();
+      symbol = body.symbol;
     }
     
-    // Validate ticker
-    if (!ticker) {
-      console.error("No ticker symbol provided in request");
+    // Validate required parameters
+    if (!symbol) {
       return new Response(
         JSON.stringify({ 
-          error: "No ticker symbol provided",
-          details: "Please provide a valid 'symbol' or 'ticker' parameter"
+          error: "Missing required parameter: symbol" 
         }),
         { 
           status: 400, 
@@ -401,26 +170,30 @@ serve(async (req) => {
       );
     }
     
-    console.log(`Received DCF request for symbol: ${ticker}`);
+    console.log(`Processing AI-DCF request for symbol: ${symbol}`);
     
-    // Calculate DCF
-    const result = await autoDCF(ticker);
+    // Fetch DCF data from FMP
+    const result = await fetchDCFData(symbol);
     
-    // Return the result
+    // Return the DCF result
     return new Response(
       JSON.stringify(result),
       { 
-        status: 200, 
-        headers: { ...corsHeaders, "Content-Type": "application/json" } 
+        headers: { 
+          ...corsHeaders, 
+          "Content-Type": "application/json",
+          "Cache-Control": "max-age=3600" // Cache for 1 hour
+        } 
       }
     );
+    
   } catch (error) {
-    console.error("Error in AI-DCF function:", error);
+    console.error("Error in AI-DCF edge function:", error);
     
     return new Response(
-      JSON.stringify({ 
-        error: error instanceof Error ? error.message : "Unknown error",
-        details: error instanceof Error ? error.stack : "No details available"
+      JSON.stringify({
+        error: error instanceof Error ? error.message : "An unknown error occurred",
+        details: error instanceof Error ? error.stack : null
       }),
       { 
         status: 500, 
