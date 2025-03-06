@@ -1,5 +1,4 @@
 
-// Re-export all AI analysis types
+// Re-export all AI analysis types without DCF types
 export * from './reportTypes';
 export * from './predictionTypes';
-export * from './dcfTypes';  // Add this export back
