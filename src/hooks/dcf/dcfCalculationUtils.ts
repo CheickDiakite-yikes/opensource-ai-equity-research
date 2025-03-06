@@ -1,3 +1,4 @@
+
 import { CustomDCFParams, CustomDCFResult, YearlyDCFData } from "@/types/ai-analysis/dcfTypes";
 import { toast } from "@/components/ui/use-toast";
 
@@ -56,56 +57,6 @@ export const createProjectedData = (
       capitalExpenditure: baseCapex * growthFactor
     };
   });
-};
-
-/**
- * Create default DCF result structure with fallback values
- */
-export const createDefaultDCFResult = (symbol: string, data?: any[]): CustomDCFResult => {
-  const baseItem = data && Array.isArray(data) && data.length > 0 ? data[0] : {};
-  
-  return {
-    year: new Date().getFullYear().toString(),
-    symbol: symbol,
-    revenue: baseItem.revenue || 100000000,
-    revenuePercentage: baseItem.revenuePercentage || 8.5,
-    ebitda: baseItem.ebitda || 30000000,
-    ebitdaPercentage: baseItem.ebitdaPercentage || 31.27,
-    ebit: baseItem.ebit || 25000000,
-    ebitPercentage: baseItem.ebitPercentage || 27.81,
-    depreciation: baseItem.depreciation || 5000000,
-    capitalExpenditure: baseItem.capitalExpenditure || 8000000,
-    capitalExpenditurePercentage: baseItem.capitalExpenditurePercentage || 3.06,
-    price: baseItem.price || 100,
-    beta: baseItem.beta || 1.244,
-    dilutedSharesOutstanding: baseItem.dilutedSharesOutstanding || 1000000,
-    costofDebt: baseItem.costofDebt || 0.0364,
-    taxRate: baseItem.taxRate || 0.21,
-    afterTaxCostOfDebt: baseItem.afterTaxCostOfDebt || (0.0364 * (1 - 0.21)),
-    riskFreeRate: baseItem.riskFreeRate || 0.0364,
-    marketRiskPremium: baseItem.marketRiskPremium || 0.0472,
-    costOfEquity: baseItem.costOfEquity || 0.0951,
-    totalDebt: baseItem.totalDebt || 30000000,
-    totalEquity: baseItem.totalEquity || 70000000,
-    totalCapital: baseItem.totalCapital || 100000000,
-    debtWeighting: baseItem.debtWeighting || 0.3,
-    equityWeighting: baseItem.equityWeighting || 0.7,
-    wacc: baseItem.wacc || 0.095,
-    operatingCashFlow: baseItem.operatingCashFlow || 20000000,
-    pvLfcf: baseItem.pvLfcf || 0,
-    sumPvLfcf: baseItem.sumPvLfcf || 0,
-    longTermGrowthRate: baseItem.longTermGrowthRate || 0.03,
-    freeCashFlow: baseItem.freeCashFlow || 15000000,
-    terminalValue: baseItem.terminalValue || 375000000,
-    presentTerminalValue: baseItem.presentTerminalValue || 0,
-    enterpriseValue: baseItem.enterpriseValue || 150000000,
-    netDebt: baseItem.netDebt || 10000000,
-    equityValue: baseItem.equityValue || 140000000,
-    equityValuePerShare: baseItem.equityValuePerShare || baseItem.dcf || 115,
-    freeCashFlowT1: baseItem.freeCashFlowT1 || 0,
-    operatingCashFlowPercentage: baseItem.operatingCashFlowPercentage || 28.86,
-    cashAndCashEquivalents: baseItem.cashAndCashEquivalents || 20000000
-  };
 };
 
 /**
