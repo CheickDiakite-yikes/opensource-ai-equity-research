@@ -1,55 +1,44 @@
 
+import { CustomDCFParams } from "@/types/ai-analysis/dcfTypes";
+
+/**
+ * DCF Calculation Types
+ */
 export enum DCFType {
   STANDARD = "standard",
   LEVERED = "levered",
-  CUSTOM_LEVERED = "custom-levered",
-  CUSTOM_ADVANCED = "advanced"
+  CUSTOM_ADVANCED = "advanced",
+  CUSTOM_LEVERED = "custom-levered"
 }
 
 /**
- * Format DCF parameters for the API request
+ * Format DCF parameters for API requests
  */
-export const formatDCFParameters = (params: Record<string, any>): Record<string, any> => {
-  // Format parameters for the FMP API
-  const apiParams: Record<string, any> = {};
-  
-  // Convert to proper parameter names expected by FMP API
+export const formatDCFParameters = (params: CustomDCFParams): Record<string, string> => {
+  const formattedParams: Record<string, string> = {};
+
+  // Map internal parameter names to FMP API parameters
   const paramMap: Record<string, string> = {
     revenueGrowthPct: 'revenueGrowth',
     ebitdaPct: 'ebitdaMargin',
     capitalExpenditurePct: 'capexPercent',
-    depreciationAndAmortizationPct: 'depreciationAndAmortizationPercent',
-    cashAndShortTermInvestmentsPct: 'cashAndShortTermInvestmentsPercent',
-    receivablesPct: 'receivablesPercent',
-    inventoriesPct: 'inventoriesPercent',
-    payablesPct: 'payablesPercent',
-    ebitPct: 'ebitPercent',
-    operatingCashFlowPct: 'operatingCashFlowPercent',
-    sellingGeneralAndAdministrativeExpensesPct: 'sellingGeneralAndAdministrativeExpensesPercent'
+    taxRate: 'taxRate',
+    longTermGrowthRate: 'longTermGrowthRate',
+    costOfEquity: 'costOfEquity',
+    costOfDebt: 'costofDebt', // Note: FMP API uses lowercase 'of' here
+    marketRiskPremium: 'marketRiskPremium',
+    riskFreeRate: 'riskFreeRate',
+    beta: 'beta'
   };
-  
-  // Map parameters with proper names
+
+  // Format each parameter
   Object.entries(params).forEach(([key, value]) => {
     if (value !== undefined && value !== null) {
-      const apiKey = paramMap[key] || key;
-      
-      // Convert percentage values to decimals if needed
-      if (['longTermGrowthRate', 'costOfEquity', 'costOfDebt', 'marketRiskPremium', 'riskFreeRate'].includes(key)) {
-        if (typeof value === 'number' && value > 0.2) {
-          value = value / 100;
-        }
-      }
-      
-      apiParams[apiKey] = value;
+      // Get the mapped parameter name, or use the original
+      const apiParam = paramMap[key] || key;
+      formattedParams[apiParam] = String(value);
     }
   });
-  
-  // Remove any undefined or null values to prevent API errors
-  Object.keys(apiParams).forEach(key => {
-    if (apiParams[key] === undefined || apiParams[key] === null || isNaN(apiParams[key])) {
-      delete apiParams[key];
-    }
-  });
-  
-  return apiParams;
+
+  return formattedParams;
 };

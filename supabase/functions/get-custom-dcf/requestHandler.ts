@@ -1,90 +1,56 @@
 
 import { corsHeaders } from "../_shared/cors.ts";
-import { FMP_API_KEY } from "../_shared/constants.ts";
 
 /**
- * Parse request parameters from GET or POST requests
+ * Parse request parameters from the request object
  */
 export const parseRequestParams = async (req: Request) => {
-  let symbol = null;
-  let type = 'standard';
-  let params = {};
-  
-  if (req.method === 'GET') {
-    const url = new URL(req.url);
-    symbol = url.searchParams.get('symbol');
-    type = url.searchParams.get('type') || 'standard';
+  try {
+    // For GET requests, parse URL params
+    if (req.method === 'GET') {
+      const url = new URL(req.url);
+      const symbol = url.searchParams.get('symbol') || '';
+      const type = url.searchParams.get('type') || 'standard';
+      
+      // Extract all other parameters
+      const params: Record<string, string> = {};
+      url.searchParams.forEach((value, key) => {
+        if (key !== 'symbol' && key !== 'type') {
+          params[key] = value;
+        }
+      });
+      
+      return { symbol, type, params };
+    } 
     
-    // Extract all other parameters for the API
-    url.searchParams.forEach((value, key) => {
-      if (key !== 'symbol' && key !== 'type') {
-        params[key] = value;
-      }
-    });
-  } else if (req.method === 'POST') {
-    try {
-      const body = await req.json();
-      symbol = body.symbol;
-      type = body.type || 'standard';
-      params = body.params || {};
-    } catch (error) {
-      console.error("Error parsing request body:", error);
-      throw new Error("Invalid request body: Could not parse JSON");
-    }
+    // For POST requests, parse JSON body
+    const body = await req.json();
+    const symbol = body.symbol || '';
+    const type = body.type || 'standard';
+    const params = body.params || {};
+    
+    return { symbol, type, params };
+  } catch (error) {
+    console.error("Error parsing request parameters:", error);
+    throw new Error("Invalid request format");
   }
-  
-  // Normalize type to ensure it's one of our supported types
-  if (!['standard', 'levered', 'custom-levered', 'advanced'].includes(type)) {
-    type = 'standard';
-  }
-  
-  return { symbol, type, params };
 };
 
 /**
- * Validate request parameters
+ * Validate a symbol for DCF calculation
  */
-export const validateRequest = (symbol: string | null) => {
-  if (!symbol) {
+export const validateRequest = (symbol: string) => {
+  if (!symbol || typeof symbol !== 'string') {
     return {
       isValid: false,
-      response: new Response(
-        JSON.stringify({ error: "Missing required parameter", details: "Symbol is required" }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
-      )
+      response: createErrorResponse(new Error("Symbol is required"))
     };
   }
   
-  if (!FMP_API_KEY) {
-    console.error("FMP_API_KEY not set in environment variables");
+  if (symbol.length > 10) {
     return {
       isValid: false,
-      response: new Response(
-        JSON.stringify([{
-          symbol: symbol,
-          date: new Date().toISOString().split('T')[0],
-          stockPrice: 100,
-          dcf: 115,
-          equityValuePerShare: 115,
-          wacc: 0.09,
-          longTermGrowthRate: 0.03,
-          freeCashFlow: 5000000000,
-          revenue: 20000000000,
-          ebitda: 8000000000,
-          operatingCashFlow: 6000000000,
-          capitalExpenditure: -1000000000,
-          mockData: true,
-          error: "API key not configured"
-        }]),
-        { 
-          headers: { 
-            ...corsHeaders, 
-            'Content-Type': 'application/json',
-            'X-Mock-Data': 'true'
-          },
-          status: 200
-        }
-      )
+      response: createErrorResponse(new Error("Invalid symbol format"))
     };
   }
   
@@ -95,32 +61,23 @@ export const validateRequest = (symbol: string | null) => {
  * Create a standardized error response
  */
 export const createErrorResponse = (error: unknown) => {
-  const errorMessage = error instanceof Error ? error.message : String(error);
-  console.error("Error in get-custom-dcf function:", errorMessage);
+  const message = error instanceof Error ? error.message : 'Unknown error';
+  const details = error instanceof Error && error.stack ? error.stack : undefined;
+  
+  console.error(`Error in get-custom-dcf function: ${message}`);
   
   return new Response(
-    JSON.stringify([{ 
-      mockData: true,
-      error: errorMessage,
-      date: new Date().toISOString().split('T')[0],
-      stockPrice: 100,
-      dcf: 115,
-      equityValuePerShare: 115,
-      wacc: 0.09,
-      longTermGrowthRate: 0.03,
-      freeCashFlow: 5000000000,
-      revenue: 20000000000,
-      ebitda: 8000000000,
-      operatingCashFlow: 6000000000,
-      capitalExpenditure: -1000000000
-    }]),
+    JSON.stringify({
+      error: message,
+      details: details,
+      timestamp: new Date().toISOString()
+    }),
     { 
+      status: 500, 
       headers: { 
         ...corsHeaders, 
-        'Content-Type': 'application/json',
-        'X-Mock-Data': 'true'
-      },
-      status: 200
+        'Content-Type': 'application/json' 
+      } 
     }
   );
 };

@@ -4,11 +4,12 @@ import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import { Info, RefreshCw } from "lucide-react";
 import { CustomDCFResult, YearlyDCFData } from "@/types/ai-analysis/dcfTypes";
-import { DCFType } from "@/services/api/analysis/dcf/types";
+import { DCFType } from "@/services/api/analysis/dcfService";
 import DCFInputForm from "./DCFInputForm";
 import DCFResultsDisplay from "./DCFResultsDisplay";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
+import DCFErrorDisplay from "./DCFErrorDisplay";
 
 interface CustomDCFSectionProps {
   symbol: string;
@@ -128,10 +129,14 @@ const CustomDCFSection: React.FC<CustomDCFSectionProps> = ({
         </CardHeader>
         <CardContent>
           {error && (
-            <div className="bg-red-50 border border-red-200 rounded p-4 mb-6 text-red-800 flex items-start">
-              <Info className="h-5 w-5 mr-2 mt-0.5 flex-shrink-0" />
-              <span>{error}</span>
-            </div>
+            <DCFErrorDisplay 
+              errors={[error]}
+              onRetry={
+                dcfModel === DCFType.STANDARD ? onCalculateStandard :
+                dcfModel === DCFType.LEVERED ? onCalculateLevered :
+                onCalculate
+              }
+            />
           )}
           
           {!customDCFResult && !error && (

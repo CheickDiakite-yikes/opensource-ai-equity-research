@@ -233,13 +233,13 @@ export const generateSensitivityAnalysis = (
     
     // Return a default sensitivity table
     return {
-      headers: ['Growth/Discount', '9.5%', '10.0%', '10.5%'],
+      headers: ['Growth/Discount', '9.0%', '9.5%', '10.0%'],
       rows: [
-        { growth: '2.0%', values: [95.00, 94.00, 93.00] },
-        { growth: '2.5%', values: [95.25, 94.25, 93.25] },
-        { growth: '3.0%', values: [95.50, 94.50, 93.50] },
-        { growth: '3.5%', values: [95.75, 94.75, 93.75] },
-        { growth: '4.0%', values: [96.00, 95.00, 94.00] }
+        { growth: '2.0%', values: [108.00, 104.00, 100.00] },
+        { growth: '2.5%', values: [112.00, 108.00, 104.00] },
+        { growth: '3.0%', values: [116.00, 112.00, 108.00] },
+        { growth: '3.5%', values: [120.00, 116.00, 112.00] },
+        { growth: '4.0%', values: [124.00, 120.00, 116.00] }
       ]
     };
   }

@@ -1,8 +1,16 @@
 
-// Re-export all DCF service functions
+// Re-export all DCF-related functions
+export {
+  fetchAIDCFAssumptions,
+  fetchCustomDCF,
+  fetchCustomLeveredDCF,
+  fetchStandardDCF,
+  fetchLeveredDCF,
+  transformDCFResponse,
+  formatDCFParameters,
+  DCFType
+} from './types';
 export * from './aiAssumptionsService';
 export * from './standardDCFService';
-export { fetchCustomDCF, fetchCustomLeveredDCF } from './customDCFService';
-export { formatDCFParameters } from './types';
+export * from './customDCFService';
 export * from './dataTransformer';
-export * from './types';
