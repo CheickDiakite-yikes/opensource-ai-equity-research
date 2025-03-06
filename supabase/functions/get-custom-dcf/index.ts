@@ -1,7 +1,10 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { corsHeaders } from "../_shared/cors.ts";
-import { FMP_API_KEY, API_BASE_URLS } from "../_shared/constants.ts";
+
+// Get environment variables for external APIs
+const FMP_API_KEY = Deno.env.get("FMP_API_KEY");
+const API_BASE_URL = "https://financialmodelingprep.com/api/v3";
 
 // Cache-control headers (per DCF type)
 const getCacheHeaders = (type: string) => {
@@ -94,43 +97,35 @@ serve(async (req) => {
     switch (type) {
       case "standard":
         // Standard DCF endpoint
-        apiUrl = `${API_BASE_URLS.FMP}/discounted-cash-flow/${symbol}`;
+        apiUrl = `${API_BASE_URL}/discounted-cash-flow/${symbol}?apikey=${FMP_API_KEY}`;
         break;
       case "levered":
         // Levered DCF endpoint
-        apiUrl = `${API_BASE_URLS.FMP}/levered-discounted-cash-flow/${symbol}`;
+        apiUrl = `${API_BASE_URL}/levered-discounted-cash-flow/${symbol}?apikey=${FMP_API_KEY}`;
         
         // Add optional limit parameter if provided
         if (params?.limit) {
-          apiUrl += `?limit=${params.limit}`;
-          delete params.limit;
+          apiUrl += `&limit=${params.limit}`;
         }
         break;
       case "custom-levered":
         // Custom Levered DCF endpoint - using the stable endpoint
-        apiUrl = `${API_BASE_URLS.FMP}/v4/advanced/custom-levered-discounted-cash-flow?symbol=${symbol}`;
+        apiUrl = `${API_BASE_URL}/v4/advanced/custom-levered-discounted-cash-flow?symbol=${symbol}&apikey=${FMP_API_KEY}`;
         break;
       case "advanced":
       default:
         // Custom DCF Advanced endpoint - using the stable endpoint
-        apiUrl = `${API_BASE_URLS.FMP}/v4/advanced/custom-discounted-cash-flow?symbol=${symbol}`;
+        apiUrl = `${API_BASE_URL}/v4/advanced/custom-discounted-cash-flow?symbol=${symbol}&apikey=${FMP_API_KEY}`;
         break;
     }
     
     // Add all provided parameters to query string for custom endpoints
     if ((type === "advanced" || type === "custom-levered") && params) {
       Object.entries(params).forEach(([key, value]) => {
-        if (value !== undefined && value !== null) {
+        if (value !== undefined && value !== null && key !== 'limit') {
           apiUrl += `&${key}=${value}`;
         }
       });
-    }
-    
-    // Add the API key
-    if (apiUrl.includes('?')) {
-      apiUrl += `&apikey=${FMP_API_KEY}`;
-    } else {
-      apiUrl += `?apikey=${FMP_API_KEY}`;
     }
     
     console.log(`Calling FMP API: ${apiUrl.replace(FMP_API_KEY, 'API_KEY_HIDDEN')}`);
