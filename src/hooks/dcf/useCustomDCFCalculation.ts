@@ -4,6 +4,7 @@ import { fetchCustomDCF, fetchCustomLeveredDCF, DCFType } from "@/services/api/a
 import { CustomDCFParams, CustomDCFResult, YearlyDCFData } from "@/types/ai-analysis/dcfTypes";
 import { createProjectedData, handleDCFError } from "./dcfCalculationUtils";
 import { useStandardDCF } from "./useStandardDCF";
+import { toast } from "@/components/ui/use-toast";
 
 export const useCustomDCFCalculation = (symbol: string) => {
   const [isCalculating, setIsCalculating] = useState(false);
@@ -34,6 +35,11 @@ export const useCustomDCFCalculation = (symbol: string) => {
       } catch (err) {
         console.error(`Error with ${type} DCF, trying standard DCF as fallback:`, err);
         // If custom DCF fails, try standard DCF
+        toast({
+          title: "Using Standard DCF",
+          description: `Custom DCF calculation failed. Falling back to standard DCF.`,
+          variant: "default",
+        });
         return await calculateStandardDCF();
       }
       
@@ -49,10 +55,21 @@ export const useCustomDCFCalculation = (symbol: string) => {
         setResult(dcfResult);
         setProjectedData(yearly);
         
+        toast({
+          title: "DCF Calculation Complete",
+          description: `Intrinsic value per share: $${dcfResult.equityValuePerShare.toFixed(2)}`,
+        });
+        
         return { dcfResult, yearly };
       } else {
         console.error(`Invalid or empty result from ${type} DCF:`, apiResult);
         setError(`Failed to calculate ${type} DCF. Please check the parameters and try again.`);
+        
+        toast({
+          title: "DCF Calculation Failed",
+          description: "Using standard DCF as fallback.",
+          variant: "destructive",
+        });
         
         // If custom DCF fails due to empty results, try standard DCF
         return await handleDCFError(
@@ -62,7 +79,14 @@ export const useCustomDCFCalculation = (symbol: string) => {
         );
       }
     } catch (err) {
-      setError(`An error occurred during calculation: ${err instanceof Error ? err.message : 'Unknown error'}`);
+      const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+      setError(`An error occurred during calculation: ${errorMessage}`);
+      
+      toast({
+        title: "Custom DCF Calculation Failed",
+        description: "Using standard DCF as fallback.",
+        variant: "destructive",
+      });
       
       // If custom DCF fails with error, try standard DCF as fallback
       return await handleDCFError(

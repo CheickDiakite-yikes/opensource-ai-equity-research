@@ -30,22 +30,27 @@ export const createProjectedData = (
     });
   } 
   
-  // Only single year data or no data, project for next years
-  const currentYear = new Date().getFullYear();
-  const projectionYears = Array.from({length: 5}, (_, i) => currentYear + i);
+  // We only have one year data, generate additional years
   const baseItem = result && Array.isArray(result) && result.length > 0 ? result[0] : null;
+  if (!baseItem) {
+    return generateDefaultProjections();
+  }
+  
+  // Generate projections based on the single year data
+  const currentYear = baseItem.year ? parseInt(baseItem.year) : new Date().getFullYear();
+  const projectionYears = Array.from({length: 5}, (_, i) => currentYear + i);
   const revenueGrowth = params?.revenueGrowthPct || 
     (baseItem?.revenuePercentage ? baseItem.revenuePercentage / 100 : 0.085);
   
-  // Generate default projections if no data available
+  // Generate projections based on base item
   return projectionYears.map((year, index) => {
     const growthFactor = Math.pow(1 + revenueGrowth, index);
-    const baseRevenue = baseItem?.revenue || 100000000;
-    const baseEbit = baseItem?.ebit || baseRevenue * 0.25; 
+    const baseRevenue = baseItem?.revenue || 394328000000;
+    const baseEbit = baseItem?.ebit || baseRevenue * 0.30; 
     const baseEbitda = baseItem?.ebitda || baseEbit * 1.2;
-    const baseFcf = baseItem?.freeCashFlow || baseItem?.ufcf || baseEbit * 0.65;
+    const baseFcf = baseItem?.freeCashFlow || baseItem?.ufcf || baseEbit * 0.80;
     const baseOcf = baseItem?.operatingCashFlow || baseFcf * 1.2;
-    const baseCapex = baseItem?.capitalExpenditure || baseRevenue * 0.08;
+    const baseCapex = baseItem?.capitalExpenditure || baseRevenue * 0.03;
     
     return {
       year: year.toString(),
@@ -57,6 +62,31 @@ export const createProjectedData = (
       capitalExpenditure: baseCapex * growthFactor
     };
   });
+};
+
+/**
+ * Generate default projections if no data is available
+ */
+const generateDefaultProjections = (): YearlyDCFData[] => {
+  const currentYear = new Date().getFullYear();
+  const results: YearlyDCFData[] = [];
+  
+  for (let i = 0; i < 5; i++) {
+    const year = currentYear + i;
+    const growthFactor = Math.pow(1.085, i);
+    
+    results.push({
+      year: year.toString(),
+      revenue: 394328000000 * growthFactor, // Apple baseline revenue
+      ebit: 119437000000 * growthFactor,
+      ebitda: 139437000000 * growthFactor,
+      freeCashFlow: 99766000000 * growthFactor,
+      operatingCashFlow: 118879000000 * growthFactor,
+      capitalExpenditure: 11322000000 * growthFactor
+    });
+  }
+  
+  return results;
 };
 
 /**

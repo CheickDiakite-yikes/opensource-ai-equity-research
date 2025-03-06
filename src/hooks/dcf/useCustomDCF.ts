@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { DCFType } from "@/services/api/analysis/dcfService";
 import { CustomDCFParams, CustomDCFResult, YearlyDCFData } from "@/types/ai-analysis/dcfTypes";
 import { useStandardDCF } from "./useStandardDCF";
@@ -12,12 +12,22 @@ export const useCustomDCF = (symbol: string) => {
   const [error, setError] = useState<string | null>(null);
   
   // Import specialized DCF hooks
-  const { calculateStandardDCF, isCalculating: isCalculatingStandard, error: standardError } = useStandardDCF(symbol);
-  const { calculateLeveredDCF, isCalculating: isCalculatingLevered, error: leveredError } = useLeveredDCF(symbol);
-  const { calculateCustomDCF: calculateCustomDCFInternal, isCalculating: isCalculatingCustom, error: customError } = useCustomDCFCalculation(symbol);
+  const { calculateStandardDCF, isCalculating: isCalculatingStandard, error: standardError, result: standardResult } = useStandardDCF(symbol);
+  const { calculateLeveredDCF, isCalculating: isCalculatingLevered, error: leveredError, result: leveredResult } = useLeveredDCF(symbol);
+  const { calculateCustomDCF: calculateCustomDCFInternal, isCalculating: isCalculatingCustom, error: customError, result: customResult } = useCustomDCFCalculation(symbol);
   
   // Combine calculation state from all hooks
   const isCalculating = isCalculatingStandard || isCalculatingLevered || isCalculatingCustom;
+  
+  // Update error state from any of the hooks
+  useEffect(() => {
+    const newError = standardError || leveredError || customError;
+    if (newError) {
+      setError(newError);
+    } else {
+      setError(null);
+    }
+  }, [standardError, leveredError, customError]);
   
   // Update results whenever any of the hooks complete their calculations
   const updateResults = (result: { dcfResult: CustomDCFResult, yearly: YearlyDCFData[] } | null) => {
@@ -29,14 +39,6 @@ export const useCustomDCF = (symbol: string) => {
     }
     return false;
   };
-  
-  // Update error state from any of the hooks
-  useState(() => {
-    const newError = standardError || leveredError || customError;
-    if (newError) {
-      setError(newError);
-    }
-  });
   
   // Wrapper functions to update combined state
   const calculateStandardDCFWrapper = async () => {

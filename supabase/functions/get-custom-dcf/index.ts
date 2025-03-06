@@ -16,6 +16,10 @@ serve(async (req) => {
     // Parse request parameters
     const { symbol, params, type } = await parseRequestParams(req);
     
+    if (!symbol) {
+      throw new Error("Symbol is required");
+    }
+    
     // Validate request
     const validation = validateRequest(symbol);
     if (!validation.isValid) {
@@ -32,7 +36,8 @@ serve(async (req) => {
     // Fetch data from FMP API with retries
     const response = await fetchWithRetry(apiUrl, {
       headers: {
-        'Accept': 'application/json'
+        'Accept': 'application/json',
+        'Cache-Control': 'no-cache'
       }
     }, 3);
     

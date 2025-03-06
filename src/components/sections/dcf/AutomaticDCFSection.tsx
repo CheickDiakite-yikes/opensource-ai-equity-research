@@ -47,7 +47,7 @@ const AutomaticDCFSection: React.FC<AutomaticDCFSectionProps> = ({ financials, s
   }, [symbol, isInitialized, calculateStandardDCF]);
   
   // Determine whether to use mock data
-  const shouldUseMockData = isCalculating || !dcfResult;
+  const shouldUseMockData = !dcfResult || (error && !dcfResult.equityValuePerShare);
   
   // Prepare the DCF data for display
   const dcfData: FormattedDCFData = shouldUseMockData
@@ -91,7 +91,10 @@ const AutomaticDCFSection: React.FC<AutomaticDCFSectionProps> = ({ financials, s
       
       {/* Error Display */}
       {error && (
-        <DCFErrorDisplay errors={[error]} />
+        <DCFErrorDisplay 
+          errors={[error]} 
+          onRetry={handleRefresh}
+        />
       )}
       
       {isCalculating ? (

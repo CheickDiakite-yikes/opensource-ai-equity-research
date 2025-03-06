@@ -22,10 +22,20 @@ export const parseRequestParams = async (req: Request) => {
     });
   } else {
     // Parse the request body for POST requests
-    const body = await req.json();
-    symbol = body.symbol;
-    params = body.params || {};
-    type = body.type || "advanced";
+    try {
+      const body = await req.json();
+      symbol = body.symbol;
+      params = body.params || {};
+      type = body.type || "advanced";
+    } catch (error) {
+      console.error("Error parsing request body:", error);
+      throw new Error("Invalid request body: Could not parse JSON");
+    }
+  }
+  
+  // Make sure we have a valid type
+  if (!type || !['standard', 'levered', 'custom-levered', 'advanced'].includes(type)) {
+    type = 'advanced';
   }
   
   return { symbol, params, type };
