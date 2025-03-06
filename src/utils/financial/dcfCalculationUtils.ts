@@ -17,14 +17,20 @@ export const calculateCustomDCF = async (symbol: string, customInputs?: Partial<
     }
     
     // Call the DCF API endpoint
-    const response = await fetch(`/api/dcf?${params.toString()}`, {
+    const apiUrl = `/api/dcf?${params.toString()}`;
+    console.log("Calling DCF API with params:", apiUrl);
+    
+    const response = await fetch(apiUrl, {
       method: 'GET',
       headers: {
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
       }
     });
     
     if (!response.ok) {
+      const errorText = await response.text();
+      console.error(`DCF calculation failed with status: ${response.status}, Error: ${errorText}`);
       throw new Error(`DCF calculation failed with status: ${response.status}`);
     }
     

@@ -40,8 +40,27 @@ serve(async (req) => {
       );
     }
     
-    // Parse the request body to get the symbol, params, and dcf type
-    const { symbol, params, type = "advanced" } = await req.json();
+    // If this is a GET request, parse the URL parameters
+    let symbol, params, type;
+    if (req.method === 'GET') {
+      const url = new URL(req.url);
+      symbol = url.searchParams.get('symbol');
+      type = url.searchParams.get('type') || 'advanced';
+      
+      // Extract all other parameters for the API
+      params = {};
+      url.searchParams.forEach((value, key) => {
+        if (key !== 'symbol' && key !== 'type') {
+          params[key] = value;
+        }
+      });
+    } else {
+      // Parse the request body to get the symbol, params, and dcf type
+      const body = await req.json();
+      symbol = body.symbol;
+      params = body.params;
+      type = body.type || "advanced";
+    }
     
     if (!symbol) {
       return new Response(
@@ -127,7 +146,11 @@ serve(async (req) => {
     }
     
     // Fetch data from FMP API
-    const response = await fetch(apiUrl);
+    const response = await fetch(apiUrl, {
+      headers: {
+        'Accept': 'application/json'
+      }
+    });
     
     if (!response.ok) {
       const errorText = await response.text();
@@ -142,9 +165,24 @@ serve(async (req) => {
       );
     }
     
+    // Check content type to ensure it's JSON
+    const contentType = response.headers.get('content-type');
+    if (!contentType || !contentType.includes('application/json')) {
+      const responseText = await response.text();
+      console.error(`FMP API returned non-JSON response: ${responseText.substring(0, 200)}...`);
+      
+      return new Response(
+        JSON.stringify({ 
+          error: "Invalid API response format", 
+          details: "The API response is not in JSON format" 
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
+      );
+    }
+    
     // Parse the API response
     const data = await response.json();
-    console.log(`Received DCF data from FMP API for ${symbol}`, data);
+    console.log(`Received DCF data from FMP API for ${symbol}`, typeof data);
     
     // For empty responses, try a fallback to v3 endpoint
     if (Array.isArray(data) && data.length === 0 && (type === "advanced" || type === "custom-levered")) {
@@ -173,7 +211,11 @@ serve(async (req) => {
       console.log(`Calling FMP fallback API: ${fallbackUrl.replace(FMP_API_KEY, 'API_KEY_HIDDEN')}`);
       
       // Fetch data from FMP API fallback
-      const fallbackResponse = await fetch(fallbackUrl);
+      const fallbackResponse = await fetch(fallbackUrl, {
+        headers: {
+          'Accept': 'application/json'
+        }
+      });
       
       if (!fallbackResponse.ok) {
         const errorText = await fallbackResponse.text();
@@ -194,9 +236,30 @@ serve(async (req) => {
         );
       }
       
+      // Check content type to ensure it's JSON
+      const fallbackContentType = fallbackResponse.headers.get('content-type');
+      if (!fallbackContentType || !fallbackContentType.includes('application/json')) {
+        const responseText = await fallbackResponse.text();
+        console.error(`FMP Fallback API returned non-JSON response: ${responseText.substring(0, 200)}...`);
+        
+        // Return the original data (even if empty) but with proper JSON content type
+        return new Response(
+          JSON.stringify(data),
+          { 
+            headers: { 
+              ...corsHeaders, 
+              'Content-Type': 'application/json',
+              ...getCacheHeaders(type),
+              'ETag': requestETag,
+              'Last-Modified': new Date().toUTCString()
+            } 
+          }
+        );
+      }
+      
       // Parse the fallback API response
       const fallbackData = await fallbackResponse.json();
-      console.log(`Received DCF data from FMP fallback API for ${symbol}`, fallbackData);
+      console.log(`Received DCF data from FMP fallback API for ${symbol}`, typeof fallbackData);
       
       // Return the fallback DCF data with appropriate caching headers
       return new Response(

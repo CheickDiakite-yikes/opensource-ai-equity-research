@@ -20,7 +20,7 @@ const DCFErrorDisplay: React.FC<DCFErrorDisplayProps> = ({ errors }) => {
             <li key={i}>{error}</li>
           ))}
         </ul>
-        <p className="mt-2">Using estimated values for the DCF calculation.</p>
+        <p className="mt-2">Using estimated values for the DCF calculation. The displayed results are based on reasonable assumptions rather than real-time data.</p>
       </AlertDescription>
     </Alert>
   );
