@@ -38,16 +38,25 @@ export const fetchCustomDCF = async (
   type: DCFType = DCFType.CUSTOM_ADVANCED
 ): Promise<CustomDCFResult[]> => {
   try {
+    if (!symbol || symbol.trim() === "") {
+      throw new Error("Symbol is required for DCF calculation");
+    }
+    
     console.log(`Fetching custom DCF for ${symbol} with params:`, params);
     
     // Format parameters for the API
     const apiParams = formatDCFParameters(params);
     
-    const data = await invokeSupabaseFunction<any>('get-custom-dcf', { 
-      symbol, 
-      params: apiParams,
-      type
-    });
+    // Make sure symbol is included in the params
+    const paramsWithSymbol = {
+      ...apiParams,
+      symbol: symbol.toUpperCase().trim(),
+      type: type.toString()
+    };
+    
+    console.log("Sending DCF request with params:", paramsWithSymbol);
+    
+    const data = await invokeSupabaseFunction<any>('get-custom-dcf', paramsWithSymbol);
     
     if (!data) {
       console.error("No data returned from custom DCF API");
