@@ -1,10 +1,9 @@
-
 import { useState, useEffect, useCallback } from "react";
 import { useDCFAssumptions } from "./useDCFAssumptions";
 import { useDCFCalculation } from "./useDCFCalculation";
 import { useDCFErrors } from "./useDCFErrors";
 import { getCurrentPrice } from "../utils/priceUtils";
-import { prepareMockDCFData, prepareDCFData } from "../utils/dcfDataUtils";
+import { createMockDCFData, prepareDCFData } from "../utils/dcfDataUtils";
 import { FormattedDCFData } from "@/types/ai-analysis/dcfTypes";
 import { toast } from "@/components/ui/use-toast";
 
@@ -35,7 +34,7 @@ export const useDCFData = (symbol: string, financials: any[]) => {
   const { errors } = useDCFErrors(assumptionsError, dcfError);
   
   // Mock DCF data as fallback
-  const mockDCFData = prepareMockDCFData(financials);
+  const mockDCFData = createMockDCFData(financials);
 
   // When assumptions change or on initial load, fetch DCF data
   useEffect(() => {
