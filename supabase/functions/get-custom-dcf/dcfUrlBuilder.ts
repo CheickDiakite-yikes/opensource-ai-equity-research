@@ -5,12 +5,14 @@ import { API_BASE_URLS, FMP_API_KEY } from "../_shared/constants.ts";
  * Build the DCF API URL based on DCF type and parameters
  */
 export const buildDcfApiUrl = (symbol: string, type: string, params: Record<string, string> = {}) => {
-  if (!symbol) {
+  if (!symbol || symbol.trim() === "") {
     throw new Error("Symbol is required to build the DCF API URL");
   }
   
-  const upperSymbol = symbol.toUpperCase();
+  const upperSymbol = symbol.toUpperCase().trim();
   let apiUrl = "";
+  
+  console.log(`Building DCF API URL for symbol: ${upperSymbol}, type: ${type}`);
   
   // Determine which FMP endpoint to use based on DCF type
   switch (type) {

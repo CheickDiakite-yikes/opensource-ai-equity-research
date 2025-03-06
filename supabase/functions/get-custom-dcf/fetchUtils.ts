@@ -27,10 +27,16 @@ export async function fetchWithRetry(
         }
       };
       
+      console.log("Sending request with options:", JSON.stringify({
+        method: mergedOptions.method || 'GET',
+        headers: Object.keys(mergedOptions.headers || {})
+      }));
+      
       const response = await fetch(url, mergedOptions);
       clearTimeout(timeoutId);
       
       console.log(`Response status: ${response.status}`);
+      console.log(`Response headers: ${JSON.stringify(Object.fromEntries(response.headers.entries()))}`);
       
       if (!response.ok) {
         const errorText = await response.text();
@@ -41,6 +47,8 @@ export async function fetchWithRetry(
       const contentType = response.headers.get('content-type');
       if (!contentType?.includes('application/json')) {
         console.error('Invalid content type:', contentType);
+        const bodyText = await response.text();
+        console.error('Response body (first 200 chars):', bodyText.substring(0, 200));
         throw new Error('API returned non-JSON response');
       }
       

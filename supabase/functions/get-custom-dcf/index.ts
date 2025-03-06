@@ -7,8 +7,11 @@ import { createErrorResponse, parseRequestParams, validateRequest, createRealCom
 import { fetchWithRetry } from "./fetchUtils.ts";
 
 serve(async (req) => {
+  console.log("DCF API Request received:", req.url);
+  
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
+    console.log("Handling CORS preflight request");
     return new Response(null, { headers: corsHeaders });
   }
   
@@ -16,12 +19,14 @@ serve(async (req) => {
     // Parse and validate request parameters
     const { symbol, type, params } = await parseRequestParams(req);
     
-    if (!symbol) {
+    if (!symbol || symbol.trim() === "") {
+      console.error("Symbol is missing or empty after parsing");
       throw new Error("Symbol is required");
     }
     
     const validation = validateRequest(symbol);
     if (!validation.isValid) {
+      console.error("DCF Request validation failed for symbol:", symbol);
       return validation.response;
     }
     
@@ -45,6 +50,7 @@ serve(async (req) => {
       
       // Parse the API response
       const data = await response.json();
+      console.log(`Received raw DCF data from API:`, typeof data, Array.isArray(data) ? `Array[${data.length}]` : "Object");
       
       // Handle empty responses
       if (Array.isArray(data) && data.length === 0) {
@@ -103,6 +109,7 @@ serve(async (req) => {
       );
     }
   } catch (error) {
-    return createErrorResponse(error);
+    console.error("Uncaught error in DCF endpoint:", error);
+    return createErrorResponse(error instanceof Error ? error : new Error(String(error)));
   }
 });

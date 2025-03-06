@@ -1,22 +1,32 @@
+
 import { corsHeaders } from "../_shared/cors.ts";
-import { createErrorResponse } from "./requestHandler.ts";
 import { getCacheHeaders } from "./cacheUtils.ts";
 
 export const validateRequest = (symbol: string) => {
-  if (!symbol) {
+  if (!symbol || symbol.trim() === "") {
+    console.error("DCF Request Validation Error: Symbol is missing or empty");
     return {
       isValid: false,
       response: createErrorResponse(new Error("Symbol is required"))
     };
   }
   
+  console.log(`DCF Request Validation: Symbol ${symbol} is valid`);
   return { isValid: true };
 };
 
 export const parseRequestParams = async (req: Request) => {
   try {
     const url = new URL(req.url);
+    console.log("DCF Request URL:", url.toString());
+    console.log("DCF Request Parameters:", Object.fromEntries(url.searchParams.entries()));
+    
     const symbol = url.searchParams.get('symbol') || '';
+    if (!symbol || symbol.trim() === "") {
+      console.error("DCF Request Parameter Error: Symbol is missing or empty");
+      throw new Error("Symbol is required");
+    }
+    
     const type = url.searchParams.get('type') || 'advanced';
     
     // Parse additional parameters from the request
@@ -27,8 +37,10 @@ export const parseRequestParams = async (req: Request) => {
       }
     }
     
+    console.log(`DCF Request Parsed: symbol=${symbol}, type=${type}, params=`, params);
     return { symbol, type, params };
   } catch (error) {
+    console.error("Error parsing DCF request parameters:", error);
     throw new Error("Error parsing request parameters: " + (error as Error).message);
   }
 };
@@ -52,6 +64,8 @@ export const createErrorResponse = (error: Error) => {
 
 // Create more realistic mock data based on actual META financials
 export const createRealCompanyMockData = (symbol: string) => {
+  console.log(`Creating realistic mock data for symbol: ${symbol}`);
+  
   const baseData = {
     symbol: symbol,
     date: new Date().toISOString().split('T')[0],
