@@ -6,6 +6,6 @@ import { prepareDCFData } from './dcfDataFormatter';
 
 export {
   convertAssumptionsToParams,
-  createMockDCFData as prepareMockDCFData,
+  createMockDCFData,
   prepareDCFData
 };
