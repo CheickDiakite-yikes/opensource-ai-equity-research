@@ -1,10 +1,7 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { corsHeaders } from "../_shared/cors.ts";
-
-// Get environment variables for external APIs
-const FMP_API_KEY = Deno.env.get("FMP_API_KEY");
-const API_BASE_URL = "https://financialmodelingprep.com/api/v3";
+import { API_BASE_URLS, FMP_API_KEY } from "../_shared/constants.ts";
 
 // Cache-control headers (per DCF type)
 const getCacheHeaders = (type: string) => {
@@ -97,11 +94,11 @@ serve(async (req) => {
     switch (type) {
       case "standard":
         // Standard DCF endpoint
-        apiUrl = `${API_BASE_URL}/discounted-cash-flow/${symbol}?apikey=${FMP_API_KEY}`;
+        apiUrl = `${API_BASE_URLS.FMP}/discounted-cash-flow/${symbol}?apikey=${FMP_API_KEY}`;
         break;
       case "levered":
         // Levered DCF endpoint
-        apiUrl = `${API_BASE_URL}/levered-discounted-cash-flow/${symbol}?apikey=${FMP_API_KEY}`;
+        apiUrl = `${API_BASE_URLS.FMP}/levered-discounted-cash-flow/${symbol}?apikey=${FMP_API_KEY}`;
         
         // Add optional limit parameter if provided
         if (params?.limit) {
@@ -110,12 +107,12 @@ serve(async (req) => {
         break;
       case "custom-levered":
         // Custom Levered DCF endpoint - using the stable endpoint
-        apiUrl = `${API_BASE_URL}/v4/advanced/custom-levered-discounted-cash-flow?symbol=${symbol}&apikey=${FMP_API_KEY}`;
+        apiUrl = `${API_BASE_URLS.FMP_STABLE}/custom-levered-discounted-cash-flow?symbol=${symbol}&apikey=${FMP_API_KEY}`;
         break;
       case "advanced":
       default:
         // Custom DCF Advanced endpoint - using the stable endpoint
-        apiUrl = `${API_BASE_URL}/v4/advanced/custom-discounted-cash-flow?symbol=${symbol}&apikey=${FMP_API_KEY}`;
+        apiUrl = `${API_BASE_URLS.FMP_STABLE}/custom-discounted-cash-flow?symbol=${symbol}&apikey=${FMP_API_KEY}`;
         break;
     }
     

@@ -5,9 +5,8 @@ export {
   fetchCustomDCF,
   fetchCustomLeveredDCF,
   fetchStandardDCF,
-  fetchLeveredDCF,  // Add this export
+  fetchLeveredDCF,  // Add explicit export
   transformDCFResponse,
-  // Use the renamed function export
   formatDCFTypeParameters,
   DCFType
 } from './dcf';
