@@ -32,10 +32,10 @@ export const useLeveredDCF = (symbol: string) => {
         setResult(dcfResult);
         
         // Create projected data
-        const yearlyData = createProjectedData(apiResult);
-        setProjectedData(yearlyData);
+        const yearly = createProjectedData(apiResult);
+        setProjectedData(yearly);
         
-        return { dcfResult, yearlyData };
+        return { dcfResult, yearly };
       } else {
         console.error("Invalid or empty result from levered DCF:", apiResult);
         setError("Failed to calculate levered DCF. Please try again later.");
