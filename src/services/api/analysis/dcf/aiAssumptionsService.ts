@@ -46,7 +46,7 @@ export const fetchAIDCFAssumptions = async (symbol: string, refreshCache = false
         .from('api_cache')
         .insert({
           cache_key: `dcf_assumptions:${symbol}`,
-          data: data,
+          data: data as unknown as Record<string, any>, // Convert to Json compatible type
           created_at: new Date().toISOString(),
           expires_at: expirationDate,
           metadata: { 
