@@ -19,9 +19,7 @@ import {
 import {
   generateResearchReport,
   generateStockPrediction,
-  analyzeGrowthInsights,
-  fetchCustomDCF,
-  fetchAIDCFAssumptions
+  analyzeGrowthInsights
 } from './analysisService';
 
 /**
@@ -65,7 +63,6 @@ export const getAllFinancialData = async (symbol: string) => {
 export {
   generateResearchReport,
   generateStockPrediction,
-  analyzeGrowthInsights,
-  fetchCustomDCF,
-  fetchAIDCFAssumptions
+  analyzeGrowthInsights
 } from './analysisService';
+
