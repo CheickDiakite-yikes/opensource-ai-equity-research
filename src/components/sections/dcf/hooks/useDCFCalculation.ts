@@ -1,4 +1,3 @@
-
 import { useState, useCallback } from "react";
 import { toast } from "@/components/ui/use-toast";
 import { calculateCustomDCF } from "@/utils/financial";
@@ -191,7 +190,7 @@ export function useDCFCalculation(symbol: string) {
         costOfDebt: assumptions.assumptions.costOfDebtPct * 100,
         marketRiskPremium: assumptions.assumptions.marketRiskPremiumPct * 100,
         riskFreeRate: assumptions.assumptions.riskFreeRatePct * 100,
-        // Additional parameters
+        // Additional parameters with corrected property names
         depreciationAndAmortizationPercentage: assumptions.assumptions.depreciationAndAmortizationPct * 100,
         operatingCashFlowPercentage: assumptions.assumptions.operatingCashFlowPct * 100,
         ebitPercentage: assumptions.assumptions.ebitPct * 100,

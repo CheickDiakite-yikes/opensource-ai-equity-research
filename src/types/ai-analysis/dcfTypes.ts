@@ -1,4 +1,3 @@
-
 // Custom DCF Analysis Types
 export interface CustomDCFParams {
   symbol: string;
@@ -43,6 +42,16 @@ export interface DCFInputs {
   costOfDebt?: number;
   marketRiskPremium?: number;
   riskFreeRate?: number;
+  
+  // Add the missing properties that were causing the error
+  depreciationAndAmortizationPercentage?: number;
+  cashAndShortTermInvestmentsPercentage?: number;
+  receivablesPercentage?: number;
+  inventoriesPercentage?: number;
+  payablesPercentage?: number;
+  ebitPercentage?: number;
+  operatingCashFlowPercentage?: number;
+  sellingGeneralAndAdministrativeExpensesPercentage?: number;
 }
 
 // New type for AI-generated DCF assumptions
