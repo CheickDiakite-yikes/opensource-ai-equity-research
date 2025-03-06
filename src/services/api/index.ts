@@ -34,8 +34,4 @@ export { fetchStockCompanyNews as fetchCompanyNews } from './marketData';
 // Re-export company peers for backwards compatibility
 export { fetchCompanyNotes as fetchCompanyPeers } from './profileService';
 
-// Re-export these functions for backward compatibility
-export { 
-  fetchStockProfile,
-  fetchStockRating 
-} from './profileService';
+// No need to re-export these again since they're already exported above
