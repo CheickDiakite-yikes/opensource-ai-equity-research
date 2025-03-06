@@ -14,9 +14,26 @@ export const fetchStandardDCF = async (symbol: string): Promise<any> => {
       type: DCFType.STANDARD
     });
     
-    if (!data || !Array.isArray(data) || data.length === 0) {
-      console.error("Empty or invalid response from standard DCF API");
+    if (!data) {
+      console.error("Empty response from standard DCF API");
       throw new Error("Standard DCF calculation returned no data");
+    }
+    
+    if (!Array.isArray(data)) {
+      console.error("Unexpected data format from standard DCF API:", data);
+      
+      // If we got an error object instead of an array
+      if (data && typeof data === 'object' && 'error' in data) {
+        throw new Error(`API Error: ${data.error}`);
+      }
+      
+      // Try to wrap non-array data in an array
+      return [data];
+    }
+    
+    if (data.length === 0) {
+      console.error("Empty array returned from standard DCF API");
+      throw new Error("Standard DCF calculation returned empty array");
     }
     
     console.log(`Successfully retrieved standard DCF data for ${symbol}:`, data);
@@ -45,9 +62,26 @@ export const fetchLeveredDCF = async (symbol: string, limit?: number): Promise<a
       params
     });
     
-    if (!data || !Array.isArray(data) || data.length === 0) {
-      console.error("Empty or invalid response from levered DCF API");
+    if (!data) {
+      console.error("Empty response from levered DCF API");
       throw new Error("Levered DCF calculation returned no data");
+    }
+    
+    if (!Array.isArray(data)) {
+      console.error("Unexpected data format from levered DCF API:", data);
+      
+      // If we got an error object instead of an array
+      if (data && typeof data === 'object' && 'error' in data) {
+        throw new Error(`API Error: ${data.error}`);
+      }
+      
+      // Try to wrap non-array data in an array
+      return [data];
+    }
+    
+    if (data.length === 0) {
+      console.error("Empty array returned from levered DCF API");
+      throw new Error("Levered DCF calculation returned empty array");
     }
     
     console.log(`Successfully retrieved levered DCF data for ${symbol}:`, data);

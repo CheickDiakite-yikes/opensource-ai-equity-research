@@ -52,9 +52,19 @@ serve(async (req) => {
     
     // Parse the API response
     const data = await response.json();
+    console.log(`Raw API response type: ${typeof data}, is array: ${Array.isArray(data)}`);
+    
+    // Process the response based on the type of DCF
+    let processedData = data;
+    
+    // For standard DCF which returns a single object, wrap it in an array for consistency
+    if (type === 'standard' && !Array.isArray(data) && typeof data === 'object') {
+      processedData = [data];
+      console.log('Wrapped single object response in array for consistency');
+    }
     
     // If we got an empty array, throw an error
-    if (Array.isArray(data) && data.length === 0) {
+    if (Array.isArray(processedData) && processedData.length === 0) {
       throw new Error(`No DCF data found for symbol: ${symbol}`);
     }
     
@@ -62,7 +72,7 @@ serve(async (req) => {
     
     // Return the DCF data with appropriate caching headers
     return new Response(
-      JSON.stringify(data),
+      JSON.stringify(processedData),
       { 
         headers: { 
           ...corsHeaders, 

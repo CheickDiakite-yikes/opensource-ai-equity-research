@@ -11,11 +11,11 @@ export const buildDcfApiUrl = (symbol: string, type: string, params: Record<stri
   switch (type) {
     case "standard":
       // Standard DCF endpoint
-      apiUrl = `${API_BASE_URLS.FMP}/discounted-cash-flow/${symbol}`;
+      apiUrl = `${API_BASE_URLS.FMP}/v3/discounted-cash-flow/${symbol}`;
       break;
     case "levered":
       // Levered DCF endpoint
-      apiUrl = `${API_BASE_URLS.FMP}/levered-discounted-cash-flow/${symbol}`;
+      apiUrl = `${API_BASE_URLS.FMP}/v3/levered-discounted-cash-flow/${symbol}`;
       break;
     case "custom-levered":
       // Custom Levered DCF endpoint - using the stable endpoint
@@ -28,6 +28,8 @@ export const buildDcfApiUrl = (symbol: string, type: string, params: Record<stri
       break;
   }
   
+  console.log(`Building DCF URL for type: ${type}, base URL: ${apiUrl}`);
+  
   // Add all provided parameters to query string for custom endpoints
   if ((type === "advanced" || type === "custom-levered") && params) {
     Object.entries(params).forEach(([key, value]) => {
@@ -38,7 +40,7 @@ export const buildDcfApiUrl = (symbol: string, type: string, params: Record<stri
             value = (parseFloat(value) / 100).toString();
           }
         }
-        apiUrl += `&${key}=${value}`;
+        apiUrl += `&${key}=${encodeURIComponent(value)}`;
       }
     });
   }

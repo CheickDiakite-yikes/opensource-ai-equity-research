@@ -21,6 +21,7 @@ const DCFErrorDisplay: React.FC<DCFErrorDisplayProps> = ({ errors }) => {
           ))}
         </ul>
         <p className="mt-2">Using estimated values for the DCF calculation. The displayed results are based on reasonable assumptions rather than real-time data.</p>
+        <p className="text-xs mt-1">Try refreshing or selecting a different DCF calculation method.</p>
       </AlertDescription>
     </Alert>
   );
