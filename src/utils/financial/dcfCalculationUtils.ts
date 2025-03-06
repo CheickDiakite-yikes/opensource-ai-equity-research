@@ -20,14 +20,38 @@ export const calculateCustomDCF = async (symbol: string, customInputs?: Partial<
         costOfDebt: 'costOfDebt',
         marketRiskPremium: 'marketRiskPremium',
         riskFreeRate: 'riskFreeRate',
-        beta: 'beta'
+        beta: 'beta',
+        // Additional mapping for other parameters
+        depreciationAndAmortizationPercentage: 'depreciationAndAmortizationPct',
+        cashAndShortTermInvestmentsPercentage: 'cashAndShortTermInvestmentsPct',
+        receivablesPercentage: 'receivablesPct',
+        inventoriesPercentage: 'inventoriesPct',
+        payablesPercentage: 'payablePct',
+        ebitPercentage: 'ebitPct',
+        operatingCashFlowPercentage: 'operatingCashFlowPct',
+        sellingGeneralAndAdministrativeExpensesPercentage: 'sellingGeneralAndAdministrativeExpensesPct'
       };
       
       Object.entries(customInputs).forEach(([key, value]) => {
         if (value !== undefined && value !== null) {
           // Use the mapped parameter name if available, otherwise use the original key
           const paramName = parameterMap[key] || key;
-          params.append(paramName, value.toString());
+          
+          // Convert from percentages to decimal if needed
+          if (key === 'longTermGrowthRate' || 
+              key === 'costOfEquity' || 
+              key === 'costOfDebt' || 
+              key === 'marketRiskPremium' || 
+              key === 'riskFreeRate') {
+            // These parameters need to be converted from percentages if they are in percentage format
+            const numValue = typeof value === 'number' ? value : parseFloat(value.toString());
+            // Check if the value is already in decimal form (less than 1.0) or needs conversion
+            const decimalValue = numValue > 1 ? numValue / 100 : numValue;
+            params.append(paramName, decimalValue.toString());
+          } else {
+            // For other parameters, pass them as-is
+            params.append(paramName, value.toString());
+          }
         }
       });
     }

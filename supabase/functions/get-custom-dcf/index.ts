@@ -112,25 +112,6 @@ serve(async (req) => {
     
     console.log(`Calling FMP API: ${apiUrl.replace(FMP_API_KEY, 'API_KEY_HIDDEN')}`);
     
-    // Check if we have a cached response (cached on the client side)
-    const headerObj = req.headers;
-    const ifNoneMatch = headerObj.get('if-none-match');
-    
-    // Calculate ETag based on the request parameters
-    const requestETag = `W/"dcf-${symbol}-${type}-${JSON.stringify(params || {})}"`;
-    
-    // If ETag matches, return 304 Not Modified
-    if (ifNoneMatch === requestETag) {
-      return new Response(null, { 
-        status: 304,
-        headers: { 
-          ...corsHeaders,
-          ...getCacheHeaders(type),
-          'ETag': requestETag
-        }
-      });
-    }
-    
     // Fetch data from FMP API
     const response = await fetch(apiUrl, {
       headers: {
@@ -218,9 +199,7 @@ serve(async (req) => {
               headers: { 
                 ...corsHeaders, 
                 'Content-Type': 'application/json',
-                ...getCacheHeaders(type),
-                'ETag': requestETag,
-                'Last-Modified': new Date().toUTCString()
+                ...getCacheHeaders(type)
               } 
             }
           );
@@ -237,9 +216,7 @@ serve(async (req) => {
           headers: { 
             ...corsHeaders, 
             'Content-Type': 'application/json',
-            ...getCacheHeaders(type),
-            'ETag': requestETag,
-            'Last-Modified': new Date().toUTCString()
+            ...getCacheHeaders(type)
           } 
         }
       );
@@ -250,10 +227,15 @@ serve(async (req) => {
       if (Array.isArray(data)) {
         data.forEach(item => {
           // Set explicit free cash flow if missing
-          if (item.freeCashFlow === undefined || item.freeCashFlow === 0) {
+          if (item.freeCashFlow === undefined && item.operatingCashFlow !== undefined) {
             const operatingCashFlow = item.operatingCashFlow || 0;
             const capitalExpenditure = item.capitalExpenditure || 0;
             item.freeCashFlow = operatingCashFlow - Math.abs(capitalExpenditure);
+          }
+          
+          // Ensure equityValuePerShare is set
+          if (item.equityValuePerShare === undefined && item.equityValue !== undefined && item.dilutedSharesOutstanding) {
+            item.equityValuePerShare = item.equityValue / item.dilutedSharesOutstanding;
           }
         });
       }
@@ -266,9 +248,7 @@ serve(async (req) => {
         headers: { 
           ...corsHeaders, 
           'Content-Type': 'application/json',
-          ...getCacheHeaders(type),
-          'ETag': requestETag,
-          'Last-Modified': new Date().toUTCString()
+          ...getCacheHeaders(type)
         } 
       }
     );
