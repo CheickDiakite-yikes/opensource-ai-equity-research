@@ -1,11 +1,7 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-
-// CORS headers for browser compatibility
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+import { corsHeaders } from "../_shared/cors.ts";
+import { FMP_API_KEY, API_BASE_URLS } from "../_shared/constants.ts";
 
 // Cache-control headers (per DCF type)
 const getCacheHeaders = (type: string) => {
@@ -30,8 +26,6 @@ serve(async (req) => {
   
   try {
     // Get the FMP API key from environment variables
-    const FMP_API_KEY = Deno.env.get('FMP_API_KEY');
-    
     if (!FMP_API_KEY) {
       console.error("FMP_API_KEY not set in environment variables");
       return new Response(
@@ -58,7 +52,7 @@ serve(async (req) => {
       // Parse the request body to get the symbol, params, and dcf type
       const body = await req.json();
       symbol = body.symbol;
-      params = body.params;
+      params = body.params || {};
       type = body.type || "advanced";
     }
     
@@ -86,35 +80,27 @@ serve(async (req) => {
         // Add optional limit parameter if provided
         if (params?.limit) {
           apiUrl += `?limit=${params.limit}`;
+          delete params.limit;
         }
         break;
       case "custom-levered":
         // Custom Levered DCF endpoint - using the stable endpoint
-        apiUrl = `https://financialmodelingprep.com/api/v4/advanced/discounted-levered-cash-flow/${symbol}?`;
-        
-        // Add all provided parameters to query string
-        if (params) {
-          Object.entries(params).forEach(([key, value]) => {
-            if (key !== 'symbol' && value !== undefined && value !== null) {
-              apiUrl += `&${key}=${value}`;
-            }
-          });
-        }
+        apiUrl = `https://financialmodelingprep.com/stable/custom-levered-discounted-cash-flow?symbol=${symbol}`;
         break;
       case "advanced":
       default:
         // Custom DCF Advanced endpoint - using the stable endpoint
-        apiUrl = `https://financialmodelingprep.com/api/v4/advanced/discounted-cash-flow/${symbol}?`;
-        
-        // Add all provided parameters to query string
-        if (params) {
-          Object.entries(params).forEach(([key, value]) => {
-            if (key !== 'symbol' && value !== undefined && value !== null) {
-              apiUrl += `&${key}=${value}`;
-            }
-          });
-        }
+        apiUrl = `https://financialmodelingprep.com/stable/custom-discounted-cash-flow?symbol=${symbol}`;
         break;
+    }
+    
+    // Add all provided parameters to query string for custom endpoints
+    if ((type === "advanced" || type === "custom-levered") && params) {
+      Object.entries(params).forEach(([key, value]) => {
+        if (value !== undefined && value !== null) {
+          apiUrl += `&${key}=${value}`;
+        }
+      });
     }
     
     // Add the API key
@@ -186,7 +172,7 @@ serve(async (req) => {
     
     // For empty responses, try a fallback to v3 endpoint
     if (Array.isArray(data) && data.length === 0 && (type === "advanced" || type === "custom-levered")) {
-      console.log(`Empty response from v4 API, trying v3 fallback endpoint for ${symbol}`);
+      console.log(`Empty response from stable API, trying v3 fallback endpoint for ${symbol}`);
       
       // Determine v3 fallback URL
       let fallbackUrl = "";
@@ -199,7 +185,7 @@ serve(async (req) => {
       // Add all provided parameters to query string
       if (params) {
         Object.entries(params).forEach(([key, value]) => {
-          if (key !== 'symbol' && value !== undefined && value !== null) {
+          if (value !== undefined && value !== null) {
             fallbackUrl += `&${key}=${value}`;
           }
         });
@@ -217,63 +203,29 @@ serve(async (req) => {
         }
       });
       
-      if (!fallbackResponse.ok) {
-        const errorText = await fallbackResponse.text();
-        console.error(`FMP Fallback API Error (${fallbackResponse.status}): ${errorText}`);
-        
-        // If both attempts fail, return original data
-        return new Response(
-          JSON.stringify(data),
-          { 
-            headers: { 
-              ...corsHeaders, 
-              'Content-Type': 'application/json',
-              ...getCacheHeaders(type),
-              'ETag': requestETag,
-              'Last-Modified': new Date().toUTCString()
-            } 
-          }
-        );
-      }
-      
-      // Check content type to ensure it's JSON
-      const fallbackContentType = fallbackResponse.headers.get('content-type');
-      if (!fallbackContentType || !fallbackContentType.includes('application/json')) {
-        const responseText = await fallbackResponse.text();
-        console.error(`FMP Fallback API returned non-JSON response: ${responseText.substring(0, 200)}...`);
-        
-        // Return the original data (even if empty) but with proper JSON content type
-        return new Response(
-          JSON.stringify(data),
-          { 
-            headers: { 
-              ...corsHeaders, 
-              'Content-Type': 'application/json',
-              ...getCacheHeaders(type),
-              'ETag': requestETag,
-              'Last-Modified': new Date().toUTCString()
-            } 
-          }
-        );
-      }
-      
-      // Parse the fallback API response
-      const fallbackData = await fallbackResponse.json();
-      console.log(`Received DCF data from FMP fallback API for ${symbol}`, typeof fallbackData);
-      
-      // Return the fallback DCF data with appropriate caching headers
-      return new Response(
-        JSON.stringify(fallbackData),
-        { 
-          headers: { 
-            ...corsHeaders, 
-            'Content-Type': 'application/json',
-            ...getCacheHeaders(type),
-            'ETag': requestETag,
-            'Last-Modified': new Date().toUTCString()
-          } 
+      if (fallbackResponse.ok) {
+        // Check content type to ensure it's JSON
+        const fallbackContentType = fallbackResponse.headers.get('content-type');
+        if (fallbackContentType && fallbackContentType.includes('application/json')) {
+          // Parse the fallback API response
+          const fallbackData = await fallbackResponse.json();
+          console.log(`Received DCF data from FMP fallback API for ${symbol}`, typeof fallbackData);
+          
+          // Return the fallback DCF data with appropriate caching headers
+          return new Response(
+            JSON.stringify(fallbackData),
+            { 
+              headers: { 
+                ...corsHeaders, 
+                'Content-Type': 'application/json',
+                ...getCacheHeaders(type),
+                'ETag': requestETag,
+                'Last-Modified': new Date().toUTCString()
+              } 
+            }
+          );
         }
-      );
+      }
     }
     
     // Handle standard DCF response that may be just one object instead of an array

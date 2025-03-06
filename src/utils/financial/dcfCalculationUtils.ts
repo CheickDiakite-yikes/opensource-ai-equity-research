@@ -7,16 +7,32 @@ export const calculateCustomDCF = async (symbol: string, customInputs?: Partial<
     const params = new URLSearchParams();
     params.append('symbol', symbol);
     
-    // Add custom inputs if provided
+    // Add custom inputs if provided, with proper parameter naming for the FMP API
     if (customInputs) {
+      // Map our internal property names to the expected FMP API parameter names
+      const parameterMap: Record<string, string> = {
+        revenuePercentage: 'revenueGrowthPct',
+        ebitdaPercentage: 'ebitdaPct',
+        capitalExpenditurePercentage: 'capitalExpenditurePct',
+        taxRate: 'taxRate',
+        longTermGrowthRate: 'longTermGrowthRate',
+        costOfEquity: 'costOfEquity',
+        costOfDebt: 'costOfDebt',
+        marketRiskPremium: 'marketRiskPremium',
+        riskFreeRate: 'riskFreeRate',
+        beta: 'beta'
+      };
+      
       Object.entries(customInputs).forEach(([key, value]) => {
         if (value !== undefined && value !== null) {
-          params.append(key, value.toString());
+          // Use the mapped parameter name if available, otherwise use the original key
+          const paramName = parameterMap[key] || key;
+          params.append(paramName, value.toString());
         }
       });
     }
     
-    // Call the DCF API endpoint
+    // Call the DCF API endpoint - use the correct stable API endpoint
     const apiUrl = `/api/dcf?${params.toString()}`;
     console.log("Calling DCF API with params:", apiUrl);
     
