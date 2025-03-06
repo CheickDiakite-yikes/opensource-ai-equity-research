@@ -55,7 +55,7 @@ export const useDCFData = (symbol: string, financials: any[]) => {
         console.error("Error initiating DCF calculation:", err);
         // Explicitly handle potential API not found errors
         if (err instanceof Error && err.message.includes("404")) {
-          addError("DCF API endpoint not found. The service may not be deployed or configured correctly.");
+          addError(new Error("DCF API endpoint not found. The service may not be deployed or configured correctly."));
         }
       }
       
