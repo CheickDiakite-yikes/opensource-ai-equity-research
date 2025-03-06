@@ -1,11 +1,13 @@
+
 import React, { useState, useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import AutomaticDCFSection from "./dcf/AutomaticDCFSection";
 import CustomDCFSection from "./dcf/CustomDCFSection";
+import AIDCFSection from "./dcf/AIDCFSection";
 import { useCustomDCF } from "@/hooks/dcf/useCustomDCF";
 import { DCFType } from "@/services/api/analysis/dcf";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Calculator, Sliders, TrendingUp, Lock, AlertTriangle } from "lucide-react";
+import { Calculator, Sliders, TrendingUp, Lock, AlertTriangle, Sparkles } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface DCFTabContentProps {
@@ -63,10 +65,10 @@ const DCFTabContent: React.FC<DCFTabContentProps> = ({ financials, symbol }) => 
   }, [rawApiResponse]);
   
   useEffect(() => {
-    if (symbol) {
+    if (symbol && activeTab === "automatic") {
       calculateStandardDCF();
     }
-  }, [symbol]);
+  }, [symbol, activeTab]);
   
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -139,7 +141,7 @@ const DCFTabContent: React.FC<DCFTabContentProps> = ({ financials, symbol }) => 
       )}
       
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-2 mb-6">
+        <TabsList className="grid w-full grid-cols-3 mb-6">
           <TabsTrigger value="automatic" className="flex items-center justify-center py-3">
             <TrendingUp className="h-4 w-4 mr-2" />
             <span>Automatic DCF</span>
@@ -147,6 +149,10 @@ const DCFTabContent: React.FC<DCFTabContentProps> = ({ financials, symbol }) => 
           <TabsTrigger value="custom" className="flex items-center justify-center py-3">
             <Sliders className="h-4 w-4 mr-2" />
             <span>Custom DCF</span>
+          </TabsTrigger>
+          <TabsTrigger value="ai" className="flex items-center justify-center py-3">
+            <Sparkles className="h-4 w-4 mr-2" />
+            <span>AI-Powered DCF</span>
           </TabsTrigger>
         </TabsList>
         
@@ -171,6 +177,10 @@ const DCFTabContent: React.FC<DCFTabContentProps> = ({ financials, symbol }) => 
             dcfModel={dcfModel}
             onModelChange={handleModelChange}
           />
+        </TabsContent>
+        
+        <TabsContent value="ai" className="space-y-6 animate-fade-in">
+          <AIDCFSection symbol={symbol} currentPrice={currentPrice} />
         </TabsContent>
       </Tabs>
       
