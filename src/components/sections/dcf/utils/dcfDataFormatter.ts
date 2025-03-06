@@ -58,16 +58,16 @@ const createAssumptionsSummary = (
     return {
       growthRate: "8.5% (first 5 years), 3% (terminal)",
       discountRate: "9.5%",
-      terminalMultiple: "DCF Model",
+      terminalMultiple: "15x",
       taxRate: "21%"
     };
   }
   
   // Use calculated/reasonable values or fallback to defaults
-  const growthRateInitial = (assumptions?.assumptions.revenueGrowthPct || 
+  const growthRateInitial = (assumptions?.assumptions?.revenueGrowthPct || 
     (customDCFResult.revenuePercentage ? customDCFResult.revenuePercentage / 100 : null) || 0.085) * 100;
   
-  const growthRateTerminal = (assumptions?.assumptions.longTermGrowthRatePct || 
+  const growthRateTerminal = (assumptions?.assumptions?.longTermGrowthRatePct || 
     customDCFResult.longTermGrowthRate || 0.03) * 100;
   
   const taxRate = (customDCFResult.taxRate || 0.21) * 100;
@@ -75,8 +75,10 @@ const createAssumptionsSummary = (
   
   return {
     growthRate: `${growthRateInitial.toFixed(1)}% (first 5 years), ${growthRateTerminal.toFixed(1)}% (terminal)`,
-    discountRate: `${waccPercent.toFixed(2)}%`,
-    terminalMultiple: "DCF Model",
+    discountRate: `${waccPercent.toFixed(1)}%`,
+    terminalMultiple: customDCFResult.terminalValue ? 
+      `${(customDCFResult.terminalValue / customDCFResult.ebit).toFixed(1)}x` : 
+      "15x",
     taxRate: `${taxRate.toFixed(1)}%`
   };
 };

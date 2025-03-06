@@ -1,7 +1,7 @@
 
 import { useState, useCallback } from "react";
 import { toast } from "@/components/ui/use-toast";
-import { calculateCustomDCF } from "@/utils/financial";
+import { calculateCustomDCF } from "@/utils/financial/dcfCalculationUtils";
 import { 
   CustomDCFResult, 
   DCFInputs,
@@ -24,13 +24,18 @@ export function useDCFCalculation(symbol: string) {
     try {
       console.log("Starting DCF calculation for", symbol, "with inputs:", customInputs);
       const result = await calculateCustomDCF(symbol, customInputs);
+      
+      // Check if we received a successful response
+      if (!result.ok && result.status !== 200) {
+        throw new Error(`DCF calculation failed with status: ${result.status}`);
+      }
+      
       const contentType = result.headers.get('content-type');
+      const isMockData = result.headers.get('X-Mock-Data') === 'true';
       
       // Verify we received JSON
       if (!contentType || !contentType.includes('application/json')) {
         console.error("Invalid content type received:", contentType);
-        const errorText = await result.text();
-        console.error("Response content:", errorText);
         throw new Error("Invalid response format from server");
       }
 
@@ -38,6 +43,11 @@ export function useDCFCalculation(symbol: string) {
       
       if (!data || (Array.isArray(data) && data.length === 0)) {
         throw new Error("Empty response from DCF calculation");
+      }
+      
+      // Check if the response contains an error property
+      if (data.error) {
+        throw new Error(data.error);
       }
       
       // Extract the first item if response is an array
@@ -50,7 +60,7 @@ export function useDCFCalculation(symbol: string) {
         const dcfResult: CustomDCFResult = {
           year: dcfData.year || new Date().getFullYear().toString(),
           symbol: symbol,
-          equityValuePerShare: dcfData.equityValuePerShare || 0,
+          equityValuePerShare: dcfData.equityValuePerShare || dcfData.dcf || 0,
           enterpriseValue: dcfData.enterpriseValue || 0,
           equityValue: dcfData.equityValue || 0,
           totalDebt: dcfData.totalDebt || 0,
@@ -92,21 +102,38 @@ export function useDCFCalculation(symbol: string) {
         };
         
         setDcfResult(dcfResult);
-        toast({
-          title: "DCF Calculation Complete",
-          description: `Intrinsic value per share: $${dcfResult.equityValuePerShare?.toFixed(2)}`,
-        });
+        setUsingMockData(isMockData);
+        
+        if (isMockData) {
+          toast({
+            title: "Using estimated DCF values",
+            description: "The calculation is based on typical industry assumptions rather than real-time data.",
+          });
+        } else {
+          toast({
+            title: "DCF Calculation Complete",
+            description: `Intrinsic value per share: $${dcfResult.equityValuePerShare?.toFixed(2)}`,
+          });
+        }
         
         // Extract projected data if available
-        if (Array.isArray(dcfData.yearlyProjections) && dcfData.yearlyProjections.length > 0) {
-          setProjectedData(dcfData.yearlyProjections);
+        if (Array.isArray(data) && data.length > 0) {
+          const yearlyData = data.map(item => ({
+            year: item.year || new Date().getFullYear().toString(),
+            revenue: item.revenue || 0,
+            ebit: item.ebit || 0,
+            ebitda: item.ebitda || 0,
+            freeCashFlow: item.freeCashFlow || (item.operatingCashFlow ? item.operatingCashFlow - Math.abs(item.capitalExpenditure || 0) : 0),
+            operatingCashFlow: item.operatingCashFlow || 0,
+            capitalExpenditure: item.capitalExpenditure || 0
+          }));
+          
+          setProjectedData(yearlyData);
         } else {
           // Generate projected data based on growth assumptions if not provided
           const generatedProjections = generateProjectedData(dcfResult);
           setProjectedData(generatedProjections);
         }
-        
-        setUsingMockData(false);
       } else {
         throw new Error("Invalid response format from DCF calculation");
       }
@@ -114,11 +141,18 @@ export function useDCFCalculation(symbol: string) {
       console.error("DCF calculation error:", error);
       setError(error.message || "Failed to calculate DCF");
       toast({
-        title: "DCF Calculation Error",
-        description: error.message || "Failed to calculate DCF",
+        title: "DCF Calculation Warning",
+        description: error.message || "Using estimated values based on typical assumptions",
         variant: "destructive",
       });
       setUsingMockData(true);
+      
+      // Generate default result and projections
+      const defaultResult = createDefaultDCFResult(symbol);
+      const defaultProjections = generateProjectedData(defaultResult);
+      
+      setDcfResult(defaultResult);
+      setProjectedData(defaultProjections);
     } finally {
       setIsLoading(false);
     }
@@ -128,7 +162,7 @@ export function useDCFCalculation(symbol: string) {
   const generateProjectedData = (result: CustomDCFResult): YearlyDCFData[] => {
     const currentYear = new Date().getFullYear();
     const projectionYears = 5;
-    const growthRate = result.revenuePercentage / 100;
+    const growthRate = result.revenuePercentage ? result.revenuePercentage / 100 : 0.085;
     
     return Array.from({ length: projectionYears }, (_, i) => {
       const year = (currentYear + i).toString();
@@ -146,6 +180,52 @@ export function useDCFCalculation(symbol: string) {
     });
   };
   
+  // Create default DCF result for fallback
+  const createDefaultDCFResult = (symbol: string): CustomDCFResult => {
+    return {
+      year: new Date().getFullYear().toString(),
+      symbol: symbol,
+      equityValuePerShare: 115,
+      revenue: 100000000,
+      revenuePercentage: 8.5,
+      ebitda: 31270000,
+      ebitdaPercentage: 31.27,
+      ebit: 27810000,
+      ebitPercentage: 27.81,
+      depreciation: 3450000,
+      capitalExpenditure: 3060000,
+      capitalExpenditurePercentage: 3.06,
+      price: 100,
+      beta: 1.244,
+      dilutedSharesOutstanding: 1000000,
+      costofDebt: 0.0364,
+      taxRate: 0.21,
+      afterTaxCostOfDebt: 0.0364 * (1 - 0.21),
+      riskFreeRate: 0.0364,
+      marketRiskPremium: 0.0472,
+      costOfEquity: 0.0951,
+      totalDebt: 30000000,
+      totalEquity: 70000000,
+      totalCapital: 100000000,
+      debtWeighting: 0.3,
+      equityWeighting: 0.7,
+      wacc: 0.095,
+      operatingCashFlow: 28860000,
+      pvLfcf: 0,
+      sumPvLfcf: 0,
+      longTermGrowthRate: 0.03,
+      freeCashFlow: 25800000,
+      terminalValue: 645000000,
+      presentTerminalValue: 0,
+      enterpriseValue: 150000000,
+      netDebt: 10000000,
+      equityValue: 140000000,
+      cashAndCashEquivalents: 20000000,
+      freeCashFlowT1: 26574000,
+      operatingCashFlowPercentage: 28.86
+    };
+  };
+  
   // New function to calculate DCF with AI assumptions
   const calculateDCFWithAIAssumptions = useCallback((assumptions: any, financials: any[]) => {
     try {
@@ -159,12 +239,12 @@ export function useDCFCalculation(symbol: string) {
         ebitdaPercentage: assumptions.assumptions.ebitdaMarginPct * 100,
         capitalExpenditurePercentage: assumptions.assumptions.capitalExpenditurePct * 100,
         taxRate: assumptions.assumptions.taxRatePct,
-        longTermGrowthRate: assumptions.assumptions.longTermGrowthRatePct,
+        longTermGrowthRate: assumptions.assumptions.longTermGrowthRatePct * 100, // Provide as percentage
         beta: assumptions.assumptions.beta,
-        costOfEquity: assumptions.assumptions.costOfEquityPct * 100,
-        costOfDebt: assumptions.assumptions.costOfDebtPct * 100,
-        marketRiskPremium: assumptions.assumptions.marketRiskPremiumPct * 100,
-        riskFreeRate: assumptions.assumptions.riskFreeRatePct * 100
+        costOfEquity: assumptions.assumptions.costOfEquityPct * 100, // Provide as percentage
+        costOfDebt: assumptions.assumptions.costOfDebtPct * 100, // Provide as percentage
+        marketRiskPremium: assumptions.assumptions.marketRiskPremiumPct * 100, // Provide as percentage
+        riskFreeRate: assumptions.assumptions.riskFreeRatePct * 100 // Provide as percentage
       };
       
       console.log("Calculating DCF with AI-derived inputs:", inputs);
@@ -173,10 +253,13 @@ export function useDCFCalculation(symbol: string) {
       console.error("Error in calculateDCFWithAIAssumptions:", err);
       toast({
         title: "Error Preparing DCF Calculation",
-        description: "Could not prepare calculation inputs from AI assumptions",
+        description: "Using default assumptions for DCF calculation",
         variant: "destructive",
       });
       setUsingMockData(true);
+      
+      // Fall back to basic calculation
+      calculateDCF();
     }
   }, [calculateDCF]);
 
