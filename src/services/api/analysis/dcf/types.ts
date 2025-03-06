@@ -1,6 +1,6 @@
 
 /**
- * Enum for DCF calculation types
+ * DCF Types Enum
  */
 export enum DCFType {
   STANDARD = "standard",
@@ -10,12 +10,11 @@ export enum DCFType {
 }
 
 /**
- * Interface for DCF API Response
+ * DCF API Parameters interface
  */
-export interface DCFResponse {
+export interface DCFApiParams {
   symbol: string;
-  date: string;
-  dcf: number;
-  price: number;
-  [key: string]: any;
+  type: DCFType;
+  params?: Record<string, any>;
+  limit?: number;
 }

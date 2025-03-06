@@ -125,35 +125,6 @@ const createPlaceholderQuote = (symbol: string): StockQuote => {
 };
 
 /**
- * Fetch stock price change data (alias for API compatibility)
- */
-export const fetchStockPriceChange = async (symbol: string): Promise<any> => {
-  try {
-    // Get the stock quote which includes price change data
-    const quote = await fetchStockQuote(symbol);
-    
-    if (!quote) return null;
-    
-    // Extract just the price change related fields
-    return {
-      symbol: quote.symbol,
-      price: quote.price,
-      change: quote.change,
-      changesPercentage: quote.changesPercentage,
-      dayLow: quote.dayLow,
-      dayHigh: quote.dayHigh,
-      yearLow: quote.yearLow,
-      yearHigh: quote.yearHigh,
-      priceAvg50: quote.priceAvg50,
-      priceAvg200: quote.priceAvg200
-    };
-  } catch (error) {
-    console.error("Error fetching stock price change:", error);
-    return null;
-  }
-};
-
-/**
  * Fetch company market cap data
  */
 export const fetchMarketCap = async (symbol: string): Promise<{ marketCap: number, date: string } | null> => {

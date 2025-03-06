@@ -1,37 +1,71 @@
 
-// Services API index
-// Re-export all service functions from the individual modules
-
-// Market data services
-export * from './marketDataService';
-
-// Profile services
-export { 
-  fetchStockProfile,
-  fetchStockRating,
-  fetchEmployeeCount,
-  fetchCompanyNotes 
-} from './profileService';
-
-// Financial data services
+// Re-export all API services
+export * from './profileService';
 export * from './financialService';
-
-// Document services
-export * from './documentsService';
-
-// Analysis services
+export * from './marketDataService';
 export * from './analysisService';
+export * from './documentsService';
+export * from './base';  // Export base utilities including withRetry
 
-// Base service utils
-export { withRetry, invokeSupabaseFunction } from './base';
+// Composite functions
+import { fetchStockProfile, fetchStockQuote } from './profileService';
+import { fetchIncomeStatements, fetchBalanceSheets, fetchCashFlowStatements, fetchKeyRatios } from './financialService';
+import { fetchHistoricalPrices, fetchCompanyNews, fetchCompanyPeers } from './marketDataService';
+import { 
+  fetchEarningsTranscripts, 
+  fetchSECFilings, 
+  triggerDocumentCaching 
+} from './documentsService';
+import {
+  generateResearchReport,
+  generateStockPrediction,
+  analyzeGrowthInsights,
+  fetchCustomDCF,
+  fetchAIDCFAssumptions
+} from './analysisService';
 
-// Enhanced API services
-export * from './enhancedApiService';
+/**
+ * Get all financial data for a symbol
+ */
+export const getAllFinancialData = async (symbol: string) => {
+  const profile = await fetchStockProfile(symbol);
+  const quote = await fetchStockQuote(symbol);
+  const incomeStatements = await fetchIncomeStatements(symbol);
+  const balanceSheets = await fetchBalanceSheets(symbol);
+  const cashFlowStatements = await fetchCashFlowStatements(symbol);
+  const keyRatios = await fetchKeyRatios(symbol);
+  const historicalPrices = await fetchHistoricalPrices(symbol);
+  const news = await fetchCompanyNews(symbol);
+  const peers = await fetchCompanyPeers(symbol);
+  const earningsTranscripts = await fetchEarningsTranscripts(symbol);
+  const secFilings = await fetchSECFilings(symbol);
 
-// Export company news from marketData for proper import in other files
-export { fetchStockCompanyNews as fetchCompanyNews } from './marketData';
+  // Trigger background caching of company documents
+  // This happens asynchronously and doesn't affect the response time
+  if (profile) {
+    triggerDocumentCaching(symbol);
+  }
 
-// Re-export company peers for backwards compatibility
-export { fetchCompanyNotes as fetchCompanyPeers } from './profileService';
+  return {
+    profile,
+    quote,
+    incomeStatements,
+    balanceSheets,
+    cashFlowStatements,
+    keyRatios,
+    historicalPrices,
+    news,
+    peers,
+    earningsTranscripts,
+    secFilings
+  };
+};
 
-// No need to re-export these again since they're already exported above
+// Re-export all analysis functions
+export {
+  generateResearchReport,
+  generateStockPrediction,
+  analyzeGrowthInsights,
+  fetchCustomDCF,
+  fetchAIDCFAssumptions
+} from './analysisService';

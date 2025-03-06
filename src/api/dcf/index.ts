@@ -1,149 +1,113 @@
 
+/**
+ * DCF API Handler
+ * 
+ * This file handles DCF calculation requests by proxying them to the Supabase
+ * function that communicates with the FMP API.
+ */
+
 import { invokeSupabaseFunction } from "@/services/api/base";
-import { DCFResponse, DCFType } from "./types";
+
+export interface DCFParams {
+  symbol: string;
+  type?: string;
+  [key: string]: any;
+}
 
 /**
- * Fetch DCF (Discounted Cash Flow) valuation for a stock
+ * Handler for DCF calculation requests
  */
-export const fetchDCF = async (symbol: string): Promise<DCFResponse | null> => {
+export const handleDCFRequest = async (params: DCFParams): Promise<any> => {
   try {
-    const data = await invokeSupabaseFunction<DCFResponse[]>('get-stock-data', { 
-      symbol, 
-      endpoint: 'dcf' 
-    });
+    const { symbol, type = 'advanced', ...customParams } = params;
     
-    if (!data || !Array.isArray(data) || data.length === 0) return null;
-    return data[0];
-  } catch (error) {
-    console.error("Error fetching DCF:", error);
-    return null;
-  }
-};
-
-/**
- * Fetch advanced DCF model with detailed assumptions
- */
-export const fetchAdvancedDCF = async (symbol: string): Promise<any | null> => {
-  try {
-    const data = await invokeSupabaseFunction<any[]>('get-stock-data', { 
-      symbol, 
-      endpoint: 'advanced-dcf' 
-    });
-    
-    if (!data || !Array.isArray(data) || data.length === 0) return null;
-    return data[0];
-  } catch (error) {
-    console.error("Error fetching advanced DCF:", error);
-    return null;
-  }
-};
-
-/**
- * Fetch levered DCF model
- */
-export const fetchLeveredDCF = async (symbol: string): Promise<any | null> => {
-  try {
-    const data = await invokeSupabaseFunction<any[]>('get-stock-data', { 
-      symbol, 
-      endpoint: 'levered-dcf' 
-    });
-    
-    if (!data || !Array.isArray(data) || data.length === 0) return null;
-    return data[0];
-  } catch (error) {
-    console.error("Error fetching levered DCF:", error);
-    return null;
-  }
-};
-
-/**
- * Calculate custom DCF with user-provided parameters
- */
-export const calculateCustomDCF = async (
-  symbol: string,
-  params: {
-    growthRate: number;
-    terminalRate: number;
-    discountRate: number;
-    forecastYears: number;
-    [key: string]: any;
-  }
-): Promise<any | null> => {
-  try {
-    const data = await invokeSupabaseFunction<any>('calculate-custom-dcf', { 
-      symbol,
-      params
-    });
-    
-    return data;
-  } catch (error) {
-    console.error("Error calculating custom DCF:", error);
-    return null;
-  }
-};
-
-/**
- * Fetch DCF model based on type
- */
-export const fetchDCFByType = async (
-  symbol: string, 
-  type: DCFType = DCFType.STANDARD
-): Promise<any | null> => {
-  try {
-    switch (type) {
-      case DCFType.STANDARD:
-        return await fetchDCF(symbol);
-      case DCFType.LEVERED:
-        return await fetchLeveredDCF(symbol);
-      case DCFType.CUSTOM_ADVANCED:
-        return await fetchAdvancedDCF(symbol);
-      default:
-        return await fetchDCF(symbol);
+    if (!symbol) {
+      throw new Error("Symbol is required for DCF calculation");
     }
+    
+    console.log(`DCF API: Processing request for ${symbol}, type: ${type}`);
+    
+    // Call the Supabase function for DCF calculation
+    const data = await invokeSupabaseFunction<any>('get-custom-dcf', {
+      symbol,
+      type,
+      params: customParams
+    });
+    
+    // Check if we received a valid response
+    if (!data) {
+      throw new Error("No data returned from DCF calculation");
+    }
+    
+    // For empty array responses, throw an error
+    if (Array.isArray(data) && data.length === 0) {
+      throw new Error(`No DCF data available for ${symbol}`);
+    }
+    
+    return {
+      ok: true,
+      json: () => Promise.resolve(data),
+      headers: new Headers({
+        'content-type': 'application/json'
+      }),
+      status: 200
+    };
   } catch (error) {
-    console.error(`Error fetching DCF of type ${type}:`, error);
-    return null;
+    console.error("Error in DCF calculation:", error);
+    
+    // Return a Response-like object with error information
+    return {
+      ok: false,
+      text: () => Promise.resolve(error.message || "Unknown error"),
+      headers: new Headers({
+        'content-type': 'text/plain'
+      }),
+      status: 500
+    };
   }
 };
 
 /**
- * Process DCF API request
+ * Process a Request object for DCF calculation
  */
 export const processDCFRequest = async (request: Request): Promise<Response> => {
   try {
-    const { symbol, type = DCFType.STANDARD, params } = await request.json();
+    const url = new URL(request.url);
+    const params: DCFParams = { symbol: "" };
     
-    if (!symbol) {
+    // Extract parameters from URL
+    url.searchParams.forEach((value, key) => {
+      params[key] = value;
+    });
+    
+    // Validate required parameters
+    if (!params.symbol) {
       return new Response(
         JSON.stringify({ error: "Symbol is required" }),
-        { status: 400 }
+        { status: 400, headers: { 'Content-Type': 'application/json' } }
       );
     }
     
-    let result;
+    // Call the handler
+    const result = await handleDCFRequest(params);
     
-    if (type === DCFType.CUSTOM_LEVERED && params) {
-      result = await calculateCustomDCF(symbol, params);
-    } else {
-      result = await fetchDCFByType(symbol, type as DCFType);
-    }
-    
-    if (!result) {
+    if (result.ok) {
       return new Response(
-        JSON.stringify({ error: "Failed to fetch DCF data" }),
-        { status: 404 }
+        JSON.stringify(await result.json()),
+        { status: 200, headers: { 'Content-Type': 'application/json' } }
+      );
+    } else {
+      return new Response(
+        JSON.stringify({ error: await result.text() }),
+        { status: result.status, headers: { 'Content-Type': 'application/json' } }
       );
     }
-    
-    return new Response(
-      JSON.stringify(result),
-      { status: 200 }
-    );
   } catch (error) {
     console.error("Error processing DCF request:", error);
+    
     return new Response(
-      JSON.stringify({ error: "Internal server error" }),
-      { status: 500 }
+      JSON.stringify({ error: error.message || "Unknown error" }),
+      { status: 500, headers: { 'Content-Type': 'application/json' } }
     );
   }
 };
