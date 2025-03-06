@@ -106,7 +106,7 @@ export const getDCF = async (req: Request): Promise<Response> => {
 /**
  * Handle DCF API requests
  */
-export const onRequest: PagesFunction = async (context) => {
+export const onRequest = async (context: { request: Request }) => {
   const req = context.request;
   
   if (req.method === "OPTIONS") {

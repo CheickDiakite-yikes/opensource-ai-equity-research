@@ -5,13 +5,12 @@
 // Market data services
 export * from './marketDataService';
 
-// Profile services - explicitly export to avoid conflicts
-export {
-  fetchCompanyProfile,
-  fetchCompanyRating,
-  fetchCompanyOutlook,
-  // Export with different name to avoid conflict
-  fetchCompanyPeers as fetchPeerCompanies
+// Profile services
+export { 
+  fetchStockProfile as fetchCompanyProfile,
+  fetchStockRating as fetchCompanyRating,
+  fetchEmployeeCount as fetchCompanyOutlook,
+  fetchCompanyNotes as fetchCompanyPeers 
 } from './profileService';
 
 // Financial data services
@@ -22,6 +21,9 @@ export * from './documentsService';
 
 // Analysis services
 export * from './analysisService';
+
+// Base service utils
+export { withRetry } from './base';
 
 // Enhanced API services
 export * from './enhancedApiService';

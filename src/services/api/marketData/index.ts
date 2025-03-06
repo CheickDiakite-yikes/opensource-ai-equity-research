@@ -1,14 +1,16 @@
 
-// Re-export everything from the individual modules, except selectively from stockDataService
+// Re-export everything from the individual modules with appropriate naming
 export * from './newsService';
 export * from './indicesService'; 
 export * from './indicesDataService';
 
-// Selectively export from stockDataService to avoid naming conflicts
+// Exports from stockDataService
 export {
-  fetchStockQuote,
   fetchHistoricalPrices,
-  fetchStockPriceChange,
-  // Rename this export to avoid conflict with newsService
+  fetchCompanyPeers,
+  fetchCompanyLogo, 
   fetchCompanyNews as fetchStockCompanyNews
 } from './stockDataService';
+
+// Add these exports to match imports from other files
+export { fetchStockQuote, fetchStockPriceChange } from '../profileService';
