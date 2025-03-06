@@ -1,22 +1,10 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { corsHeaders } from "../_shared/cors.ts";
-import { FMP_API_KEY, API_BASE_URLS } from "../_shared/constants.ts";
-
-// Cache-control headers (per DCF type)
-const getCacheHeaders = (type: string) => {
-  let maxAge = 3600; // Default 1 hour cache
-  
-  // Custom DCF types that use user-defined parameters shouldn't be cached as long
-  if (type === 'custom-levered' || type === 'advanced') {
-    maxAge = 300; // 5 minutes for custom DCF calculations
-  }
-  
-  return {
-    'Cache-Control': `public, max-age=${maxAge}`,
-    'Vary': 'Origin, Accept-Encoding',
-  };
-};
+import { parseRequestParams, validateRequest, createErrorResponse } from "./requestHandler.ts";
+import { buildDcfApiUrl } from "./dcfUrlBuilder.ts";
+import { getCacheHeaders } from "./cacheUtils.ts";
+import { fetchWithRetry } from "./fetchUtils.ts";
 
 serve(async (req) => {
   // Handle CORS preflight requests
@@ -25,93 +13,21 @@ serve(async (req) => {
   }
   
   try {
-    // Get the FMP API key from environment variables
-    if (!FMP_API_KEY) {
-      console.error("FMP_API_KEY not set in environment variables");
-      return new Response(
-        JSON.stringify({ error: "API key not configured", details: "FMP_API_KEY environment variable is missing" }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
-      );
-    }
-    
     // Parse request parameters
-    let symbol, params, type;
+    const { symbol, params, type } = await parseRequestParams(req);
     
-    if (req.method === 'GET') {
-      const url = new URL(req.url);
-      symbol = url.searchParams.get('symbol');
-      type = url.searchParams.get('type') || 'advanced';
-      
-      // Extract all other parameters for the API
-      params = {};
-      url.searchParams.forEach((value, key) => {
-        if (key !== 'symbol' && key !== 'type') {
-          params[key] = value;
-        }
-      });
-    } else {
-      // Parse the request body for POST requests
-      const body = await req.json();
-      symbol = body.symbol;
-      params = body.params || {};
-      type = body.type || "advanced";
-    }
-    
-    if (!symbol) {
-      return new Response(
-        JSON.stringify({ error: "Missing required parameter", details: "Symbol is required" }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
-      );
+    // Validate request
+    const validation = validateRequest(symbol);
+    if (!validation.isValid) {
+      return validation.response;
     }
     
     console.log(`Processing DCF request for ${symbol}, type: ${type}`);
     
-    // Determine which FMP endpoint to use based on DCF type
-    let apiUrl = "";
+    // Build the API URL
+    const apiUrl = buildDcfApiUrl(symbol!, type!, params);
     
-    switch (type) {
-      case "standard":
-        // Standard DCF endpoint
-        apiUrl = `${API_BASE_URLS.FMP}/discounted-cash-flow/${symbol}`;
-        break;
-      case "levered":
-        // Levered DCF endpoint
-        apiUrl = `${API_BASE_URLS.FMP}/levered-discounted-cash-flow/${symbol}`;
-        break;
-      case "custom-levered":
-        // Custom Levered DCF endpoint - using the stable endpoint
-        apiUrl = `${API_BASE_URLS.FMP_STABLE}/custom-levered-discounted-cash-flow?symbol=${symbol}`;
-        break;
-      case "advanced":
-      default:
-        // Custom DCF Advanced endpoint - using the stable endpoint
-        apiUrl = `${API_BASE_URLS.FMP_STABLE}/custom-discounted-cash-flow?symbol=${symbol}`;
-        break;
-    }
-    
-    // Add all provided parameters to query string for custom endpoints
-    if ((type === "advanced" || type === "custom-levered") && params) {
-      Object.entries(params).forEach(([key, value]) => {
-        if (value !== undefined && value !== null) {
-          // Convert percentage values to decimals if needed
-          if (['longTermGrowthRate', 'costOfEquity', 'costOfDebt', 'marketRiskPremium', 'riskFreeRate'].includes(key)) {
-            if (typeof value === 'string' && !isNaN(parseFloat(value)) && parseFloat(value) > 0.2) {
-              value = (parseFloat(value) / 100).toString();
-            }
-          }
-          apiUrl += `&${key}=${value}`;
-        }
-      });
-    }
-    
-    // Add the API key
-    if (apiUrl.includes('?')) {
-      apiUrl += `&apikey=${FMP_API_KEY}`;
-    } else {
-      apiUrl += `?apikey=${FMP_API_KEY}`;
-    }
-    
-    console.log(`Calling FMP API: ${apiUrl.replace(FMP_API_KEY, 'API_KEY_HIDDEN')}`);
+    console.log(`Calling FMP API: ${apiUrl.replace(/apikey=[^&]+/, 'API_KEY_HIDDEN')}`);
     
     // Fetch data from FMP API with retries
     const response = await fetchWithRetry(apiUrl, {
@@ -151,56 +67,12 @@ serve(async (req) => {
         headers: { 
           ...corsHeaders, 
           'Content-Type': 'application/json',
-          ...getCacheHeaders(type)
+          ...getCacheHeaders(type!)
         } 
       }
     );
     
   } catch (error) {
-    console.error("Error in get-custom-dcf function:", error);
-    
-    // Return a clear error response
-    return new Response(
-      JSON.stringify({ 
-        error: error.message || "Failed to fetch DCF data",
-        details: "An error occurred while fetching DCF data from the FMP API"
-      }),
-      { 
-        headers: { 
-          ...corsHeaders, 
-          'Content-Type': 'application/json'
-        },
-        status: 500
-      }
-    );
+    return createErrorResponse(error instanceof Error ? error : new Error(String(error)));
   }
 });
-
-/**
- * Fetch with retry functionality
- */
-async function fetchWithRetry(
-  url: string,
-  options: RequestInit = {},
-  maxRetries: number = 3
-): Promise<Response> {
-  let lastError: Error | null = null;
-  
-  for (let attempt = 1; attempt <= maxRetries; attempt++) {
-    try {
-      const response = await fetch(url, options);
-      return response;
-    } catch (error) {
-      console.error(`Fetch error (attempt ${attempt}/${maxRetries}):`, error);
-      lastError = error instanceof Error ? error : new Error(String(error));
-      
-      if (attempt < maxRetries) {
-        // Wait before retrying with exponential backoff
-        const delay = 1000 * Math.pow(2, attempt - 1);
-        await new Promise(resolve => setTimeout(resolve, delay));
-      }
-    }
-  }
-  
-  throw lastError || new Error('Failed to fetch after multiple attempts');
-}
