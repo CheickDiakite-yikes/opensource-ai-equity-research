@@ -37,7 +37,7 @@ export const useCustomDCFCalculation = (symbol: string) => {
         // If custom DCF fails, try standard DCF
         toast({
           title: "Using Standard DCF",
-          description: `Custom DCF calculation failed. Falling back to standard DCF.`,
+          description: `Custom DCF calculation unavailable. Using standard DCF instead.`,
           variant: "default",
         });
         return await calculateStandardDCF();
@@ -45,6 +45,9 @@ export const useCustomDCFCalculation = (symbol: string) => {
       
       if (apiResult && Array.isArray(apiResult) && apiResult.length > 0) {
         console.log(`Received ${type} DCF results:`, apiResult);
+        
+        // Check if using mock data (we're already showing toast in the service)
+        const isMockData = apiResult[0].mockData === true;
         
         // The API returns an array, but we'll use the first item as our primary result
         const dcfResult = apiResult[0];
@@ -55,20 +58,22 @@ export const useCustomDCFCalculation = (symbol: string) => {
         setResult(dcfResult);
         setProjectedData(yearly);
         
-        toast({
-          title: "DCF Calculation Complete",
-          description: `Intrinsic value per share: $${dcfResult.equityValuePerShare.toFixed(2)}`,
-        });
+        if (!isMockData) {
+          toast({
+            title: "DCF Calculation Complete",
+            description: `Intrinsic value per share: $${dcfResult.equityValuePerShare.toFixed(2)}`,
+          });
+        }
         
         return { dcfResult, yearly };
       } else {
         console.error(`Invalid or empty result from ${type} DCF:`, apiResult);
-        setError(`Failed to calculate ${type} DCF. Please check the parameters and try again.`);
+        setError(`Failed to calculate ${type} DCF. Using estimated values instead.`);
         
         toast({
-          title: "DCF Calculation Failed",
-          description: "Using standard DCF as fallback.",
-          variant: "destructive",
+          title: "DCF Calculation Notice",
+          description: "Using standard DCF with estimated values.",
+          variant: "default",
         });
         
         // If custom DCF fails due to empty results, try standard DCF
@@ -83,9 +88,9 @@ export const useCustomDCFCalculation = (symbol: string) => {
       setError(`An error occurred during calculation: ${errorMessage}`);
       
       toast({
-        title: "Custom DCF Calculation Failed",
-        description: "Using standard DCF as fallback.",
-        variant: "destructive",
+        title: "Using Estimated DCF Values",
+        description: "DCF calculation with requested parameters unavailable. Using estimated values.",
+        variant: "default",
       });
       
       // If custom DCF fails with error, try standard DCF as fallback

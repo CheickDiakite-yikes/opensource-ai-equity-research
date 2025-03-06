@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useCustomDCF } from "@/hooks/dcf/useCustomDCF";
@@ -18,30 +17,30 @@ const DCFTabContent: React.FC<DCFTabContentProps> = ({ financials, symbol }) => 
   // Custom DCF inputs state - all parameters included and properly formatted
   const [customParams, setCustomParams] = useState({
     // Growth parameters (as decimals)
-    revenueGrowth: "10.94",
-    ebitdaMargin: "31.27",
-    capexPercent: "3.06", 
-    taxRate: "24.09",
+    revenueGrowth: "10.5",
+    ebitdaMargin: "30.0",
+    capexPercent: "3.0", 
+    taxRate: "24.0",
     
     // Working capital parameters (as decimals)
-    depreciationAndAmortizationPercent: "3.45",
-    cashAndShortTermInvestmentsPercent: "23.44",
-    receivablesPercent: "15.33", 
-    inventoriesPercent: "1.55",
-    payablesPercent: "16.14",
-    ebitPercent: "27.81",
-    operatingCashFlowPercent: "28.86",
-    sellingGeneralAndAdministrativeExpensesPercent: "6.62",
+    depreciationAndAmortizationPercent: "3.5",
+    cashAndShortTermInvestmentsPercent: "23.0",
+    receivablesPercent: "15.0", 
+    inventoriesPercent: "1.5",
+    payablesPercent: "16.0",
+    ebitPercent: "27.0",
+    operatingCashFlowPercent: "28.0",
+    sellingGeneralAndAdministrativeExpensesPercent: "6.5",
     
     // Rate parameters (as whole numbers)
-    longTermGrowthRate: "4",
-    costOfEquity: "9.51",
-    costOfDebt: "3.64",
-    marketRiskPremium: "4.72",
-    riskFreeRate: "3.64",
+    longTermGrowthRate: "3.0",
+    costOfEquity: "9.5",
+    costOfDebt: "3.5",
+    marketRiskPremium: "4.7",
+    riskFreeRate: "3.6",
     
     // Other
-    beta: "1.244"
+    beta: "1.2"
   });
   
   // Custom DCF calculation hook

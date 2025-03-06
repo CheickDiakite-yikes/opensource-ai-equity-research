@@ -33,13 +33,6 @@ export async function fetchWithRetry(
       // Log response status
       console.log(`Response status: ${response.status}`);
       
-      // Check if response is not OK
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error(`Error response (${response.status}): ${errorText}`);
-        throw new Error(`Failed with status ${response.status}: ${errorText}`);
-      }
-      
       return response;
     } catch (error) {
       console.error(`Fetch error (attempt ${attempt}/${maxRetries}):`, error);

@@ -9,17 +9,17 @@ export const getCacheHeaders = (type: string) => {
   switch(type) {
     case 'standard':
     case 'levered':
-      // Cache standard DCF for 2 hours
-      cacheHeaders['Cache-Control'] = 'public, max-age=7200';
+      // Cache standard DCF for 1 hour
+      cacheHeaders['Cache-Control'] = 'public, max-age=3600';
       break;
     case 'custom-levered':
     case 'advanced':
-      // Cache custom DCF for 1 hour
-      cacheHeaders['Cache-Control'] = 'public, max-age=3600';
+      // Cache custom DCF for 30 minutes
+      cacheHeaders['Cache-Control'] = 'public, max-age=1800';
       break;
     default:
-      // Default cache for 30 minutes
-      cacheHeaders['Cache-Control'] = 'public, max-age=1800';
+      // Default cache for 15 minutes
+      cacheHeaders['Cache-Control'] = 'public, max-age=900';
   }
   
   return cacheHeaders;

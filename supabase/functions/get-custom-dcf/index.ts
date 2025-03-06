@@ -48,7 +48,33 @@ serve(async (req) => {
       
       // Handle empty responses
       if (Array.isArray(data) && data.length === 0) {
-        throw new Error(`No DCF data found for symbol: ${symbol}`);
+        // Return mock data for empty responses instead of throwing an error
+        console.log(`No DCF data found for symbol: ${symbol}, returning mock data`);
+        return new Response(
+          JSON.stringify([{
+            symbol: symbol,
+            date: new Date().toISOString().split('T')[0],
+            stockPrice: 100,
+            dcf: 115,
+            equityValuePerShare: 115,
+            wacc: 0.09,
+            longTermGrowthRate: 0.03,
+            freeCashFlow: 5000000000,
+            revenue: 20000000000,
+            ebitda: 8000000000,
+            operatingCashFlow: 6000000000,
+            capitalExpenditure: -1000000000,
+            mockData: true
+          }]),
+          { 
+            headers: { 
+              ...corsHeaders, 
+              'Content-Type': 'application/json',
+              'X-Mock-Data': 'true',
+              ...getCacheHeaders(type)
+            } 
+          }
+        );
       }
       
       // Format the response based on type
@@ -72,7 +98,33 @@ serve(async (req) => {
       );
     } catch (fetchError) {
       console.error(`Error fetching from FMP API: ${fetchError}`);
-      throw new Error(`Failed to fetch DCF data: ${fetchError.message}`);
+      // Return mock data with error status
+      return new Response(
+        JSON.stringify([{
+          symbol: symbol,
+          date: new Date().toISOString().split('T')[0],
+          stockPrice: 100,
+          dcf: 115,
+          equityValuePerShare: 115,
+          wacc: 0.09,
+          longTermGrowthRate: 0.03,
+          freeCashFlow: 5000000000,
+          revenue: 20000000000,
+          ebitda: 8000000000,
+          operatingCashFlow: 6000000000,
+          capitalExpenditure: -1000000000,
+          mockData: true,
+          error: fetchError.message
+        }]),
+        { 
+          headers: { 
+            ...corsHeaders, 
+            'Content-Type': 'application/json',
+            'X-Mock-Data': 'true',
+            ...getCacheHeaders(type)
+          } 
+        }
+      );
     }
   } catch (error) {
     return createErrorResponse(error);

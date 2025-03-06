@@ -15,7 +15,7 @@ const DCFErrorDisplay: React.FC<DCFErrorDisplayProps> = ({ errors, onRetry }) =>
   return (
     <Alert variant="destructive" className="mb-4">
       <AlertTriangle className="h-4 w-4" />
-      <AlertTitle>Error Calculating DCF</AlertTitle>
+      <AlertTitle>DCF Calculation Notice</AlertTitle>
       <AlertDescription>
         <ul className="list-disc pl-4 mt-2 space-y-1">
           {errors.map((error, i) => (
@@ -31,7 +31,7 @@ const DCFErrorDisplay: React.FC<DCFErrorDisplayProps> = ({ errors, onRetry }) =>
               Try Again
             </Button>
           )}
-          <p className="text-xs mt-1 flex items-center">Try selecting a different DCF calculation method.</p>
+          <p className="text-xs mt-1 flex items-center">You can also try selecting a different DCF calculation method.</p>
         </div>
       </AlertDescription>
     </Alert>

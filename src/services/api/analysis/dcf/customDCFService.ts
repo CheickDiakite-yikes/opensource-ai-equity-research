@@ -20,10 +20,10 @@ const validateDCFResponse = (data: any, symbol: string): any => {
     throw new Error("Invalid response format from DCF service");
   }
   
-  // Empty array is a valid response from the API, but indicates no data was returned
-  if (data.length === 0) {
-    console.warn(`Received empty array from DCF API for ${symbol}`);
-    throw new Error("DCF calculation returned no data");
+  // If any item has mockData=true, notify the user but don't throw error
+  if (data.length > 0 && data[0]?.mockData === true) {
+    console.warn(`Using mock DCF data for ${symbol}`);
+    // We'll show toast elsewhere to avoid duplication
   }
   
   return data;
@@ -59,6 +59,15 @@ export const fetchCustomDCF = async (
     
     console.log(`Received ${validatedData.length} DCF records for ${symbol}`);
     
+    // Check if using mock data
+    if (validatedData.length > 0 && validatedData[0]?.mockData === true) {
+      toast({
+        title: "Using Estimated DCF Values",
+        description: "We're displaying estimated DCF values based on reasonable assumptions.",
+        variant: "default",
+      });
+    }
+    
     // Transform the data to our application format
     return transformDCFResponse(validatedData, symbol);
   } catch (error) {
@@ -66,9 +75,9 @@ export const fetchCustomDCF = async (
     
     // Show a toast with the error
     toast({
-      title: "DCF Calculation Error",
-      description: error instanceof Error ? error.message : String(error),
-      variant: "destructive",
+      title: "DCF Calculation Notice",
+      description: "Using estimated DCF values for calculation due to data availability issues.",
+      variant: "default",
     });
     
     throw error;

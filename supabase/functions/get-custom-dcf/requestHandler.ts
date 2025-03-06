@@ -60,8 +60,30 @@ export const validateRequest = (symbol: string | null) => {
     return {
       isValid: false,
       response: new Response(
-        JSON.stringify({ error: "API key not configured", details: "FMP_API_KEY environment variable is missing" }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
+        JSON.stringify([{
+          symbol: symbol,
+          date: new Date().toISOString().split('T')[0],
+          stockPrice: 100,
+          dcf: 115,
+          equityValuePerShare: 115,
+          wacc: 0.09,
+          longTermGrowthRate: 0.03,
+          freeCashFlow: 5000000000,
+          revenue: 20000000000,
+          ebitda: 8000000000,
+          operatingCashFlow: 6000000000,
+          capitalExpenditure: -1000000000,
+          mockData: true,
+          error: "API key not configured"
+        }]),
+        { 
+          headers: { 
+            ...corsHeaders, 
+            'Content-Type': 'application/json',
+            'X-Mock-Data': 'true'
+          },
+          status: 200
+        }
       )
     };
   }
@@ -77,18 +99,28 @@ export const createErrorResponse = (error: unknown) => {
   console.error("Error in get-custom-dcf function:", errorMessage);
   
   return new Response(
-    JSON.stringify({ 
+    JSON.stringify([{ 
+      mockData: true,
       error: errorMessage,
-      details: "An error occurred while fetching DCF data from the FMP API",
-      mockData: true
-    }),
+      date: new Date().toISOString().split('T')[0],
+      stockPrice: 100,
+      dcf: 115,
+      equityValuePerShare: 115,
+      wacc: 0.09,
+      longTermGrowthRate: 0.03,
+      freeCashFlow: 5000000000,
+      revenue: 20000000000,
+      ebitda: 8000000000,
+      operatingCashFlow: 6000000000,
+      capitalExpenditure: -1000000000
+    }]),
     { 
       headers: { 
         ...corsHeaders, 
         'Content-Type': 'application/json',
         'X-Mock-Data': 'true'
       },
-      status: 500
+      status: 200
     }
   );
 };

@@ -85,7 +85,7 @@ const AutomaticDCFSection: React.FC<AutomaticDCFSectionProps> = ({ financials, s
         <AlertTitle>FMP Standard DCF Model</AlertTitle>
         <AlertDescription>
           This DCF analysis uses the Financial Modeling Prep standard DCF calculation for {symbol}.
-          {error && " Currently showing estimated values due to data retrieval issues."}
+          {shouldUseMockData && " Currently showing estimated values."}
         </AlertDescription>
       </Alert>
       

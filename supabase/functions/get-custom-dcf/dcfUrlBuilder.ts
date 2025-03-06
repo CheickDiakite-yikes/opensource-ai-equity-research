@@ -21,11 +21,11 @@ export const buildDcfApiUrl = (symbol: string, type: string, params: Record<stri
       apiUrl = `${API_BASE_URLS.FMP}/v3/levered-discounted-cash-flow/${upperSymbol}`;
       break;
     case "custom-levered":
-      apiUrl = `${API_BASE_URLS.FMP_STABLE}/v4/advanced/discounted-cash-flow-model?symbol=${upperSymbol}&type=levered`;
+      apiUrl = `${API_BASE_URLS.FMP}/v4/advanced_discounted_cash_flow?symbol=${upperSymbol}&type=levered`;
       break;
     case "advanced":
     default:
-      apiUrl = `${API_BASE_URLS.FMP_STABLE}/v4/advanced/discounted-cash-flow-model?symbol=${upperSymbol}`;
+      apiUrl = `${API_BASE_URLS.FMP}/v4/advanced_discounted_cash_flow?symbol=${upperSymbol}`;
       break;
   }
   
