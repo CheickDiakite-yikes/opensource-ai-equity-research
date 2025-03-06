@@ -6,7 +6,6 @@ import BalanceSheetTabContent from '../sections/BalanceSheetTabContent';
 import CashFlowTabContent from '../sections/CashFlowTabContent';
 import RatiosTabContent from '../sections/RatiosTabContent';
 import GrowthTabContent from '../sections/GrowthTabContent';
-import DCFTabContent from '../sections/DCFTabContent';
 import { useDirectFinancialData } from '@/hooks/useDirectFinancialData';
 import LoadingSkeleton from '../LoadingSkeleton';
 import ErrorState from './ErrorState';
@@ -43,13 +42,12 @@ const AnalysisTabs: React.FC<AnalysisTabsProps> = ({
 
   return (
     <Tabs defaultValue="financials" value={activeTab} onValueChange={setActiveTab} className="w-full">
-      <TabsList className="grid grid-cols-6 mb-4">
+      <TabsList className="grid grid-cols-5 mb-4">
         <TabsTrigger value="financials">Income</TabsTrigger>
         <TabsTrigger value="balance-sheet">Balance Sheet</TabsTrigger>
         <TabsTrigger value="cash-flow">Cash Flow</TabsTrigger>
         <TabsTrigger value="ratios">Ratios</TabsTrigger>
         <TabsTrigger value="growth">Growth</TabsTrigger>
-        <TabsTrigger value="dcf">Valuation</TabsTrigger>
       </TabsList>
       
       <TabsContent value="financials">
@@ -70,13 +68,6 @@ const AnalysisTabs: React.FC<AnalysisTabsProps> = ({
       
       <TabsContent value="growth">
         <GrowthTabContent financials={financials} symbol={symbol} />
-      </TabsContent>
-      
-      <TabsContent value="dcf">
-        <DCFTabContent 
-          symbol={symbol} 
-          financials={financials} 
-        />
       </TabsContent>
     </Tabs>
   );
