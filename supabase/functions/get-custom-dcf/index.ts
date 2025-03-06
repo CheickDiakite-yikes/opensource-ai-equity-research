@@ -212,9 +212,6 @@ serve(async (req) => {
     
     console.log(`Received DCF data for ${symbol}, type: ${type}`);
     
-    // Store the successful result in Supabase for future reference
-    // (note: this would require database access, which we'll implement separately)
-    
     // Return the DCF data with appropriate caching headers
     return new Response(
       JSON.stringify(data),

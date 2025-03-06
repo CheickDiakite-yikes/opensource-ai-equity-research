@@ -13,17 +13,17 @@ export const fetchAIDCFAssumptions = async (symbol: string, refreshCache = false
     // Check if we have cached assumptions in Supabase
     if (!refreshCache) {
       const { data: cachedData, error: cacheError } = await supabase
-        .from('dcf_assumptions')
+        .from('api_cache')
         .select('*')
-        .eq('symbol', symbol)
+        .eq('cache_key', `dcf_assumptions:${symbol}`)
         .gt('expires_at', new Date().toISOString())
         .order('created_at', { ascending: false })
         .limit(1)
         .maybeSingle();
       
-      if (!cacheError && cachedData) {
+      if (!cacheError && cachedData && cachedData.data) {
         console.log(`Using cached DCF assumptions for ${symbol}`);
-        return cachedData.assumptions as AIDCFSuggestion;
+        return cachedData.data as AIDCFSuggestion;
       }
     }
     
@@ -40,13 +40,19 @@ export const fetchAIDCFAssumptions = async (symbol: string, refreshCache = false
     
     // Store the result in Supabase for future use
     if (data) {
+      const expirationDate = data.expiresAt || new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+      
       const { error: insertError } = await supabase
-        .from('dcf_assumptions')
+        .from('api_cache')
         .insert({
-          symbol: symbol,
-          assumptions: data,
+          cache_key: `dcf_assumptions:${symbol}`,
+          data: data,
           created_at: new Date().toISOString(),
-          expires_at: data.expiresAt || new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
+          expires_at: expirationDate,
+          metadata: { 
+            symbol,
+            type: 'dcf_assumptions'
+          }
         });
       
       if (insertError) {

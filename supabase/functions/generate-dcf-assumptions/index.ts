@@ -132,49 +132,25 @@ async function fetchFinancialData(symbol: string) {
   }
 }
 
-// Generate AI-based DCF assumptions
+// Generate AI-based DCF assumptions using your approach
 async function generateAIAssumptions(symbol: string, financialData: any) {
   try {
     // Extract relevant financial data for the model
     const revenueData = financialData.income.map((stmt: any) => ({
       date: stmt.date || stmt.calendarYear,
       revenue: stmt.revenue,
-      grossProfit: stmt.grossProfit,
-      netIncome: stmt.netIncome,
-      ebitda: stmt.ebitda,
+      netIncome: stmt.netIncome || 0,
     }));
     
     // Extract cash flow data if available
     const cashFlowData = financialData.cashFlow.map((stmt: any) => ({
       date: stmt.date || stmt.calendarYear,
-      operatingCashFlow: stmt.operatingCashFlow,
-      capitalExpenditure: stmt.capitalExpenditure,
-      freeCashFlow: stmt.freeCashFlow,
+      operatingCashFlow: stmt.operatingCashFlow || 0,
+      capitalExpenditure: stmt.capitalExpenditure || 0,
+      freeCashFlow: stmt.freeCashFlow || 0,
     }));
 
-    // Determine average growth rates
-    let revenueGrowth = 0;
-    let ebitdaGrowth = 0;
-    
-    if (revenueData.length > 1) {
-      const growthRates = [];
-      
-      for (let i = 0; i < revenueData.length - 1; i++) {
-        const current = revenueData[i];
-        const previous = revenueData[i + 1];
-        
-        if (current.revenue && previous.revenue) {
-          const growth = (current.revenue - previous.revenue) / previous.revenue;
-          growthRates.push(growth);
-        }
-      }
-      
-      if (growthRates.length > 0) {
-        revenueGrowth = growthRates.reduce((sum, rate) => sum + rate, 0) / growthRates.length;
-      }
-    }
-    
-    // Prepare the prompt for OpenAI
+    // Prepare the prompt for OpenAI similar to your example
     const prompt = `
       I have the following historical financial data for company ${symbol}:
       
@@ -184,32 +160,24 @@ async function generateAIAssumptions(symbol: string, financialData: any) {
       Cash Flow Data:
       ${JSON.stringify(cashFlowData, null, 2)}
       
-      Based on this data, please provide reasonable assumptions for a DCF valuation with the following parameters:
-      1. revenueGrowthPct (annual growth rate as decimal, e.g., 0.085 for 8.5%)
-      2. ebitdaMarginPct (EBITDA margin as decimal, e.g., 0.30 for 30%)
-      3. capitalExpenditurePct (CapEx as % of revenue, as decimal)
-      4. taxRatePct (Effective tax rate as decimal)
-      5. longTermGrowthRatePct (Terminal growth rate as decimal, typically 2-3%)
-      6. costOfEquityPct (Required return for equity holders as decimal)
-      7. costOfDebtPct (Cost of debt as decimal)
-      8. marketRiskPremiumPct (Equity risk premium as decimal)
-      9. riskFreeRatePct (Risk free rate as decimal)
-      10. beta (Company's beta)
+      Please provide reasonable assumptions for a DCF valuation with the following parameters:
+      1. averageRevenueGrowth (annual growth rate as decimal)
+      2. wacc (weighted average cost of capital as decimal)
+      3. terminalGrowth (long term growth rate as decimal)
+      4. taxRate (effective tax rate as decimal)
+      5. ebitdaMargin (EBITDA margin as decimal)
+      6. capitalExpenditurePercent (CapEx as % of revenue as decimal)
       
       Return your answer in valid JSON only, with the following structure:
       {
         "explanation": "Briefly explain your reasoning",
         "assumptions": {
-          "revenueGrowthPct": number,
-          "ebitdaMarginPct": number,
-          "capitalExpenditurePct": number,
-          "taxRatePct": number,
-          "longTermGrowthRatePct": number,
-          "costOfEquityPct": number,
-          "costOfDebtPct": number,
-          "marketRiskPremiumPct": number,
-          "riskFreeRatePct": number,
-          "beta": number
+          "averageRevenueGrowth": number,
+          "wacc": number,
+          "terminalGrowth": number,
+          "taxRate": number,
+          "ebitdaMargin": number,
+          "capitalExpenditurePercent": number
         }
       }
     `;
@@ -272,25 +240,26 @@ async function generateAIAssumptions(symbol: string, financialData: any) {
       expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(), // 24 hours from now
       explanation: parsedResponse.explanation || "AI-generated DCF assumptions based on historical financial data",
       assumptions: {
-        revenueGrowthPct: parsedResponse.assumptions.revenueGrowthPct || revenueGrowth || 0.085,
-        ebitdaMarginPct: parsedResponse.assumptions.ebitdaMarginPct || 0.30,
-        capitalExpenditurePct: parsedResponse.assumptions.capitalExpenditurePct || 0.05,
-        taxRatePct: parsedResponse.assumptions.taxRatePct || 0.21,
-        longTermGrowthRatePct: parsedResponse.assumptions.longTermGrowthRatePct || 0.03,
-        costOfEquityPct: parsedResponse.assumptions.costOfEquityPct || 0.10,
-        costOfDebtPct: parsedResponse.assumptions.costOfDebtPct || 0.05,
-        marketRiskPremiumPct: parsedResponse.assumptions.marketRiskPremiumPct || 0.05,
-        riskFreeRatePct: parsedResponse.assumptions.riskFreeRatePct || 0.04,
-        beta: parsedResponse.assumptions.beta || 1.2,
+        // Map the received assumptions to our expected format
+        revenueGrowthPct: parsedResponse.assumptions.averageRevenueGrowth || 0.085,
+        ebitdaMarginPct: parsedResponse.assumptions.ebitdaMargin || 0.30,
+        capitalExpenditurePct: parsedResponse.assumptions.capitalExpenditurePercent || 0.05,
+        taxRatePct: parsedResponse.assumptions.taxRate || 0.21,
+        longTermGrowthRatePct: parsedResponse.assumptions.terminalGrowth || 0.03,
+        costOfEquityPct: 0.10,
+        costOfDebtPct: 0.05,
+        marketRiskPremiumPct: 0.05,
+        riskFreeRatePct: 0.04,
+        beta: 1.2,
         // Add additional fields to match our core data structure
-        depreciationAndAmortizationPct: parsedResponse.assumptions.depreciationAndAmortizationPct || 0.05,
-        cashAndShortTermInvestmentsPct: parsedResponse.assumptions.cashAndShortTermInvestmentsPct || 0.15,
-        receivablesPct: parsedResponse.assumptions.receivablesPct || 0.12,
-        inventoriesPct: parsedResponse.assumptions.inventoriesPct || 0.08,
-        payablesPct: parsedResponse.assumptions.payablesPct || 0.10,
-        ebitPct: parsedResponse.assumptions.ebitPct || 0.25,
-        operatingCashFlowPct: parsedResponse.assumptions.operatingCashFlowPct || 0.25,
-        sellingGeneralAndAdministrativeExpensesPct: parsedResponse.assumptions.sellingGeneralAndAdministrativeExpensesPct || 0.15
+        depreciationAndAmortizationPct: 0.05,
+        cashAndShortTermInvestmentsPct: 0.15,
+        receivablesPct: 0.12,
+        inventoriesPct: 0.08,
+        payablesPct: 0.10,
+        ebitPct: 0.25,
+        operatingCashFlowPct: 0.25,
+        sellingGeneralAndAdministrativeExpensesPct: 0.15
       }
     };
     

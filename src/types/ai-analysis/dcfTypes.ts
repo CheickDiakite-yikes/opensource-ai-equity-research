@@ -48,7 +48,7 @@ export interface DCFInputs {
 // New type for AI-generated DCF assumptions
 export interface AIDCFSuggestion {
   symbol: string;
-  company: string; // Added company property
+  company: string; 
   timestamp: string;
   expiresAt: string;
   assumptions: {
@@ -77,6 +77,7 @@ export interface AIDCFSuggestion {
     
     // Other
     beta: number;
+    [key: string]: number; // Allow additional properties
   };
   explanation: string;
   industryComparison?: {
@@ -138,7 +139,6 @@ export interface CustomDCFResult {
   equityValuePerShare: number;
   freeCashFlowT1: number;
   operatingCashFlowPercentage: number;
-  // Add the missing property
   cashAndCashEquivalents: number;
 }
 
