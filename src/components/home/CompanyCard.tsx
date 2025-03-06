@@ -3,12 +3,13 @@ import React from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { motion } from "framer-motion";
 import { useCompanyCardData } from "@/hooks/useCompanyCardData";
+import { Button } from "@/components/ui/button";
+import { BarChart4 } from "lucide-react";
 
 // Import our new components
 import CompanyCardHeader from "./card-components/CompanyCardHeader";
 import PriceDisplay from "./card-components/PriceDisplay";
 import TrendIndicator from "./card-components/TrendIndicator";
-import PredictionIndicator from "./card-components/PredictionIndicator";
 
 export interface CompanyCardProps {
   company: { symbol: string, name: string };
@@ -38,11 +39,8 @@ const CompanyCard = ({ company, onSelect }: CompanyCardProps) => {
   // Use our custom hook to fetch data
   const {
     quote,
-    prediction,
-    isPredictionLoading,
     isQuoteLoading,
-    isQuoteError,
-    predictionError
+    isQuoteError
   } = useCompanyCardData(company.symbol);
 
   return (
@@ -62,38 +60,35 @@ const CompanyCard = ({ company, onSelect }: CompanyCardProps) => {
           <div className="flex flex-col h-full justify-between space-y-4">
             <CompanyCardHeader symbol={company.symbol} name={company.name} />
 
-            <div className="grid grid-cols-2 gap-4 mb-2">
+            <div className="flex justify-between items-center">
               <PriceDisplay 
                 price={quote?.price || null}
                 label="Current Price"
                 isLoading={isQuoteLoading}
                 error={isQuoteError}
                 iconColor="text-blue-500"
+                className="flex-grow"
               />
               
-              <PriceDisplay 
-                price={prediction?.predictedPrice?.oneYear || null}
-                label="AI Prediction"
-                isLoading={isPredictionLoading}
-                error={!!predictionError}
-                iconColor="text-indigo-500"
-              />
-            </div>
-
-            <div className="flex items-center justify-between">
               {quote && quote.changesPercentage !== undefined && (
                 <TrendIndicator 
                   percentage={quote.changesPercentage} 
                   timeframe="24h" 
                 />
               )}
-              
-              <PredictionIndicator 
-                currentPrice={quote?.price || 0}
-                predictedPrice={prediction?.predictedPrice?.oneYear || null}
-                isLoading={isPredictionLoading}
-              />
             </div>
+
+            <Button 
+              variant="outline" 
+              className="w-full mt-2 bg-gradient-to-r from-blue-50 to-indigo-50 hover:from-blue-100 hover:to-indigo-100 dark:from-slate-800 dark:to-slate-700 dark:hover:from-slate-700 dark:hover:to-slate-600 border border-blue-200 dark:border-slate-600"
+              onClick={(e) => {
+                e.stopPropagation();
+                onSelect(company.symbol);
+              }}
+            >
+              <BarChart4 className="mr-2 h-4 w-4 text-blue-600 dark:text-blue-400" />
+              <span>View Analysis</span>
+            </Button>
           </div>
         </CardContent>
       </Card>

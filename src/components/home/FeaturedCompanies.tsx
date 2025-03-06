@@ -26,7 +26,7 @@ const FeaturedCompanies: React.FC<FeaturedCompaniesProps> = ({
         >
           <SectionHeader 
             title="Featured Companies"
-            description="Explore trending stocks with real-time AI price predictions and in-depth financial analysis."
+            description="Explore trending stocks with AI-powered analysis and in-depth financial research."
           />
           
           {featuredSymbols.length > 0 ? (

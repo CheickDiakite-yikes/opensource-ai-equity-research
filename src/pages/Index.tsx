@@ -1,14 +1,19 @@
+
 import { useState, useEffect } from "react";
 import Header from "@/components/layout/Header";
 import LandingView from "@/components/home/LandingView";
 import StockView from "@/components/stocks/StockView";
 import { toast } from "sonner";
+import { useSearchParams, useNavigate } from "react-router-dom";
 
 const Index = () => {
   const [symbol, setSymbol] = useState<string>("");
   const [searchedSymbol, setSearchedSymbol] = useState<string>("");
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [recentSearches, setRecentSearches] = useState<string[]>([]);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
+  
   const [featuredSymbols] = useState<{symbol: string, name: string}[]>([
     { symbol: "AAPL", name: "Apple Inc." },
     { symbol: "MSFT", name: "Microsoft Corporation" },
@@ -25,7 +30,14 @@ const Index = () => {
     if (savedSearches) {
       setRecentSearches(JSON.parse(savedSearches));
     }
-  }, []);
+    
+    // Check if there's a symbol in the URL parameters
+    const symbolParam = searchParams.get('symbol');
+    if (symbolParam) {
+      setSymbol(symbolParam);
+      setSearchedSymbol(symbolParam);
+    }
+  }, [searchParams]);
 
   const handleSearch = () => {
     if (!symbol.trim()) return;
@@ -41,6 +53,9 @@ const Index = () => {
     
     setRecentSearches(updatedSearches);
     localStorage.setItem('recentSearches', JSON.stringify(updatedSearches));
+    
+    // Update URL with the symbol
+    setSearchParams({ symbol: symbolUpperCase });
     
     setTimeout(() => {
       setIsLoading(false);
@@ -59,12 +74,13 @@ const Index = () => {
   const clearSearch = () => {
     setSearchedSymbol("");
     setSymbol("");
+    navigate('/');
     toast.info("Returned to home view", {
       duration: 2000,
     });
   };
 
-  const searchSymbol = (sym: string) => {
+  const searchSymbol = (sym: string, targetTab: string = "overview") => {
     setSymbol(sym);
     setSearchedSymbol(sym);
     
@@ -75,6 +91,9 @@ const Index = () => {
     
     setRecentSearches(updatedSearches);
     localStorage.setItem('recentSearches', JSON.stringify(updatedSearches));
+    
+    // Update URL with the symbol and tab
+    setSearchParams({ symbol: sym, tab: targetTab });
     
     toast.success(`Loading data for ${sym}`, {
       duration: 3000,
@@ -96,7 +115,7 @@ const Index = () => {
           <LandingView 
             recentSearches={recentSearches}
             featuredSymbols={featuredSymbols}
-            onSelectSymbol={searchSymbol}
+            onSelectSymbol={(sym) => searchSymbol(sym, "analysis")}
           />
         ) : (
           <StockView 
