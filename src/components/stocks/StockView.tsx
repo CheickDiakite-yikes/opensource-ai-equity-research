@@ -22,6 +22,7 @@ const StockView: React.FC<StockViewProps> = ({ symbol, onClear }) => {
     const tabParam = searchParams.get("tab");
     if (tabParam && ["overview", "analysis", "report"].includes(tabParam)) {
       setActiveTab(tabParam);
+      console.log("Setting active tab to:", tabParam);
     }
   }, [searchParams]);
 

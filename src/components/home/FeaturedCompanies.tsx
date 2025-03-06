@@ -14,6 +14,11 @@ const FeaturedCompanies: React.FC<FeaturedCompaniesProps> = ({
   featuredSymbols, 
   onSelectSymbol 
 }) => {
+  // Function to handle company selection and explicitly pass "report" as the tab
+  const handleSelectCompany = (symbol: string) => {
+    onSelectSymbol(symbol);
+  };
+
   return (
     <div className="relative py-8">
       <div className="container mx-auto px-4 sm:px-6 md:px-0 max-w-[1400px]">
@@ -34,7 +39,7 @@ const FeaturedCompanies: React.FC<FeaturedCompaniesProps> = ({
                 <CompanyCard 
                   key={company.symbol}
                   company={company}
-                  onSelect={onSelectSymbol}
+                  onSelect={handleSelectCompany}
                 />
               ))}
             </div>

@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import Header from "@/components/layout/Header";
 import LandingView from "@/components/home/LandingView";
@@ -52,7 +53,8 @@ const Index = () => {
     setRecentSearches(updatedSearches);
     localStorage.setItem('recentSearches', JSON.stringify(updatedSearches));
     
-    setSearchParams({ symbol: symbolUpperCase });
+    // Default to report tab when searching
+    setSearchParams({ symbol: symbolUpperCase, tab: "report" });
     
     setTimeout(() => {
       setIsLoading(false);
@@ -77,7 +79,7 @@ const Index = () => {
     });
   };
 
-  const searchSymbol = (sym: string, targetTab: string = "report") => {
+  const searchSymbol = (sym: string) => {
     setSymbol(sym);
     setSearchedSymbol(sym);
     
@@ -89,7 +91,8 @@ const Index = () => {
     setRecentSearches(updatedSearches);
     localStorage.setItem('recentSearches', JSON.stringify(updatedSearches));
     
-    setSearchParams({ symbol: sym, tab: targetTab });
+    // Always set tab to "report" when selecting from featured companies
+    setSearchParams({ symbol: sym, tab: "report" });
     
     toast.success(`Loading research data for ${sym}`, {
       duration: 3000,
@@ -111,7 +114,7 @@ const Index = () => {
           <LandingView 
             recentSearches={recentSearches}
             featuredSymbols={featuredSymbols}
-            onSelectSymbol={(sym) => searchSymbol(sym, "analysis")}
+            onSelectSymbol={searchSymbol}
           />
         ) : (
           <StockView 

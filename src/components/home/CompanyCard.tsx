@@ -53,7 +53,6 @@ const CompanyCard = ({ company, onSelect }: CompanyCardProps) => {
     >
       <Card 
         className="cursor-pointer h-full transition-all duration-300 rounded-xl bg-white dark:bg-slate-800/90 border border-slate-200 dark:border-slate-700 shadow-md hover:shadow-xl hover:border-blue-300 dark:hover:border-blue-500/50 backdrop-blur-sm overflow-hidden"
-        onClick={() => onSelect(company.symbol)}
       >
         <div className="h-1 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-t-xl" />
         <CardContent className="p-6 relative">
@@ -83,6 +82,7 @@ const CompanyCard = ({ company, onSelect }: CompanyCardProps) => {
               className="w-full mt-2 bg-gradient-to-r from-blue-50 to-indigo-50 hover:from-blue-100 hover:to-indigo-100 dark:from-slate-800 dark:to-slate-700 dark:hover:from-slate-700 dark:hover:to-slate-600 border border-blue-200 dark:border-slate-600"
               onClick={(e) => {
                 e.stopPropagation();
+                // Explicitly pass "report" as the tab parameter
                 onSelect(company.symbol);
               }}
             >
