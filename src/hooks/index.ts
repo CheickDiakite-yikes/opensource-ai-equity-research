@@ -1,8 +1,18 @@
 
-// Re-export all hooks for easier imports
-export * from './use-mobile';
-export * from './use-toast';
-export * from './useDirectFinancialData';
-export * from './useStockOverviewData';
-export * from './useEnhancedReportData';
-export * from './dcf/useAIDCFAssumptions';  // Add this export back
+// Re-export all hooks
+import useDirectFinancialData from './useDirectFinancialData';
+import useCompanyCardData from './useCompanyCardData';
+import useStockPrediction from './useStockPrediction';
+import useMobile from './use-mobile';
+import useToast from './use-toast';
+
+// Re-export hooks
+export { useDirectFinancialData, useCompanyCardData, useStockPrediction, useMobile, useToast };
+
+// Stub for DCF-related hooks that have been removed
+export const useAIDCFAssumptions = () => ({ 
+  data: null, 
+  isLoading: false, 
+  refresh: () => {}, 
+  error: null 
+});

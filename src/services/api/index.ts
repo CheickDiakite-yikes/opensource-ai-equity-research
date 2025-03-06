@@ -1,4 +1,3 @@
-
 // Re-export all API services
 export * from './profileService';
 export * from './financialService';
@@ -17,11 +16,13 @@ import {
   triggerDocumentCaching 
 } from './documentsService';
 import {
+  fetchAIDCFAssumptions  // Keep this import
+} from './analysisService';
+import { 
   generateResearchReport,
   generateStockPrediction,
-  analyzeGrowthInsights,
-  fetchAIDCFAssumptions  // Add this back
-} from './analysisService';
+  analyzeGrowthInsights
+} from './analysis/researchService';
 
 /**
  * Get all financial data for a symbol
@@ -65,5 +66,5 @@ export {
   generateResearchReport,
   generateStockPrediction,
   analyzeGrowthInsights,
-  fetchAIDCFAssumptions  // Add this back
-} from './analysisService';
+  fetchAIDCFAssumptions  // Keep this export
+};
