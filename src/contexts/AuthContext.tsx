@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
@@ -71,11 +70,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const fetchProfile = async (userId: string) => {
     try {
       // Use type assertion to work around the type issue
-      const { data, error } = await (supabase
-        .from('profiles') as any)
-        .select("*")
-        .eq("id", userId)
-        .single();
+      const { data, error } = await supabase.from("profiles" as any).select("*").eq("id", userId).single();
 
       if (error) {
         console.error("Error fetching profile:", error);
@@ -164,10 +159,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setIsLoading(true);
       
       // Update the profile in the database
-      const { error } = await (supabase
-        .from('profiles') as any)
-        .update(updates)
-        .eq("id", user.id);
+      const { error } = await supabase.from("profiles" as any).update(updates).eq("id", user.id);
       
       if (error) {
         toast.error(error.message);

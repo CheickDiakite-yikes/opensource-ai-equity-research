@@ -329,6 +329,7 @@ export type Database = {
           company_name: string
           created_at: string
           expires_at: string
+          html_content: string | null
           id: string
           report_data: Json
           symbol: string
@@ -338,6 +339,7 @@ export type Database = {
           company_name: string
           created_at?: string
           expires_at?: string
+          html_content?: string | null
           id?: string
           report_data: Json
           symbol: string
@@ -347,6 +349,7 @@ export type Database = {
           company_name?: string
           created_at?: string
           expires_at?: string
+          html_content?: string | null
           id?: string
           report_data?: Json
           symbol?: string
