@@ -23,11 +23,13 @@ export async function createCacheTable(supabase: any): Promise<boolean> {
       sql_statement: `
         CREATE TABLE IF NOT EXISTS public.api_cache (
           id SERIAL PRIMARY KEY,
-          cache_key TEXT NOT NULL,
+          cache_key TEXT NOT NULL UNIQUE,
           data JSONB NOT NULL,
           created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
           expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
-          metadata JSONB
+          metadata JSONB,
+          access_count INTEGER DEFAULT 0,
+          last_accessed TIMESTAMP WITH TIME ZONE
         );
         
         -- Create indexes for efficient lookups
@@ -42,6 +44,25 @@ export async function createCacheTable(supabase: any): Promise<boolean> {
         
         -- Add an index to the metadata column for potential filtering
         CREATE INDEX IF NOT EXISTS idx_api_cache_metadata ON public.api_cache USING GIN (metadata jsonb_path_ops);
+        
+        -- Create an index on the last_accessed column for LRU cleanup
+        CREATE INDEX IF NOT EXISTS idx_api_cache_last_accessed ON public.api_cache (last_accessed);
+        
+        -- Create a function to update last_accessed timestamp
+        CREATE OR REPLACE FUNCTION update_api_cache_access()
+        RETURNS TRIGGER AS $$
+        BEGIN
+          NEW.last_accessed = NOW();
+          NEW.access_count = OLD.access_count + 1;
+          RETURN NEW;
+        END;
+        $$ LANGUAGE plpgsql;
+        
+        -- Create a trigger to update last_accessed on SELECT
+        CREATE TRIGGER tr_update_api_cache_access
+        BEFORE UPDATE ON public.api_cache
+        FOR EACH ROW
+        EXECUTE FUNCTION update_api_cache_access();
       `
     });
     
@@ -54,6 +75,103 @@ export async function createCacheTable(supabase: any): Promise<boolean> {
     return true;
   } catch (err) {
     console.error("Error in createCacheTable:", err);
+    return false;
+  }
+}
+
+/**
+ * Create functions to manage cache entries with advanced features
+ */
+export async function createCacheFunctions(supabase: any): Promise<boolean> {
+  try {
+    // Create a function to get or create cache entries
+    const { error } = await supabase.rpc('execute_sql', {
+      sql_statement: `
+        -- Function to get a cache entry or return a default value
+        CREATE OR REPLACE FUNCTION get_or_create_cache(
+          p_cache_key TEXT, 
+          p_expires_at TIMESTAMP WITH TIME ZONE, 
+          p_default_data JSONB DEFAULT '{}'::JSONB
+        )
+        RETURNS JSONB
+        LANGUAGE plpgsql
+        AS $$
+        DECLARE
+          cached_data JSONB;
+        BEGIN
+          -- Try to get cached data
+          SELECT data INTO cached_data
+          FROM api_cache
+          WHERE cache_key = p_cache_key AND expires_at > NOW();
+          
+          -- Return cached data if found
+          IF cached_data IS NOT NULL THEN
+            -- Update the last_accessed timestamp and access_count
+            UPDATE api_cache 
+            SET last_accessed = NOW(), access_count = access_count + 1
+            WHERE cache_key = p_cache_key;
+            
+            RETURN cached_data;
+          END IF;
+          
+          -- Insert default data if no cache found
+          INSERT INTO api_cache (cache_key, data, expires_at, last_accessed, access_count)
+          VALUES (p_cache_key, p_default_data, p_expires_at, NOW(), 1)
+          ON CONFLICT (cache_key) 
+          DO UPDATE SET 
+            data = p_default_data, 
+            expires_at = p_expires_at,
+            last_accessed = NOW(),
+            access_count = api_cache.access_count + 1
+          RETURNING data INTO cached_data;
+          
+          RETURN cached_data;
+        END;
+        $$;
+        
+        -- Function to clean LRU cache entries when the table grows too large
+        CREATE OR REPLACE FUNCTION clean_lru_cache(p_max_entries INTEGER DEFAULT 1000)
+        RETURNS INTEGER
+        LANGUAGE plpgsql
+        AS $$
+        DECLARE
+          v_count INTEGER;
+          v_deleted INTEGER;
+        BEGIN
+          -- Count total entries
+          SELECT COUNT(*) INTO v_count FROM api_cache;
+          
+          -- If below limit, do nothing
+          IF v_count <= p_max_entries THEN
+            RETURN 0;
+          END IF;
+          
+          -- Delete least recently used entries
+          WITH to_delete AS (
+            SELECT id
+            FROM api_cache
+            ORDER BY last_accessed NULLS FIRST, access_count, id
+            LIMIT (v_count - p_max_entries)
+          )
+          DELETE FROM api_cache
+          WHERE id IN (SELECT id FROM to_delete)
+          RETURNING id INTO v_deleted;
+          
+          RETURN v_deleted;
+        END;
+        $$;
+      `
+    });
+    
+    if (error) {
+      console.error("Error creating cache functions:", error);
+      return false;
+    }
+    
+    console.log("Successfully created cache management functions");
+    return true;
+  } catch (err) {
+    console.error("Error in createCacheFunctions:", err);
     return false;
   }
 }

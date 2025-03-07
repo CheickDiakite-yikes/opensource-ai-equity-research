@@ -1,6 +1,7 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { cacheService } from "@/services/cache/cacheService";
 
 /**
  * Service for database optimization tasks
@@ -61,18 +62,22 @@ export const databaseOptimizer = {
    */
   async cleanupCache(): Promise<boolean> {
     try {
+      // First clear the client-side cache
+      cacheService.clearExpired();
+      
+      // Then clean the server-side cache
       const { data, error } = await supabase.functions.invoke('optimize-database', {
         body: { action: 'cleanup-cache' }
       });
       
       if (error) {
         console.error("Error cleaning up cache:", error);
-        toast.error("Failed to clean up cache");
+        toast.error("Failed to clean up server cache");
         return false;
       }
       
       console.log("Cache cleanup result:", data);
-      toast.success("Expired cache entries cleaned up successfully");
+      toast.success("Cache cleaned up successfully");
       return true;
     } catch (err) {
       console.error("Error in cleanupCache:", err);
@@ -88,6 +93,11 @@ export const databaseOptimizer = {
     try {
       toast.info("Starting database optimization...");
       
+      // First clear local cache
+      cacheService.clearExpired();
+      console.log("Local cache cleaned");
+      
+      // Then run server-side optimizations
       await this.setupTables();
       await this.optimizeIndexes();
       await this.cleanupCache();
@@ -98,6 +108,53 @@ export const databaseOptimizer = {
       console.error("Error in optimizeAll:", err);
       toast.error(`Database optimization failed: ${err.message}`);
       return false;
+    }
+  },
+  
+  /**
+   * Get cache statistics
+   */
+  getLocalCacheStats() {
+    return cacheService.getStats();
+  },
+  
+  /**
+   * Get database cache statistics
+   */
+  async getServerCacheStats(): Promise<any> {
+    try {
+      const { data, error } = await supabase.from('api_cache')
+        .select('*', { count: 'exact' });
+        
+      if (error) {
+        console.error("Error fetching cache stats:", error);
+        return { error: error.message };
+      }
+      
+      // Calculate some basic stats
+      let oldestEntry = new Date();
+      let newestEntry = new Date(0);
+      let totalSize = 0;
+      
+      data.forEach(entry => {
+        const entryDate = new Date(entry.created_at);
+        if (entryDate < oldestEntry) oldestEntry = entryDate;
+        if (entryDate > newestEntry) newestEntry = entryDate;
+        
+        // Estimate size
+        const dataSize = JSON.stringify(entry.data).length;
+        totalSize += dataSize;
+      });
+      
+      return {
+        count: data.length,
+        oldestEntry,
+        newestEntry,
+        estimatedSize: Math.round(totalSize / 1024) // KB
+      };
+    } catch (err) {
+      console.error("Error in getServerCacheStats:", err);
+      return { error: err.message };
     }
   }
 };

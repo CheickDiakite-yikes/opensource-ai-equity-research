@@ -46,7 +46,9 @@ export const useDirectFinancialData = (
           if (initialData.income.length === 0) {
             try {
               console.log(`Fetching income statements for ${symbol}...`);
-              const incomeData = await withRetry(() => fetchIncomeStatements(symbol), 2);
+              const incomeData = await withRetry(() => fetchIncomeStatements(symbol), {
+                retries: 2
+              });
               if (incomeData && incomeData.length > 0) {
                 newFinancials.income = incomeData;
                 dataImproved = true;
@@ -61,7 +63,9 @@ export const useDirectFinancialData = (
           if (initialData.balance.length === 0) {
             try {
               console.log(`Fetching balance sheets for ${symbol}...`);
-              const balanceData = await withRetry(() => fetchBalanceSheets(symbol), 2);
+              const balanceData = await withRetry(() => fetchBalanceSheets(symbol), {
+                retries: 2
+              });
               if (balanceData && balanceData.length > 0) {
                 newFinancials.balance = balanceData;
                 dataImproved = true;
@@ -76,7 +80,9 @@ export const useDirectFinancialData = (
           if (initialData.cashflow.length === 0) {
             try {
               console.log(`Fetching cash flow statements for ${symbol}...`);
-              const cashflowData = await withRetry(() => fetchCashFlowStatements(symbol), 2);
+              const cashflowData = await withRetry(() => fetchCashFlowStatements(symbol), {
+                retries: 2
+              });
               if (cashflowData && cashflowData.length > 0) {
                 newFinancials.cashflow = cashflowData;
                 dataImproved = true;
@@ -91,7 +97,9 @@ export const useDirectFinancialData = (
           if (initialData.ratios.length === 0) {
             try {
               console.log(`Fetching key ratios for ${symbol}...`);
-              const ratiosData = await withRetry(() => fetchKeyRatios(symbol), 2);
+              const ratiosData = await withRetry(() => fetchKeyRatios(symbol), {
+                retries: 2
+              });
               if (ratiosData && ratiosData.length > 0) {
                 newFinancials.ratios = ratiosData;
                 dataImproved = true;
@@ -127,10 +135,10 @@ export const useDirectFinancialData = (
     try {
       // Directly fetch all financial statements with higher retry counts
       const [income, balance, cashflow, ratios] = await Promise.all([
-        withRetry(() => fetchIncomeStatements(symbol), 3),
-        withRetry(() => fetchBalanceSheets(symbol), 3),
-        withRetry(() => fetchCashFlowStatements(symbol), 3),
-        withRetry(() => fetchKeyRatios(symbol), 3)
+        withRetry(() => fetchIncomeStatements(symbol), { retries: 3 }),
+        withRetry(() => fetchBalanceSheets(symbol), { retries: 3 }),
+        withRetry(() => fetchCashFlowStatements(symbol), { retries: 3 }),
+        withRetry(() => fetchKeyRatios(symbol), { retries: 3 })
       ]);
       
       // Update the direct financials state
