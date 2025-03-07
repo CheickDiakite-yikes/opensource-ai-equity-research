@@ -79,7 +79,7 @@ export const SearchResults = forwardRef<HTMLDivElement, SearchResultsProps>(({
   return (
     <Command 
       ref={ref}
-      className="rounded-xl border shadow-xl bg-popover/95 backdrop-blur-sm overflow-hidden"
+      className="rounded-xl border shadow-xl bg-background text-foreground z-50 overflow-hidden w-full absolute top-full left-0"
     >
       <CommandList>
         <CommandInput placeholder="Search for stocks..." value={query} onValueChange={(value) => {}} />

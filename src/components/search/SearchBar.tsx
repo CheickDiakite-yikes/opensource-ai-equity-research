@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from "react";
 import { useSearchParams } from "react-router-dom";
 import { Search } from "lucide-react";
@@ -9,10 +8,9 @@ import { StockQuote } from "@/types";
 import { SearchResults } from "./SearchResults";
 import { ClearButton } from "./ClearButton";
 import { searchStocks } from "@/lib/api/fmpApi";
+import { toast } from "sonner";
 
-// Additional popular stock tickers that might not be returned by the API
 const commonTickers: Record<string, string> = {
-  'DIS': 'Walt Disney Company',
   'NFLX': 'Netflix Inc.',
   'GOOGL': 'Alphabet Inc. Class A',
   'GOOG': 'Alphabet Inc. Class C',
@@ -38,6 +36,7 @@ const commonTickers: Record<string, string> = {
   'CSCO': 'Cisco Systems Inc.',
   'VZ': 'Verizon Communications Inc.',
   'T': 'AT&T Inc.',
+  'DIS': 'Walt Disney Company',
 };
 
 interface SearchBarProps {
@@ -59,7 +58,6 @@ const SearchBar = ({
   const commandRef = useRef<HTMLDivElement>(null);
   const [, setSearchParams] = useSearchParams();
 
-  // Load recent searches from localStorage
   useEffect(() => {
     const savedSearches = localStorage.getItem('recentSearches');
     if (savedSearches) {
@@ -67,7 +65,6 @@ const SearchBar = ({
     }
   }, []);
 
-  // Handle clicks outside to close dropdown
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (commandRef.current && !commandRef.current.contains(event.target as Node)) {
@@ -81,7 +78,6 @@ const SearchBar = ({
     };
   }, []);
 
-  // Create stock quote object from common ticker
   const createCommonTickerQuote = (symbol: string, name: string): StockQuote => {
     return {
       symbol,
@@ -103,26 +99,24 @@ const SearchBar = ({
       previousClose: 0,
       eps: 0,
       pe: 0,
+      earningsAnnouncement: null,
       sharesOutstanding: 0,
       timestamp: 0,
       isCommonTicker: true,
     };
   };
 
-  // Check if the query matches any common tickers
   const findMatchingCommonTickers = (searchQuery: string): StockQuote[] => {
     if (!searchQuery) return [];
     
     const matches: StockQuote[] = [];
     const upperQuery = searchQuery.toUpperCase();
     
-    // Check for exact symbol matches first
     if (commonTickers[upperQuery]) {
       matches.push(createCommonTickerQuote(upperQuery, commonTickers[upperQuery]));
       return matches;
     }
     
-    // Then check for partial matches in symbol or name
     Object.entries(commonTickers).forEach(([symbol, name]) => {
       if (symbol.includes(upperQuery) || 
           name.toUpperCase().includes(upperQuery)) {
@@ -146,29 +140,23 @@ const SearchBar = ({
     setIsOpen(true);
     
     try {
-      // First check for common tickers - this ensures immediate results
       const commonTickerMatches = findMatchingCommonTickers(value);
       
-      // Show common ticker matches immediately
       if (commonTickerMatches.length > 0) {
         setResults(commonTickerMatches);
       }
       
-      // Get API results
       const searchResults = await searchStocks(value);
       
       if (searchResults && searchResults.length > 0) {
-        // Filter out duplicates (prefer API results over common tickers)
         const apiSymbols = new Set(searchResults.map(r => r.symbol));
         const filteredCommonTickers = commonTickerMatches.filter(
           match => !apiSymbols.has(match.symbol)
         );
         
-        // Combine results, putting API results first
         const combinedResults = [...searchResults, ...filteredCommonTickers];
         setResults(combinedResults);
       } else if (commonTickerMatches.length === 0) {
-        // If no API results and no common ticker matches, check for an exact match
         const upperValue = value.toUpperCase();
         if (commonTickers[upperValue]) {
           setResults([createCommonTickerQuote(upperValue, commonTickers[upperValue])]);
@@ -179,7 +167,6 @@ const SearchBar = ({
     } catch (error) {
       console.error("Search error:", error);
       
-      // If API fails, still show common ticker matches
       const commonTickerMatches = findMatchingCommonTickers(value);
       setResults(commonTickerMatches.length > 0 ? commonTickerMatches : []);
     } finally {
@@ -190,7 +177,6 @@ const SearchBar = ({
   const handleSelectStock = (symbol: string) => {
     setIsOpen(false);
     
-    // Save to recent searches
     const updatedSearches = [
       symbol,
       ...recentSearches.filter(s => s !== symbol)
@@ -199,7 +185,6 @@ const SearchBar = ({
     setRecentSearches(updatedSearches);
     localStorage.setItem('recentSearches', JSON.stringify(updatedSearches));
     
-    // Navigate to the appropriate URL with query parameters
     setSearchParams({ symbol, tab: "report" });
   };
 
@@ -235,15 +220,9 @@ const SearchBar = ({
         />
       </div>
       
-      <AnimatePresence>
-        {isOpen && (
-          <motion.div
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            transition={{ duration: 0.15 }}
-            className="absolute top-full mt-1 w-full z-50"
-          >
+      {isOpen && (
+        <div className="absolute z-[60] w-full">
+          <div className="relative mt-1 w-full">
             <SearchResults
               ref={commandRef}
               query={query}
@@ -253,9 +232,9 @@ const SearchBar = ({
               featuredSymbols={featuredSymbols}
               onSelectStock={handleSelectStock}
             />
-          </motion.div>
-        )}
-      </AnimatePresence>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
