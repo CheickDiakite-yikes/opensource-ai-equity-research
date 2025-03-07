@@ -24,13 +24,23 @@ const SavedContent = () => {
   // Refresh reports when page loads
   useEffect(() => {
     if (user) {
+      console.log("SavedContent component mounted, fetching reports...");
       fetchReports();
     }
   }, [user]);
 
+  // Log reports when they change
+  useEffect(() => {
+    console.log("Reports updated:", reports.length);
+    reports.forEach(report => {
+      console.log(`- Report ${report.id}: ${report.symbol}, HTML: ${report.html_content ? "YES" : "NO"}`);
+    });
+  }, [reports]);
+
   const isLoading = authLoading || reportsLoading || predictionsLoading;
 
   const handleSelectReport = (report: SavedReport) => {
+    console.log("Selecting report:", report.id);
     setSelectedReport(report);
     setSelectedPrediction(null);
     
@@ -49,6 +59,7 @@ const SavedContent = () => {
 
   const handleDeleteReport = async (reportId: string, e: React.MouseEvent) => {
     e.stopPropagation();
+    console.log("Deleting report:", reportId);
     const success = await deleteReport(reportId);
     if (success && selectedReport?.id === reportId) {
       setSelectedReport(null);
@@ -94,6 +105,15 @@ const SavedContent = () => {
   return (
     <div className="container max-w-7xl mx-auto py-8 px-4">
       <h1 className="text-3xl font-bold mb-6">Saved Content</h1>
+      
+      <div className="mb-4">
+        <button 
+          onClick={() => fetchReports()} 
+          className="text-sm text-primary hover:underline flex items-center gap-1"
+        >
+          <Loader2 className="h-3 w-3" /> Refresh Reports
+        </button>
+      </div>
       
       <Tabs defaultValue="reports" className="w-full">
         <TabsList className="grid w-full grid-cols-2 mb-6">

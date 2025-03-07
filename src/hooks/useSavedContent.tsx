@@ -51,18 +51,23 @@ export const useSavedReports = () => {
     try {
       const data = await getUserResearchReports();
       
+      // Enhanced debug logging
+      console.log("Raw data from getUserResearchReports:", data);
+      
       // Convert Json type to ResearchReport type with type assertion
-      const convertedReports = data.map(item => ({
-        ...item,
-        report_data: item.report_data as unknown as ResearchReport,
-        // Ensure html_content is properly typed
-        html_content: item.html_content || null
-      })) as SavedReport[];
+      const convertedReports = data.map(item => {
+        console.log(`Processing report ${item.id}:`, item);
+        return {
+          ...item,
+          report_data: item.report_data as unknown as ResearchReport,
+          html_content: item.html_content || null
+        };
+      }) as SavedReport[];
       
       // Debug
       console.log(`Fetched ${convertedReports.length} reports`);
       convertedReports.forEach(report => {
-        console.log(`Report ${report.id} HTML content: ${report.html_content ? 'YES' : 'NO'}`);
+        console.log(`Report ${report.id}: Symbol=${report.symbol}, HTML content: ${report.html_content ? `YES (${report.html_content.length} chars)` : 'NO'}`);
       });
       
       setReports(convertedReports);
@@ -83,16 +88,20 @@ export const useSavedReports = () => {
   };
 
   const saveReport = async (symbol: string, companyName: string, reportData: ResearchReport) => {
+    console.log("Saving report for:", symbol, companyName);
     const reportId = await saveResearchReport(symbol, companyName, reportData);
+    console.log("Save result - report ID:", reportId);
+    
     if (reportId) {
       // Refresh reports list after saving
-      fetchReports();
+      await fetchReports();
     }
     return reportId;
   };
 
   // Fetch reports when the component mounts or user changes
   useEffect(() => {
+    console.log("useSavedReports useEffect - fetching reports");
     fetchReports();
   }, [user]);
 

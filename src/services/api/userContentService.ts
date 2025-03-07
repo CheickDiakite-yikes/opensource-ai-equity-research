@@ -24,6 +24,13 @@ const MAX_SAVED_ITEMS = 10;
 const generateReportHTML = (report: ResearchReport): string => {
   try {
     console.log("Generating HTML content for report", report.symbol);
+    
+    // Do some validation checks to make sure we have a valid report
+    if (!report || !report.symbol || !report.companyName) {
+      console.error("Invalid report data:", report);
+      return "";
+    }
+    
     const title = `${report.companyName} (${report.symbol}) - Equity Research Report`;
     
     // Build the content by combining all the sections
@@ -86,6 +93,7 @@ export const saveResearchReport = async (
   reportData: ResearchReport
 ): Promise<string | null> => {
   try {
+    console.log("Starting saveResearchReport for:", symbol);
     const user = supabase.auth.getUser();
     if (!(await user).data.user) {
       toast.error("You must be signed in to save reports");
@@ -93,6 +101,7 @@ export const saveResearchReport = async (
     }
 
     const userId = (await user).data.user.id;
+    console.log("User ID:", userId);
 
     // First, count existing reports
     const { count, error: countError } = await supabase
@@ -105,6 +114,8 @@ export const saveResearchReport = async (
       toast.error("Failed to save report");
       return null;
     }
+
+    console.log("Current report count:", count);
 
     // If at limit, delete oldest
     if (count && count >= MAX_SAVED_ITEMS) {
@@ -123,6 +134,8 @@ export const saveResearchReport = async (
 
       if (oldestReports && oldestReports.length > 0) {
         const oldestIds = oldestReports.map(report => report.id);
+        console.log("Deleting oldest reports:", oldestIds);
+        
         const { error: deleteError } = await supabase
           .from("user_research_reports")
           .delete()
@@ -136,12 +149,21 @@ export const saveResearchReport = async (
       }
     }
 
-    // Generate HTML version of the report - do this BEFORE inserting to ensure valid content
+    // Generate HTML version of the report
     console.log("Generating HTML content for report...");
     let htmlContent = null;
     
     try {
-      htmlContent = generateReportHTML(reportData);
+      // Make sure the reportData has all needed properties
+      const enhancedReportData = {
+        ...reportData,
+        symbol: symbol,
+        companyName: companyName
+      };
+      
+      htmlContent = generateReportHTML(enhancedReportData);
+      
+      // Validate the generated HTML
       if (!htmlContent || htmlContent.length < 100) {
         console.warn("Generated HTML is too short or empty, length:", htmlContent?.length);
         htmlContent = null;
@@ -153,6 +175,8 @@ export const saveResearchReport = async (
     }
 
     // Now, insert the new report - use type cast to Json
+    console.log("Inserting report into database with HTML:", htmlContent ? "YES" : "NO");
+    
     const { data, error } = await supabase
       .from("user_research_reports")
       .insert({
@@ -162,7 +186,7 @@ export const saveResearchReport = async (
         report_data: reportData as unknown as Json,
         html_content: htmlContent
       })
-      .select("id")
+      .select("id, html_content")
       .single();
 
     if (error) {
@@ -171,6 +195,7 @@ export const saveResearchReport = async (
       return null;
     }
 
+    console.log("Report saved successfully. ID:", data.id, "HTML content:", data.html_content ? "YES" : "NO");
     toast.success("Research report saved successfully");
     return data.id;
   } catch (error) {

@@ -42,6 +42,14 @@ const SavedReportsList: React.FC<SavedReportsListProps> = ({
     toast.success("Report downloaded as HTML");
   };
 
+  if (reports.length === 0) {
+    return (
+      <div className="text-center p-4 bg-muted/30 rounded-lg">
+        <p className="text-muted-foreground">No saved reports found.</p>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-3">
       {reports.map((report) => (
@@ -89,6 +97,13 @@ const SavedReportsList: React.FC<SavedReportsListProps> = ({
                 Saved {formatDistanceToNow(new Date(report.created_at), { addSuffix: true })}
               </span>
             </div>
+            {report.html_content ? (
+              <div className="mt-1">
+                <span className="text-xs bg-green-100 text-green-800 px-1.5 py-0.5 rounded-full">
+                  HTML Available
+                </span>
+              </div>
+            ) : null}
           </CardContent>
           <CardFooter className="p-4 pt-0">
             <div className="w-full flex justify-between items-center">
