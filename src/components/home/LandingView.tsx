@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import HeroSection from "./HeroSection";
@@ -10,13 +11,23 @@ import MarketNews from "./MarketNews";
 import { SearchBar } from "@/components/search";
 import { fetchMarketIndices, fetchMarketNews } from "@/services/api/marketDataService";
 import { toast } from "sonner";
-import { Search } from "lucide-react";
 
 interface LandingViewProps {
   recentSearches: string[];
   featuredSymbols: { symbol: string, name: string }[];
   onSelectSymbol: (symbol: string) => void;
 }
+
+const container = {
+  hidden: { opacity: 0 },
+  show: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.2,
+      delayChildren: 0.3
+    }
+  }
+};
 
 const LandingView: React.FC<LandingViewProps> = ({ 
   recentSearches, 
@@ -62,54 +73,56 @@ const LandingView: React.FC<LandingViewProps> = ({
   }, []);
 
   return (
-    <div className="space-y-8 my-6">
+    <motion.div 
+      variants={container}
+      initial="hidden"
+      animate="show"
+      className="space-y-0 my-6 md:my-12"
+    >
       <HeroSection />
       
+      {/* Enhanced Search Bar positioned between Hero and Feature Cards */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.8, duration: 0.5 }}
-        className="max-w-2xl mx-auto px-4 -mt-6 relative z-10"
+        transition={{ delay: 1.2, duration: 0.5 }}
+        className="my-16 max-w-3xl mx-auto px-4 relative z-10"
       >
-        <div className="bg-white dark:bg-slate-800 rounded-xl shadow-lg p-6">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="p-2 rounded-full bg-blue-50 dark:bg-blue-900/30">
-              <Search className="h-5 w-5 text-blue-500" />
-            </div>
-            <h3 className="font-medium">Search for a Company or Symbol</h3>
+        <div className="relative">
+          <div className="absolute -inset-0.5 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-xl blur opacity-30"></div>
+          <div className="relative bg-card/95 backdrop-blur-sm shadow-xl rounded-xl p-4">
+            <h3 className="text-lg font-medium mb-3 text-center">Search for a Company or Symbol</h3>
+            <SearchBar 
+              featuredSymbols={featuredSymbols}
+              className="shadow-md"
+              placeholder="Enter a company name or ticker symbol..."
+            />
           </div>
-          <SearchBar 
-            featuredSymbols={featuredSymbols}
-            className="shadow-sm"
-            placeholder="Enter a company name or ticker symbol..."
-          />
         </div>
       </motion.div>
       
-      <FeatureCards />
+      <div className="py-8">
+        <FeatureCards />
+      </div>
       
       <FeaturedCompanies 
         featuredSymbols={featuredSymbols} 
         onSelectSymbol={onSelectSymbol} 
       />
-      
-      <div className="grid md:grid-cols-2 gap-8">
-        <MarketPerformance 
-          marketData={marketData} 
-          isLoading={isLoadingMarkets} 
-        />
-        <MarketNews 
-          newsData={marketNews} 
-          isLoading={isLoadingNews} 
-        />
-      </div>
-      
+      <MarketPerformance 
+        marketData={marketData} 
+        isLoading={isLoadingMarkets} 
+      />
+      <MarketNews 
+        newsData={marketNews} 
+        isLoading={isLoadingNews} 
+      />
       <RecentSearches 
         recentSearches={recentSearches} 
         onSelectSymbol={onSelectSymbol} 
       />
       <HowToUse />
-    </div>
+    </motion.div>
   );
 };
 
