@@ -30,8 +30,8 @@ export const useStockOverviewData = (symbol: string) => {
       
       // Use retry mechanism for core data
       const [profileData, quoteData, ratingData] = await Promise.all([
-        withRetry(() => fetchStockProfile(symbol), 2),
-        withRetry(() => fetchStockQuote(symbol), 2),
+        withRetry(() => fetchStockProfile(symbol), { retries: 2 }),
+        withRetry(() => fetchStockQuote(symbol), { retries: 2 }),
         fetchStockRating(symbol).catch(err => {
           console.warn("Error fetching rating data:", err);
           return null;

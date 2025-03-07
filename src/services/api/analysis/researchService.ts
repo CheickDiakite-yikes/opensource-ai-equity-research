@@ -17,7 +17,7 @@ export const generateResearchReport = async (reportRequest: any): Promise<Resear
       return await invokeSupabaseFunction<ResearchReport>('generate-research-report', {
         reportRequest
       });
-    }, 2, 2000); // 2 retries with 2s initial delay
+    }, { retries: 2, retryDelay: 2000 }); // 2 retries with 2s initial delay
     
     if (!data) {
       console.error("No data returned from research report API");
@@ -86,7 +86,7 @@ export const generateStockPrediction = async (
         news,
         quickMode // Pass the quick mode flag to the edge function
       });
-    }, 1, 1000); // 1 retry with 1s delay
+    }, { retries: 1, retryDelay: 1000 }); // 1 retry with 1s delay
     
     if (!data) {
       console.error("No data returned from stock prediction API");

@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from "react";
 import { toast } from "sonner";
 import { useCacheService } from "@/services/cache/useCacheService";
@@ -121,7 +120,7 @@ export const useEnhancedReportData = (symbol: string) => {
           }
           
           // Fetch fresh data
-          const result = await withRetry(() => fetchFn(), 2, 1000);
+          const result = await withRetry(() => fetchFn(), { retries: 2, retryDelay: 1000 });
           updateStatus(key, result ? 'success' : 'empty');
           
           // Cache the result if it's valid and we have a cache key
