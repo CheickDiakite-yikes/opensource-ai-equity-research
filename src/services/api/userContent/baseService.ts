@@ -24,7 +24,7 @@ export const getUserId = async (): Promise<string | null> => {
  * Manage maximum items per user - delete oldest if over limit
  */
 export const manageItemLimit = async (
-  tableName: string,
+  tableName: "user_research_reports" | "user_price_predictions",
   userId: string,
   count: number | null
 ): Promise<boolean> => {
