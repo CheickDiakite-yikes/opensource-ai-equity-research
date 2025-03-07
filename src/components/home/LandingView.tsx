@@ -82,10 +82,12 @@ const LandingView: React.FC<LandingViewProps> = ({
       <HeroSection featuredSymbols={featuredSymbols} />
       
       {/* Feature Cards Section - full width */}
-      <FeatureCards />
+      <div className="py-8">
+        <FeatureCards />
+      </div>
       
       {/* Market Performance Section - full width */}
-      <div className="max-w-screen-xl mx-auto px-6 py-16">
+      <div className="max-w-screen-xl mx-auto px-6 py-8">
         <motion.div 
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -100,7 +102,7 @@ const LandingView: React.FC<LandingViewProps> = ({
       </div>
       
       {/* Featured Companies Section - full width */}
-      <div className="max-w-screen-xl mx-auto px-6 py-16 bg-gradient-to-t from-muted/10 to-background">
+      <div className="max-w-screen-xl mx-auto px-6 py-8 bg-gradient-to-t from-muted/10 to-background">
         <motion.div 
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -115,7 +117,7 @@ const LandingView: React.FC<LandingViewProps> = ({
       </div>
       
       {/* News Section - full width */}
-      <div className="max-w-screen-xl mx-auto px-6 py-16 bg-gradient-to-b from-muted/10 to-background">
+      <div className="max-w-screen-xl mx-auto px-6 py-8 bg-gradient-to-b from-muted/10 to-background">
         <motion.div 
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -130,8 +132,8 @@ const LandingView: React.FC<LandingViewProps> = ({
       </div>
       
       {/* Recent Searches and How To Use - full width */}
-      <div className="max-w-screen-xl mx-auto px-6 py-16">
-        <div className="grid grid-cols-1 gap-8">
+      <div className="max-w-screen-xl mx-auto px-6 py-8">
+        <div className="grid grid-cols-1 gap-6">
           {recentSearches.length > 0 && (
             <motion.div 
               initial={{ opacity: 0, y: 20 }}
