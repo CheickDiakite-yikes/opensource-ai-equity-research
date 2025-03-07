@@ -1,7 +1,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { Search } from "lucide-react";
+import { Search, Loader2, X, TrendingUp, ChevronRight } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { 
@@ -15,6 +15,7 @@ import {
 import { StockQuote } from "@/types";
 import { searchStocks } from "@/lib/api/fmpApi";
 import { cn } from "@/lib/utils";
+import { motion, AnimatePresence } from "framer-motion";
 
 interface SearchBarProps {
   placeholder?: string;
@@ -57,6 +58,7 @@ const SearchBar = ({
     }
     
     setIsLoading(true);
+    setIsOpen(true);
     
     try {
       const searchResults = await searchStocks(value);
@@ -83,110 +85,150 @@ const SearchBar = ({
   return (
     <div 
       className={cn(
-        "relative w-full max-w-2xl mx-auto",
+        "relative w-full max-w-3xl mx-auto",
         className
       )}
     >
-      <div className="relative">
+      <div className="relative flex items-center">
+        <div className="absolute left-4 z-10 text-muted-foreground">
+          <Search size={18} />
+        </div>
         <Input
           type="text"
           placeholder={placeholder}
           value={query}
           onChange={(e) => handleSearch(e.target.value)}
           onFocus={() => setIsOpen(true)}
-          className="w-full h-12 pl-10 pr-4 rounded-lg border-input bg-background text-foreground shadow-sm transition-all focus:ring-2 focus:ring-primary/20"
+          className="w-full h-12 pl-12 pr-16 rounded-full shadow-md border-input/50 bg-background text-foreground transition-all focus:ring-2 focus:ring-primary/20 focus:border-primary/50"
         />
-        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-5 w-5" />
-        {query.length > 0 && (
-          <Button
-            variant="ghost"
-            size="sm"
-            className="absolute right-2 top-1/2 transform -translate-y-1/2 h-7 w-7 p-0"
-            onClick={() => {
-              setQuery("");
-              setResults([]);
-            }}
-          >
-            ×
-          </Button>
-        )}
+        <div className="absolute right-3 flex items-center space-x-1">
+          {isLoading && (
+            <Loader2 size={18} className="animate-spin text-muted-foreground" />
+          )}
+          {query.length > 0 && !isLoading && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-7 w-7 p-0 rounded-full"
+              onClick={() => {
+                setQuery("");
+                setResults([]);
+              }}
+            >
+              <X size={16} />
+            </Button>
+          )}
+        </div>
       </div>
       
-      {isOpen && (
-        <Command 
-          ref={commandRef}
-          className="absolute top-full mt-1 w-full rounded-lg border shadow-md bg-popover z-10 overflow-hidden"
-        >
-          <CommandList>
-            <CommandInput placeholder="Search for stocks..." value={query} onValueChange={handleSearch} />
-            
-            {isLoading && (
-              <div className="py-6 text-center text-sm text-muted-foreground">
-                Searching...
-              </div>
-            )}
-            
-            <CommandEmpty>
-              {filteredFeaturedSymbols.length > 0 ? (
-                <div className="py-2 text-sm text-muted-foreground">
-                  No API results found. Try these:
-                </div>
-              ) : (
-                "No results found."
-              )}
-            </CommandEmpty>
-            
-            {/* API Results */}
-            {results.length > 0 && (
-              <CommandGroup heading="Search Results">
-                {results.map((stock) => (
-                  <CommandItem
-                    key={stock.symbol}
-                    onSelect={() => handleSelectStock(stock.symbol)}
-                    className="flex items-center justify-between py-2"
-                  >
-                    <div className="flex flex-col">
-                      <span className="font-medium">{stock.symbol}</span>
-                      <span className="text-xs text-muted-foreground">{stock.name}</span>
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.15 }}
+            className="absolute top-full mt-1 w-full z-10"
+          >
+            <Command 
+              ref={commandRef}
+              className="rounded-xl border shadow-lg bg-popover overflow-hidden"
+            >
+              <CommandList>
+                <CommandInput placeholder="Search for stocks..." value={query} onValueChange={handleSearch} />
+                
+                {isLoading && (
+                  <div className="py-6 text-center text-sm text-muted-foreground flex flex-col items-center">
+                    <Loader2 size={24} className="animate-spin mb-2" />
+                    <span>Searching markets...</span>
+                  </div>
+                )}
+                
+                <CommandEmpty>
+                  {filteredFeaturedSymbols.length > 0 ? (
+                    <div className="py-2 text-sm text-muted-foreground">
+                      No API results found. Try these popular stocks:
                     </div>
-                    {stock.price && (
-                      <div className="flex flex-col items-end">
-                        <span>${stock.price.toFixed(2)}</span>
-                        <span 
-                          className={cn(
-                            "text-xs",
-                            stock.changesPercentage > 0 ? "text-green-600" : stock.changesPercentage < 0 ? "text-red-600" : "text-muted-foreground"
-                          )}
-                        >
-                          {stock.changesPercentage > 0 ? "+" : ""}{stock.changesPercentage.toFixed(2)}%
-                        </span>
+                  ) : (
+                    <div className="flex flex-col items-center py-6 gap-2">
+                      <div className="rounded-full bg-muted p-2">
+                        <Search size={20} className="text-muted-foreground" />
                       </div>
-                    )}
-                  </CommandItem>
-                ))}
-              </CommandGroup>
-            )}
-            
-            {/* Featured Symbols as Suggestions */}
-            {filteredFeaturedSymbols.length > 0 && results.length === 0 && (
-              <CommandGroup heading="Popular Stocks">
-                {filteredFeaturedSymbols.map((stock) => (
-                  <CommandItem
-                    key={stock.symbol}
-                    onSelect={() => handleSelectStock(stock.symbol)}
-                    className="flex items-center justify-between py-2"
-                  >
-                    <div className="flex flex-col">
-                      <span className="font-medium">{stock.symbol}</span>
-                      <span className="text-xs text-muted-foreground">{stock.name}</span>
+                      <p>No stocks found. Try a different search term.</p>
                     </div>
-                  </CommandItem>
-                ))}
-              </CommandGroup>
-            )}
-          </CommandList>
-        </Command>
-      )}
+                  )}
+                </CommandEmpty>
+                
+                {/* API Results */}
+                {results.length > 0 && (
+                  <CommandGroup heading={
+                    <div className="flex items-center gap-1 text-xs font-medium text-muted-foreground">
+                      <TrendingUp size={14} />
+                      <span>SEARCH RESULTS</span>
+                    </div>
+                  }>
+                    {results.map((stock) => (
+                      <CommandItem
+                        key={stock.symbol}
+                        onSelect={() => handleSelectStock(stock.symbol)}
+                        className="flex items-center justify-between py-3 px-4 hover:bg-accent/50"
+                      >
+                        <div className="flex flex-col">
+                          <div className="flex items-center gap-2">
+                            <span className="font-semibold">{stock.symbol}</span>
+                            <span className="text-xs px-1.5 py-0.5 rounded-md bg-muted">Stock</span>
+                          </div>
+                          <span className="text-xs text-muted-foreground line-clamp-1">{stock.name}</span>
+                        </div>
+                        {stock.price && (
+                          <div className="flex flex-col items-end">
+                            <span className="font-medium">${stock.price.toFixed(2)}</span>
+                            <span 
+                              className={cn(
+                                "text-xs flex items-center",
+                                stock.changesPercentage > 0 ? "text-green-600" : stock.changesPercentage < 0 ? "text-red-600" : "text-muted-foreground"
+                              )}
+                            >
+                              {stock.changesPercentage > 0 ? "+" : ""}{stock.changesPercentage.toFixed(2)}%
+                            </span>
+                          </div>
+                        )}
+                      </CommandItem>
+                    ))}
+                  </CommandGroup>
+                )}
+                
+                {/* Featured Symbols as Suggestions */}
+                {filteredFeaturedSymbols.length > 0 && (
+                  <CommandGroup heading={
+                    <div className="flex items-center gap-1 text-xs font-medium text-muted-foreground">
+                      <TrendingUp size={14} />
+                      <span>POPULAR STOCKS</span>
+                    </div>
+                  }>
+                    {filteredFeaturedSymbols.map((stock) => (
+                      <CommandItem
+                        key={stock.symbol}
+                        onSelect={() => handleSelectStock(stock.symbol)}
+                        className="flex items-center justify-between py-3 px-4 hover:bg-accent/50"
+                      >
+                        <div className="flex flex-col">
+                          <div className="flex items-center gap-2">
+                            <span className="font-semibold">{stock.symbol}</span>
+                            <span className="text-xs px-1.5 py-0.5 rounded-md bg-muted">Popular</span>
+                          </div>
+                          <span className="text-xs text-muted-foreground line-clamp-1">{stock.name}</span>
+                        </div>
+                        <ChevronRight size={16} className="text-muted-foreground" />
+                      </CommandItem>
+                    ))}
+                  </CommandGroup>
+                )}
+              </CommandList>
+            </Command>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
