@@ -1,75 +1,62 @@
 
-import { useState, useRef, useEffect } from "react";
-import { Search, X, ArrowRight } from "lucide-react";
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { 
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList
+} from "@/components/ui/command";
+import { StockQuote } from "@/types";
+import { searchStocks } from "@/lib/api/fmpApi";
 import { cn } from "@/lib/utils";
 
 interface SearchBarProps {
   placeholder?: string;
   className?: string;
-  value: string;
-  onChange: (value: string) => void;
-  onSearch: () => void;
-  onKeyDown?: (e: React.KeyboardEvent) => void;
-  isLoading?: boolean;
-  featuredSymbols?: {symbol: string, name: string}[];
 }
 
-const SearchBar = ({ 
-  placeholder = "Search ticker symbol...", 
-  className,
-  value,
-  onChange,
-  onSearch,
-  onKeyDown,
-  isLoading = false,
-  featuredSymbols = []
-}: SearchBarProps) => {
+const SearchBar = ({ placeholder = "Search for a stock...", className }: SearchBarProps) => {
+  const [query, setQuery] = useState("");
+  const [results, setResults] = useState<StockQuote[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
-  const [filteredSymbols, setFilteredSymbols] = useState<{symbol: string, name: string}[]>([]);
-  const searchRef = useRef<HTMLDivElement>(null);
+  const navigate = useNavigate();
 
-  useEffect(() => {
-    if (value.length < 1) {
-      setFilteredSymbols([]);
+  const handleSearch = async (value: string) => {
+    setQuery(value);
+    
+    if (value.length < 2) {
+      setResults([]);
       return;
     }
     
-    // Filter the featured symbols based on the input
-    const filtered = featuredSymbols.filter(
-      item => 
-        item.symbol.toLowerCase().includes(value.toLowerCase()) || 
-        item.name.toLowerCase().includes(value.toLowerCase())
-    );
-    setFilteredSymbols(filtered.slice(0, 5)); // Limit to 5 results
-  }, [value, featuredSymbols]);
+    setIsLoading(true);
+    
+    try {
+      const searchResults = await searchStocks(value);
+      setResults(searchResults || []);
+    } catch (error) {
+      console.error("Search error:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
-  useEffect(() => {
-    // Handle clicks outside of the search component to close dropdown
-    const handleClickOutside = (event: MouseEvent) => {
-      if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
-        setIsOpen(false);
-      }
-    };
-
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, []);
-
-  const handleSelectSymbol = (symbol: string) => {
-    onChange(symbol);
+  const handleSelectStock = (symbol: string) => {
     setIsOpen(false);
-    onSearch();
+    navigate(`/stock/${symbol}`);
   };
 
   return (
     <div 
-      ref={searchRef}
       className={cn(
-        "relative w-full max-w-lg",
+        "relative w-full max-w-2xl mx-auto",
         className
       )}
     >
@@ -77,61 +64,66 @@ const SearchBar = ({
         <Input
           type="text"
           placeholder={placeholder}
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
+          value={query}
+          onChange={(e) => handleSearch(e.target.value)}
           onFocus={() => setIsOpen(true)}
-          onKeyDown={onKeyDown}
-          className="w-full h-10 pl-10 pr-4 rounded-lg border shadow-sm transition-all focus:ring-1 focus:ring-primary"
-          disabled={isLoading}
+          className="w-full h-12 pl-10 pr-4 rounded-lg border-input bg-background text-foreground shadow-sm transition-all focus:ring-2 focus:ring-primary/20"
         />
-        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-        
-        {value.length > 0 && (
+        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-5 w-5" />
+        {query.length > 0 && (
           <Button
             variant="ghost"
             size="sm"
-            className="absolute right-14 top-1/2 transform -translate-y-1/2 h-7 w-7 p-0 rounded-full hover:bg-muted"
-            onClick={() => onChange("")}
-            disabled={isLoading}
+            className="absolute right-2 top-1/2 transform -translate-y-1/2 h-7 w-7 p-0"
+            onClick={() => {
+              setQuery("");
+              setResults([]);
+            }}
           >
-            <X className="h-3.5 w-3.5" />
-            <span className="sr-only">Clear</span>
+            ×
           </Button>
         )}
-        
-        <Button
-          className="absolute right-1 top-1/2 transform -translate-y-1/2 h-8 rounded-md px-3"
-          size="sm"
-          onClick={onSearch}
-          disabled={isLoading || !value.trim()}
-        >
-          {isLoading ? (
-            <div className="h-4 w-4 border-2 border-background border-t-transparent rounded-full animate-spin" />
-          ) : (
-            <>
-              <span className="mr-1">Search</span>
-              <ArrowRight className="h-3.5 w-3.5" />
-            </>
-          )}
-        </Button>
       </div>
       
-      {isOpen && filteredSymbols.length > 0 && (
-        <div className="absolute top-full left-0 right-0 mt-1 bg-background rounded-md border shadow-lg z-10 py-1">
-          {filteredSymbols.map((item) => (
-            <button
-              key={item.symbol}
-              className="w-full px-4 py-2 text-left hover:bg-muted flex justify-between items-center"
-              onClick={() => handleSelectSymbol(item.symbol)}
-            >
-              <div className="flex flex-col">
-                <span className="font-medium">{item.symbol}</span>
-                <span className="text-xs text-muted-foreground">{item.name}</span>
+      {isOpen && (
+        <Command className="absolute top-full mt-1 w-full rounded-lg border shadow-md bg-popover z-10 overflow-hidden">
+          <CommandList>
+            <CommandInput placeholder="Search for stocks..." value={query} onValueChange={handleSearch} />
+            {isLoading && (
+              <div className="py-6 text-center text-sm text-muted-foreground">
+                Searching...
               </div>
-              <ArrowRight className="h-3.5 w-3.5 text-muted-foreground" />
-            </button>
-          ))}
-        </div>
+            )}
+            <CommandEmpty>No results found.</CommandEmpty>
+            <CommandGroup heading="Stocks">
+              {results.map((stock) => (
+                <CommandItem
+                  key={stock.symbol}
+                  onSelect={() => handleSelectStock(stock.symbol)}
+                  className="flex items-center justify-between py-2"
+                >
+                  <div className="flex flex-col">
+                    <span className="font-medium">{stock.symbol}</span>
+                    <span className="text-xs text-muted-foreground">{stock.name}</span>
+                  </div>
+                  {stock.price && (
+                    <div className="flex flex-col items-end">
+                      <span>${stock.price.toFixed(2)}</span>
+                      <span 
+                        className={cn(
+                          "text-xs",
+                          stock.changesPercentage > 0 ? "text-green-600" : stock.changesPercentage < 0 ? "text-red-600" : "text-muted-foreground"
+                        )}
+                      >
+                        {stock.changesPercentage > 0 ? "+" : ""}{stock.changesPercentage.toFixed(2)}%
+                      </span>
+                    </div>
+                  )}
+                </CommandItem>
+              ))}
+            </CommandGroup>
+          </CommandList>
+        </Command>
       )}
     </div>
   );

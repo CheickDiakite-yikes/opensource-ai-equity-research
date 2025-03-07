@@ -13,7 +13,6 @@ import { toast } from "sonner";
 import SavedContentHeader from "@/components/saved-content/SavedContentHeader";
 import SavedContentTabs from "@/components/saved-content/SavedContentTabs";
 import DebugInfo from "@/components/saved-content/DebugInfo";
-import NavigationHeader from "@/components/layout/NavigationHeader";
 import { motion, AnimatePresence } from "framer-motion";
 
 const SavedContent = () => {
@@ -162,35 +161,31 @@ const SavedContent = () => {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.5 }}
-          className="min-h-screen bg-gradient-to-br from-background to-muted/30"
+          className="container max-w-7xl mx-auto py-8 px-4"
         >
-          <NavigationHeader />
+          <SavedContentHeader 
+            userEmail={user?.email || null}
+            isRefreshing={isRefreshing}
+            onRefresh={handleRefresh}
+          />
           
-          <div className="container max-w-7xl mx-auto py-8 px-4">
-            <SavedContentHeader 
-              userEmail={user?.email || null}
-              isRefreshing={isRefreshing}
-              onRefresh={handleRefresh}
-            />
-            
-            <SavedContentTabs
-              reports={reports}
-              predictions={predictions}
-              selectedReport={selectedReport}
-              selectedPrediction={selectedPrediction}
-              onSelectReport={handleSelectReport}
-              onSelectPrediction={handleSelectPrediction}
-              onDeleteReport={handleDeleteReport}
-              onDeletePrediction={handleDeletePrediction}
-              onDownloadHtml={handleDownloadHtml}
-            />
-            
-            <DebugInfo
-              userId={user?.id}
-              reports={reports}
-              predictionsCount={predictions.length}
-            />
-          </div>
+          <SavedContentTabs
+            reports={reports}
+            predictions={predictions}
+            selectedReport={selectedReport}
+            selectedPrediction={selectedPrediction}
+            onSelectReport={handleSelectReport}
+            onSelectPrediction={handleSelectPrediction}
+            onDeleteReport={handleDeleteReport}
+            onDeletePrediction={handleDeletePrediction}
+            onDownloadHtml={handleDownloadHtml}
+          />
+          
+          <DebugInfo
+            userId={user?.id}
+            reports={reports}
+            predictionsCount={predictions.length}
+          />
         </motion.div>
       )}
     </AnimatePresence>
