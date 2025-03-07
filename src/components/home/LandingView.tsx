@@ -82,12 +82,12 @@ const LandingView: React.FC<LandingViewProps> = ({
       <HeroSection featuredSymbols={featuredSymbols} />
       
       {/* Feature Cards Section - full width */}
-      <div className="py-8">
+      <div className="py-6">
         <FeatureCards />
       </div>
       
-      {/* Market Performance Section - full width */}
-      <div className="max-w-screen-xl mx-auto px-6 py-8">
+      {/* Market Performance Section */}
+      <div className="max-w-screen-xl mx-auto px-4 py-6">
         <motion.div 
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -101,8 +101,8 @@ const LandingView: React.FC<LandingViewProps> = ({
         </motion.div>
       </div>
       
-      {/* Featured Companies Section - full width */}
-      <div className="max-w-screen-xl mx-auto px-6 py-8 bg-gradient-to-t from-muted/10 to-background">
+      {/* Featured Companies Section */}
+      <div className="max-w-screen-xl mx-auto px-4 py-6 bg-gradient-to-t from-muted/10 to-background">
         <motion.div 
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -116,8 +116,8 @@ const LandingView: React.FC<LandingViewProps> = ({
         </motion.div>
       </div>
       
-      {/* News Section - full width */}
-      <div className="max-w-screen-xl mx-auto px-6 py-8 bg-gradient-to-b from-muted/10 to-background">
+      {/* News Section */}
+      <div className="max-w-screen-xl mx-auto px-4 py-6 bg-gradient-to-b from-muted/10 to-background">
         <motion.div 
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -131,9 +131,9 @@ const LandingView: React.FC<LandingViewProps> = ({
         </motion.div>
       </div>
       
-      {/* Recent Searches and How To Use - full width */}
-      <div className="max-w-screen-xl mx-auto px-6 py-8">
-        <div className="grid grid-cols-1 gap-6">
+      {/* Recent Searches and How To Use */}
+      <div className="max-w-screen-xl mx-auto px-4 py-6">
+        <div className="grid grid-cols-1 gap-4">
           {recentSearches.length > 0 && (
             <motion.div 
               initial={{ opacity: 0, y: 20 }}

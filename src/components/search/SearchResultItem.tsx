@@ -17,11 +17,13 @@ export const SearchResultItem = ({ stock, onSelect }: SearchResultItemProps) => 
       <div className="flex flex-col">
         <div className="flex items-center gap-2">
           <span className="font-semibold">{stock.symbol}</span>
-          <span className="text-xs px-1.5 py-0.5 rounded-md bg-primary/10 text-primary">Stock</span>
+          <span className="text-xs px-1.5 py-0.5 rounded-md bg-primary/10 text-primary">
+            {(stock as any).isCommonTicker ? "Popular" : "Stock"}
+          </span>
         </div>
         <span className="text-xs text-muted-foreground line-clamp-1">{stock.name}</span>
       </div>
-      {stock.price && (
+      {stock.price && !stock.isCommonTicker && (
         <div className="flex flex-col items-end">
           <span className="font-medium">${stock.price.toFixed(2)}</span>
           <span 

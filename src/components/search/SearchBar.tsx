@@ -10,6 +10,37 @@ import { SearchResults } from "./SearchResults";
 import { ClearButton } from "./ClearButton";
 import { searchStocks } from "@/lib/api/fmpApi";
 
+// Additional popular stock tickers that might not be returned by the API
+const commonTickers: Record<string, string> = {
+  'DIS': 'Walt Disney Company',
+  'NFLX': 'Netflix Inc.',
+  'GOOGL': 'Alphabet Inc. Class A',
+  'GOOG': 'Alphabet Inc. Class C',
+  'FB': 'Meta Platforms Inc.',
+  'META': 'Meta Platforms Inc.',
+  'AMZN': 'Amazon.com Inc.',
+  'MSFT': 'Microsoft Corporation',
+  'AAPL': 'Apple Inc.',
+  'TSLA': 'Tesla Inc.',
+  'JPM': 'JPMorgan Chase & Co.',
+  'BAC': 'Bank of America Corporation',
+  'WMT': 'Walmart Inc.',
+  'JNJ': 'Johnson & Johnson',
+  'PG': 'Procter & Gamble Company',
+  'V': 'Visa Inc.',
+  'MA': 'Mastercard Incorporated',
+  'PFE': 'Pfizer Inc.',
+  'XOM': 'Exxon Mobil Corporation',
+  'CVX': 'Chevron Corporation',
+  'KO': 'Coca-Cola Company',
+  'PEP': 'PepsiCo Inc.',
+  'INTC': 'Intel Corporation',
+  'CSCO': 'Cisco Systems Inc.',
+  'VZ': 'Verizon Communications Inc.',
+  'T': 'AT&T Inc.',
+  'DIS': 'Walt Disney Company', // Repeated to ensure it's included
+};
+
 interface SearchBarProps {
   placeholder?: string;
   className?: string;
@@ -51,6 +82,75 @@ const SearchBar = ({
     };
   }, []);
 
+  // Check if the query matches any common tickers
+  const findMatchingCommonTickers = (searchQuery: string): StockQuote[] => {
+    if (!searchQuery) return [];
+    
+    const matches: StockQuote[] = [];
+    const upperQuery = searchQuery.toUpperCase();
+    
+    // First check for exact matches
+    Object.entries(commonTickers).forEach(([symbol, name]) => {
+      if (symbol === upperQuery) {
+        matches.push({
+          symbol,
+          name,
+          price: 0, // Placeholder price that will be updated with real data
+          changesPercentage: 0,
+          change: 0,
+          dayLow: 0,
+          dayHigh: 0,
+          yearHigh: 0,
+          yearLow: 0,
+          marketCap: 0,
+          priceAvg50: 0,
+          priceAvg200: 0,
+          volume: 0,
+          avgVolume: 0,
+          exchange: "NYSE/NASDAQ",
+          open: 0,
+          previousClose: 0,
+          eps: 0,
+          pe: 0,
+          isCommonTicker: true, // Flag to identify this as a manually added ticker
+        });
+      }
+    });
+    
+    // Then check for starting with query
+    if (matches.length === 0) {
+      Object.entries(commonTickers).forEach(([symbol, name]) => {
+        if (symbol.startsWith(upperQuery) || 
+            name.toUpperCase().includes(upperQuery)) {
+          matches.push({
+            symbol,
+            name,
+            price: 0,
+            changesPercentage: 0,
+            change: 0,
+            dayLow: 0,
+            dayHigh: 0,
+            yearHigh: 0,
+            yearLow: 0,
+            marketCap: 0,
+            priceAvg50: 0,
+            priceAvg200: 0,
+            volume: 0,
+            avgVolume: 0,
+            exchange: "NYSE/NASDAQ",
+            open: 0,
+            previousClose: 0,
+            eps: 0,
+            pe: 0,
+            isCommonTicker: true,
+          });
+        }
+      });
+    }
+    
+    return matches;
+  };
+
   const handleSearch = async (value: string) => {
     setQuery(value);
     
@@ -63,10 +163,28 @@ const SearchBar = ({
     setIsOpen(true);
     
     try {
+      // Get API results
       const searchResults = await searchStocks(value);
-      setResults(searchResults || []);
+      
+      // Get common ticker matches
+      const commonTickerMatches = findMatchingCommonTickers(value);
+      
+      // Filter out duplicates (prefer API results over common tickers)
+      const apiSymbols = new Set((searchResults || []).map(r => r.symbol));
+      const filteredCommonTickers = commonTickerMatches.filter(
+        match => !apiSymbols.has(match.symbol)
+      );
+      
+      // Combine results, putting API results first
+      const combinedResults = [...(searchResults || []), ...filteredCommonTickers];
+      
+      setResults(combinedResults);
     } catch (error) {
       console.error("Search error:", error);
+      
+      // If API fails, still show common ticker matches
+      const commonTickerMatches = findMatchingCommonTickers(value);
+      setResults(commonTickerMatches);
     } finally {
       setIsLoading(false);
     }

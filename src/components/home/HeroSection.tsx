@@ -41,9 +41,9 @@ const HeroSection: React.FC<HeroSectionProps> = ({ featuredSymbols }) => {
   };
 
   return (
-    <div className="relative overflow-hidden pt-8 md:pt-16 pb-8 md:pb-16">
+    <div className="relative overflow-hidden pt-6 md:pt-10 pb-6 md:pb-10">
       <div className="max-w-screen-xl mx-auto">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-16 items-center px-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-10 items-center px-4">
           {/* Left side - Content */}
           <motion.div
             initial={{ opacity: 0, x: -50 }}
@@ -56,19 +56,19 @@ const HeroSection: React.FC<HeroSectionProps> = ({ featuredSymbols }) => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.3 }}
             >
-              <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 leading-tight tracking-tight">
+              <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-4 leading-tight tracking-tight">
                 <span className="block text-foreground">AI-Powered</span>
                 <span className="block bg-clip-text text-transparent bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 dark:from-blue-400 dark:via-indigo-400 dark:to-purple-400">
                   Equity Research
                 </span>
               </h1>
               
-              <p className="text-lg md:text-xl text-muted-foreground mb-8 max-w-xl leading-relaxed">
+              <p className="text-lg md:text-xl text-muted-foreground mb-6 max-w-xl leading-relaxed">
                 Leverage advanced AI algorithms to generate institutional-quality research, 
                 perform deep fundamental analysis, and discover alpha-generating insights.
               </p>
               
-              <div className="flex flex-wrap gap-4 mb-10">
+              <div className="flex flex-wrap gap-4 mb-8">
                 <Button size="lg" className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-md hover:shadow-lg transition-all duration-300 rounded-full px-8">
                   Get Started <ArrowRight className="ml-1" />
                 </Button>
@@ -100,7 +100,7 @@ const HeroSection: React.FC<HeroSectionProps> = ({ featuredSymbols }) => {
           >
             <div className="absolute inset-0 bg-gradient-to-br from-blue-50/30 via-indigo-50/20 to-purple-50/30 dark:from-blue-950/30 dark:via-indigo-950/20 dark:to-purple-950/30 rounded-3xl -z-10" />
             
-            <div className="relative h-[400px] md:h-[500px] w-full rounded-3xl overflow-hidden bg-gradient-to-br from-blue-900/5 to-indigo-900/10 dark:from-blue-400/5 dark:to-indigo-400/10 border border-blue-100/30 dark:border-blue-700/20 shadow-xl">
+            <div className="relative h-[350px] md:h-[450px] w-full rounded-3xl overflow-hidden bg-gradient-to-br from-blue-900/5 to-indigo-900/10 dark:from-blue-400/5 dark:to-indigo-400/10 border border-blue-100/30 dark:border-blue-700/20 shadow-xl">
               {/* Background elements */}
               <div className="absolute top-1/4 right-1/4 w-64 h-64 bg-blue-400/10 dark:bg-blue-400/5 rounded-full blur-3xl" />
               <div className="absolute bottom-1/3 left-1/3 w-72 h-72 bg-indigo-400/10 dark:bg-indigo-400/5 rounded-full blur-3xl" />
