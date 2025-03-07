@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Navigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
@@ -9,6 +8,16 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { Loader2 } from "lucide-react";
+import AppHeader from "@/components/layout/AppHeader";
+
+const featuredSymbols = [
+  { symbol: "AAPL", name: "Apple Inc." },
+  { symbol: "MSFT", name: "Microsoft Corporation" },
+  { symbol: "AMZN", name: "Amazon.com Inc." },
+  { symbol: "GOOG", name: "Alphabet Inc." },
+  { symbol: "META", name: "Meta Platforms Inc." },
+  { symbol: "TSLA", name: "Tesla Inc." }
+];
 
 const industryOptions = [
   "Investment Banking",
@@ -84,147 +93,153 @@ const Profile = () => {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
+      <>
+        <AppHeader featuredSymbols={featuredSymbols} />
+        <div className="flex items-center justify-center min-h-[calc(100vh-80px)]">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      </>
     );
   }
 
   return (
-    <div className="container max-w-4xl mx-auto py-8 px-4">
-      <h1 className="text-3xl font-bold mb-6">Your Profile</h1>
-      
-      <div className="grid gap-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>Account Details</CardTitle>
-            <CardDescription>
-              Update your personal information
-            </CardDescription>
-          </CardHeader>
-          
-          <form onSubmit={handleUpdateProfile}>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="firstName">First Name</Label>
-                  <Input 
-                    id="firstName" 
-                    value={firstName}
-                    onChange={(e) => setFirstName(e.target.value)}
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="lastName">Last Name</Label>
-                  <Input 
-                    id="lastName" 
-                    value={lastName}
-                    onChange={(e) => setLastName(e.target.value)}
-                  />
-                </div>
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <Input 
-                  id="email" 
-                  value={user?.email || ""}
-                  disabled
-                  className="bg-muted"
-                />
-                <p className="text-xs text-muted-foreground">
-                  Your email cannot be changed
-                </p>
-              </div>
-              
-              <Separator />
-              
-              <div className="space-y-2">
-                <Label htmlFor="firmName">Firm/Company Name</Label>
-                <Input 
-                  id="firmName" 
-                  value={firmName}
-                  onChange={(e) => setFirmName(e.target.value)}
-                />
-              </div>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="industry">Industry</Label>
-                  <Select value={industry} onValueChange={setIndustry}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select industry" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {industryOptions.map((option) => (
-                        <SelectItem key={option} value={option}>
-                          {option}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="jobRole">Job Role</Label>
-                  <Select value={jobRole} onValueChange={setJobRole}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select role" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {jobRoleOptions.map((option) => (
-                        <SelectItem key={option} value={option}>
-                          {option}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="location">Location</Label>
-                  <Input 
-                    id="location" 
-                    placeholder="City, Country" 
-                    value={location}
-                    onChange={(e) => setLocation(e.target.value)}
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="yearsExperience">Years Experience</Label>
-                  <Input 
-                    id="yearsExperience" 
-                    type="number" 
-                    min="0"
-                    value={yearsExperience}
-                    onChange={(e) => setYearsExperience(e.target.value)}
-                  />
-                </div>
-              </div>
-            </CardContent>
+    <>
+      <AppHeader featuredSymbols={featuredSymbols} />
+      <div className="container max-w-4xl mx-auto py-8 px-4">
+        <h1 className="text-3xl font-bold mb-6">Your Profile</h1>
+        
+        <div className="grid gap-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Account Details</CardTitle>
+              <CardDescription>
+                Update your personal information
+              </CardDescription>
+            </CardHeader>
             
-            <CardFooter className="flex justify-between">
-              <Button variant="outline" type="button" onClick={signOut}>
-                Sign Out
-              </Button>
+            <form onSubmit={handleUpdateProfile}>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="firstName">First Name</Label>
+                    <Input 
+                      id="firstName" 
+                      value={firstName}
+                      onChange={(e) => setFirstName(e.target.value)}
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="lastName">Last Name</Label>
+                    <Input 
+                      id="lastName" 
+                      value={lastName}
+                      onChange={(e) => setLastName(e.target.value)}
+                    />
+                  </div>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="email">Email</Label>
+                  <Input 
+                    id="email" 
+                    value={user?.email || ""}
+                    disabled
+                    className="bg-muted"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Your email cannot be changed
+                  </p>
+                </div>
+                
+                <Separator />
+                
+                <div className="space-y-2">
+                  <Label htmlFor="firmName">Firm/Company Name</Label>
+                  <Input 
+                    id="firmName" 
+                    value={firmName}
+                    onChange={(e) => setFirmName(e.target.value)}
+                  />
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="industry">Industry</Label>
+                    <Select value={industry} onValueChange={setIndustry}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select industry" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {industryOptions.map((option) => (
+                          <SelectItem key={option} value={option}>
+                            {option}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="jobRole">Job Role</Label>
+                    <Select value={jobRole} onValueChange={setJobRole}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select role" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {jobRoleOptions.map((option) => (
+                          <SelectItem key={option} value={option}>
+                            {option}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="location">Location</Label>
+                    <Input 
+                      id="location" 
+                      placeholder="City, Country" 
+                      value={location}
+                      onChange={(e) => setLocation(e.target.value)}
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="yearsExperience">Years Experience</Label>
+                    <Input 
+                      id="yearsExperience" 
+                      type="number" 
+                      min="0"
+                      value={yearsExperience}
+                      onChange={(e) => setYearsExperience(e.target.value)}
+                    />
+                  </div>
+                </div>
+              </CardContent>
               
-              <Button type="submit" disabled={isSaving}>
-                {isSaving ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Saving
-                  </>
-                ) : "Save Changes"}
-              </Button>
-            </CardFooter>
-          </form>
-        </Card>
+              <CardFooter className="flex justify-between">
+                <Button variant="outline" type="button" onClick={signOut}>
+                  Sign Out
+                </Button>
+                
+                <Button type="submit" disabled={isSaving}>
+                  {isSaving ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Saving
+                    </>
+                  ) : "Save Changes"}
+                </Button>
+              </CardFooter>
+            </form>
+          </Card>
+        </div>
       </div>
-    </div>
+    </>
   );
 };
 

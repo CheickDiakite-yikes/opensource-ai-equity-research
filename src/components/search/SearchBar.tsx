@@ -91,13 +91,13 @@ const SearchBar = ({
   return (
     <div 
       className={cn(
-        "relative w-full max-w-3xl mx-auto",
+        "relative w-full",
         className
       )}
     >
       <div className="relative flex items-center">
-        <div className="absolute left-4 z-10 text-primary/70">
-          <Search size={18} strokeWidth={2.5} />
+        <div className="absolute left-3 z-10 text-primary/70">
+          <Search size={16} strokeWidth={2.5} />
         </div>
         <Input
           type="text"
@@ -105,7 +105,7 @@ const SearchBar = ({
           value={query}
           onChange={(e) => handleSearch(e.target.value)}
           onFocus={() => setIsOpen(true)}
-          className="w-full h-12 pl-12 pr-16 rounded-full shadow-lg border-input/50 bg-background text-foreground transition-all focus:ring-2 focus:ring-primary/20 focus:border-primary/50 text-base"
+          className="w-full h-10 pl-9 pr-10 rounded-lg border-input/50 bg-background text-foreground transition-all focus:ring-2 focus:ring-primary/20 focus:border-primary/50 text-sm"
         />
         <ClearButton 
           query={query} 
@@ -124,7 +124,7 @@ const SearchBar = ({
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
             transition={{ duration: 0.15 }}
-            className="absolute top-full mt-1 w-full z-10"
+            className="absolute top-full mt-1 w-full z-50"
           >
             <SearchResults
               ref={commandRef}
