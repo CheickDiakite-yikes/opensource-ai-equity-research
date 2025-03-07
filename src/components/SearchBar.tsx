@@ -1,6 +1,6 @@
 
 import { useState, useEffect, useRef } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { Search, Loader2, X, TrendingUp, ChevronRight, History, Sparkles, BarChart4 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -35,6 +35,7 @@ const SearchBar = ({
   const [recentSearches, setRecentSearches] = useState<string[]>([]);
   const commandRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
+  const [, setSearchParams] = useSearchParams();
 
   // Load recent searches from localStorage
   useEffect(() => {
@@ -93,7 +94,18 @@ const SearchBar = ({
 
   const handleSelectStock = (symbol: string) => {
     setIsOpen(false);
-    navigate(`/stock/${symbol}`);
+    
+    // Save to recent searches
+    const updatedSearches = [
+      symbol,
+      ...recentSearches.filter(s => s !== symbol)
+    ].slice(0, 5);
+    
+    setRecentSearches(updatedSearches);
+    localStorage.setItem('recentSearches', JSON.stringify(updatedSearches));
+    
+    // Navigate to the appropriate URL with query parameters
+    setSearchParams({ symbol, tab: "report" });
   };
 
   return (

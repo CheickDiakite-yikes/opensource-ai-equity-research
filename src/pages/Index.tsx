@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import Header from "@/components/layout/Header";
 import LandingView from "@/components/home/LandingView";
@@ -26,10 +25,7 @@ const Index = () => {
     { symbol: "V", name: "Visa Inc." },
     { symbol: "MA", name: "Mastercard Inc." },
     { symbol: "PYPL", name: "PayPal Holdings, Inc." },
-    { symbol: "NFLX", name: "Netflix, Inc." },
-    { symbol: "DIS", name: "The Walt Disney Company" },
-    { symbol: "INTC", name: "Intel Corporation" },
-    { symbol: "AMD", name: "Advanced Micro Devices, Inc." }
+    { symbol: "NFLX", name: "Netflix, Inc." }
   ]);
 
   useEffect(() => {
