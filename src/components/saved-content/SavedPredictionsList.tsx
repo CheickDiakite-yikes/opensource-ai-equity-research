@@ -2,7 +2,7 @@
 import React from "react";
 import { formatDistanceToNow } from "date-fns";
 import { Clock, Trash2, TrendingUp, TrendingDown } from "lucide-react";
-import { SavedPrediction } from "@/hooks/useSavedContent";
+import { SavedPrediction } from "@/hooks/saved-content";
 import { motion } from "framer-motion";
 
 interface SavedPredictionsListProps {

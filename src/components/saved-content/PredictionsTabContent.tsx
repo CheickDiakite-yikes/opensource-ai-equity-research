@@ -1,7 +1,7 @@
 
 import React from "react";
 import { Card } from "@/components/ui/card";
-import { SavedPrediction } from "@/hooks/useSavedContent";
+import { SavedPrediction } from "@/hooks/saved-content";
 import SavedPredictionsList from "./SavedPredictionsList";
 import EmptyContentState from "./EmptyContentState";
 import ContentPlaceholder from "./ContentPlaceholder";

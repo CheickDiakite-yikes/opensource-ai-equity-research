@@ -2,7 +2,12 @@
 import React, { useState, useEffect } from "react";
 import { Navigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import { useSavedReports, useSavedPredictions, SavedReport, SavedPrediction } from "@/hooks/useSavedContent";
+import { 
+  useSavedReports, 
+  useSavedPredictions, 
+  SavedReport, 
+  SavedPrediction 
+} from "@/hooks/saved-content";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Loader2, FileText, TrendingUp, RefreshCw } from "lucide-react";
 import { toast } from "sonner";

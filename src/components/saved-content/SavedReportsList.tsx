@@ -2,7 +2,7 @@
 import React from "react";
 import { formatDistanceToNow } from "date-fns";
 import { Clock, Download, Trash2 } from "lucide-react";
-import { SavedReport } from "@/hooks/useSavedContent";
+import { SavedReport } from "@/hooks/saved-content";
 import { motion } from "framer-motion";
 
 interface SavedReportsListProps {

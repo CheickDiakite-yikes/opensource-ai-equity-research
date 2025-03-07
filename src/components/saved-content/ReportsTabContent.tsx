@@ -1,7 +1,7 @@
 
 import React from "react";
 import { Card } from "@/components/ui/card";
-import { SavedReport } from "@/hooks/useSavedContent";
+import { SavedReport } from "@/hooks/saved-content";
 import SavedReportsList from "./SavedReportsList";
 import EmptyContentState from "./EmptyContentState";
 import ContentPlaceholder from "./ContentPlaceholder";
