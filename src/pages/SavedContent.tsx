@@ -10,6 +10,7 @@ import {
 } from "@/hooks/saved-content";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import NavigationHeader from "@/components/layout/NavigationHeader";
 import SavedContentHeader from "@/components/saved-content/SavedContentHeader";
 import SavedContentTabs from "@/components/saved-content/SavedContentTabs";
 import DebugInfo from "@/components/saved-content/DebugInfo";
@@ -128,67 +129,71 @@ const SavedContent = () => {
   };
 
   return (
-    <AnimatePresence>
-      {isLoading ? (
-        <motion.div 
-          key="loading"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          className="flex items-center justify-center min-h-screen"
-        >
-          <motion.div
-            animate={{ 
-              rotate: 360,
-              transition: { duration: 1, repeat: Infinity, ease: "linear" }
-            }}
-            className="relative"
-          >
-            <Loader2 className="h-8 w-8 text-primary" />
-          </motion.div>
-          <motion.span 
+    <div className="min-h-screen bg-background">
+      <NavigationHeader />
+      
+      <AnimatePresence>
+        {isLoading ? (
+          <motion.div 
+            key="loading"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ delay: 0.5 }}
-            className="ml-3 text-muted-foreground"
+            exit={{ opacity: 0 }}
+            className="flex items-center justify-center min-h-[calc(100vh-60px)]"
           >
-            Loading content...
-          </motion.span>
-        </motion.div>
-      ) : (
-        <motion.div 
-          key="content"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.5 }}
-          className="container max-w-7xl mx-auto py-8 px-4"
-        >
-          <SavedContentHeader 
-            userEmail={user?.email || null}
-            isRefreshing={isRefreshing}
-            onRefresh={handleRefresh}
-          />
-          
-          <SavedContentTabs
-            reports={reports}
-            predictions={predictions}
-            selectedReport={selectedReport}
-            selectedPrediction={selectedPrediction}
-            onSelectReport={handleSelectReport}
-            onSelectPrediction={handleSelectPrediction}
-            onDeleteReport={handleDeleteReport}
-            onDeletePrediction={handleDeletePrediction}
-            onDownloadHtml={handleDownloadHtml}
-          />
-          
-          <DebugInfo
-            userId={user?.id}
-            reports={reports}
-            predictionsCount={predictions.length}
-          />
-        </motion.div>
-      )}
-    </AnimatePresence>
+            <motion.div
+              animate={{ 
+                rotate: 360,
+                transition: { duration: 1, repeat: Infinity, ease: "linear" }
+              }}
+              className="relative"
+            >
+              <Loader2 className="h-8 w-8 text-primary" />
+            </motion.div>
+            <motion.span 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.5 }}
+              className="ml-3 text-muted-foreground"
+            >
+              Loading content...
+            </motion.span>
+          </motion.div>
+        ) : (
+          <motion.div 
+            key="content"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.5 }}
+            className="container max-w-7xl mx-auto py-8 px-4"
+          >
+            <SavedContentHeader 
+              userEmail={user?.email || null}
+              isRefreshing={isRefreshing}
+              onRefresh={handleRefresh}
+            />
+            
+            <SavedContentTabs
+              reports={reports}
+              predictions={predictions}
+              selectedReport={selectedReport}
+              selectedPrediction={selectedPrediction}
+              onSelectReport={handleSelectReport}
+              onSelectPrediction={handleSelectPrediction}
+              onDeleteReport={handleDeleteReport}
+              onDeletePrediction={handleDeletePrediction}
+              onDownloadHtml={handleDownloadHtml}
+            />
+            
+            <DebugInfo
+              userId={user?.id}
+              reports={reports}
+              predictionsCount={predictions.length}
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
   );
 };
 

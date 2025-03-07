@@ -1,6 +1,5 @@
-
 import { useState, useEffect } from "react";
-import Header from "@/components/layout/Header";
+import NavigationHeader from "@/components/layout/NavigationHeader";
 import LandingView from "@/components/home/LandingView";
 import StockView from "@/components/stocks/StockView";
 import { toast } from "sonner";
@@ -101,28 +100,32 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background to-muted/30">
-      <Header 
-        symbol={symbol}
-        setSymbol={setSymbol}
-        handleSearch={handleSearch}
-        isLoading={isLoading}
-        handleKeyDown={handleKeyDown}
-      />
+      <NavigationHeader />
+      
+      <div className="container mx-auto pt-4 px-4 sm:px-6 md:px-0 max-w-[1400px]">
+        <Header 
+          symbol={symbol}
+          setSymbol={setSymbol}
+          handleSearch={handleSearch}
+          isLoading={isLoading}
+          handleKeyDown={handleKeyDown}
+        />
 
-      <main className="container mx-auto px-4 sm:px-6 md:px-0 max-w-[1400px]">
-        {!searchedSymbol ? (
-          <LandingView 
-            recentSearches={recentSearches}
-            featuredSymbols={featuredSymbols}
-            onSelectSymbol={searchSymbol}
-          />
-        ) : (
-          <StockView 
-            symbol={searchedSymbol} 
-            onClear={clearSearch} 
-          />
-        )}
-      </main>
+        <main>
+          {!searchedSymbol ? (
+            <LandingView 
+              recentSearches={recentSearches}
+              featuredSymbols={featuredSymbols}
+              onSelectSymbol={searchSymbol}
+            />
+          ) : (
+            <StockView 
+              symbol={searchedSymbol} 
+              onClear={clearSearch} 
+            />
+          )}
+        </main>
+      </div>
     </div>
   );
 };
