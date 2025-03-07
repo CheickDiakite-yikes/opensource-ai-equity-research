@@ -1,10 +1,9 @@
 
 import React from "react";
 import { formatDistanceToNow } from "date-fns";
-import { Clock, Trash2 } from "lucide-react";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { Clock, Trash2, TrendingUp, TrendingDown } from "lucide-react";
 import { SavedPrediction } from "@/hooks/useSavedContent";
+import { motion } from "framer-motion";
 
 interface SavedPredictionsListProps {
   predictions: SavedPrediction[];
@@ -20,57 +19,74 @@ const SavedPredictionsList: React.FC<SavedPredictionsListProps> = ({
   onDeletePrediction,
 }) => {
   return (
-    <div className="space-y-3">
-      {predictions.map((prediction) => (
-        <Card 
-          key={prediction.id} 
-          className={`cursor-pointer hover:border-primary/50 transition-colors ${
-            selectedPrediction?.id === prediction.id ? 'border-primary' : ''
-          }`}
-          onClick={() => onSelectPrediction(prediction)}
-        >
-          <CardHeader className="p-4 pb-2">
+    <div className="divide-y divide-border/40">
+      {predictions.map((prediction, index) => {
+        const isPositive = prediction.prediction_data.predictedPrice.oneYear > prediction.prediction_data.currentPrice;
+        const percentChange = ((prediction.prediction_data.predictedPrice.oneYear - prediction.prediction_data.currentPrice) / prediction.prediction_data.currentPrice) * 100;
+        
+        return (
+          <motion.div 
+            key={prediction.id}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3, delay: index * 0.05 }}
+            className={`cursor-pointer group p-4 hover:bg-primary/5 transition-all ${
+              selectedPrediction?.id === prediction.id ? 'bg-primary/10' : ''
+            }`}
+            onClick={() => onSelectPrediction(prediction)}
+          >
             <div className="flex justify-between items-start">
               <div>
-                <CardTitle className="text-base">{prediction.symbol}</CardTitle>
-                <CardDescription className="text-xs line-clamp-1">
+                <h3 className={`text-base font-medium ${
+                  selectedPrediction?.id === prediction.id ? 'text-primary' : ''
+                }`}>
+                  {prediction.symbol}
+                </h3>
+                <p className="text-xs text-muted-foreground line-clamp-1 mt-0.5">
                   {prediction.company_name}
-                </CardDescription>
+                </p>
+                
+                <div className="flex items-center gap-2 mt-2">
+                  <div className="text-xs text-muted-foreground flex items-center gap-1">
+                    <Clock className="h-3 w-3" />
+                    <span>
+                      {formatDistanceToNow(new Date(prediction.created_at), { addSuffix: true })}
+                    </span>
+                  </div>
+                  
+                  <span className={`text-xs px-1.5 py-0.5 rounded-full flex items-center gap-0.5 ${
+                    isPositive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                  }`}>
+                    {isPositive ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
+                    <span>{Math.abs(percentChange).toFixed(1)}%</span>
+                  </span>
+                </div>
               </div>
-              <Button 
-                variant="ghost" 
-                size="icon" 
-                className="h-7 w-7 rounded-full hover:bg-destructive/10 text-muted-foreground hover:text-destructive"
-                onClick={(e) => onDeletePrediction(prediction.id, e)}
-              >
-                <Trash2 className="h-4 w-4" />
-              </Button>
+              
+              <div className="flex space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                <button
+                  className="p-1.5 rounded-full hover:bg-destructive/10 hover:text-destructive transition-colors"
+                  onClick={(e) => onDeletePrediction(prediction.id, e)}
+                  title="Delete prediction"
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                </button>
+              </div>
             </div>
-          </CardHeader>
-          <CardContent className="p-4 pt-0 pb-2">
-            <div className="text-xs text-muted-foreground flex items-center mt-1 gap-1">
-              <Clock className="h-3 w-3" />
-              <span>
-                Saved {formatDistanceToNow(new Date(prediction.created_at), { addSuffix: true })}
-              </span>
-            </div>
-          </CardContent>
-          <CardFooter className="p-4 pt-0">
-            <div className="w-full flex justify-between items-center text-xs">
+            
+            <div className="flex justify-between items-center mt-2 text-xs">
               <div className="font-medium">
                 Current: ${prediction.prediction_data.currentPrice.toFixed(2)}
               </div>
               <div className={`font-medium ${
-                prediction.prediction_data.predictedPrice.oneYear > prediction.prediction_data.currentPrice 
-                  ? 'text-green-600' 
-                  : 'text-red-600'
+                isPositive ? 'text-green-600' : 'text-red-600'
               }`}>
                 1Y: ${prediction.prediction_data.predictedPrice.oneYear.toFixed(2)}
               </div>
             </div>
-          </CardFooter>
-        </Card>
-      ))}
+          </motion.div>
+        );
+      })}
     </div>
   );
 };

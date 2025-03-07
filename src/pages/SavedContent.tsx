@@ -131,38 +131,49 @@ const SavedContent = () => {
   }
 
   return (
-    <div className="container max-w-7xl mx-auto py-8 px-4">
-      <h1 className="text-3xl font-bold mb-6">Saved Content</h1>
-      
-      <div className="mb-4 flex justify-between items-center">
-        <Button 
-          onClick={handleRefresh} 
-          variant="outline"
-          size="sm"
-          disabled={isRefreshing}
-          className="flex items-center gap-1.5"
-        >
-          <RefreshCw className={`h-3.5 w-3.5 ${isRefreshing ? 'animate-spin' : ''}`} />
-          <span>{isRefreshing ? 'Refreshing...' : 'Refresh Content'}</span>
-        </Button>
+    <div className="container max-w-7xl mx-auto py-8 px-4 animate-fade-in">
+      <div className="mb-8 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-gradient-to-r from-primary/5 to-primary/10 p-5 rounded-xl">
+        <div>
+          <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">Saved Content</h1>
+          <p className="text-muted-foreground mt-1">Your research reports and price predictions</p>
+        </div>
         
-        <div className="text-sm text-muted-foreground">
+        <div className="flex items-center gap-4">
+          <Button 
+            onClick={handleRefresh} 
+            variant="outline"
+            size="sm"
+            disabled={isRefreshing}
+            className="flex items-center gap-1.5 hover:bg-primary/10 hover:text-primary transition-colors"
+          >
+            <RefreshCw className={`h-3.5 w-3.5 ${isRefreshing ? 'animate-spin' : ''}`} />
+            <span>{isRefreshing ? 'Refreshing...' : 'Refresh'}</span>
+          </Button>
+          
           {user && (
-            <span>Logged in as: {user.email}</span>
+            <div className="text-sm bg-primary/10 text-primary px-3 py-1.5 rounded-full">
+              <span>Logged in as: {user.email}</span>
+            </div>
           )}
         </div>
       </div>
       
       <Tabs defaultValue="reports" className="w-full">
-        <TabsList className="grid w-full grid-cols-2 mb-6">
-          <TabsTrigger value="reports" className="flex items-center gap-2">
+        <TabsList className="w-full grid grid-cols-2 mb-8 bg-secondary/50 p-1 rounded-xl">
+          <TabsTrigger 
+            value="reports" 
+            className="flex items-center gap-2 py-3 data-[state=active]:bg-background data-[state=active]:shadow-md rounded-lg transition-all"
+          >
             <FileText className="h-4 w-4" />
             <span>Research Reports</span>
             <span className="ml-2 inline-flex items-center justify-center rounded-full bg-primary/10 text-primary text-xs font-medium h-5 w-5">
               {reports.length}
             </span>
           </TabsTrigger>
-          <TabsTrigger value="predictions" className="flex items-center gap-2">
+          <TabsTrigger 
+            value="predictions" 
+            className="flex items-center gap-2 py-3 data-[state=active]:bg-background data-[state=active]:shadow-md rounded-lg transition-all"
+          >
             <TrendingUp className="h-4 w-4" />
             <span>Price Predictions</span>
             <span className="ml-2 inline-flex items-center justify-center rounded-full bg-primary/10 text-primary text-xs font-medium h-5 w-5">
@@ -171,7 +182,7 @@ const SavedContent = () => {
           </TabsTrigger>
         </TabsList>
         
-        <TabsContent value="reports" className="space-y-6">
+        <TabsContent value="reports" className="space-y-6 animate-fade-in">
           <ReportsTabContent
             reports={reports}
             selectedReport={selectedReport}
@@ -181,7 +192,7 @@ const SavedContent = () => {
           />
         </TabsContent>
         
-        <TabsContent value="predictions" className="space-y-6">
+        <TabsContent value="predictions" className="space-y-6 animate-fade-in">
           <PredictionsTabContent
             predictions={predictions}
             selectedPrediction={selectedPrediction}

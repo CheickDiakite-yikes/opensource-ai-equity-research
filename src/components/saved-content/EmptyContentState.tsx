@@ -1,46 +1,73 @@
 
 import React from "react";
-import { FileText, Search, TrendingUp } from "lucide-react";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { cn } from "@/lib/utils";
+import { FileText, TrendingUp, PlusCircle, Info } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { useNavigate } from "react-router-dom";
+import { motion } from "framer-motion";
 
 interface EmptyContentStateProps {
   type: "reports" | "predictions";
 }
 
 const EmptyContentState: React.FC<EmptyContentStateProps> = ({ type }) => {
-  const Icon = type === "reports" ? FileText : TrendingUp;
+  const navigate = useNavigate();
   
+  const handleNavigateToSearch = () => {
+    navigate("/");
+  };
+
   return (
-    <div className="flex flex-col items-center justify-center p-8 text-center space-y-4">
-      <div className={cn(
-        "rounded-full p-4",
-        type === "reports" ? "bg-primary/10" : "bg-amber-500/10"
-      )}>
-        <Icon className={cn(
-          "h-8 w-8",
-          type === "reports" ? "text-primary" : "text-amber-500"
-        )} />
-      </div>
-      
-      <div className="space-y-2 max-w-md">
-        <h3 className="text-xl font-medium">No saved {type}</h3>
-        <p className="text-muted-foreground">
-          You haven't saved any {type === "reports" ? "research reports" : "price predictions"} yet. 
-          Generate and save a {type === "reports" ? "report" : "prediction"} to see it here.
-        </p>
-      </div>
-      
-      <Alert className="max-w-md mt-6 bg-muted/50">
-        <Search className="h-4 w-4" />
-        <AlertTitle>How to get started</AlertTitle>
-        <AlertDescription className="text-sm">
+    <motion.div 
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.5 }}
+      className="flex flex-col items-center justify-center p-10 text-center rounded-xl border border-dashed border-primary/20 bg-gradient-to-b from-primary/5 to-background h-[60vh] shadow-sm"
+    >
+      <div className="flex flex-col items-center max-w-md">
+        {type === "reports" ? (
+          <div className="h-20 w-20 bg-primary/10 rounded-full flex items-center justify-center mb-6">
+            <FileText className="h-10 w-10 text-primary" />
+          </div>
+        ) : (
+          <div className="h-20 w-20 bg-primary/10 rounded-full flex items-center justify-center mb-6">
+            <TrendingUp className="h-10 w-10 text-primary" />
+          </div>
+        )}
+        
+        <h3 className="text-2xl font-medium mb-3">
+          No Saved {type === "reports" ? "Research Reports" : "Price Predictions"}
+        </h3>
+        
+        <p className="text-muted-foreground mb-6">
           {type === "reports" 
-            ? "Search for a stock, go to the Research tab, and click 'Generate Research Report'. Then click 'Save' to keep it." 
-            : "Search for a stock, go to the Research tab, and click 'Generate Price Prediction'. Then click 'Save' to keep it."}
-        </AlertDescription>
-      </Alert>
-    </div>
+            ? "Research reports provide in-depth analysis of companies, including financials, risks, and growth opportunities."
+            : "Price predictions offer AI-powered forecasts of stock performance over different time horizons."
+          }
+        </p>
+        
+        <div className="flex flex-col sm:flex-row gap-4 w-full justify-center">
+          <Button 
+            onClick={handleNavigateToSearch}
+            className="gap-2 shadow-sm"
+          >
+            <PlusCircle className="h-4 w-4" />
+            <span>Create New {type === "reports" ? "Report" : "Prediction"}</span>
+          </Button>
+          
+          <Button variant="outline" className="gap-2">
+            <Info className="h-4 w-4" />
+            <span>Learn More</span>
+          </Button>
+        </div>
+        
+        <div className="mt-8 p-4 bg-primary/5 rounded-lg border border-primary/10 text-sm text-muted-foreground">
+          <p>
+            Start by searching for a company and generating a {type === "reports" ? "research report" : "price prediction"}.
+            All your {type} will be automatically saved here.
+          </p>
+        </div>
+      </div>
+    </motion.div>
   );
 };
 

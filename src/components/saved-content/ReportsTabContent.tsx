@@ -1,8 +1,6 @@
 
 import React from "react";
 import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Download } from "lucide-react";
 import { SavedReport } from "@/hooks/useSavedContent";
 import SavedReportsList from "./SavedReportsList";
 import EmptyContentState from "./EmptyContentState";
@@ -32,33 +30,36 @@ const ReportsTabContent: React.FC<ReportsTabContentProps> = ({
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
       <div className="col-span-1 space-y-4">
-        <h2 className="text-xl font-medium">Your Reports</h2>
+        <div className="flex items-center justify-between">
+          <h2 className="text-xl font-medium text-primary/90">Your Reports</h2>
+          <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded-full">
+            {reports.length} saved
+          </span>
+        </div>
         
-        <SavedReportsList
-          reports={reports}
-          selectedReport={selectedReport}
-          onSelectReport={onSelectReport}
-          onDeleteReport={onDeleteReport}
-        />
+        <div className="bg-gradient-to-r from-background to-secondary/30 p-0.5 rounded-xl shadow-sm">
+          <div className="bg-background rounded-lg overflow-hidden">
+            <SavedReportsList
+              reports={reports}
+              selectedReport={selectedReport}
+              onSelectReport={onSelectReport}
+              onDeleteReport={onDeleteReport}
+              onDownloadHtml={onDownloadHtml}
+            />
+          </div>
+        </div>
         
         <SavedContentDisclaimer type="reports" />
       </div>
       
-      <div className="col-span-1 lg:col-span-2">
+      <div className="col-span-1 lg:col-span-2 transition-all duration-300">
         {selectedReport ? (
-          <Card className="p-4 h-full">
-            <div className="flex justify-end mb-3">
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={() => onDownloadHtml(selectedReport)}
-                className="flex items-center gap-1"
-              >
-                <Download className="h-4 w-4" />
-                <span>Download HTML</span>
-              </Button>
-            </div>
-            <ResearchReportDisplay report={selectedReport.report_data} />
+          <Card className="p-5 h-full overflow-hidden border border-primary/5 shadow-md hover:shadow-lg transition-shadow bg-gradient-to-br from-background to-secondary/10">
+            <ResearchReportDisplay 
+              report={selectedReport.report_data} 
+              htmlContent={selectedReport.html_content}
+              onDownloadHtml={() => onDownloadHtml(selectedReport)}
+            />
           </Card>
         ) : (
           <ContentPlaceholder type="report" />

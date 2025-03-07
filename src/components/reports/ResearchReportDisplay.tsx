@@ -6,24 +6,25 @@ import { ReportSectionsList } from "./ReportSectionsList";
 import { SensitivityAnalysis } from "./SensitivityAnalysis";
 import { GrowthCatalysts } from "./GrowthCatalysts";
 import { DisclaimerSection } from "./DisclaimerSection";
-import { downloadReportAsHTML } from "@/utils/reportDownloadUtils";
 import { Button } from "@/components/ui/button";
 import { Download, AlertTriangle, FileText } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 interface ResearchReportDisplayProps {
   report: ResearchReport;
+  htmlContent?: string | null;
+  onDownloadHtml?: () => void;
 }
 
-const ResearchReportDisplay: React.FC<ResearchReportDisplayProps> = ({ report }) => {
+const ResearchReportDisplay: React.FC<ResearchReportDisplayProps> = ({ 
+  report, 
+  htmlContent,
+  onDownloadHtml
+}) => {
   const [expandedScenarios, setExpandedScenarios] = useState<string | null>(null);
   
   const toggleScenario = (scenario: string) => {
     setExpandedScenarios(prev => prev === scenario ? null : scenario);
-  };
-  
-  const handleDownload = () => {
-    downloadReportAsHTML(report);
   };
 
   // Check if report is potentially low quality
@@ -42,16 +43,24 @@ const ResearchReportDisplay: React.FC<ResearchReportDisplayProps> = ({ report })
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold">Research Report</h2>
-        <Button 
-          variant="outline" 
-          size="sm" 
-          onClick={handleDownload}
-          className="flex items-center gap-1"
-        >
-          <Download className="h-4 w-4" />
-          <span>Download</span>
-        </Button>
+        <div className="flex items-center">
+          <FileText className="h-5 w-5 text-primary mr-2" />
+          <h2 className="text-2xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
+            Research Report
+          </h2>
+        </div>
+        
+        {htmlContent && onDownloadHtml && (
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={onDownloadHtml}
+            className="flex items-center gap-1 shadow-sm hover:shadow-md transition-shadow"
+          >
+            <Download className="h-4 w-4" />
+            <span>Download HTML</span>
+          </Button>
+        )}
       </div>
       
       {isLowQualityReport && (
@@ -75,8 +84,8 @@ const ResearchReportDisplay: React.FC<ResearchReportDisplayProps> = ({ report })
       />
       
       {report.summary && (
-        <div className="bg-muted/40 p-4 rounded-lg border border-border/60">
-          <h3 className="font-semibold mb-2">Executive Summary</h3>
+        <div className="bg-gradient-to-r from-primary/5 to-primary/10 p-4 rounded-lg border border-primary/10 shadow-sm">
+          <h3 className="font-semibold mb-2 text-primary/90">Executive Summary</h3>
           <p className="text-sm text-muted-foreground">{report.summary}</p>
         </div>
       )}
