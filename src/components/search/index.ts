@@ -5,3 +5,4 @@ export * from "./SearchResultItem";
 export * from "./FeaturedSymbolItem";
 export * from "./RecentSearchItem";
 export * from "./ClearButton";
+export * from "./useSearchHistory";

@@ -1,6 +1,7 @@
+
 import { useState, useEffect, useRef } from "react";
 import { useSearchParams } from "react-router-dom";
-import { Search } from "lucide-react";
+import { Search, TrendingUp, Info } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
@@ -9,61 +10,31 @@ import { SearchResults } from "./SearchResults";
 import { ClearButton } from "./ClearButton";
 import { searchStocks } from "@/lib/api/fmpApi";
 import { toast } from "sonner";
+import { useSearchHistory } from "./useSearchHistory";
+import { featuredSymbols } from "@/constants/featuredSymbols";
 
-const commonTickers: Record<string, string> = {
-  'NFLX': 'Netflix Inc.',
-  'GOOGL': 'Alphabet Inc. Class A',
-  'GOOG': 'Alphabet Inc. Class C',
-  'FB': 'Meta Platforms Inc.',
-  'META': 'Meta Platforms Inc.',
-  'AMZN': 'Amazon.com Inc.',
-  'MSFT': 'Microsoft Corporation',
-  'AAPL': 'Apple Inc.',
-  'TSLA': 'Tesla Inc.',
-  'JPM': 'JPMorgan Chase & Co.',
-  'BAC': 'Bank of America Corporation',
-  'WMT': 'Walmart Inc.',
-  'JNJ': 'Johnson & Johnson',
-  'PG': 'Procter & Gamble Company',
-  'V': 'Visa Inc.',
-  'MA': 'Mastercard Incorporated',
-  'PFE': 'Pfizer Inc.',
-  'XOM': 'Exxon Mobil Corporation',
-  'CVX': 'Chevron Corporation',
-  'KO': 'Coca-Cola Company',
-  'PEP': 'PepsiCo Inc.',
-  'INTC': 'Intel Corporation',
-  'CSCO': 'Cisco Systems Inc.',
-  'VZ': 'Verizon Communications Inc.',
-  'T': 'AT&T Inc.',
-  'DIS': 'Walt Disney Company',
-};
-
-interface SearchBarProps {
-  placeholder?: string;
-  className?: string;
-  featuredSymbols?: {symbol: string, name: string}[];
+// Stock categories for better search results 
+enum StockCategory {
+  EXACT_MATCH = "Exact Match",
+  COMMON = "Popular Stocks",
+  API = "Search Results"
 }
 
 const SearchBar = ({ 
   placeholder = "Search for a stock...", 
-  className,
-  featuredSymbols = [] 
-}: SearchBarProps) => {
+  className
+}: {
+  placeholder?: string;
+  className?: string;
+}) => {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<StockQuote[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
-  const [recentSearches, setRecentSearches] = useState<string[]>([]);
+  const { recentSearches, addToHistory } = useSearchHistory();
   const commandRef = useRef<HTMLDivElement>(null);
   const [, setSearchParams] = useSearchParams();
-
-  useEffect(() => {
-    const savedSearches = localStorage.getItem('recentSearches');
-    if (savedSearches) {
-      setRecentSearches(JSON.parse(savedSearches).slice(0, 3));
-    }
-  }, []);
+  const searchInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -78,7 +49,8 @@ const SearchBar = ({
     };
   }, []);
 
-  const createCommonTickerQuote = (symbol: string, name: string): StockQuote => {
+  // Create a stock quote object for common tickers
+  const createCommonTickerQuote = (symbol: string, name: string, category: StockCategory = StockCategory.COMMON): StockQuote => {
     return {
       symbol,
       name,
@@ -103,23 +75,29 @@ const SearchBar = ({
       sharesOutstanding: 0,
       timestamp: 0,
       isCommonTicker: true,
+      category
     };
   };
 
+  // Find matching common tickers with categorization
   const findMatchingCommonTickers = (searchQuery: string): StockQuote[] => {
     if (!searchQuery) return [];
     
     const matches: StockQuote[] = [];
     const upperQuery = searchQuery.toUpperCase();
     
-    if (commonTickers[upperQuery]) {
-      matches.push(createCommonTickerQuote(upperQuery, commonTickers[upperQuery]));
-      return matches;
+    // First check for exact match - highest priority
+    const featuredSymbol = featuredSymbols.find(s => s.symbol === upperQuery);
+    if (featuredSymbol) {
+      matches.push(createCommonTickerQuote(featuredSymbol.symbol, featuredSymbol.name, StockCategory.EXACT_MATCH));
     }
     
-    Object.entries(commonTickers).forEach(([symbol, name]) => {
+    // Then add other matching symbols
+    featuredSymbols.forEach(({symbol, name}) => {
+      if (symbol === upperQuery) return; // Skip exact matches we already added
+      
       if (symbol.includes(upperQuery) || 
-          name.toUpperCase().includes(upperQuery)) {
+          name.toLowerCase().includes(searchQuery.toLowerCase())) {
         matches.push(createCommonTickerQuote(symbol, name));
       }
     });
@@ -140,26 +118,45 @@ const SearchBar = ({
     setIsOpen(true);
     
     try {
+      // First get matches from common tickers
       const commonTickerMatches = findMatchingCommonTickers(value);
       
       if (commonTickerMatches.length > 0) {
         setResults(commonTickerMatches);
       }
       
+      // Then fetch from API
       const searchResults = await searchStocks(value);
       
       if (searchResults && searchResults.length > 0) {
-        const apiSymbols = new Set(searchResults.map(r => r.symbol));
+        // Add category to API results
+        const categorizedApiResults = searchResults.map(result => ({
+          ...result,
+          category: StockCategory.API,
+          isCommonTicker: false
+        }));
+        
+        // Get symbols from API to avoid duplicates
+        const apiSymbols = new Set(categorizedApiResults.map(r => r.symbol));
+        
+        // Filter common tickers to avoid duplicates
         const filteredCommonTickers = commonTickerMatches.filter(
           match => !apiSymbols.has(match.symbol)
         );
         
-        const combinedResults = [...searchResults, ...filteredCommonTickers];
+        // Combine results with exact matches first
+        const exactMatches = filteredCommonTickers.filter(t => t.category === StockCategory.EXACT_MATCH);
+        const regularCommonTickers = filteredCommonTickers.filter(t => t.category === StockCategory.COMMON);
+        
+        const combinedResults = [...exactMatches, ...categorizedApiResults, ...regularCommonTickers];
         setResults(combinedResults);
       } else if (commonTickerMatches.length === 0) {
+        // If no API results and no common matches, try exact match with uppercase
         const upperValue = value.toUpperCase();
-        if (commonTickers[upperValue]) {
-          setResults([createCommonTickerQuote(upperValue, commonTickers[upperValue])]);
+        const featuredSymbol = featuredSymbols.find(s => s.symbol === upperValue);
+        
+        if (featuredSymbol) {
+          setResults([createCommonTickerQuote(upperValue, featuredSymbol.name, StockCategory.EXACT_MATCH)]);
         } else {
           setResults([]);
         }
@@ -169,6 +166,8 @@ const SearchBar = ({
       
       const commonTickerMatches = findMatchingCommonTickers(value);
       setResults(commonTickerMatches.length > 0 ? commonTickerMatches : []);
+      
+      // Silently handle error - don't show error toast as it's disruptive during typing
     } finally {
       setIsLoading(false);
     }
@@ -176,16 +175,18 @@ const SearchBar = ({
 
   const handleSelectStock = (symbol: string) => {
     setIsOpen(false);
-    
-    const updatedSearches = [
-      symbol,
-      ...recentSearches.filter(s => s !== symbol)
-    ].slice(0, 5);
-    
-    setRecentSearches(updatedSearches);
-    localStorage.setItem('recentSearches', JSON.stringify(updatedSearches));
-    
+    setQuery("");
+    addToHistory(symbol);
     setSearchParams({ symbol, tab: "report" });
+    
+    // Focus back on search input after selection for better UX
+    if (searchInputRef.current) {
+      searchInputRef.current.blur();
+    }
+    
+    toast.success(`Loading research data for ${symbol}`, {
+      duration: 2000,
+    });
   };
 
   return (
@@ -196,10 +197,11 @@ const SearchBar = ({
       )}
     >
       <div className="relative flex items-center">
-        <div className="absolute left-3 z-10 text-primary/70">
-          <Search size={16} strokeWidth={2.5} />
+        <div className="absolute left-3 z-10 text-primary">
+          <Search size={18} strokeWidth={2} />
         </div>
         <Input
+          ref={searchInputRef}
           type="text"
           placeholder={placeholder}
           value={query}
@@ -207,7 +209,7 @@ const SearchBar = ({
           onFocus={() => {
             if (query.length > 0) setIsOpen(true);
           }}
-          className="w-full h-10 pl-9 pr-10 rounded-lg border-input/50 bg-background text-foreground transition-all focus:ring-2 focus:ring-primary/20 focus:border-primary/50 text-sm"
+          className="w-full h-11 pl-10 pr-10 rounded-lg border-input bg-background text-foreground transition-all focus:ring-2 focus:ring-primary/20 focus:border-primary/50"
         />
         <ClearButton 
           query={query} 
@@ -220,21 +222,29 @@ const SearchBar = ({
         />
       </div>
       
-      {isOpen && (
-        <div className="absolute z-[60] w-full">
-          <div className="relative mt-1 w-full">
-            <SearchResults
-              ref={commandRef}
-              query={query}
-              results={results}
-              isLoading={isLoading}
-              recentSearches={recentSearches}
-              featuredSymbols={featuredSymbols}
-              onSelectStock={handleSelectStock}
-            />
-          </div>
-        </div>
-      )}
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div 
+            initial={{ opacity: 0, y: -5 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -5 }}
+            transition={{ duration: 0.15 }}
+            className="absolute z-[100] w-full"
+          >
+            <div className="relative mt-1 w-full">
+              <SearchResults
+                ref={commandRef}
+                query={query}
+                results={results}
+                isLoading={isLoading}
+                recentSearches={recentSearches}
+                featuredSymbols={featuredSymbols}
+                onSelectStock={handleSelectStock}
+              />
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
