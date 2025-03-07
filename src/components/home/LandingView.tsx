@@ -8,7 +8,7 @@ import RecentSearches from "./RecentSearches";
 import HowToUse from "./HowToUse";
 import MarketPerformance from "./MarketPerformance";
 import MarketNews from "./MarketNews";
-import SearchBar from "@/components/SearchBar";
+import { SearchBar } from "@/components/search";
 import { fetchMarketIndices, fetchMarketNews } from "@/services/api/marketDataService";
 import { toast } from "sonner";
 
