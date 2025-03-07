@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useRef } from "react";
 import { useSearchParams } from "react-router-dom";
 import { Search } from "lucide-react";
@@ -80,6 +81,34 @@ const SearchBar = ({
     };
   }, []);
 
+  // Create stock quote object from common ticker
+  const createCommonTickerQuote = (symbol: string, name: string): StockQuote => {
+    return {
+      symbol,
+      name,
+      price: 0,
+      changesPercentage: 0,
+      change: 0,
+      dayLow: 0,
+      dayHigh: 0,
+      yearHigh: 0,
+      yearLow: 0,
+      marketCap: 0,
+      priceAvg50: 0,
+      priceAvg200: 0,
+      volume: 0,
+      avgVolume: 0,
+      exchange: "NYSE/NASDAQ",
+      open: 0,
+      previousClose: 0,
+      eps: 0,
+      pe: 0,
+      sharesOutstanding: 0,
+      timestamp: 0,
+      isCommonTicker: true,
+    };
+  };
+
   // Check if the query matches any common tickers
   const findMatchingCommonTickers = (searchQuery: string): StockQuote[] => {
     if (!searchQuery) return [];
@@ -87,68 +116,19 @@ const SearchBar = ({
     const matches: StockQuote[] = [];
     const upperQuery = searchQuery.toUpperCase();
     
-    // First check for exact matches
+    // Check for exact symbol matches first
+    if (commonTickers[upperQuery]) {
+      matches.push(createCommonTickerQuote(upperQuery, commonTickers[upperQuery]));
+      return matches;
+    }
+    
+    // Then check for partial matches in symbol or name
     Object.entries(commonTickers).forEach(([symbol, name]) => {
-      if (symbol === upperQuery) {
-        matches.push({
-          symbol,
-          name,
-          price: 0,
-          changesPercentage: 0,
-          change: 0,
-          dayLow: 0,
-          dayHigh: 0,
-          yearHigh: 0,
-          yearLow: 0,
-          marketCap: 0,
-          priceAvg50: 0,
-          priceAvg200: 0,
-          volume: 0,
-          avgVolume: 0,
-          exchange: "NYSE/NASDAQ",
-          open: 0,
-          previousClose: 0,
-          eps: 0,
-          pe: 0,
-          sharesOutstanding: 0,
-          timestamp: 0,
-          isCommonTicker: true,
-        });
+      if (symbol.includes(upperQuery) || 
+          name.toUpperCase().includes(upperQuery)) {
+        matches.push(createCommonTickerQuote(symbol, name));
       }
     });
-    
-    // Then check for starting with query
-    if (matches.length === 0) {
-      Object.entries(commonTickers).forEach(([symbol, name]) => {
-        if (symbol.startsWith(upperQuery) || 
-            name.toUpperCase().includes(upperQuery)) {
-          matches.push({
-            symbol,
-            name,
-            price: 0,
-            changesPercentage: 0,
-            change: 0,
-            dayLow: 0,
-            dayHigh: 0,
-            yearHigh: 0,
-            yearLow: 0,
-            marketCap: 0,
-            priceAvg50: 0,
-            priceAvg200: 0,
-            volume: 0,
-            avgVolume: 0,
-            exchange: "NYSE/NASDAQ",
-            open: 0,
-            previousClose: 0,
-            eps: 0,
-            pe: 0,
-            sharesOutstanding: 0,
-            timestamp: 0,
-            isCommonTicker: true,
-          });
-        }
-      });
-    }
     
     return matches;
   };
@@ -158,6 +138,7 @@ const SearchBar = ({
     
     if (value.length < 1) {
       setResults([]);
+      setIsOpen(false);
       return;
     }
     
@@ -165,28 +146,42 @@ const SearchBar = ({
     setIsOpen(true);
     
     try {
+      // First check for common tickers - this ensures immediate results
+      const commonTickerMatches = findMatchingCommonTickers(value);
+      
+      // Show common ticker matches immediately
+      if (commonTickerMatches.length > 0) {
+        setResults(commonTickerMatches);
+      }
+      
       // Get API results
       const searchResults = await searchStocks(value);
       
-      // Get common ticker matches
-      const commonTickerMatches = findMatchingCommonTickers(value);
-      
-      // Filter out duplicates (prefer API results over common tickers)
-      const apiSymbols = new Set((searchResults || []).map(r => r.symbol));
-      const filteredCommonTickers = commonTickerMatches.filter(
-        match => !apiSymbols.has(match.symbol)
-      );
-      
-      // Combine results, putting API results first
-      const combinedResults = [...(searchResults || []), ...filteredCommonTickers];
-      
-      setResults(combinedResults);
+      if (searchResults && searchResults.length > 0) {
+        // Filter out duplicates (prefer API results over common tickers)
+        const apiSymbols = new Set(searchResults.map(r => r.symbol));
+        const filteredCommonTickers = commonTickerMatches.filter(
+          match => !apiSymbols.has(match.symbol)
+        );
+        
+        // Combine results, putting API results first
+        const combinedResults = [...searchResults, ...filteredCommonTickers];
+        setResults(combinedResults);
+      } else if (commonTickerMatches.length === 0) {
+        // If no API results and no common ticker matches, check for an exact match
+        const upperValue = value.toUpperCase();
+        if (commonTickers[upperValue]) {
+          setResults([createCommonTickerQuote(upperValue, commonTickers[upperValue])]);
+        } else {
+          setResults([]);
+        }
+      }
     } catch (error) {
       console.error("Search error:", error);
       
       // If API fails, still show common ticker matches
       const commonTickerMatches = findMatchingCommonTickers(value);
-      setResults(commonTickerMatches);
+      setResults(commonTickerMatches.length > 0 ? commonTickerMatches : []);
     } finally {
       setIsLoading(false);
     }
@@ -224,7 +219,9 @@ const SearchBar = ({
           placeholder={placeholder}
           value={query}
           onChange={(e) => handleSearch(e.target.value)}
-          onFocus={() => setIsOpen(true)}
+          onFocus={() => {
+            if (query.length > 0) setIsOpen(true);
+          }}
           className="w-full h-10 pl-9 pr-10 rounded-lg border-input/50 bg-background text-foreground transition-all focus:ring-2 focus:ring-primary/20 focus:border-primary/50 text-sm"
         />
         <ClearButton 
@@ -233,6 +230,7 @@ const SearchBar = ({
           onClear={() => {
             setQuery("");
             setResults([]);
+            setIsOpen(false);
           }} 
         />
       </div>
