@@ -1,93 +1,111 @@
 
+import { supabase } from "@/integrations/supabase/client";
+
+// Cache expiration times
+export const CACHE_EXPIRY = {
+  SHORT: 5 * 60 * 1000, // 5 minutes
+  MEDIUM: 30 * 60 * 1000, // 30 minutes
+  LONG: 24 * 60 * 60 * 1000, // 24 hours
+  WEEK: 7 * 24 * 60 * 60 * 1000, // 1 week
+};
+
 /**
- * Cache service for storing API responses with TTL support
+ * Get data from cache or fetch and cache it
  */
-
-interface CacheEntry<T> {
-  data: T;
-  expiry: number;
-}
-
-export class CacheService {
-  private static instance: CacheService;
-  private cache: Map<string, CacheEntry<any>> = new Map();
-  
-  // Default TTL is 5 minutes
-  private defaultTTL = 5 * 60 * 1000;
-
-  private constructor() {}
-
-  public static getInstance(): CacheService {
-    if (!CacheService.instance) {
-      CacheService.instance = new CacheService();
-    }
-    return CacheService.instance;
-  }
-
-  /**
-   * Set a cache entry with optional TTL
-   */
-  public set<T>(key: string, data: T, ttl?: number): void {
-    const expiryTime = Date.now() + (ttl || this.defaultTTL);
-    this.cache.set(key, { data, expiry: expiryTime });
+export const getWithCache = async <T>(
+  cacheKey: string,
+  fetchFn: () => Promise<T>,
+  expiryMs: number = CACHE_EXPIRY.MEDIUM
+): Promise<T> => {
+  try {
+    // Check if we have cached data
+    const expiresAt = new Date(Date.now() + expiryMs).toISOString();
     
-    // Log cache operations in development
-    if (import.meta.env.DEV) {
-      console.log(`Cache: stored '${key}' (expires in ${Math.round((ttl || this.defaultTTL) / 1000)}s)`);
-    }
-  }
-
-  /**
-   * Get a cache entry if it exists and is not expired
-   */
-  public get<T>(key: string): T | null {
-    const entry = this.cache.get(key);
+    const { data: cacheData, error } = await supabase
+      .from('api_cache')
+      .select('data')
+      .eq('cache_key', cacheKey)
+      .gt('expires_at', new Date().toISOString())
+      .maybeSingle();
     
-    if (!entry) {
-      return null;
+    // Return cached data if available
+    if (!error && cacheData) {
+      console.log(`Cache hit for key: ${cacheKey}`);
+      return cacheData.data as T;
     }
     
-    // Check if the entry is expired
-    if (Date.now() > entry.expiry) {
-      this.cache.delete(key);
-      if (import.meta.env.DEV) {
-        console.log(`Cache: entry '${key}' expired`);
+    // Fetch fresh data
+    console.log(`Cache miss for key: ${cacheKey}, fetching fresh data`);
+    const freshData = await fetchFn();
+    
+    // Store in cache
+    if (freshData) {
+      const { error: insertError } = await supabase
+        .from('api_cache')
+        .upsert({
+          cache_key: cacheKey,
+          data: freshData as any,
+          expires_at: expiresAt,
+          metadata: { 
+            cached_at: new Date().toISOString(),
+            type: typeof freshData
+          }
+        }, { 
+          onConflict: 'cache_key'
+        });
+      
+      if (insertError) {
+        console.error(`Error caching data for key ${cacheKey}:`, insertError);
       }
-      return null;
     }
     
-    if (import.meta.env.DEV) {
-      console.log(`Cache: hit for '${key}'`);
+    return freshData;
+  } catch (err) {
+    console.error(`Error in getWithCache for key ${cacheKey}:`, err);
+    throw err;
+  }
+};
+
+/**
+ * Invalidate a specific cache entry
+ */
+export const invalidateCache = async (cacheKey: string): Promise<boolean> => {
+  try {
+    const { error } = await supabase
+      .from('api_cache')
+      .delete()
+      .eq('cache_key', cacheKey);
+    
+    if (error) {
+      console.error(`Error invalidating cache for key ${cacheKey}:`, error);
+      return false;
     }
     
-    return entry.data as T;
+    return true;
+  } catch (err) {
+    console.error(`Error in invalidateCache for key ${cacheKey}:`, err);
+    return false;
   }
+};
 
-  /**
-   * Delete a specific cache entry
-   */
-  public delete(key: string): void {
-    this.cache.delete(key);
+/**
+ * Invalidate all cache entries with a specific prefix
+ */
+export const invalidateCacheByPrefix = async (keyPrefix: string): Promise<boolean> => {
+  try {
+    const { error } = await supabase
+      .from('api_cache')
+      .delete()
+      .like('cache_key', `${keyPrefix}%`);
+    
+    if (error) {
+      console.error(`Error invalidating cache with prefix ${keyPrefix}:`, error);
+      return false;
+    }
+    
+    return true;
+  } catch (err) {
+    console.error(`Error in invalidateCacheByPrefix for prefix ${keyPrefix}:`, err);
+    return false;
   }
-
-  /**
-   * Clear all expired entries
-   */
-  public clearExpired(): void {
-    const now = Date.now();
-    this.cache.forEach((entry, key) => {
-      if (now > entry.expiry) {
-        this.cache.delete(key);
-      }
-    });
-  }
-
-  /**
-   * Clear entire cache
-   */
-  public clear(): void {
-    this.cache.clear();
-  }
-}
-
-export const cacheService = CacheService.getInstance();
+};

@@ -4,7 +4,9 @@ import { useDirectFinancialData } from './useDirectFinancialData';
 import { useCompanyCardData } from './useCompanyCardData';
 import { useStockPrediction } from './useStockPrediction';
 import { useIsMobile } from './use-mobile';
-import { useToast, toast } from './use-toast';
+import { useToast } from './use-toast';
+import { usePrefetchSymbolData } from './usePrefetchSymbolData';
+import { useCacheService } from '@/services/cache/useCacheService';
 
 // Re-export hooks
 export { 
@@ -13,13 +15,21 @@ export {
   useStockPrediction, 
   useIsMobile, 
   useToast,
-  toast
+  usePrefetchSymbolData,
+  useCacheService
 };
 
 // Stub for DCF-related hooks that have been removed
 export const useAIDCFAssumptions = () => ({ 
-  data: null, 
-  isLoading: false, 
-  refresh: () => {}, 
-  error: null 
+  assumptions: null, 
+  isLoading: false,
+  error: null, 
+  refresh: () => {}
+});
+
+export const useDCFCalculation = () => ({
+  dcfData: null,
+  isLoading: false,
+  error: null,
+  refresh: () => {}
 });

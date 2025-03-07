@@ -1,111 +1,59 @@
 
-import { useState, useCallback } from 'react';
+import { useState } from "react";
+import { getWithCache, invalidateCache, CACHE_EXPIRY } from "./cacheService";
 
 /**
- * Cache expiration times (in milliseconds)
+ * Hook for convenient data caching in components
  */
-const CACHE_EXPIRATION = {
-  SHORT: 5 * 60 * 1000, // 5 minutes
-  MEDIUM: 30 * 60 * 1000, // 30 minutes
-  LONG: 24 * 60 * 60 * 1000, // 24 hours
-};
-
-/**
- * Cache service for storing and retrieving data with TTL
- */
-export const useCacheService = () => {
-  const [cacheStore] = useState<Map<string, { data: any; expires: number }>>(new Map());
+export const useCacheService = <T>(
+  cacheKeyPrefix: string = "app"
+) => {
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [error, setError] = useState<Error | null>(null);
 
   /**
-   * Set data in cache with an expiration time
+   * Get data with caching
    */
-  const setCache = useCallback(async <T,>(
+  const fetchWithCache = async <D>(
     key: string,
-    data: T,
-    expirationTime: number = CACHE_EXPIRATION.MEDIUM
-  ): Promise<void> => {
-    if (!key || data === undefined) return;
-
-    const expires = Date.now() + expirationTime;
-    cacheStore.set(key, { data, expires });
-    
-    // Also store in localStorage for persistence across page refreshes
+    fetchFn: () => Promise<D>,
+    expiryMs: number = CACHE_EXPIRY.MEDIUM
+  ): Promise<D | null> => {
     try {
-      localStorage.setItem(
-        `cache_${key}`,
-        JSON.stringify({ data, expires })
-      );
-    } catch (error) {
-      console.warn('Failed to store cache in localStorage:', error);
+      setIsLoading(true);
+      setError(null);
+      
+      const cacheKey = `${cacheKeyPrefix}:${key}`;
+      const data = await getWithCache<D>(cacheKey, fetchFn, expiryMs);
+      
+      return data;
+    } catch (err) {
+      const error = err instanceof Error ? err : new Error(String(err));
+      setError(error);
+      return null;
+    } finally {
+      setIsLoading(false);
     }
-  }, [cacheStore]);
-
-  /**
-   * Get data from cache, returns null if expired or not found
-   */
-  const getCache = useCallback(async <T,>(key: string): Promise<T | null> => {
-    // First check in-memory cache
-    const cached = cacheStore.get(key);
-    
-    if (cached && cached.expires > Date.now()) {
-      return cached.data as T;
-    }
-    
-    // If not in memory, try localStorage
-    try {
-      const storedCache = localStorage.getItem(`cache_${key}`);
-      if (storedCache) {
-        const parsedCache = JSON.parse(storedCache);
-        
-        if (parsedCache.expires > Date.now()) {
-          // Restore to in-memory cache and return
-          cacheStore.set(key, parsedCache);
-          return parsedCache.data as T;
-        } else {
-          // Clean up expired cache
-          localStorage.removeItem(`cache_${key}`);
-        }
-      }
-    } catch (error) {
-      console.warn('Failed to retrieve cache from localStorage:', error);
-    }
-    
-    return null;
-  }, [cacheStore]);
+  };
 
   /**
-   * Clear a specific cache entry
+   * Invalidate a specific cache entry
    */
-  const clearCache = useCallback((key: string): void => {
-    cacheStore.delete(key);
+  const clearCache = async (key: string): Promise<boolean> => {
     try {
-      localStorage.removeItem(`cache_${key}`);
-    } catch (error) {
-      console.warn('Failed to clear cache from localStorage:', error);
+      const cacheKey = `${cacheKeyPrefix}:${key}`;
+      return await invalidateCache(cacheKey);
+    } catch (err) {
+      const error = err instanceof Error ? err : new Error(String(err));
+      setError(error);
+      return false;
     }
-  }, [cacheStore]);
-
-  /**
-   * Clear all cache entries
-   */
-  const clearAllCache = useCallback((): void => {
-    cacheStore.clear();
-    
-    try {
-      // Only clear our cache keys
-      Object.keys(localStorage)
-        .filter(key => key.startsWith('cache_'))
-        .forEach(key => localStorage.removeItem(key));
-    } catch (error) {
-      console.warn('Failed to clear all cache from localStorage:', error);
-    }
-  }, [cacheStore]);
+  };
 
   return {
-    setCache,
-    getCache,
+    fetchWithCache,
     clearCache,
-    clearAllCache,
-    CACHE_EXPIRATION
+    isLoading,
+    error
   };
 };
