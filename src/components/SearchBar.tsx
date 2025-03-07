@@ -1,7 +1,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { Search, Loader2, X, TrendingUp, ChevronRight } from "lucide-react";
+import { Search, Loader2, X, TrendingUp, ChevronRight, History, Sparkles, BarChart4 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { 
@@ -32,8 +32,17 @@ const SearchBar = ({
   const [results, setResults] = useState<StockQuote[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
+  const [recentSearches, setRecentSearches] = useState<string[]>([]);
   const commandRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
+
+  // Load recent searches from localStorage
+  useEffect(() => {
+    const savedSearches = localStorage.getItem('recentSearches');
+    if (savedSearches) {
+      setRecentSearches(JSON.parse(savedSearches).slice(0, 3));
+    }
+  }, []);
 
   // Handle clicks outside to close dropdown
   useEffect(() => {
@@ -77,6 +86,11 @@ const SearchBar = ({
       symbol.name.toLowerCase().includes(query.toLowerCase())
   );
 
+  // Filter recent searches based on query
+  const filteredRecentSearches = recentSearches.filter(
+    symbol => symbol.toLowerCase().includes(query.toLowerCase())
+  );
+
   const handleSelectStock = (symbol: string) => {
     setIsOpen(false);
     navigate(`/stock/${symbol}`);
@@ -90,8 +104,8 @@ const SearchBar = ({
       )}
     >
       <div className="relative flex items-center">
-        <div className="absolute left-4 z-10 text-muted-foreground">
-          <Search size={18} />
+        <div className="absolute left-4 z-10 text-primary/70">
+          <Search size={18} strokeWidth={2.5} />
         </div>
         <Input
           type="text"
@@ -99,17 +113,17 @@ const SearchBar = ({
           value={query}
           onChange={(e) => handleSearch(e.target.value)}
           onFocus={() => setIsOpen(true)}
-          className="w-full h-12 pl-12 pr-16 rounded-full shadow-md border-input/50 bg-background text-foreground transition-all focus:ring-2 focus:ring-primary/20 focus:border-primary/50"
+          className="w-full h-12 pl-12 pr-16 rounded-full shadow-lg border-input/50 bg-background text-foreground transition-all focus:ring-2 focus:ring-primary/20 focus:border-primary/50 text-base"
         />
         <div className="absolute right-3 flex items-center space-x-1">
           {isLoading && (
-            <Loader2 size={18} className="animate-spin text-muted-foreground" />
+            <Loader2 size={18} className="animate-spin text-primary" />
           )}
           {query.length > 0 && !isLoading && (
             <Button
               variant="ghost"
               size="sm"
-              className="h-7 w-7 p-0 rounded-full"
+              className="h-7 w-7 p-0 rounded-full hover:bg-primary/10"
               onClick={() => {
                 setQuery("");
                 setResults([]);
@@ -132,38 +146,64 @@ const SearchBar = ({
           >
             <Command 
               ref={commandRef}
-              className="rounded-xl border shadow-lg bg-popover overflow-hidden"
+              className="rounded-xl border shadow-xl bg-popover/95 backdrop-blur-sm overflow-hidden"
             >
               <CommandList>
                 <CommandInput placeholder="Search for stocks..." value={query} onValueChange={handleSearch} />
                 
                 {isLoading && (
                   <div className="py-6 text-center text-sm text-muted-foreground flex flex-col items-center">
-                    <Loader2 size={24} className="animate-spin mb-2" />
+                    <Loader2 size={24} className="animate-spin mb-2 text-primary" />
                     <span>Searching markets...</span>
                   </div>
                 )}
                 
                 <CommandEmpty>
-                  {filteredFeaturedSymbols.length > 0 ? (
+                  {filteredFeaturedSymbols.length > 0 || filteredRecentSearches.length > 0 ? (
                     <div className="py-2 text-sm text-muted-foreground">
-                      No API results found. Try these popular stocks:
+                      No API results found. Check suggested stocks below.
                     </div>
                   ) : (
                     <div className="flex flex-col items-center py-6 gap-2">
-                      <div className="rounded-full bg-muted p-2">
-                        <Search size={20} className="text-muted-foreground" />
+                      <div className="rounded-full bg-primary/10 p-3">
+                        <Search size={20} className="text-primary" />
                       </div>
-                      <p>No stocks found. Try a different search term.</p>
+                      <p className="text-center text-sm text-muted-foreground">No stocks found. Try a different search term or check featured stocks below.</p>
                     </div>
                   )}
                 </CommandEmpty>
+                
+                {/* Recent Searches */}
+                {filteredRecentSearches.length > 0 && (
+                  <CommandGroup heading={
+                    <div className="flex items-center gap-1 text-xs font-medium text-muted-foreground">
+                      <History size={14} />
+                      <span>RECENT SEARCHES</span>
+                    </div>
+                  }>
+                    {filteredRecentSearches.map((symbol) => (
+                      <CommandItem
+                        key={`recent-${symbol}`}
+                        onSelect={() => handleSelectStock(symbol)}
+                        className="flex items-center justify-between py-3 px-4 hover:bg-accent/50"
+                      >
+                        <div className="flex items-center gap-2">
+                          <div className="bg-primary/10 p-1.5 rounded-md">
+                            <History size={14} className="text-primary" />
+                          </div>
+                          <span className="font-medium">{symbol}</span>
+                        </div>
+                        <ChevronRight size={16} className="text-muted-foreground" />
+                      </CommandItem>
+                    ))}
+                  </CommandGroup>
+                )}
                 
                 {/* API Results */}
                 {results.length > 0 && (
                   <CommandGroup heading={
                     <div className="flex items-center gap-1 text-xs font-medium text-muted-foreground">
-                      <TrendingUp size={14} />
+                      <BarChart4 size={14} />
                       <span>SEARCH RESULTS</span>
                     </div>
                   }>
@@ -171,12 +211,12 @@ const SearchBar = ({
                       <CommandItem
                         key={stock.symbol}
                         onSelect={() => handleSelectStock(stock.symbol)}
-                        className="flex items-center justify-between py-3 px-4 hover:bg-accent/50"
+                        className="flex items-center justify-between py-3 px-4 hover:bg-accent/50 transition-colors"
                       >
                         <div className="flex flex-col">
                           <div className="flex items-center gap-2">
                             <span className="font-semibold">{stock.symbol}</span>
-                            <span className="text-xs px-1.5 py-0.5 rounded-md bg-muted">Stock</span>
+                            <span className="text-xs px-1.5 py-0.5 rounded-md bg-primary/10 text-primary">Stock</span>
                           </div>
                           <span className="text-xs text-muted-foreground line-clamp-1">{stock.name}</span>
                         </div>
@@ -202,7 +242,7 @@ const SearchBar = ({
                 {filteredFeaturedSymbols.length > 0 && (
                   <CommandGroup heading={
                     <div className="flex items-center gap-1 text-xs font-medium text-muted-foreground">
-                      <TrendingUp size={14} />
+                      <Sparkles size={14} />
                       <span>POPULAR STOCKS</span>
                     </div>
                   }>
@@ -210,12 +250,12 @@ const SearchBar = ({
                       <CommandItem
                         key={stock.symbol}
                         onSelect={() => handleSelectStock(stock.symbol)}
-                        className="flex items-center justify-between py-3 px-4 hover:bg-accent/50"
+                        className="flex items-center justify-between py-3 px-4 hover:bg-accent/50 transition-colors"
                       >
                         <div className="flex flex-col">
                           <div className="flex items-center gap-2">
                             <span className="font-semibold">{stock.symbol}</span>
-                            <span className="text-xs px-1.5 py-0.5 rounded-md bg-muted">Popular</span>
+                            <span className="text-xs px-1.5 py-0.5 rounded-md bg-primary/10 text-primary">Popular</span>
                           </div>
                           <span className="text-xs text-muted-foreground line-clamp-1">{stock.name}</span>
                         </div>
