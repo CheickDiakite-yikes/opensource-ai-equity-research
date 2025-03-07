@@ -136,14 +136,20 @@ export const saveResearchReport = async (
       }
     }
 
-    // Generate HTML version of the report
-    console.log("Generating HTML content for report");
-    const htmlContent = generateReportHTML(reportData);
+    // Generate HTML version of the report - do this BEFORE inserting to ensure valid content
+    console.log("Generating HTML content for report...");
+    let htmlContent = null;
     
-    if (!htmlContent) {
-      console.error("Failed to generate HTML content");
-    } else {
-      console.log("HTML content generated successfully, length:", htmlContent.length);
+    try {
+      htmlContent = generateReportHTML(reportData);
+      if (!htmlContent || htmlContent.length < 100) {
+        console.warn("Generated HTML is too short or empty, length:", htmlContent?.length);
+        htmlContent = null;
+      } else {
+        console.log("HTML content generated successfully, length:", htmlContent.length);
+      }
+    } catch (htmlError) {
+      console.error("Error generating HTML content:", htmlError);
     }
 
     // Now, insert the new report - use type cast to Json
@@ -154,7 +160,7 @@ export const saveResearchReport = async (
         symbol,
         company_name: companyName,
         report_data: reportData as unknown as Json,
-        html_content: htmlContent || null
+        html_content: htmlContent
       })
       .select("id")
       .single();

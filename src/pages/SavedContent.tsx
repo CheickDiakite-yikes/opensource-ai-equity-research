@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Navigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSavedReports, useSavedPredictions, SavedReport, SavedPrediction } from "@/hooks/useSavedContent";
@@ -11,7 +11,7 @@ import PredictionsTabContent from "@/components/saved-content/PredictionsTabCont
 
 const SavedContent = () => {
   const { user, isLoading: authLoading } = useAuth();
-  const { reports, isLoading: reportsLoading, deleteReport } = useSavedReports();
+  const { reports, isLoading: reportsLoading, deleteReport, fetchReports } = useSavedReports();
   const { predictions, isLoading: predictionsLoading, deletePrediction } = useSavedPredictions();
   const [selectedReport, setSelectedReport] = useState<SavedReport | null>(null);
   const [selectedPrediction, setSelectedPrediction] = useState<SavedPrediction | null>(null);
@@ -21,11 +21,25 @@ const SavedContent = () => {
     return <Navigate to="/auth" />;
   }
 
+  // Refresh reports when page loads
+  useEffect(() => {
+    if (user) {
+      fetchReports();
+    }
+  }, [user]);
+
   const isLoading = authLoading || reportsLoading || predictionsLoading;
 
   const handleSelectReport = (report: SavedReport) => {
     setSelectedReport(report);
     setSelectedPrediction(null);
+    
+    // Debug HTML content
+    if (report.html_content) {
+      console.log(`Report ${report.id} has HTML content of length: ${report.html_content.length}`);
+    } else {
+      console.warn(`Report ${report.id} has no HTML content`);
+    }
   };
 
   const handleSelectPrediction = (prediction: SavedPrediction) => {

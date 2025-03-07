@@ -67,8 +67,9 @@ const SavedReportsList: React.FC<SavedReportsListProps> = ({
                   className="h-7 w-7 rounded-full hover:bg-primary/10 text-muted-foreground"
                   onClick={(e) => handleDownloadHtml(report, e)}
                   title="Download HTML"
+                  disabled={!report.html_content}
                 >
-                  <Download className="h-4 w-4" />
+                  <Download className={`h-4 w-4 ${!report.html_content ? 'opacity-50' : ''}`} />
                 </Button>
                 <Button 
                   variant="ghost" 

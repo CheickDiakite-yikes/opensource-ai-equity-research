@@ -20,7 +20,7 @@ export interface SavedReport {
   report_data: ResearchReport;
   created_at: string;
   expires_at: string;
-  html_content?: string;
+  html_content?: string | null;
 }
 
 export interface SavedPrediction {
@@ -50,11 +50,22 @@ export const useSavedReports = () => {
     
     try {
       const data = await getUserResearchReports();
+      
       // Convert Json type to ResearchReport type with type assertion
-      setReports(data.map(item => ({
+      const convertedReports = data.map(item => ({
         ...item,
-        report_data: item.report_data as unknown as ResearchReport
-      })) as SavedReport[]);
+        report_data: item.report_data as unknown as ResearchReport,
+        // Ensure html_content is properly typed
+        html_content: item.html_content || null
+      })) as SavedReport[];
+      
+      // Debug
+      console.log(`Fetched ${convertedReports.length} reports`);
+      convertedReports.forEach(report => {
+        console.log(`Report ${report.id} HTML content: ${report.html_content ? 'YES' : 'NO'}`);
+      });
+      
+      setReports(convertedReports);
     } catch (err) {
       console.error("Error fetching saved reports:", err);
       setError("Failed to load saved reports");
