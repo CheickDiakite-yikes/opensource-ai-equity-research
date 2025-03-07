@@ -12,7 +12,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { User, Settings, LogOut, ChevronDown } from "lucide-react";
+import { User, Settings, LogOut, ChevronDown, Bookmark } from "lucide-react";
 
 export default function UserMenu() {
   const { user, profile, signOut } = useAuth();
@@ -57,6 +57,12 @@ export default function UserMenu() {
           <Link to="/profile" className="cursor-pointer flex w-full items-center">
             <User className="mr-2 h-4 w-4" />
             <span>Profile</span>
+          </Link>
+        </DropdownMenuItem>
+        <DropdownMenuItem asChild>
+          <Link to="/saved-content" className="cursor-pointer flex w-full items-center">
+            <Bookmark className="mr-2 h-4 w-4" />
+            <span>Saved Content</span>
           </Link>
         </DropdownMenuItem>
         <DropdownMenuItem asChild>

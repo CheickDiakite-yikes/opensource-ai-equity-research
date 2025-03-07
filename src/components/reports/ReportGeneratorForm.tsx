@@ -2,9 +2,10 @@
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Info, Check, FileText, TrendingUp, Loader2, AlertTriangle } from "lucide-react";
+import { Info, Check, FileText, TrendingUp, Loader2, AlertTriangle, Save } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface ReportGeneratorFormProps {
   reportType: string;
@@ -14,6 +15,10 @@ interface ReportGeneratorFormProps {
   isGenerating: boolean;
   isPredicting: boolean;
   hasData: boolean;
+  onSaveReport?: () => void;
+  onSavePrediction?: () => void;
+  canSaveReport?: boolean;
+  canSavePrediction?: boolean;
 }
 
 const ReportGeneratorForm: React.FC<ReportGeneratorFormProps> = ({
@@ -23,8 +28,14 @@ const ReportGeneratorForm: React.FC<ReportGeneratorFormProps> = ({
   onPredictPrice,
   isGenerating,
   isPredicting,
-  hasData
+  hasData,
+  onSaveReport,
+  onSavePrediction,
+  canSaveReport = false,
+  canSavePrediction = false
 }) => {
+  const { user } = useAuth();
+  
   return (
     <motion.div 
       initial={{ opacity: 0, y: 10 }}
@@ -38,12 +49,26 @@ const ReportGeneratorForm: React.FC<ReportGeneratorFormProps> = ({
             <FileText className="h-4 w-4 text-primary" />
             Research Report
           </h3>
-          {isGenerating && (
-            <div className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
-              <Loader2 className="h-3.5 w-3.5 animate-spin text-primary" />
-              <span>Processing</span>
-            </div>
-          )}
+          <div className="flex items-center gap-2">
+            {isGenerating && (
+              <div className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+                <Loader2 className="h-3.5 w-3.5 animate-spin text-primary" />
+                <span>Processing</span>
+              </div>
+            )}
+            
+            {canSaveReport && user && onSaveReport && (
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="h-8 px-2 text-xs" 
+                onClick={onSaveReport}
+              >
+                <Save className="h-3.5 w-3.5 mr-1" />
+                Save
+              </Button>
+            )}
+          </div>
         </div>
         
         <div>
@@ -117,12 +142,26 @@ const ReportGeneratorForm: React.FC<ReportGeneratorFormProps> = ({
             <TrendingUp className="h-4 w-4 text-primary" />
             Price Prediction
           </h3>
-          {isPredicting && (
-            <div className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
-              <Loader2 className="h-3.5 w-3.5 animate-spin text-primary" />
-              <span>Processing</span>
-            </div>
-          )}
+          <div className="flex items-center gap-2">
+            {isPredicting && (
+              <div className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+                <Loader2 className="h-3.5 w-3.5 animate-spin text-primary" />
+                <span>Processing</span>
+              </div>
+            )}
+            
+            {canSavePrediction && user && onSavePrediction && (
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="h-8 px-2 text-xs" 
+                onClick={onSavePrediction}
+              >
+                <Save className="h-3.5 w-3.5 mr-1" />
+                Save
+              </Button>
+            )}
+          </div>
         </div>
         
         <div className="flex items-start gap-2 text-sm text-muted-foreground rounded-md p-3 bg-muted/30">
@@ -194,6 +233,18 @@ const ReportGeneratorForm: React.FC<ReportGeneratorFormProps> = ({
             <div className="text-sm">
               <p className="font-medium">Cannot generate report</p>
               <p className="text-amber-700/80 text-xs mt-0.5">Financial data is not available. Please try another ticker symbol.</p>
+            </div>
+          </div>
+        </div>
+      )}
+      
+      {!user && (hasData) && (
+        <div className="col-span-1 md:col-span-2">
+          <div className="flex items-start gap-2 p-3 border-l-4 border-blue-500 bg-blue-50 text-blue-800 rounded-r-md">
+            <Info className="h-4 w-4 mt-0.5 flex-shrink-0" />
+            <div className="text-sm">
+              <p className="font-medium">Sign in to save reports</p>
+              <p className="text-blue-700/80 text-xs mt-0.5">Create an account or sign in to save generated reports and predictions for 7 days.</p>
             </div>
           </div>
         </div>

@@ -294,12 +294,76 @@ export type Database = {
         }
         Relationships: []
       }
+      user_price_predictions: {
+        Row: {
+          company_name: string
+          created_at: string
+          expires_at: string
+          id: string
+          prediction_data: Json
+          symbol: string
+          user_id: string
+        }
+        Insert: {
+          company_name: string
+          created_at?: string
+          expires_at?: string
+          id?: string
+          prediction_data: Json
+          symbol: string
+          user_id: string
+        }
+        Update: {
+          company_name?: string
+          created_at?: string
+          expires_at?: string
+          id?: string
+          prediction_data?: Json
+          symbol?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_research_reports: {
+        Row: {
+          company_name: string
+          created_at: string
+          expires_at: string
+          id: string
+          report_data: Json
+          symbol: string
+          user_id: string
+        }
+        Insert: {
+          company_name: string
+          created_at?: string
+          expires_at?: string
+          id?: string
+          report_data: Json
+          symbol: string
+          user_id: string
+        }
+        Update: {
+          company_name?: string
+          created_at?: string
+          expires_at?: string
+          id?: string
+          report_data?: Json
+          symbol?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
       cleanup_expired_cache: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
+      cleanup_expired_user_data: {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
