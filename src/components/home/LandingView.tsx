@@ -8,6 +8,7 @@ import RecentSearches from "./RecentSearches";
 import HowToUse from "./HowToUse";
 import MarketPerformance from "./MarketPerformance";
 import MarketNews from "./MarketNews";
+import SearchBar from "@/components/SearchBar";
 import { fetchMarketIndices, fetchMarketNews } from "@/services/api/marketDataService";
 import { toast } from "sonner";
 
@@ -79,6 +80,21 @@ const LandingView: React.FC<LandingViewProps> = ({
       className="space-y-0 my-12"
     >
       <HeroSection />
+      
+      {/* Search Bar positioned between Hero and Feature Cards */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.5, duration: 0.5 }}
+        className="my-12"
+      >
+        <SearchBar 
+          featuredSymbols={featuredSymbols}
+          className="max-w-3xl mx-auto shadow-lg"
+          placeholder="Search for a company or ticker symbol..."
+        />
+      </motion.div>
+      
       <FeatureCards />
       <FeaturedCompanies 
         featuredSymbols={featuredSymbols} 

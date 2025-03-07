@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -19,19 +19,39 @@ import { cn } from "@/lib/utils";
 interface SearchBarProps {
   placeholder?: string;
   className?: string;
+  featuredSymbols?: {symbol: string, name: string}[];
 }
 
-const SearchBar = ({ placeholder = "Search for a stock...", className }: SearchBarProps) => {
+const SearchBar = ({ 
+  placeholder = "Search for a stock...", 
+  className,
+  featuredSymbols = [] 
+}: SearchBarProps) => {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<StockQuote[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
+  const commandRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
+
+  // Handle clicks outside to close dropdown
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (commandRef.current && !commandRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
 
   const handleSearch = async (value: string) => {
     setQuery(value);
     
-    if (value.length < 2) {
+    if (value.length < 1) {
       setResults([]);
       return;
     }
@@ -47,6 +67,13 @@ const SearchBar = ({ placeholder = "Search for a stock...", className }: SearchB
       setIsLoading(false);
     }
   };
+
+  // Filter featured symbols based on query
+  const filteredFeaturedSymbols = featuredSymbols.filter(
+    symbol => 
+      symbol.symbol.toLowerCase().includes(query.toLowerCase()) || 
+      symbol.name.toLowerCase().includes(query.toLowerCase())
+  );
 
   const handleSelectStock = (symbol: string) => {
     setIsOpen(false);
@@ -86,42 +113,77 @@ const SearchBar = ({ placeholder = "Search for a stock...", className }: SearchB
       </div>
       
       {isOpen && (
-        <Command className="absolute top-full mt-1 w-full rounded-lg border shadow-md bg-popover z-10 overflow-hidden">
+        <Command 
+          ref={commandRef}
+          className="absolute top-full mt-1 w-full rounded-lg border shadow-md bg-popover z-10 overflow-hidden"
+        >
           <CommandList>
             <CommandInput placeholder="Search for stocks..." value={query} onValueChange={handleSearch} />
+            
             {isLoading && (
               <div className="py-6 text-center text-sm text-muted-foreground">
                 Searching...
               </div>
             )}
-            <CommandEmpty>No results found.</CommandEmpty>
-            <CommandGroup heading="Stocks">
-              {results.map((stock) => (
-                <CommandItem
-                  key={stock.symbol}
-                  onSelect={() => handleSelectStock(stock.symbol)}
-                  className="flex items-center justify-between py-2"
-                >
-                  <div className="flex flex-col">
-                    <span className="font-medium">{stock.symbol}</span>
-                    <span className="text-xs text-muted-foreground">{stock.name}</span>
-                  </div>
-                  {stock.price && (
-                    <div className="flex flex-col items-end">
-                      <span>${stock.price.toFixed(2)}</span>
-                      <span 
-                        className={cn(
-                          "text-xs",
-                          stock.changesPercentage > 0 ? "text-green-600" : stock.changesPercentage < 0 ? "text-red-600" : "text-muted-foreground"
-                        )}
-                      >
-                        {stock.changesPercentage > 0 ? "+" : ""}{stock.changesPercentage.toFixed(2)}%
-                      </span>
+            
+            <CommandEmpty>
+              {filteredFeaturedSymbols.length > 0 ? (
+                <div className="py-2 text-sm text-muted-foreground">
+                  No API results found. Try these:
+                </div>
+              ) : (
+                "No results found."
+              )}
+            </CommandEmpty>
+            
+            {/* API Results */}
+            {results.length > 0 && (
+              <CommandGroup heading="Search Results">
+                {results.map((stock) => (
+                  <CommandItem
+                    key={stock.symbol}
+                    onSelect={() => handleSelectStock(stock.symbol)}
+                    className="flex items-center justify-between py-2"
+                  >
+                    <div className="flex flex-col">
+                      <span className="font-medium">{stock.symbol}</span>
+                      <span className="text-xs text-muted-foreground">{stock.name}</span>
                     </div>
-                  )}
-                </CommandItem>
-              ))}
-            </CommandGroup>
+                    {stock.price && (
+                      <div className="flex flex-col items-end">
+                        <span>${stock.price.toFixed(2)}</span>
+                        <span 
+                          className={cn(
+                            "text-xs",
+                            stock.changesPercentage > 0 ? "text-green-600" : stock.changesPercentage < 0 ? "text-red-600" : "text-muted-foreground"
+                          )}
+                        >
+                          {stock.changesPercentage > 0 ? "+" : ""}{stock.changesPercentage.toFixed(2)}%
+                        </span>
+                      </div>
+                    )}
+                  </CommandItem>
+                ))}
+              </CommandGroup>
+            )}
+            
+            {/* Featured Symbols as Suggestions */}
+            {filteredFeaturedSymbols.length > 0 && results.length === 0 && (
+              <CommandGroup heading="Popular Stocks">
+                {filteredFeaturedSymbols.map((stock) => (
+                  <CommandItem
+                    key={stock.symbol}
+                    onSelect={() => handleSelectStock(stock.symbol)}
+                    className="flex items-center justify-between py-2"
+                  >
+                    <div className="flex flex-col">
+                      <span className="font-medium">{stock.symbol}</span>
+                      <span className="text-xs text-muted-foreground">{stock.name}</span>
+                    </div>
+                  </CommandItem>
+                ))}
+              </CommandGroup>
+            )}
           </CommandList>
         </Command>
       )}
