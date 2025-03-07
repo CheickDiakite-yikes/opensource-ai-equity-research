@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from "react";
 import { useSearchParams } from "react-router-dom";
 import { Search } from "lucide-react";
@@ -38,7 +37,6 @@ const commonTickers: Record<string, string> = {
   'CSCO': 'Cisco Systems Inc.',
   'VZ': 'Verizon Communications Inc.',
   'T': 'AT&T Inc.',
-  'DIS': 'Walt Disney Company', // Repeated to ensure it's included
 };
 
 interface SearchBarProps {
@@ -95,7 +93,7 @@ const SearchBar = ({
         matches.push({
           symbol,
           name,
-          price: 0, // Placeholder price that will be updated with real data
+          price: 0,
           changesPercentage: 0,
           change: 0,
           dayLow: 0,
@@ -112,7 +110,9 @@ const SearchBar = ({
           previousClose: 0,
           eps: 0,
           pe: 0,
-          isCommonTicker: true, // Flag to identify this as a manually added ticker
+          sharesOutstanding: 0,
+          timestamp: 0,
+          isCommonTicker: true,
         });
       }
     });
@@ -142,6 +142,8 @@ const SearchBar = ({
             previousClose: 0,
             eps: 0,
             pe: 0,
+            sharesOutstanding: 0,
+            timestamp: 0,
             isCommonTicker: true,
           });
         }

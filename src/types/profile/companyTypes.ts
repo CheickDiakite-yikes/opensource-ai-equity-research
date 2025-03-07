@@ -67,9 +67,10 @@ export interface StockQuote {
   previousClose: number;
   eps: number;
   pe: number;
-  earningsAnnouncement: string;
+  earningsAnnouncement?: string;
   sharesOutstanding: number;
   timestamp: number;
+  isCommonTicker?: boolean; // Added optional property for common tickers
 }
 
 /**
