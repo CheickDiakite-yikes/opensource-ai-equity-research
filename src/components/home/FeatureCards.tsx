@@ -11,12 +11,12 @@ const cardVariants = {
 
 const FeatureCards: React.FC = () => {
   return (
-    <div className="py-8">
+    <div className="py-12 px-4">
       <motion.h2 
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.5 }}
-        className="text-2xl font-bold mb-8 text-center"
+        className="text-3xl font-bold mb-10 text-center"
       >
         Powerful Features for Investors
       </motion.h2>

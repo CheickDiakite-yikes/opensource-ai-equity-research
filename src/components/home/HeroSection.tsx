@@ -35,11 +35,11 @@ const HeroSection: React.FC = () => {
   };
 
   return (
-    <div className="text-center max-w-4xl mx-auto py-12 relative">
-      {/* Background gradient effect */}
-      <div className="absolute inset-0 bg-gradient-to-r from-blue-50/30 to-indigo-50/30 rounded-xl -z-10 blur-xl" />
+    <div className="relative max-w-5xl mx-auto py-16 px-4">
+      {/* Gradient background effect */}
+      <div className="absolute inset-0 bg-gradient-to-r from-blue-50/50 via-indigo-50/30 to-purple-50/40 rounded-xl -z-10 blur-xl" />
       
-      {/* Decorative elements - floating icons */}
+      {/* Decorative floating elements */}
       <motion.div
         className="absolute inset-0 overflow-hidden"
         variants={floatingIcons}
@@ -47,31 +47,31 @@ const HeroSection: React.FC = () => {
         animate={isVisible ? "visible" : "hidden"}
       >
         <motion.div variants={iconVariant} className="absolute top-[20%] left-[15%] text-primary/20">
-          <ChartLine size={28} />
+          <ChartLine size={32} />
         </motion.div>
         <motion.div variants={iconVariant} className="absolute top-[10%] right-[20%] text-blue-400/20">
-          <BarChart4 size={32} />
+          <BarChart4 size={36} />
         </motion.div>
         <motion.div variants={iconVariant} className="absolute bottom-[30%] left-[10%] text-indigo-500/20">
-          <Search size={24} />
+          <Search size={28} />
         </motion.div>
         <motion.div variants={iconVariant} className="absolute bottom-[20%] right-[15%] text-didi-blue/20">
-          <TrendingUp size={28} />
+          <TrendingUp size={32} />
         </motion.div>
         <motion.div variants={iconVariant} className="absolute top-[40%] right-[10%] text-primary/20">
-          <Brain size={30} />
+          <Brain size={34} />
         </motion.div>
       </motion.div>
       
-      {/* Main content with animations */}
+      {/* Main content with enhanced animations */}
       <motion.div
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.8, ease: "easeOut" }}
-        className="mb-8 relative z-10"
+        className="mb-10 relative z-10 text-center"
       >
         <motion.h1 
-          className="text-5xl font-bold mb-6 bg-clip-text text-transparent bg-gradient-to-r from-primary to-blue-600"
+          className="text-5xl sm:text-6xl font-bold mb-6 bg-clip-text text-transparent bg-gradient-to-r from-primary to-blue-600"
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.8, delay: 0.2 }}
@@ -95,7 +95,7 @@ const HeroSection: React.FC = () => {
       <motion.div 
         className="h-0.5 w-0 bg-gradient-to-r from-primary/50 via-blue-500/50 to-primary/50 mx-auto rounded-full"
         initial={{ width: 0 }}
-        animate={{ width: "50%" }}
+        animate={{ width: "60%" }}
         transition={{ delay: 1, duration: 1.5, ease: "easeInOut" }}
       />
       
@@ -104,7 +104,7 @@ const HeroSection: React.FC = () => {
         initial={{ opacity: 0, scale: 0.8 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ delay: 1.5, duration: 0.6 }}
-        className="flex justify-center mt-10"
+        className="flex justify-center mt-12"
       >
         <motion.div 
           animate={{ y: [0, 10, 0] }} 
@@ -112,7 +112,7 @@ const HeroSection: React.FC = () => {
           whileHover={{ scale: 1.1 }}
           className="cursor-pointer"
         >
-          <ArrowDownCircle className="h-10 w-10 text-primary hover:text-primary/90 transition-colors" />
+          <ArrowDownCircle className="h-12 w-12 text-primary hover:text-primary/90 transition-colors" />
         </motion.div>
       </motion.div>
     </div>
