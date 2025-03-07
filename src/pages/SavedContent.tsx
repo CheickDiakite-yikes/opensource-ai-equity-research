@@ -12,7 +12,6 @@ import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import SavedContentHeader from "@/components/saved-content/SavedContentHeader";
 import SavedContentTabs from "@/components/saved-content/SavedContentTabs";
-import DebugInfo from "@/components/saved-content/DebugInfo";
 import { motion, AnimatePresence } from "framer-motion";
 import AppHeader from "@/components/layout/AppHeader";
 
@@ -192,12 +191,6 @@ const SavedContent = () => {
               onDeleteReport={handleDeleteReport}
               onDeletePrediction={handleDeletePrediction}
               onDownloadHtml={handleDownloadHtml}
-            />
-            
-            <DebugInfo
-              userId={user?.id}
-              reports={reports}
-              predictionsCount={predictions.length}
             />
           </motion.div>
         )}
