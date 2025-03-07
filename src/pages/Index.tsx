@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from "react";
-import Header from "@/components/layout/Header";
+import NavigationHeader from "@/components/layout/NavigationHeader";
 import LandingView from "@/components/home/LandingView";
 import StockView from "@/components/stocks/StockView";
 import { toast } from "sonner";
@@ -22,7 +22,19 @@ const Index = () => {
     { symbol: "META", name: "Meta Platforms Inc." },
     { symbol: "TSLA", name: "Tesla Inc." },
     { symbol: "NVDA", name: "NVIDIA Corporation" },
-    { symbol: "JPM", name: "JPMorgan Chase & Co." }
+    { symbol: "JPM", name: "JPMorgan Chase & Co." },
+    { symbol: "V", name: "Visa Inc." },
+    { symbol: "JNJ", name: "Johnson & Johnson" },
+    { symbol: "WMT", name: "Walmart Inc." },
+    { symbol: "PG", name: "Procter & Gamble Co." },
+    { symbol: "MA", name: "Mastercard Inc." },
+    { symbol: "UNH", name: "UnitedHealth Group Inc." },
+    { symbol: "HD", name: "Home Depot Inc." },
+    { symbol: "BAC", name: "Bank of America Corp." },
+    { symbol: "XOM", name: "Exxon Mobil Corporation" },
+    { symbol: "AVGO", name: "Broadcom Inc." },
+    { symbol: "COST", name: "Costco Wholesale Corporation" },
+    { symbol: "DIS", name: "The Walt Disney Company" }
   ]);
 
   useEffect(() => {
@@ -101,12 +113,13 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background to-muted/30">
-      <Header 
+      <NavigationHeader 
         symbol={symbol}
         setSymbol={setSymbol}
         handleSearch={handleSearch}
         isLoading={isLoading}
         handleKeyDown={handleKeyDown}
+        featuredSymbols={featuredSymbols}
       />
 
       <main className="container mx-auto px-4 sm:px-6 md:px-0 max-w-[1400px]">
