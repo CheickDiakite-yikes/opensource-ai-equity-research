@@ -78,71 +78,81 @@ const LandingView: React.FC<LandingViewProps> = ({
       animate="show"
       className="overflow-hidden"
     >
-      {/* Hero Section with search bar integrated */}
+      {/* Hero Section with search bar integrated - side by side layout */}
       <HeroSection featuredSymbols={featuredSymbols} />
       
-      {/* Feature Cards Section */}
+      {/* Feature Cards Section - full width */}
       <FeatureCards />
       
-      {/* Market Data and Featured Companies in a side-by-side layout */}
+      {/* Market Performance Section - full width */}
       <div className="max-w-screen-xl mx-auto px-6 py-16">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 md:gap-16">
-          <motion.div 
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.7 }}
-          >
-            <MarketPerformance 
-              marketData={marketData} 
-              isLoading={isLoadingMarkets} 
-            />
-          </motion.div>
-          
-          <motion.div 
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.7, delay: 0.2 }}
-          >
-            <FeaturedCompanies 
-              featuredSymbols={featuredSymbols} 
-              onSelectSymbol={onSelectSymbol} 
-            />
-          </motion.div>
-        </div>
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.7 }}
+        >
+          <MarketPerformance 
+            marketData={marketData} 
+            isLoading={isLoadingMarkets} 
+          />
+        </motion.div>
       </div>
       
-      {/* News and Recent Searches in a side-by-side layout */}
-      <div className="max-w-screen-xl mx-auto px-6 py-16 bg-gradient-to-t from-muted/30 to-background">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 md:gap-16">
+      {/* Featured Companies Section - full width */}
+      <div className="max-w-screen-xl mx-auto px-6 py-16 bg-gradient-to-t from-muted/10 to-background">
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.7 }}
+        >
+          <FeaturedCompanies 
+            featuredSymbols={featuredSymbols} 
+            onSelectSymbol={onSelectSymbol} 
+          />
+        </motion.div>
+      </div>
+      
+      {/* News Section - full width */}
+      <div className="max-w-screen-xl mx-auto px-6 py-16 bg-gradient-to-b from-muted/10 to-background">
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.7 }}
+        >
+          <MarketNews 
+            newsData={marketNews} 
+            isLoading={isLoadingNews} 
+          />
+        </motion.div>
+      </div>
+      
+      {/* Recent Searches and How To Use - full width */}
+      <div className="max-w-screen-xl mx-auto px-6 py-16">
+        <div className="grid grid-cols-1 gap-8">
+          {recentSearches.length > 0 && (
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.7 }}
+            >
+              <RecentSearches 
+                recentSearches={recentSearches} 
+                onSelectSymbol={onSelectSymbol} 
+              />
+            </motion.div>
+          )}
+          
           <motion.div 
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.7 }}
           >
-            <MarketNews 
-              newsData={marketNews} 
-              isLoading={isLoadingNews} 
-            />
-          </motion.div>
-          
-          <motion.div 
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.7, delay: 0.2 }}
-            className="flex flex-col"
-          >
-            <RecentSearches 
-              recentSearches={recentSearches} 
-              onSelectSymbol={onSelectSymbol} 
-            />
-            
-            <div className="mt-auto pt-8">
-              <HowToUse />
-            </div>
+            <HowToUse />
           </motion.div>
         </div>
       </div>
