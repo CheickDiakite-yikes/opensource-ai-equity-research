@@ -7,7 +7,7 @@ import {
   deletePricePrediction,
   saveResearchReport,
   savePricePrediction
-} from "@/services/api/userContentService";
+} from "@/services/api/userContent";
 import { useAuth } from "@/contexts/AuthContext";
 import { ResearchReport } from "@/types/ai-analysis/reportTypes";
 import { StockPrediction } from "@/types/ai-analysis/predictionTypes";
