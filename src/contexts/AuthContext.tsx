@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
@@ -75,7 +76,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (error) {
         console.error("Error fetching profile:", error);
       } else {
-        setProfile(data as UserProfile);
+        // Fix type assertion here - cast to UserProfile
+        setProfile(data as unknown as UserProfile);
       }
     } catch (error) {
       console.error("Error fetching profile:", error);
