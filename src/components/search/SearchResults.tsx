@@ -9,11 +9,43 @@ import {
   CommandItem,
   CommandList
 } from "@/components/ui/command";
-import { Loader2, History, BarChart4, Sparkles, ChevronRight } from "lucide-react";
+import { Loader2, History, BarChart4, Sparkles, ChevronRight, Search } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { SearchResultItem } from "./SearchResultItem";
 import { FeaturedSymbolItem } from "./FeaturedSymbolItem";
 import { RecentSearchItem } from "./RecentSearchItem";
+import { Skeleton } from "@/components/ui/skeleton";
+
+// Create a separate SearchResultSkeleton component for better organization
+const SearchResultSkeleton = () => {
+  return (
+    <div className="p-4 space-y-3">
+      <div className="flex items-center gap-2">
+        <Skeleton className="h-8 w-8 rounded-md" />
+        <div className="space-y-2">
+          <Skeleton className="h-4 w-32" />
+          <Skeleton className="h-3 w-48" />
+        </div>
+      </div>
+      
+      <div className="flex items-center gap-2">
+        <Skeleton className="h-8 w-8 rounded-md" />
+        <div className="space-y-2">
+          <Skeleton className="h-4 w-20" />
+          <Skeleton className="h-3 w-40" />
+        </div>
+      </div>
+      
+      <div className="flex items-center gap-2">
+        <Skeleton className="h-8 w-8 rounded-md" />
+        <div className="space-y-2">
+          <Skeleton className="h-4 w-24" />
+          <Skeleton className="h-3 w-36" />
+        </div>
+      </div>
+    </div>
+  );
+};
 
 interface SearchResultsProps {
   query: string;
@@ -52,34 +84,41 @@ export const SearchResults = forwardRef<HTMLDivElement, SearchResultsProps>(({
       <CommandList>
         <CommandInput placeholder="Search for stocks..." value={query} onValueChange={(value) => {}} />
         
-        {/* Loading State */}
+        {/* Loading State with Skeleton */}
         {isLoading && (
-          <div className="py-6 text-center text-sm text-muted-foreground flex flex-col items-center">
-            <Loader2 size={24} className="animate-spin mb-2 text-primary" />
-            <span>Searching markets...</span>
-          </div>
+          <CommandGroup>
+            <div className="py-2">
+              <div className="flex items-center justify-between mb-2 px-4">
+                <Skeleton className="h-4 w-24" />
+                <Skeleton className="h-3 w-16" />
+              </div>
+              <SearchResultSkeleton />
+            </div>
+          </CommandGroup>
         )}
         
         {/* Empty State */}
-        <CommandEmpty>
-          {filteredFeaturedSymbols.length > 0 || filteredRecentSearches.length > 0 ? (
-            <div className="py-2 text-sm text-muted-foreground">
-              No API results found. Check suggested stocks below.
-            </div>
-          ) : (
-            <div className="flex flex-col items-center py-6 gap-2">
-              <div className="rounded-full bg-primary/10 p-3">
-                <Search size={20} className="text-primary" />
+        {!isLoading && (
+          <CommandEmpty>
+            {filteredFeaturedSymbols.length > 0 || filteredRecentSearches.length > 0 ? (
+              <div className="py-2 text-sm text-muted-foreground">
+                No API results found. Check suggested stocks below.
               </div>
-              <p className="text-center text-sm text-muted-foreground">
-                No stocks found. Try a different search term or check featured stocks below.
-              </p>
-            </div>
-          )}
-        </CommandEmpty>
+            ) : (
+              <div className="flex flex-col items-center py-6 gap-2">
+                <div className="rounded-full bg-primary/10 p-3">
+                  <Search size={20} className="text-primary" />
+                </div>
+                <p className="text-center text-sm text-muted-foreground">
+                  No stocks found. Try a different search term or check featured stocks below.
+                </p>
+              </div>
+            )}
+          </CommandEmpty>
+        )}
         
         {/* Recent Searches Section */}
-        {filteredRecentSearches.length > 0 && (
+        {!isLoading && filteredRecentSearches.length > 0 && (
           <CommandGroup heading={
             <div className="flex items-center gap-1 text-xs font-medium text-muted-foreground">
               <History size={14} />
@@ -97,7 +136,7 @@ export const SearchResults = forwardRef<HTMLDivElement, SearchResultsProps>(({
         )}
         
         {/* API Results Section */}
-        {results.length > 0 && (
+        {!isLoading && results.length > 0 && (
           <CommandGroup heading={
             <div className="flex items-center gap-1 text-xs font-medium text-muted-foreground">
               <BarChart4 size={14} />
@@ -115,7 +154,7 @@ export const SearchResults = forwardRef<HTMLDivElement, SearchResultsProps>(({
         )}
         
         {/* Featured Symbols Section */}
-        {filteredFeaturedSymbols.length > 0 && (
+        {!isLoading && filteredFeaturedSymbols.length > 0 && (
           <CommandGroup heading={
             <div className="flex items-center gap-1 text-xs font-medium text-muted-foreground">
               <Sparkles size={14} />
@@ -138,6 +177,3 @@ export const SearchResults = forwardRef<HTMLDivElement, SearchResultsProps>(({
 });
 
 SearchResults.displayName = "SearchResults";
-
-// Need to export Search icon for the empty state
-export { Search } from "lucide-react";

@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import { StockQuote } from "@/types";
 import { SearchResults } from "./SearchResults";
+import { ClearButton } from "./ClearButton";
 import { searchStocks } from "@/lib/api/fmpApi";
 
 interface SearchBarProps {
