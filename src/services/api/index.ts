@@ -1,3 +1,4 @@
+
 // Re-export all API services
 export * from './profileService';
 export * from './financialService';
@@ -20,9 +21,11 @@ import {
 } from './analysisService';
 import { 
   generateResearchReport,
-  generateStockPrediction,
-  analyzeGrowthInsights
+  generateStockPrediction
 } from './analysis/researchService';
+import {
+  analyzeGrowthInsights
+} from './analysis/insightsService';
 
 /**
  * Get all financial data for a symbol
