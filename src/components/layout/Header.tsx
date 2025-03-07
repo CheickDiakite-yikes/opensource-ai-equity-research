@@ -1,9 +1,11 @@
 
 import React from "react";
+import { Link } from "react-router-dom";
 import { Search, ChevronRight } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
+import UserMenu from "./UserMenu";
 
 interface HeaderProps {
   symbol: string;
@@ -27,54 +29,59 @@ const Header: React.FC<HeaderProps> = ({
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.5 }}
+          className="flex items-center"
         >
-          <h1 className="text-2xl font-bold flex items-center gap-2">
+          <Link to="/" className="flex items-center gap-2">
             <img 
               src="/lovable-uploads/288626b2-84b1-4aca-9399-864c39d76976.png" 
               alt="DiDi Equity Research" 
               className="h-10"
             />
-            <span className="bg-clip-text text-transparent bg-gradient-to-r from-primary to-blue-600">
+            <span className="bg-clip-text text-transparent bg-gradient-to-r from-primary to-blue-600 text-2xl font-bold">
               Equity Research
             </span>
-          </h1>
+          </Link>
         </motion.div>
         
-        <motion.div 
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.2 }}
-          className="flex items-center gap-2 w-full sm:w-auto"
-        >
-          <div className="relative flex-1 sm:w-64">
-            <Input
-              type="text"
-              placeholder="Search ticker symbol..."
-              value={symbol}
-              onChange={(e) => setSymbol(e.target.value)}
-              onKeyDown={handleKeyDown}
-              className="pl-10 bg-background/80 backdrop-blur-sm pr-4 border-border/50 focus:border-primary/50 transition-colors h-10"
-            />
-            <Search className="absolute left-3 top-2.5 h-5 w-5 text-muted-foreground" />
-          </div>
-          <Button 
-            onClick={handleSearch} 
-            disabled={isLoading || !symbol.trim()} 
-            className="gap-1 px-4 h-10"
+        <div className="flex items-center gap-4">
+          <motion.div 
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.2 }}
+            className="flex items-center gap-2 w-full sm:w-auto"
           >
-            {isLoading ? (
-              <span className="flex items-center gap-2">
-                <div className="h-4 w-4 rounded-full border-2 border-white border-t-transparent animate-spin" />
-                Searching...
-              </span>
-            ) : (
-              <>
-                Search
-                <ChevronRight className="h-3.5 w-3.5" />
-              </>
-            )}
-          </Button>
-        </motion.div>
+            <div className="relative flex-1 sm:w-64">
+              <Input
+                type="text"
+                placeholder="Search ticker symbol..."
+                value={symbol}
+                onChange={(e) => setSymbol(e.target.value)}
+                onKeyDown={handleKeyDown}
+                className="pl-10 bg-background/80 backdrop-blur-sm pr-4 border-border/50 focus:border-primary/50 transition-colors h-10"
+              />
+              <Search className="absolute left-3 top-2.5 h-5 w-5 text-muted-foreground" />
+            </div>
+            <Button 
+              onClick={handleSearch} 
+              disabled={isLoading || !symbol.trim()} 
+              className="gap-1 px-4 h-10"
+            >
+              {isLoading ? (
+                <span className="flex items-center gap-2">
+                  <div className="h-4 w-4 rounded-full border-2 border-white border-t-transparent animate-spin" />
+                  Searching...
+                </span>
+              ) : (
+                <>
+                  Search
+                  <ChevronRight className="h-3.5 w-3.5" />
+                </>
+              )}
+            </Button>
+          </motion.div>
+          
+          <UserMenu />
+        </div>
       </div>
     </header>
   );
