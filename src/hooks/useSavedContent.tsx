@@ -20,6 +20,7 @@ export interface SavedReport {
   report_data: ResearchReport;
   created_at: string;
   expires_at: string;
+  html_content?: string;
 }
 
 export interface SavedPrediction {

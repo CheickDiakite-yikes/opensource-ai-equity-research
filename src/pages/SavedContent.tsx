@@ -11,7 +11,8 @@ import ResearchReportDisplay from "@/components/reports/ResearchReportDisplay";
 import PricePredictionDisplay from "@/components/reports/PricePredictionDisplay";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { formatDistanceToNow } from "date-fns";
-import { Loader2, FileText, TrendingUp, Clock, Trash2, Search, AlertTriangle } from "lucide-react";
+import { Loader2, FileText, TrendingUp, Clock, Trash2, Search, AlertTriangle, Download } from "lucide-react";
+import { toast } from "sonner";
 
 const SavedContent = () => {
   const { user, isLoading: authLoading } = useAuth();
@@ -51,6 +52,26 @@ const SavedContent = () => {
     if (success && selectedPrediction?.id === predictionId) {
       setSelectedPrediction(null);
     }
+  };
+
+  const handleDownloadHtml = (report: SavedReport) => {
+    if (!report.html_content) {
+      toast.error("HTML content not available for this report");
+      return;
+    }
+
+    // Create a Blob and download
+    const blob = new Blob([report.html_content], { type: 'text/html' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${report.symbol}_research_report.html`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    
+    toast.success("Report downloaded as HTML");
   };
 
   if (isLoading) {
@@ -114,14 +135,28 @@ const SavedContent = () => {
                               {report.company_name}
                             </CardDescription>
                           </div>
-                          <Button 
-                            variant="ghost" 
-                            size="icon" 
-                            className="h-7 w-7 rounded-full hover:bg-destructive/10 text-muted-foreground hover:text-destructive"
-                            onClick={(e) => handleDeleteReport(report.id, e)}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
+                          <div className="flex">
+                            <Button 
+                              variant="ghost" 
+                              size="icon" 
+                              className="h-7 w-7 rounded-full hover:bg-primary/10 text-muted-foreground"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDownloadHtml(report);
+                              }}
+                              title="Download HTML"
+                            >
+                              <Download className="h-4 w-4" />
+                            </Button>
+                            <Button 
+                              variant="ghost" 
+                              size="icon" 
+                              className="h-7 w-7 rounded-full hover:bg-destructive/10 text-muted-foreground hover:text-destructive"
+                              onClick={(e) => handleDeleteReport(report.id, e)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
                         </div>
                       </CardHeader>
                       <CardContent className="p-4 pt-0 pb-2">
@@ -157,6 +192,17 @@ const SavedContent = () => {
               <div className="col-span-1 lg:col-span-2">
                 {selectedReport ? (
                   <Card className="p-4 h-full">
+                    <div className="flex justify-end mb-3">
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        onClick={() => handleDownloadHtml(selectedReport)}
+                        className="flex items-center gap-1"
+                      >
+                        <Download className="h-4 w-4" />
+                        <span>Download HTML</span>
+                      </Button>
+                    </div>
                     <ResearchReportDisplay report={selectedReport.report_data} />
                   </Card>
                 ) : (
