@@ -11,6 +11,7 @@ import {
 import { useAuth } from "@/contexts/AuthContext";
 import { ResearchReport } from "@/types/ai-analysis/reportTypes";
 import { StockPrediction } from "@/types/ai-analysis/predictionTypes";
+import { Json } from "@/integrations/supabase/types";
 
 export interface SavedReport {
   id: string;
@@ -48,7 +49,11 @@ export const useSavedReports = () => {
     
     try {
       const data = await getUserResearchReports();
-      setReports(data as SavedReport[]);
+      // Convert Json type to ResearchReport type with type assertion
+      setReports(data.map(item => ({
+        ...item,
+        report_data: item.report_data as unknown as ResearchReport
+      })) as SavedReport[]);
     } catch (err) {
       console.error("Error fetching saved reports:", err);
       setError("Failed to load saved reports");
@@ -100,7 +105,11 @@ export const useSavedPredictions = () => {
     
     try {
       const data = await getUserPricePredictions();
-      setPredictions(data as SavedPrediction[]);
+      // Convert Json type to StockPrediction type with type assertion
+      setPredictions(data.map(item => ({
+        ...item,
+        prediction_data: item.prediction_data as unknown as StockPrediction
+      })) as SavedPrediction[]);
     } catch (err) {
       console.error("Error fetching saved predictions:", err);
       setError("Failed to load saved predictions");

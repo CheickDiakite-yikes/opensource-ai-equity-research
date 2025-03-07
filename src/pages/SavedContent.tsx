@@ -7,7 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { ResearchReportDisplay } from "@/components/reports/ResearchReportDisplay";
+import ResearchReportDisplay from "@/components/reports/ResearchReportDisplay";
 import PricePredictionDisplay from "@/components/reports/PricePredictionDisplay";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { formatDistanceToNow } from "date-fns";

@@ -2,6 +2,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { ResearchReport } from "@/types/ai-analysis/reportTypes";
 import { StockPrediction } from "@/types/ai-analysis/predictionTypes";
+import { Json } from "@/integrations/supabase/types";
 
 // Maximum number of reports/predictions to keep per user
 const MAX_SAVED_ITEMS = 10;
@@ -65,14 +66,14 @@ export const saveResearchReport = async (
       }
     }
 
-    // Now, insert the new report
+    // Now, insert the new report - use type cast to Json
     const { data, error } = await supabase
       .from("user_research_reports")
       .insert({
         user_id: userId,
         symbol,
         company_name: companyName,
-        report_data: reportData,
+        report_data: reportData as unknown as Json,
       })
       .select("id")
       .single();
@@ -151,14 +152,14 @@ export const savePricePrediction = async (
       }
     }
 
-    // Now, insert the new prediction
+    // Now, insert the new prediction - use type cast to Json
     const { data, error } = await supabase
       .from("user_price_predictions")
       .insert({
         user_id: userId,
         symbol,
         company_name: companyName,
-        prediction_data: predictionData,
+        prediction_data: predictionData as unknown as Json,
       })
       .select("id")
       .single();
