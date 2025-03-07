@@ -70,8 +70,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const fetchProfile = async (userId: string) => {
     try {
-      const { data, error } = await supabase
-        .from("profiles")
+      // Use type assertion to work around the type issue
+      const { data, error } = await (supabase
+        .from('profiles') as any)
         .select("*")
         .eq("id", userId)
         .single();
@@ -79,7 +80,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (error) {
         console.error("Error fetching profile:", error);
       } else {
-        setProfile(data);
+        setProfile(data as UserProfile);
       }
     } catch (error) {
       console.error("Error fetching profile:", error);
@@ -163,8 +164,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setIsLoading(true);
       
       // Update the profile in the database
-      const { error } = await supabase
-        .from("profiles")
+      const { error } = await (supabase
+        .from('profiles') as any)
         .update(updates)
         .eq("id", user.id);
       
