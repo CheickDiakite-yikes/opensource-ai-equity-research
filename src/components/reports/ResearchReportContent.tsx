@@ -44,19 +44,30 @@ const ResearchReportContent = ({
 }: ResearchReportContentProps) => {
   const { user } = useAuth();
   const [showTip, setShowTip] = useState(true);
-  const { saveReport } = useSavedReports();
-  const { savePrediction } = useSavedPredictions();
+  const { saveReport, fetchReports } = useSavedReports();
+  const { savePrediction, fetchPredictions } = useSavedPredictions();
+  const [saveAttempted, setSaveAttempted] = useState(false);
   
   // Handle saving a report
   const handleSaveReport = async () => {
-    if (!user || !report) return;
+    if (!user) {
+      toast.error("You must be signed in to save reports");
+      return;
+    }
+    
+    if (!report) {
+      toast.error("No report to save");
+      return;
+    }
     
     console.log("Saving report:", report.symbol, report.companyName);
     try {
+      setSaveAttempted(true);
       const reportId = await saveReport(report.symbol, report.companyName, report);
       if (reportId) {
         toast.success(`Report for ${report.symbol} saved successfully`);
         console.log("Report saved with ID:", reportId);
+        fetchReports(); // Refresh the reports list
       } else {
         toast.error("Failed to save report. Please try again.");
         console.error("No report ID returned from saveReport");
@@ -69,10 +80,19 @@ const ResearchReportContent = ({
   
   // Handle saving a prediction
   const handleSavePrediction = async () => {
-    if (!user || !prediction) return;
+    if (!user) {
+      toast.error("You must be signed in to save predictions");
+      return;
+    }
+    
+    if (!prediction) {
+      toast.error("No prediction to save");
+      return;
+    }
     
     console.log("Saving prediction:", prediction.symbol, data.profile?.companyName || prediction.symbol);
     try {
+      setSaveAttempted(true);
       const predictionId = await savePrediction(
         prediction.symbol, 
         data.profile?.companyName || prediction.symbol, 
@@ -82,6 +102,7 @@ const ResearchReportContent = ({
       if (predictionId) {
         toast.success(`Prediction for ${prediction.symbol} saved successfully`);
         console.log("Prediction saved with ID:", predictionId);
+        fetchPredictions(); // Refresh the predictions list
       } else {
         toast.error("Failed to save prediction. Please try again.");
         console.error("No prediction ID returned from savePrediction");
@@ -103,7 +124,7 @@ const ResearchReportContent = ({
 
   // Auto-save report when it's generated (if user is logged in)
   useEffect(() => {
-    if (user && report && !isGenerating) {
+    if (user && report && !isGenerating && !saveAttempted) {
       console.log("Auto-saving newly generated report");
       handleSaveReport();
     }
@@ -111,11 +132,18 @@ const ResearchReportContent = ({
   
   // Auto-save prediction when it's generated (if user is logged in)
   useEffect(() => {
-    if (user && prediction && !isPredicting) {
+    if (user && prediction && !isPredicting && !saveAttempted) {
       console.log("Auto-saving newly generated prediction");
       handleSavePrediction();
     }
   }, [prediction, isPredicting, user]);
+
+  // Reset save attempted flag when new report/prediction is being generated
+  useEffect(() => {
+    if (isGenerating || isPredicting) {
+      setSaveAttempted(false);
+    }
+  }, [isGenerating, isPredicting]);
 
   if (!data) {
     return <LoadingSkeleton />;
@@ -169,6 +197,24 @@ const ResearchReportContent = ({
           <AlertTitle>Error generating report</AlertTitle>
           <AlertDescription>
             {generationError}
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {user ? (
+        <Alert className="bg-green-50 border-green-200">
+          <Info className="h-4 w-4 text-green-600" />
+          <AlertTitle className="text-green-800">Auto-save enabled</AlertTitle>
+          <AlertDescription className="text-green-700/80">
+            Reports and predictions will be automatically saved to your account.
+          </AlertDescription>
+        </Alert>
+      ) : (
+        <Alert className="bg-blue-50 border-blue-200">
+          <Info className="h-4 w-4 text-blue-600" />
+          <AlertTitle className="text-blue-800">Sign in to save</AlertTitle>
+          <AlertDescription className="text-blue-700/80">
+            Sign in to automatically save your reports and predictions.
           </AlertDescription>
         </Alert>
       )}

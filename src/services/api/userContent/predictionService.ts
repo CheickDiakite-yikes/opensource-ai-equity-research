@@ -61,7 +61,7 @@ export const savePricePrediction = async (
 
     if (error) {
       console.error("Error saving prediction:", error);
-      toast.error("Failed to save prediction");
+      toast.error("Failed to save prediction: " + error.message);
       return null;
     }
 
@@ -102,7 +102,7 @@ export const getUserPricePredictions = async () => {
 
     if (error) {
       console.error("Error fetching user predictions:", error);
-      toast.error("Failed to load saved predictions");
+      toast.error("Failed to load saved predictions: " + error.message);
       return [];
     }
 

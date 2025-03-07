@@ -88,7 +88,7 @@ export const saveResearchReport = async (
 
     if (error) {
       console.error("Error saving report:", error);
-      toast.error("Failed to save report");
+      toast.error("Failed to save report: " + error.message);
       return null;
     }
 
@@ -129,7 +129,7 @@ export const getUserResearchReports = async () => {
 
     if (error) {
       console.error("Error fetching user reports:", error);
-      toast.error("Failed to load saved reports");
+      toast.error("Failed to load saved reports: " + error.message);
       return [];
     }
 

@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -9,11 +10,13 @@ export const MAX_SAVED_ITEMS = 10;
  */
 export const getUserId = async (): Promise<string | null> => {
   try {
-    const user = supabase.auth.getUser();
-    if (!(await user).data.user) {
+    const { data } = await supabase.auth.getUser();
+    if (!data.user) {
+      console.log("No authenticated user found");
       return null;
     }
-    return (await user).data.user.id;
+    console.log("Authenticated user ID:", data.user.id);
+    return data.user.id;
   } catch (error) {
     console.error("Error getting user ID:", error);
     return null;
