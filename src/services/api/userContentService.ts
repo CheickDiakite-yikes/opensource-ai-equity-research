@@ -1,9 +1,9 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { ResearchReport } from "@/types/ai-analysis/reportTypes";
 import { StockPrediction } from "@/types/ai-analysis/predictionTypes";
 import { Json } from "@/integrations/supabase/types";
-import { downloadReportAsHTML } from "@/utils/reports/reportDownloadUtils";
 import {
   generateReportHeader,
   generateExecutiveSummary,
@@ -22,50 +22,59 @@ const MAX_SAVED_ITEMS = 10;
  * Generate HTML content for a research report
  */
 const generateReportHTML = (report: ResearchReport): string => {
-  const title = `${report.companyName} (${report.symbol}) - Equity Research Report`;
-  
-  // Build the content by combining all the sections
-  let content = generateReportHeader(report);
-  content += generateExecutiveSummary(report);
-  
-  // Add Scenario Analysis if available
-  if (report.scenarioAnalysis) {
-    content += generateScenarioAnalysis(report.scenarioAnalysis);
+  try {
+    console.log("Generating HTML content for report", report.symbol);
+    const title = `${report.companyName} (${report.symbol}) - Equity Research Report`;
+    
+    // Build the content by combining all the sections
+    let content = generateReportHeader(report);
+    content += generateExecutiveSummary(report);
+    
+    // Add Scenario Analysis if available
+    if (report.scenarioAnalysis) {
+      content += generateScenarioAnalysis(report.scenarioAnalysis);
+    }
+    
+    // Add Growth Catalysts if available
+    if (report.catalysts) {
+      content += generateGrowthCatalysts(report.catalysts);
+    }
+    
+    // Add all standard sections from the report
+    content += generateReportSections(report);
+    
+    // Add Rating Details if available
+    if (report.ratingDetails) {
+      content += generateRatingDetails(report);
+    }
+    
+    // Add Disclaimer
+    content += generateDisclaimer();
+    
+    // Generate full HTML with CSS styling
+    const htmlContent = `
+      <!DOCTYPE html>
+      <html lang="en">
+      <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>${title}</title>
+        <style>
+          ${getReportStyles()}
+        </style>
+      </head>
+      <body>
+        ${content}
+      </body>
+      </html>
+    `;
+    
+    console.log("HTML content generated successfully, length:", htmlContent.length);
+    return htmlContent;
+  } catch (error) {
+    console.error("Error generating HTML content:", error);
+    return ""; // Return empty string if there's an error
   }
-  
-  // Add Growth Catalysts if available
-  if (report.catalysts) {
-    content += generateGrowthCatalysts(report.catalysts);
-  }
-  
-  // Add all standard sections from the report
-  content += generateReportSections(report);
-  
-  // Add Rating Details if available
-  if (report.ratingDetails) {
-    content += generateRatingDetails(report);
-  }
-  
-  // Add Disclaimer
-  content += generateDisclaimer();
-  
-  // Generate full HTML with CSS styling
-  return `
-    <!DOCTYPE html>
-    <html lang="en">
-    <head>
-      <meta charset="UTF-8">
-      <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <title>${title}</title>
-      <style>
-        ${getReportStyles()}
-      </style>
-    </head>
-    <body>
-      ${content}
-    </body>
-    </html>
-  `;
 };
 
 /**
@@ -128,7 +137,14 @@ export const saveResearchReport = async (
     }
 
     // Generate HTML version of the report
+    console.log("Generating HTML content for report");
     const htmlContent = generateReportHTML(reportData);
+    
+    if (!htmlContent) {
+      console.error("Failed to generate HTML content");
+    } else {
+      console.log("HTML content generated successfully, length:", htmlContent.length);
+    }
 
     // Now, insert the new report - use type cast to Json
     const { data, error } = await supabase
@@ -138,7 +154,7 @@ export const saveResearchReport = async (
         symbol,
         company_name: companyName,
         report_data: reportData as unknown as Json,
-        html_content: htmlContent
+        html_content: htmlContent || null
       })
       .select("id")
       .single();
