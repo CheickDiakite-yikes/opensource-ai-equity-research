@@ -14,11 +14,15 @@ export const savePricePrediction = async (
   predictionData: StockPrediction
 ): Promise<string | null> => {
   try {
+    console.log("Starting savePricePrediction for:", symbol);
     const userId = await getUserId();
     if (!userId) {
+      console.error("No user ID found when saving prediction");
       toast.error("You must be signed in to save predictions");
       return null;
     }
+    
+    console.log("User ID:", userId);
 
     // First, count existing predictions
     const { count, error: countError } = await supabase
@@ -32,13 +36,19 @@ export const savePricePrediction = async (
       return null;
     }
 
+    console.log("Current prediction count:", count);
+
     // Manage item limit
     const limitManaged = await manageItemLimit("user_price_predictions", userId, count);
     if (!limitManaged) {
+      console.error("Failed to manage item limit");
       return null;
     }
 
     // Now, insert the new prediction - use type cast to Json
+    console.log("Inserting prediction into database");
+    console.log("Prediction data sample:", JSON.stringify(predictionData).substring(0, 200) + "...");
+    
     const { data, error } = await supabase
       .from("user_price_predictions")
       .insert({
@@ -47,8 +57,7 @@ export const savePricePrediction = async (
         company_name: companyName,
         prediction_data: predictionData as unknown as Json,
       })
-      .select("id")
-      .single();
+      .select("id");
 
     if (error) {
       console.error("Error saving prediction:", error);
@@ -56,8 +65,15 @@ export const savePricePrediction = async (
       return null;
     }
 
+    if (!data || data.length === 0) {
+      console.error("No data returned after saving prediction");
+      toast.error("Failed to save prediction - no data returned");
+      return null;
+    }
+
+    console.log("Prediction saved successfully. ID:", data[0].id);
     toast.success("Price prediction saved successfully");
-    return data.id;
+    return data[0].id;
   } catch (error) {
     console.error("Error in savePricePrediction:", error);
     toast.error("An unexpected error occurred");
@@ -70,11 +86,14 @@ export const savePricePrediction = async (
  */
 export const getUserPricePredictions = async () => {
   try {
+    console.log("Getting user price predictions");
     const userId = await getUserId();
     if (!userId) {
+      console.log("No user ID found when getting predictions");
       return [];
     }
 
+    console.log("Fetching predictions for user:", userId);
     const { data, error } = await supabase
       .from("user_price_predictions")
       .select("*")
@@ -87,6 +106,12 @@ export const getUserPricePredictions = async () => {
       return [];
     }
 
+    if (!data || data.length === 0) {
+      console.log("No predictions found for user");
+      return [];
+    }
+
+    console.log(`Found ${data.length} predictions for user`);
     return data || [];
   } catch (error) {
     console.error("Error in getUserPricePredictions:", error);

@@ -18,6 +18,7 @@ export const saveResearchReport = async (
     console.log("Starting saveResearchReport for:", symbol);
     const userId = await getUserId();
     if (!userId) {
+      console.error("No user ID found when saving report");
       toast.error("You must be signed in to save reports");
       return null;
     }
@@ -41,6 +42,7 @@ export const saveResearchReport = async (
     // Manage item limit
     const limitManaged = await manageItemLimit("user_research_reports", userId, count);
     if (!limitManaged) {
+      console.error("Failed to manage item limit");
       return null;
     }
 
@@ -71,6 +73,7 @@ export const saveResearchReport = async (
 
     // Now, insert the new report - use type cast to Json
     console.log("Inserting report into database with HTML:", htmlContent ? "YES" : "NO");
+    console.log("Report data sample:", JSON.stringify(reportData).substring(0, 200) + "...");
     
     const { data, error } = await supabase
       .from("user_research_reports")
@@ -81,8 +84,7 @@ export const saveResearchReport = async (
         report_data: reportData as unknown as Json,
         html_content: htmlContent
       })
-      .select("id, html_content")
-      .single();
+      .select("id, html_content");
 
     if (error) {
       console.error("Error saving report:", error);
@@ -90,9 +92,15 @@ export const saveResearchReport = async (
       return null;
     }
 
-    console.log("Report saved successfully. ID:", data.id, "HTML content:", data.html_content ? "YES" : "NO");
+    if (!data || data.length === 0) {
+      console.error("No data returned after saving report");
+      toast.error("Failed to save report - no data returned");
+      return null;
+    }
+
+    console.log("Report saved successfully. ID:", data[0].id, "HTML content:", data[0].html_content ? "YES" : "NO");
     toast.success("Research report saved successfully");
-    return data.id;
+    return data[0].id;
   } catch (error) {
     console.error("Error in saveResearchReport:", error);
     toast.error("An unexpected error occurred");
@@ -105,11 +113,14 @@ export const saveResearchReport = async (
  */
 export const getUserResearchReports = async () => {
   try {
+    console.log("Getting user research reports");
     const userId = await getUserId();
     if (!userId) {
+      console.log("No user ID found when getting reports");
       return [];
     }
 
+    console.log("Fetching reports for user:", userId);
     const { data, error } = await supabase
       .from("user_research_reports")
       .select("*")
@@ -122,6 +133,12 @@ export const getUserResearchReports = async () => {
       return [];
     }
 
+    if (!data || data.length === 0) {
+      console.log("No reports found for user");
+      return [];
+    }
+
+    console.log(`Found ${data.length} reports for user`);
     return data || [];
   } catch (error) {
     console.error("Error in getUserResearchReports:", error);

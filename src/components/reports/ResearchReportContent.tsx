@@ -51,10 +51,19 @@ const ResearchReportContent = ({
   const handleSaveReport = async () => {
     if (!user || !report) return;
     
+    console.log("Saving report:", report.symbol, report.companyName);
     try {
-      await saveReport(report.symbol, report.companyName, report);
+      const reportId = await saveReport(report.symbol, report.companyName, report);
+      if (reportId) {
+        toast.success(`Report for ${report.symbol} saved successfully`);
+        console.log("Report saved with ID:", reportId);
+      } else {
+        toast.error("Failed to save report. Please try again.");
+        console.error("No report ID returned from saveReport");
+      }
     } catch (error) {
       console.error("Error saving report:", error);
+      toast.error("An error occurred while saving the report");
     }
   };
   
@@ -62,10 +71,24 @@ const ResearchReportContent = ({
   const handleSavePrediction = async () => {
     if (!user || !prediction) return;
     
+    console.log("Saving prediction:", prediction.symbol, data.profile?.companyName || prediction.symbol);
     try {
-      await savePrediction(prediction.symbol, data.profile?.companyName || prediction.symbol, prediction);
+      const predictionId = await savePrediction(
+        prediction.symbol, 
+        data.profile?.companyName || prediction.symbol, 
+        prediction
+      );
+      
+      if (predictionId) {
+        toast.success(`Prediction for ${prediction.symbol} saved successfully`);
+        console.log("Prediction saved with ID:", predictionId);
+      } else {
+        toast.error("Failed to save prediction. Please try again.");
+        console.error("No prediction ID returned from savePrediction");
+      }
     } catch (error) {
       console.error("Error saving prediction:", error);
+      toast.error("An error occurred while saving the prediction");
     }
   };
   
@@ -77,6 +100,22 @@ const ResearchReportContent = ({
       );
     }
   }, [isReportTooBasic, report]);
+
+  // Auto-save report when it's generated (if user is logged in)
+  useEffect(() => {
+    if (user && report && !isGenerating) {
+      console.log("Auto-saving newly generated report");
+      handleSaveReport();
+    }
+  }, [report, isGenerating, user]);
+  
+  // Auto-save prediction when it's generated (if user is logged in)
+  useEffect(() => {
+    if (user && prediction && !isPredicting) {
+      console.log("Auto-saving newly generated prediction");
+      handleSavePrediction();
+    }
+  }, [prediction, isPredicting, user]);
 
   if (!data) {
     return <LoadingSkeleton />;

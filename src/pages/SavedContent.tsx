@@ -4,20 +4,23 @@ import { Navigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSavedReports, useSavedPredictions, SavedReport, SavedPrediction } from "@/hooks/useSavedContent";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Loader2, FileText, TrendingUp } from "lucide-react";
+import { Loader2, FileText, TrendingUp, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import ReportsTabContent from "@/components/saved-content/ReportsTabContent";
 import PredictionsTabContent from "@/components/saved-content/PredictionsTabContent";
+import { Button } from "@/components/ui/button";
 
 const SavedContent = () => {
   const { user, isLoading: authLoading } = useAuth();
   const { reports, isLoading: reportsLoading, deleteReport, fetchReports } = useSavedReports();
-  const { predictions, isLoading: predictionsLoading, deletePrediction } = useSavedPredictions();
+  const { predictions, isLoading: predictionsLoading, deletePrediction, fetchPredictions } = useSavedPredictions();
   const [selectedReport, setSelectedReport] = useState<SavedReport | null>(null);
   const [selectedPrediction, setSelectedPrediction] = useState<SavedPrediction | null>(null);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   // If user is not logged in, redirect to login page
   if (!user && !authLoading) {
+    console.log("No user logged in, redirecting to /auth");
     return <Navigate to="/auth" />;
   }
 
@@ -26,6 +29,7 @@ const SavedContent = () => {
     if (user) {
       console.log("SavedContent component mounted, fetching reports...");
       fetchReports();
+      fetchPredictions();
     }
   }, [user]);
 
@@ -36,6 +40,14 @@ const SavedContent = () => {
       console.log(`- Report ${report.id}: ${report.symbol}, HTML: ${report.html_content ? "YES" : "NO"}`);
     });
   }, [reports]);
+
+  // Log predictions when they change
+  useEffect(() => {
+    console.log("Predictions updated:", predictions.length);
+    predictions.forEach(prediction => {
+      console.log(`- Prediction ${prediction.id}: ${prediction.symbol}`);
+    });
+  }, [predictions]);
 
   const isLoading = authLoading || reportsLoading || predictionsLoading;
 
@@ -53,6 +65,7 @@ const SavedContent = () => {
   };
 
   const handleSelectPrediction = (prediction: SavedPrediction) => {
+    console.log("Selecting prediction:", prediction.id);
     setSelectedPrediction(prediction);
     setSelectedReport(null);
   };
@@ -68,6 +81,7 @@ const SavedContent = () => {
 
   const handleDeletePrediction = async (predictionId: string, e: React.MouseEvent) => {
     e.stopPropagation();
+    console.log("Deleting prediction:", predictionId);
     const success = await deletePrediction(predictionId);
     if (success && selectedPrediction?.id === predictionId) {
       setSelectedPrediction(null);
@@ -94,6 +108,20 @@ const SavedContent = () => {
     toast.success("Report downloaded as HTML");
   };
 
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    console.log("Manually refreshing content...");
+    try {
+      await Promise.all([fetchReports(), fetchPredictions()]);
+      toast.success("Content refreshed");
+    } catch (error) {
+      console.error("Error refreshing content:", error);
+      toast.error("Failed to refresh content");
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -106,13 +134,23 @@ const SavedContent = () => {
     <div className="container max-w-7xl mx-auto py-8 px-4">
       <h1 className="text-3xl font-bold mb-6">Saved Content</h1>
       
-      <div className="mb-4">
-        <button 
-          onClick={() => fetchReports()} 
-          className="text-sm text-primary hover:underline flex items-center gap-1"
+      <div className="mb-4 flex justify-between items-center">
+        <Button 
+          onClick={handleRefresh} 
+          variant="outline"
+          size="sm"
+          disabled={isRefreshing}
+          className="flex items-center gap-1.5"
         >
-          <Loader2 className="h-3 w-3" /> Refresh Reports
-        </button>
+          <RefreshCw className={`h-3.5 w-3.5 ${isRefreshing ? 'animate-spin' : ''}`} />
+          <span>{isRefreshing ? 'Refreshing...' : 'Refresh Content'}</span>
+        </Button>
+        
+        <div className="text-sm text-muted-foreground">
+          {user && (
+            <span>Logged in as: {user.email}</span>
+          )}
+        </div>
       </div>
       
       <Tabs defaultValue="reports" className="w-full">
@@ -152,6 +190,22 @@ const SavedContent = () => {
           />
         </TabsContent>
       </Tabs>
+      
+      {/* Debug information (only in development) */}
+      {import.meta.env.DEV && (
+        <div className="mt-10 p-4 border rounded bg-gray-50 text-xs font-mono">
+          <h3 className="font-bold mb-2">Debug Info:</h3>
+          <div>User ID: {user?.id || 'Not logged in'}</div>
+          <div>Reports: {reports.length}</div>
+          <div>Predictions: {predictions.length}</div>
+          {reports.length > 0 && (
+            <div className="mt-1">
+              <div>First report: {reports[0].id} - {reports[0].symbol}</div>
+              <div>HTML content: {reports[0].html_content ? 'YES' : 'NO'}</div>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 };

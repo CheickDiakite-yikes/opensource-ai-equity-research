@@ -40,11 +40,13 @@ export const useSavedReports = () => {
 
   const fetchReports = async () => {
     if (!user) {
+      console.log("No user logged in, clearing reports");
       setReports([]);
       setIsLoading(false);
       return;
     }
 
+    console.log("Fetching reports for user:", user.id);
     setIsLoading(true);
     setError(null);
     
@@ -54,9 +56,29 @@ export const useSavedReports = () => {
       // Enhanced debug logging
       console.log("Raw data from getUserResearchReports:", data);
       
+      if (data.length === 0) {
+        console.log("No reports found for user");
+        setReports([]);
+        setIsLoading(false);
+        return;
+      }
+      
       // Convert Json type to ResearchReport type with type assertion
       const convertedReports = data.map(item => {
-        console.log(`Processing report ${item.id}:`, item);
+        console.log(`Processing report ${item.id}:`, {
+          symbol: item.symbol,
+          company_name: item.company_name,
+          html_available: !!item.html_content,
+          html_length: item.html_content?.length || 0,
+          created_at: item.created_at,
+          expires_at: item.expires_at
+        });
+        
+        // Validate report_data
+        if (!item.report_data) {
+          console.error(`Report ${item.id} has no report_data!`);
+        }
+        
         return {
           ...item,
           report_data: item.report_data as unknown as ResearchReport,
@@ -80,9 +102,13 @@ export const useSavedReports = () => {
   };
 
   const deleteReport = async (reportId: string) => {
+    console.log("Deleting report:", reportId);
     const success = await deleteResearchReport(reportId);
     if (success) {
+      console.log("Report deleted successfully, updating state");
       setReports(prevReports => prevReports.filter(report => report.id !== reportId));
+    } else {
+      console.error("Failed to delete report");
     }
     return success;
   };
@@ -94,7 +120,10 @@ export const useSavedReports = () => {
     
     if (reportId) {
       // Refresh reports list after saving
+      console.log("Report saved successfully, refreshing reports list");
       await fetchReports();
+    } else {
+      console.error("Failed to save report - no ID returned");
     }
     return reportId;
   };
@@ -116,21 +145,50 @@ export const useSavedPredictions = () => {
 
   const fetchPredictions = async () => {
     if (!user) {
+      console.log("No user logged in, clearing predictions");
       setPredictions([]);
       setIsLoading(false);
       return;
     }
 
+    console.log("Fetching predictions for user:", user.id);
     setIsLoading(true);
     setError(null);
     
     try {
       const data = await getUserPricePredictions();
+      
+      console.log("Raw data from getUserPricePredictions:", data);
+      
+      if (data.length === 0) {
+        console.log("No predictions found for user");
+        setPredictions([]);
+        setIsLoading(false);
+        return;
+      }
+      
       // Convert Json type to StockPrediction type with type assertion
-      setPredictions(data.map(item => ({
-        ...item,
-        prediction_data: item.prediction_data as unknown as StockPrediction
-      })) as SavedPrediction[]);
+      const convertedPredictions = data.map(item => {
+        console.log(`Processing prediction ${item.id}:`, {
+          symbol: item.symbol,
+          company_name: item.company_name,
+          created_at: item.created_at,
+          expires_at: item.expires_at
+        });
+        
+        // Validate prediction_data
+        if (!item.prediction_data) {
+          console.error(`Prediction ${item.id} has no prediction_data!`);
+        }
+        
+        return {
+          ...item,
+          prediction_data: item.prediction_data as unknown as StockPrediction
+        };
+      }) as SavedPrediction[];
+      
+      console.log(`Fetched ${convertedPredictions.length} predictions`);
+      setPredictions(convertedPredictions);
     } catch (err) {
       console.error("Error fetching saved predictions:", err);
       setError("Failed to load saved predictions");
@@ -140,26 +198,37 @@ export const useSavedPredictions = () => {
   };
 
   const deletePrediction = async (predictionId: string) => {
+    console.log("Deleting prediction:", predictionId);
     const success = await deletePricePrediction(predictionId);
     if (success) {
+      console.log("Prediction deleted successfully, updating state");
       setPredictions(prevPredictions => 
         prevPredictions.filter(prediction => prediction.id !== predictionId)
       );
+    } else {
+      console.error("Failed to delete prediction");
     }
     return success;
   };
 
   const savePrediction = async (symbol: string, companyName: string, predictionData: StockPrediction) => {
+    console.log("Saving prediction for:", symbol, companyName);
     const predictionId = await savePricePrediction(symbol, companyName, predictionData);
+    console.log("Save result - prediction ID:", predictionId);
+    
     if (predictionId) {
       // Refresh predictions list after saving
+      console.log("Prediction saved successfully, refreshing predictions list");
       fetchPredictions();
+    } else {
+      console.error("Failed to save prediction - no ID returned");
     }
     return predictionId;
   };
 
   // Fetch predictions when the component mounts or user changes
   useEffect(() => {
+    console.log("useSavedPredictions useEffect - fetching predictions");
     fetchPredictions();
   }, [user]);
 
