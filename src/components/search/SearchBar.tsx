@@ -1,3 +1,4 @@
+
 import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
@@ -47,28 +48,11 @@ const SearchBar = ({
   
   const {
     handleFocus,
-    handleSelectStock: baseHandleSelectStock,
+    handleSelectStock,
     commandRef,
     searchInputRef,
     recentSearches
   } = useSearchInteractions(onSelectCallback);
-  
-  // Custom handler that ensures proper navigation
-  const handleSelectStock = (symbol: string) => {
-    if (onSelectCallback) {
-      // If a callback is provided, use it (for custom handling)
-      onSelectCallback(symbol);
-    } else {
-      // Otherwise use default navigation behavior
-      const params = new URLSearchParams();
-      params.set('symbol', symbol);
-      params.set('tab', 'overview');
-      navigate(`/?${params.toString()}`);
-    }
-    
-    // Close the dropdown
-    setIsOpen(false);
-  };
   
   useEffect(() => {
     // Auto focus the search input if requested

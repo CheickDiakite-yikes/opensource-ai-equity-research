@@ -27,8 +27,9 @@ const StockView: React.FC<StockViewProps> = ({ symbol, onClear }) => {
     } else {
       // If no valid tab parameter, default to overview and update URL
       setActiveTab("overview");
-      searchParams.set("tab", "overview");
-      setSearchParams(searchParams);
+      const newParams = new URLSearchParams(searchParams);
+      newParams.set("tab", "overview");
+      setSearchParams(newParams);
     }
   }, [searchParams, setSearchParams]);
 
@@ -37,8 +38,9 @@ const StockView: React.FC<StockViewProps> = ({ symbol, onClear }) => {
     setActiveTab(tab);
     
     // Update URL with new tab parameter while preserving the symbol
-    searchParams.set("tab", tab);
-    setSearchParams(searchParams);
+    const newParams = new URLSearchParams(searchParams);
+    newParams.set("tab", tab);
+    setSearchParams(newParams);
     
     console.log(`Tab changed to: ${tab}`);
   };

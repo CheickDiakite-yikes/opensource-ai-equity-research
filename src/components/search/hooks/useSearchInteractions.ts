@@ -41,11 +41,13 @@ export const useSearchInteractions = (onSelectCallback?: (symbol: string) => voi
       // Use custom callback if provided
       onSelectCallback(symbol);
     } else {
-      // Default behavior - update URL parameters
-      const params = new URLSearchParams(searchParams);
+      // Default behavior - update URL parameters and force navigation to ensure page reload
+      const params = new URLSearchParams();
       params.set('symbol', symbol);
       params.set('tab', 'overview');
-      setSearchParams(params);
+      
+      // Use navigate instead of setSearchParams to ensure proper route update
+      navigate(`/?${params.toString()}`);
     }
     
     // Focus back on search input after selection for better UX

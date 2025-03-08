@@ -16,11 +16,11 @@ export const useSearch = ({ featuredSymbols = commonTickers }: UseSearchProps = 
   const [isOpen, setIsOpen] = useState(false);
 
   useEffect(() => {
-    // Show featured symbols by default when dropdown is opened
     if (isOpen && query.length === 0) {
-      setResults(findMatchingCommonTickers("", featuredSymbols));
+      const featuredResults = findMatchingCommonTickers("", featuredSymbols);
+      setResults(featuredResults);
     }
-  }, [isOpen, featuredSymbols]);
+  }, [isOpen, query, featuredSymbols]);
 
   const handleSearch = async (value: string) => {
     setQuery(value);

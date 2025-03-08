@@ -49,11 +49,13 @@ const Index = () => {
     localStorage.setItem('recentSearches', JSON.stringify(updatedSearches));
     
     // Preserve current tab if it exists, otherwise default to overview
-    const currentTab = searchParams.get('tab');
-    const newParams = new URLSearchParams();
-    newParams.set('symbol', symbolUpperCase);
-    newParams.set('tab', currentTab || 'overview');
-    setSearchParams(newParams);
+    const currentTab = searchParams.get('tab') || 'overview';
+    
+    // Use navigate for consistent routing behavior
+    const params = new URLSearchParams();
+    params.set('symbol', symbolUpperCase);
+    params.set('tab', currentTab);
+    navigate(`/?${params.toString()}`);
     
     setTimeout(() => {
       setIsLoading(false);
@@ -72,9 +74,8 @@ const Index = () => {
   const clearSearch = () => {
     setSearchedSymbol("");
     setSymbol("");
-    // Clear symbol from URL
-    searchParams.delete('symbol');
-    setSearchParams(searchParams);
+    // Clear symbol from URL and navigate to home
+    navigate('/');
     toast.info("Returned to home view", {
       duration: 2000,
     });
@@ -96,15 +97,11 @@ const Index = () => {
     setRecentSearches(updatedSearches);
     localStorage.setItem('recentSearches', JSON.stringify(updatedSearches));
     
-    // Set up URL parameters for the stock view
-    const newParams = new URLSearchParams();
-    newParams.set('symbol', upperSym);
-    
-    // Preserve the current tab or default to overview
-    const currentTab = searchParams.get('tab');
-    newParams.set('tab', currentTab || 'overview');
-    
-    setSearchParams(newParams);
+    // Navigate to ensure consistent routing
+    const params = new URLSearchParams();
+    params.set('symbol', upperSym);
+    params.set('tab', 'overview');
+    navigate(`/?${params.toString()}`);
     
     toast.success(`Loading research data for ${upperSym}`, {
       duration: 3000,
