@@ -6,7 +6,6 @@ import InfoCards from "./InfoCards";
 import CompanyDescription from "./CompanyDescription";
 import EarningsCallSection from "./EarningsCallSection";
 import SECFilingsSection from "./SECFilingsSection";
-import PeerComparisonSection from "./PeerComparisonSection";
 
 interface StockOverviewContentProps {
   profile: StockProfile;
@@ -34,12 +33,6 @@ const StockOverviewContent = ({
       <InfoCards profile={profile} quote={quote} rating={rating} />
       
       <CompanyDescription description={profile.description} />
-      
-      <PeerComparisonSection 
-        symbol={symbol}
-        profile={profile}
-        quote={quote}
-      />
       
       <EarningsCallSection 
         earningsCalls={earningsCalls} 

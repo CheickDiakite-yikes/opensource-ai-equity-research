@@ -18,13 +18,13 @@ export class PeersController extends BaseProfileController {
       const data = await makeApiRequest<any[]>(url);
       
       if (!data || !Array.isArray(data) || data.length === 0) {
-        return [{ symbol, peersList: [] }];
+        return [{ symbol, peers: [] }];
       }
       
       return data;
     } catch (error) {
       console.warn(`Peers data fetch failed: ${error.message}`);
-      return [{ symbol, peersList: [] }];
+      return [{ symbol, peers: [] }];
     }
   }
 }

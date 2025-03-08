@@ -10,12 +10,7 @@ export * from './base';  // Export base utilities including withRetry
 // Composite functions
 import { fetchStockProfile, fetchStockQuote } from './profileService';
 import { fetchIncomeStatements, fetchBalanceSheets, fetchCashFlowStatements, fetchKeyRatios } from './financialService';
-import { 
-  fetchHistoricalPrices, 
-  fetchCompanyNews, 
-  fetchCompanyPeers,
-  fetchMarketNews
-} from './marketDataService';
+import { fetchHistoricalPrices, fetchCompanyNews, fetchCompanyPeers } from './marketDataService';
 import { 
   fetchEarningsTranscripts, 
   fetchSECFilings, 
@@ -75,12 +70,4 @@ export {
   generateStockPrediction,
   analyzeGrowthInsights,
   fetchAIDCFAssumptions  // Keep this export
-};
-
-// Re-export specific market data functions to ensure they're available
-export {
-  fetchHistoricalPrices,
-  fetchCompanyNews,
-  fetchCompanyPeers,
-  fetchMarketNews
 };

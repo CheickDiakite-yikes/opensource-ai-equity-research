@@ -1,4 +1,6 @@
 
-// Re-export all market data-related functions from this directory
+// Re-export everything from the individual modules
 export * from './newsService';
-export * from '../marketData';
+export * from './indicesService'; 
+export * from './stockDataService';
+export * from './indicesDataService';
