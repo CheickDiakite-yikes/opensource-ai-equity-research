@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { StockProfile, StockQuote } from "@/types";
 import { RatingSnapshot, GradeNews } from "@/types/ratings/ratingTypes";
+import { SECFiling } from "@/types/documentTypes";
 import { 
   fetchStockProfile, 
   fetchStockQuote, 
@@ -24,13 +25,11 @@ export const useStockOverviewData = (symbol: string) => {
   const [gradeNews, setGradeNews] = useState<GradeNews[]>([]);
   const [ratingsLoading, setRatingsLoading] = useState(true);
 
-  // Load main company data
   const loadData = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
       
-      // Use retry mechanism for core data
       const [profileData, quoteData, ratingData] = await Promise.all([
         withRetry(() => fetchStockProfile(symbol), { retries: 2 }),
         withRetry(() => fetchStockQuote(symbol), { retries: 2 }),
@@ -51,7 +50,6 @@ export const useStockOverviewData = (symbol: string) => {
       console.error("Error loading stock overview data:", err);
       setError(err.message || `Failed to load data for ${symbol}`);
       
-      // Show a helpful toast message
       toast({
         title: "Error Loading Data",
         description: `Could not load data for ${symbol}. ${err.message || "Please try again later."}`,
@@ -62,7 +60,6 @@ export const useStockOverviewData = (symbol: string) => {
     }
   }, [symbol]);
 
-  // Load document data (SEC filings)
   const loadDocuments = useCallback(async () => {
     try {
       setDocumentsLoading(true);
@@ -75,7 +72,6 @@ export const useStockOverviewData = (symbol: string) => {
       if (filingsData && filingsData.length > 0) {
         setSecFilings(filingsData);
       } else {
-        // Fallback empty state for filings
         setSecFilings([
           {
             symbol,
@@ -91,23 +87,19 @@ export const useStockOverviewData = (symbol: string) => {
       }
     } catch (err) {
       console.error("Error loading document data:", err);
-      // Document loading errors don't prevent the main view from loading
     } finally {
       setDocumentsLoading(false);
     }
   }, [symbol]);
 
-  // Load ratings data - modified to reset state on new symbol
   const loadRatingsData = useCallback(async () => {
     try {
-      // Reset rating data when loading new symbol
       setRatingSnapshot(null);
       setGradeNews([]);
       setRatingsLoading(true);
       
       console.log(`Starting to load ratings data for ${symbol}`);
       
-      // Try both endpoints with more detailed logging
       console.log("Attempting to fetch rating snapshot...");
       const snapshotData = await fetchRatingSnapshot(symbol);
       console.log("Rating snapshot result:", snapshotData ? "Success" : "No data");
@@ -116,7 +108,6 @@ export const useStockOverviewData = (symbol: string) => {
       const newsData = await fetchGradeNews(symbol, 10);
       console.log("Grade news result:", newsData && newsData.length > 0 ? `Found ${newsData.length} items` : "No data");
       
-      // Set the data even if one or both are null/empty
       setRatingSnapshot(snapshotData);
       setGradeNews(newsData || []);
       
@@ -131,13 +122,11 @@ export const useStockOverviewData = (symbol: string) => {
       });
     } catch (err) {
       console.error("Error loading ratings data:", err);
-      // Rating errors don't prevent the main view from loading
     } finally {
       setRatingsLoading(false);
     }
   }, [symbol]);
 
-  // Refetch all data
   const refetch = useCallback(() => {
     loadData();
     loadDocuments();
@@ -146,7 +135,6 @@ export const useStockOverviewData = (symbol: string) => {
 
   useEffect(() => {
     if (symbol) {
-      // Reset data when symbol changes
       setRatingSnapshot(null);
       setGradeNews([]);
       loadData();
