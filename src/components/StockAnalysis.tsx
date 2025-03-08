@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useResearchReportData } from "@/components/reports/useResearchReportData";
 import LoadingSkeleton from "@/components/LoadingSkeleton";
 import { prepareFinancialData, prepareRatioData } from "@/utils/financial";
@@ -30,20 +30,30 @@ const StockAnalysis = ({ symbol }: StockAnalysisProps) => {
     retryFetchingData, 
     isLoading: isDirectFetchLoading 
   } = useDirectFinancialData(symbol, {
-    income: data.income,
-    balance: data.balance,
-    cashflow: data.cashflow,
-    ratios: data.ratios
+    income: data?.income || [],
+    balance: data?.balance || [],
+    cashflow: data?.cashflow || [],
+    ratios: data?.ratios || []
   });
+
+  // Safely access data with fallbacks
+  const safeData = {
+    income: data?.income || [],
+    balance: data?.balance || [],
+    cashflow: data?.cashflow || [],
+    ratios: data?.ratios || [],
+    transcripts: data?.transcripts || [],
+    filings: data?.filings || []
+  };
 
   // Combine data from both sources (useResearchReportData and direct fetch)
   const combinedData = {
-    income: data.income.length > 0 ? data.income : directFinancials.income,
-    balance: data.balance.length > 0 ? data.balance : directFinancials.balance,
-    cashflow: data.cashflow.length > 0 ? data.cashflow : directFinancials.cashflow,
-    ratios: data.ratios.length > 0 ? data.ratios : directFinancials.ratios,
-    transcripts: data.transcripts,
-    filings: data.filings
+    income: safeData.income.length > 0 ? safeData.income : directFinancials.income,
+    balance: safeData.balance.length > 0 ? safeData.balance : directFinancials.balance,
+    cashflow: safeData.cashflow.length > 0 ? safeData.cashflow : directFinancials.cashflow,
+    ratios: safeData.ratios.length > 0 ? safeData.ratios : directFinancials.ratios,
+    transcripts: safeData.transcripts,
+    filings: safeData.filings
   };
   
   // Check if combined data has minimum requirements
@@ -53,14 +63,31 @@ const StockAnalysis = ({ symbol }: StockAnalysisProps) => {
     (combinedData.cashflow.length > 0 ? 1 : 0)
   ) >= 2;
 
+  useEffect(() => {
+    // Add debug logging to track data loading
+    console.log(`StockAnalysis for ${symbol} - Data loading status:`, {
+      income: combinedData.income.length,
+      balance: combinedData.balance.length,
+      cashflow: combinedData.cashflow.length,
+      ratios: combinedData.ratios.length,
+      hasMinimumData: hasCombinedMinimumData
+    });
+  }, [combinedData, symbol, hasCombinedMinimumData]);
+
   // Function to handle retry
   const handleRetry = async () => {
     setIsRetrying(true);
-    const success = await retryFetchingData();
-    setIsRetrying(false);
-    
-    if (!success) {
-      toast.error(`Could not retrieve financial data for ${symbol} after multiple attempts.`);
+    try {
+      const success = await retryFetchingData();
+      
+      if (!success) {
+        toast.error(`Could not retrieve financial data for ${symbol} after multiple attempts.`);
+      }
+    } catch (err) {
+      console.error(`Error retrying data fetch for ${symbol}:`, err);
+      toast.error(`Error loading data: ${err instanceof Error ? err.message : 'Unknown error'}`);
+    } finally {
+      setIsRetrying(false);
     }
   };
 
@@ -70,6 +97,7 @@ const StockAnalysis = ({ symbol }: StockAnalysisProps) => {
 
   // If there's still not enough data after both attempts, show error
   if (error || !hasCombinedMinimumData) {
+    console.error(`Insufficient data for analysis of ${symbol}:`, error);
     return <ErrorState symbol={symbol} onRetry={handleRetry} isRetrying={isRetrying} />;
   }
 
@@ -79,6 +107,7 @@ const StockAnalysis = ({ symbol }: StockAnalysisProps) => {
     combinedData.balance, 
     combinedData.cashflow
   );
+  
   // Cast to KeyRatio[] to ensure type compatibility
   const ratioData: RatioData[] = prepareRatioData(combinedData.ratios as KeyRatio[]);
 

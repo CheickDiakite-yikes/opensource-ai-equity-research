@@ -6,7 +6,6 @@ import BalanceSheetTabContent from '../sections/BalanceSheetTabContent';
 import CashFlowTabContent from '../sections/CashFlowTabContent';
 import RatiosTabContent from '../sections/RatiosTabContent';
 import GrowthTabContent from '../sections/GrowthTabContent';
-import { useDirectFinancialData } from '@/hooks/useDirectFinancialData';
 import LoadingSkeleton from '../LoadingSkeleton';
 import ErrorState from './ErrorState';
 import { FinancialData, RatioData } from '@/types';
@@ -31,6 +30,7 @@ const AnalysisTabs: React.FC<AnalysisTabsProps> = ({
   
   // Error handling if financials data is missing
   if (!financials || financials.length === 0) {
+    console.error(`No financial data available for ${symbol}`);
     return (
       <ErrorState 
         symbol={symbol} 
@@ -50,23 +50,23 @@ const AnalysisTabs: React.FC<AnalysisTabsProps> = ({
         <TabsTrigger value="growth">Growth</TabsTrigger>
       </TabsList>
       
-      <TabsContent value="financials">
+      <TabsContent value="financials" className="mt-4">
         <FinancialsTabContent financials={financials} />
       </TabsContent>
       
-      <TabsContent value="balance-sheet">
+      <TabsContent value="balance-sheet" className="mt-4">
         <BalanceSheetTabContent financials={financials} />
       </TabsContent>
       
-      <TabsContent value="cash-flow">
+      <TabsContent value="cash-flow" className="mt-4">
         <CashFlowTabContent financials={financials} />
       </TabsContent>
       
-      <TabsContent value="ratios">
+      <TabsContent value="ratios" className="mt-4">
         <RatiosTabContent ratioData={ratioData} symbol={symbol} />
       </TabsContent>
       
-      <TabsContent value="growth">
+      <TabsContent value="growth" className="mt-4">
         <GrowthTabContent financials={financials} symbol={symbol} />
       </TabsContent>
     </Tabs>
