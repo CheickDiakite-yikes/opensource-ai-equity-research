@@ -71,12 +71,19 @@ const RatingsSnapshotSection = ({ ratingSnapshot, isLoading }: RatingsSnapshotSe
     return (score / 5) * 100;
   };
 
+  // Add debugging for the current rating snapshot
+  console.log("Rendering rating snapshot:", {
+    symbol: ratingSnapshot.symbol,
+    rating: ratingSnapshot.rating,
+    overallScore: ratingSnapshot.overallScore
+  });
+
   return (
     <Card>
       <CardHeader>
         <CardTitle className="text-xl flex items-center gap-2">
           <BarChart3 className="h-5 w-5 text-primary" />
-          <span>Ratings Snapshot</span>
+          <span>Ratings Snapshot for {ratingSnapshot.symbol}</span>
           <span className={`text-sm rounded-full px-2 py-0.5 ${
             ratingSnapshot.rating === 'A' || ratingSnapshot.rating === 'A+' || ratingSnapshot.rating === 'A-' ? 'bg-green-100 text-green-800' :
             ratingSnapshot.rating === 'B' || ratingSnapshot.rating === 'B+' || ratingSnapshot.rating === 'B-' ? 'bg-blue-100 text-blue-800' :

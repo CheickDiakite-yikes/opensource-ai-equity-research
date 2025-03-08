@@ -23,11 +23,48 @@ export const fetchRatingSnapshot = async (symbol: string): Promise<RatingSnapsho
     }
     
     const url = `${API_BASE_URLS.FMP}/rating/${symbol}?apikey=${apiKey}`;
-    const response = await fetchWithRetry(url);
-    const data = await handleFetchResponse<RatingSnapshot[]>(response);
+    console.log(`Making request to: ${url.replace(apiKey, "API_KEY_HIDDEN")}`);
     
-    console.log(`Rating snapshot result for ${symbol}:`, data ? `Found ${data.length} results` : 'No data');
-    return data && data.length > 0 ? data[0] : null;
+    const response = await fetchWithRetry(url);
+    
+    if (!response.ok) {
+      console.warn(`Error response fetching rating snapshot: ${response.status}`);
+      return null;
+    }
+    
+    const data = await response.json();
+    
+    if (!data || !Array.isArray(data) || data.length === 0) {
+      console.warn(`No rating snapshot data found for ${symbol}`);
+      return null;
+    }
+    
+    // Log the first item to verify we're getting real, unique data
+    console.log(`Rating snapshot for ${symbol}:`, {
+      rating: data[0].rating,
+      symbol: data[0].symbol,
+      scores: {
+        overall: data[0].ratingScore || data[0].overallScore,
+        dcf: data[0].dcfScore || data[0].discountedCashFlowScore,
+        roe: data[0].roeScore || data[0].returnOnEquityScore,
+        roa: data[0].roaScore || data[0].returnOnAssetsScore
+      }
+    });
+    
+    // Map API response to our expected type
+    const ratingSnapshot: RatingSnapshot = {
+      symbol: data[0].symbol || symbol,
+      rating: data[0].rating || 'N/A',
+      overallScore: data[0].ratingScore || data[0].overallScore || 0,
+      discountedCashFlowScore: data[0].dcfScore || data[0].discountedCashFlowScore || 0,
+      returnOnEquityScore: data[0].roeScore || data[0].returnOnEquityScore || 0,
+      returnOnAssetsScore: data[0].roaScore || data[0].returnOnAssetsScore || 0,
+      debtToEquityScore: data[0].deScore || data[0].debtToEquityScore || 0,
+      priceToEarningsScore: data[0].peScore || data[0].priceToEarningsScore || 0,
+      priceToBookScore: data[0].pbScore || data[0].priceToBookScore || 0
+    };
+    
+    return ratingSnapshot;
   } catch (error) {
     console.error("Error fetching rating snapshot:", error);
     return null;

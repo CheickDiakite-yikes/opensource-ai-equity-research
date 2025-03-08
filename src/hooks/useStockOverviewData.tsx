@@ -1,6 +1,5 @@
-
 import { useState, useEffect, useCallback } from "react";
-import { StockProfile, StockQuote, SECFiling } from "@/types";
+import { StockProfile, StockQuote } from "@/types";
 import { RatingSnapshot, GradeNews } from "@/types/ratings/ratingTypes";
 import { 
   fetchStockProfile, 
@@ -98,10 +97,14 @@ export const useStockOverviewData = (symbol: string) => {
     }
   }, [symbol]);
 
-  // Load ratings data
+  // Load ratings data - modified to reset state on new symbol
   const loadRatingsData = useCallback(async () => {
     try {
+      // Reset rating data when loading new symbol
+      setRatingSnapshot(null);
+      setGradeNews([]);
       setRatingsLoading(true);
+      
       console.log(`Starting to load ratings data for ${symbol}`);
       
       // Try both endpoints with more detailed logging
@@ -118,7 +121,12 @@ export const useStockOverviewData = (symbol: string) => {
       setGradeNews(newsData || []);
       
       console.log("Completed loading ratings data:", { 
-        hasRatingSnapshot: !!snapshotData, 
+        hasRatingSnapshot: !!snapshotData,
+        snapshotDetails: snapshotData ? {
+          symbol: snapshotData.symbol,
+          rating: snapshotData.rating,
+          overallScore: snapshotData.overallScore
+        } : null,
         gradeNewsCount: newsData?.length || 0 
       });
     } catch (err) {
@@ -138,6 +146,9 @@ export const useStockOverviewData = (symbol: string) => {
 
   useEffect(() => {
     if (symbol) {
+      // Reset data when symbol changes
+      setRatingSnapshot(null);
+      setGradeNews([]);
       loadData();
     }
   }, [symbol, loadData]);
