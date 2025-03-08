@@ -14,6 +14,7 @@ interface CompanyMatch {
 /**
  * More intelligent search using fuzzy matching and scoring
  * Enhanced with direct API integration and fallback to local search
+ * Now fully case-insensitive
  */
 export const getIntelligentSearchResults = async (query: string): Promise<StockQuote[]> => {
   if (!query || query.length < 1) return [];
@@ -25,53 +26,69 @@ export const getIntelligentSearchResults = async (query: string): Promise<StockQ
   // Step 2: Score all tickers from our database
   const allMatches: CompanyMatch[] = [];
   
-  // Score based on exact symbol match (highest priority)
-  const exactSymbolMatch = commonTickers.find(t => t.symbol === upperQuery);
-  if (exactSymbolMatch) {
-    allMatches.push({
-      symbol: exactSymbolMatch.symbol,
-      name: exactSymbolMatch.name,
-      score: 100 // Maximum score
-    });
-  }
-  
   // Special case for Disney - always prioritize it highly when searching for "dis" or "disney"
-  if (upperQuery === 'DIS' || lowerQuery.includes('disney')) {
+  if (lowerQuery === 'dis' || lowerQuery.includes('disney')) {
     const disneyTicker = commonTickers.find(t => t.symbol === 'DIS');
     if (disneyTicker) {
-      // If not already added as exact match
-      if (!allMatches.some(m => m.symbol === 'DIS')) {
-        allMatches.push({
-          symbol: disneyTicker.symbol,
-          name: disneyTicker.name,
-          score: upperQuery === 'DIS' ? 100 : 90 // Very high score
-        });
-      }
+      allMatches.push({
+        symbol: disneyTicker.symbol,
+        name: disneyTicker.name,
+        score: 100 // Maximum score
+      });
+    }
+  }
+  
+  // Score based on exact symbol match (highest priority) - case insensitive
+  const exactSymbolMatch = commonTickers.find(t => t.symbol.toUpperCase() === upperQuery);
+  if (exactSymbolMatch) {
+    // If not already added (like Disney special case)
+    if (!allMatches.some(m => m.symbol === exactSymbolMatch.symbol)) {
+      allMatches.push({
+        symbol: exactSymbolMatch.symbol,
+        name: exactSymbolMatch.name,
+        score: 100 // Maximum score
+      });
+    }
+  }
+  
+  // Score based on exact company name match (high priority) - case insensitive
+  const exactNameMatch = commonTickers.find(t => 
+    t.name.toLowerCase() === lowerQuery && lowerQuery.length > 2
+  );
+  if (exactNameMatch) {
+    // If not already added
+    if (!allMatches.some(m => m.symbol === exactNameMatch.symbol)) {
+      allMatches.push({
+        symbol: exactNameMatch.symbol,
+        name: exactNameMatch.name,
+        score: 95 // Very high score, just below exact symbol match
+      });
     }
   }
 
-  // Score symbols that start with the query (high priority)
+  // Score all remaining tickers
   commonTickers.forEach(ticker => {
-    if (ticker.symbol === upperQuery) return; // Skip exact matches already added
     if (allMatches.some(m => m.symbol === ticker.symbol)) return; // Skip already added matches
     
     let score = 0;
+    const tickerSymbolLower = ticker.symbol.toLowerCase();
+    const tickerNameLower = ticker.name.toLowerCase();
     
     // Symbol starts with query (high priority)
-    if (ticker.symbol.startsWith(upperQuery)) {
-      score += 85 - (ticker.symbol.length - upperQuery.length);
+    if (tickerSymbolLower.startsWith(lowerQuery)) {
+      score += 85 - (ticker.symbol.length - lowerQuery.length);
     }
     // Symbol contains query
-    else if (ticker.symbol.includes(upperQuery)) {
-      score += 65 - (ticker.symbol.length - upperQuery.length);
+    else if (tickerSymbolLower.includes(lowerQuery)) {
+      score += 65 - (ticker.symbol.length - lowerQuery.length);
     }
     // Company name starts with query
-    else if (ticker.name.toLowerCase().startsWith(lowerQuery)) {
-      score += 60 - (ticker.name.length - lowerQuery.length) / 10;
+    else if (tickerNameLower.startsWith(lowerQuery)) {
+      score += 70 - (ticker.name.length - lowerQuery.length) / 10;
     }
     // Company name contains query
-    else if (ticker.name.toLowerCase().includes(lowerQuery)) {
-      score += 45 - (ticker.name.length - lowerQuery.length) / 10;
+    else if (tickerNameLower.includes(lowerQuery)) {
+      score += 55 - (ticker.name.length - lowerQuery.length) / 10;
     }
     
     // Acronym matching (e.g. "aapl" matches "Apple")
@@ -87,7 +104,7 @@ export const getIntelligentSearchResults = async (query: string): Promise<StockQ
     const industryTerms = ['tech', 'semiconductor', 'bank', 'oil', 'pharma', 'health', 'retail', 'auto', 'electric', 
                           'energy', 'software', 'fintech', 'financial', 'media', 'streaming', 'cloud', 'ai'];
     for (const term of industryTerms) {
-      if (lowerQuery.includes(term) && ticker.name.toLowerCase().includes(term)) {
+      if (lowerQuery.includes(term) && tickerNameLower.includes(term)) {
         score += 40;
       }
     }
@@ -134,21 +151,29 @@ export const getIntelligentSearchResults = async (query: string): Promise<StockQ
       'mcd': ['mcdonald'],
     };
     
-    // Check if our query is a key in typoMap and ticker includes the mapped terms
+    // Check if our query matches any key in typoMap or if ticker name includes the mapped terms
     for (const [key, terms] of Object.entries(typoMap)) {
       if (lowerQuery.includes(key) || key.includes(lowerQuery)) {
         for (const term of terms) {
-          if (ticker.name.toLowerCase().includes(term)) {
+          if (tickerNameLower.includes(term)) {
             score += 40;
             break;
           }
         }
       }
+      
+      // Also check if query matches any of the terms and ticker symbol matches the key
+      for (const term of terms) {
+        if (lowerQuery.includes(term) && tickerSymbolLower === key) {
+          score += 45;
+          break;
+        }
+      }
     }
 
-    // Special case for Disney since it's a common search term
-    if (ticker.symbol === 'DIS' && lowerQuery.includes('disney')) {
-      score += 75; // Give Disney a high priority when searching for "disney"
+    // Special case for Disney 
+    if (ticker.symbol === 'DIS' && (lowerQuery.includes('disney') || lowerQuery === 'dis')) {
+      score += 90; // Very high priority when searching for "disney"
     }
     
     // Special case for semiconductor companies
@@ -158,7 +183,7 @@ export const getIntelligentSearchResults = async (query: string): Promise<StockQ
     for (const term of semiconductorTerms) {
       if (lowerQuery.includes(term)) {
         for (const company of semiconductorCompanies) {
-          if (ticker.name.toLowerCase().includes(company)) {
+          if (tickerNameLower.includes(company)) {
             score += 35;
             break;
           }
@@ -225,8 +250,8 @@ export const getIntelligentSearchResults = async (query: string): Promise<StockQ
           for (const adjacentChar of keyboardMap[char]) {
             const typoVariation = lowerQuery.substring(0, i) + adjacentChar + lowerQuery.substring(i + 1);
             
-            if (ticker.symbol.toLowerCase().includes(typoVariation) || 
-                ticker.name.toLowerCase().includes(typoVariation)) {
+            if (tickerSymbolLower.includes(typoVariation) || 
+                tickerNameLower.includes(typoVariation)) {
               score += 20;
               break;
             }
@@ -254,11 +279,14 @@ export const getIntelligentSearchResults = async (query: string): Promise<StockQ
   const localResults: StockQuote[] = sortedMatches.map(match => {
     // Determine category based on score and exact match
     let category = StockCategory.COMMON;
-    if (match.symbol === upperQuery) {
+    if (match.symbol.toUpperCase() === upperQuery) {
       category = StockCategory.EXACT_MATCH;
     }
     // Special case for Disney - make it an exact match when searching for 'dis'
-    else if (match.symbol === 'DIS' && (upperQuery === 'DIS' || lowerQuery.includes('disney'))) {
+    else if (match.symbol === 'DIS' && (lowerQuery === 'dis' || lowerQuery.includes('disney'))) {
+      category = StockCategory.EXACT_MATCH;
+    }
+    else if (match.score >= 95) {
       category = StockCategory.EXACT_MATCH;
     }
     

@@ -65,26 +65,44 @@ export const useSearch = ({ featuredSymbols = commonTickers }: UseSearchProps = 
     // Always set dropdown to open when user is typing
     setIsOpen(true);
     
-    // Special case handling for common search terms
+    // Special case handling for common search terms using lowercase matching
     const lowerValue = value.toLowerCase();
     
-    // Special handling for Disney searches
+    // Special handling for Disney searches (case-insensitive)
     if (lowerValue === 'dis' || lowerValue.includes('disney')) {
       const disneyTicker = commonTickers.find(ticker => ticker.symbol === 'DIS');
       if (disneyTicker) {
         const disneyQuote = createCommonTickerQuote(
           disneyTicker.symbol, 
           disneyTicker.name, 
-          lowerValue === 'dis' ? StockCategory.EXACT_MATCH : StockCategory.COMMON
+          StockCategory.EXACT_MATCH
         );
         
         if (isMounted.current) {
           setResults([disneyQuote]);
         }
+        return; // Return early to avoid unnecessary API calls
       }
     }
     
-    // First check if we have an exact match with a common ticker
+    // Check for common company name searches
+    const companyNameMatch = commonTickers.find(ticker => 
+      ticker.name.toLowerCase().includes(lowerValue) && lowerValue.length > 2
+    );
+    
+    if (companyNameMatch) {
+      const companyNameQuote = createCommonTickerQuote(
+        companyNameMatch.symbol,
+        companyNameMatch.name,
+        StockCategory.EXACT_MATCH
+      );
+      
+      if (isMounted.current) {
+        setResults([companyNameQuote]);
+      }
+    }
+    
+    // First check if we have an exact match with a common ticker (case insensitive)
     const upperValue = value.toUpperCase();
     const exactCommonMatch = commonTickers.find(ticker => ticker.symbol === upperValue);
     
@@ -100,10 +118,10 @@ export const useSearch = ({ featuredSymbols = commonTickers }: UseSearchProps = 
       }
     }
     
-    // Immediately show common tickers even before API call
+    // Immediately show common tickers even before API call (now with case-insensitive matching)
     const commonTickerMatches = findMatchingCommonTickers(value, featuredSymbols);
     
-    if (isMounted.current) {
+    if (isMounted.current && commonTickerMatches.length > 0) {
       setResults(commonTickerMatches);
     }
     
