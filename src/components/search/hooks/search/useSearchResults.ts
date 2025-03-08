@@ -28,8 +28,8 @@ export const useSearchResults = (
 
   useEffect(() => {
     if (isOpen && query.length === 0 && isMounted.current) {
-      const featuredResults = findLocalMatchingTickers("");
-      setResults(featuredResults);
+      const { commonTickerMatches } = findLocalMatchingTickers("");
+      setResults(commonTickerMatches);
     }
   }, [isOpen, featuredSymbols, query, setResults, findLocalMatchingTickers]);
 
