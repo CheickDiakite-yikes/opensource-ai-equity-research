@@ -50,11 +50,39 @@ export const fetchGradeNews = async (symbol: string, limit: number = 5): Promise
     
     // The correct endpoint is "grade" (not "grades-news" or "upgrade_downgrade")
     const url = `${API_BASE_URLS.FMP}/grade/${symbol}?limit=${limit}&apikey=${apiKey}`;
-    const response = await fetchWithRetry(url);
-    const data = await handleFetchResponse<GradeNews[]>(response);
     
-    console.log(`Grade news result for ${symbol}:`, data ? `Found ${data.length} results` : 'No data');
-    return data || [];
+    console.log(`Making request to: ${url.replace(apiKey, "API_KEY_HIDDEN")}`);
+    
+    const response = await fetchWithRetry(url);
+    
+    if (!response.ok) {
+      console.warn(`Error response fetching grade news: ${response.status}`);
+      return [];
+    }
+    
+    const data = await response.json();
+    
+    // Validate and clean the data
+    const validData = Array.isArray(data) ? data.filter(item => {
+      // Validate and format dates if needed
+      if (item.publishedDate) {
+        try {
+          const date = new Date(item.publishedDate);
+          // Check if date is valid
+          if (isNaN(date.getTime())) {
+            console.warn(`Invalid date for news item: ${item.publishedDate}`);
+            item.publishedDate = null; // Set to null if invalid
+          }
+        } catch (e) {
+          console.warn(`Error parsing date: ${item.publishedDate}`);
+          item.publishedDate = null; // Set to null if there's an error
+        }
+      }
+      return true; // Keep the item in the array
+    }) : [];
+    
+    console.log(`Grade news result for ${symbol}:`, validData ? `Found ${validData.length} results` : 'No data');
+    return validData || [];
   } catch (error) {
     console.error("Error fetching grade news:", error);
     return [];

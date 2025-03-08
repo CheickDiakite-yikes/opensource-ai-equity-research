@@ -1,8 +1,9 @@
 
-import { GradeNews } from "@/types/ratings/ratingTypes";
+import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { GradeNews } from "@/types/ratings/ratingTypes";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ExternalLink, TrendingUp, TrendingDown, Minus, AlertCircle, GraduationCap } from "lucide-react";
+import { ArrowUpIcon, ArrowDownIcon, MinusIcon, HelpCircleIcon } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 
 interface GradeNewsSectionProps {
@@ -13,134 +14,126 @@ interface GradeNewsSectionProps {
 const GradeNewsSection = ({ gradeNews, isLoading }: GradeNewsSectionProps) => {
   if (isLoading) {
     return (
-      <Card>
+      <Card className="mt-6">
         <CardHeader>
           <CardTitle className="text-xl flex items-center gap-2">
-            <GraduationCap className="h-5 w-5 text-primary" />
-            <span>Analyst Grade Updates</span>
+            <Skeleton className="h-6 w-[180px]" />
           </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            <Skeleton className="h-20 w-full" />
-            <Skeleton className="h-20 w-full" />
-            <Skeleton className="h-20 w-full" />
+            {Array.from({ length: 3 }).map((_, index) => (
+              <div key={index} className="flex flex-col gap-2">
+                <Skeleton className="h-5 w-full" />
+                <Skeleton className="h-4 w-3/4" />
+              </div>
+            ))}
           </div>
         </CardContent>
       </Card>
     );
   }
 
-  // If no data but not loading, show placeholder with explanation
   if (!gradeNews || gradeNews.length === 0) {
     return (
-      <Card className="border-dashed border-muted-foreground/50">
+      <Card className="mt-6">
         <CardHeader>
-          <CardTitle className="text-xl flex items-center gap-2">
-            <GraduationCap className="h-5 w-5 text-primary" />
-            <span>Analyst Grade Updates</span>
-          </CardTitle>
+          <CardTitle className="text-xl">Analyst Ratings & Upgrades</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex items-center gap-2 text-muted-foreground">
-            <AlertCircle size={16} />
-            <p>No recent analyst grade updates are available for this stock. This could be due to API limitations or because no ratings have been issued recently.</p>
+          <div className="text-muted-foreground text-center py-6">
+            <HelpCircleIcon className="mx-auto h-12 w-12 text-muted-foreground/50 mb-2" />
+            <p>No analyst ratings or grade changes available for this stock.</p>
           </div>
         </CardContent>
       </Card>
     );
   }
 
-  // Helper function to determine the direction of grade change
-  const getGradeChangeDirection = (newGrade: string, previousGrade: string) => {
-    if (!newGrade || !previousGrade) return 'same';
+  // Helper function to safely parse date strings and handle invalid dates
+  const safeFormatDate = (dateString: string) => {
+    try {
+      // Check if the date string is valid
+      const date = new Date(dateString);
+      
+      // Check if date is valid
+      if (isNaN(date.getTime())) {
+        return "Date unavailable";
+      }
+      
+      return formatDistanceToNow(date, { addSuffix: true });
+    } catch (error) {
+      console.warn("Error formatting date:", dateString, error);
+      return "Date unavailable";
+    }
+  };
+
+  // Get grade change icon and color
+  const getGradeChangeInfo = (newGrade: string, oldGrade?: string) => {
+    if (!oldGrade) {
+      return { 
+        icon: <HelpCircleIcon className="h-5 w-5 text-yellow-500" />, 
+        colorClass: "text-yellow-500" 
+      };
+    }
+
+    // Simple comparison logic - can be expanded for more nuanced grade comparison
+    if (newGrade.toLowerCase().includes('buy') && !oldGrade.toLowerCase().includes('buy')) {
+      return { 
+        icon: <ArrowUpIcon className="h-5 w-5 text-green-500" />, 
+        colorClass: "text-green-500" 
+      };
+    } 
+    else if (newGrade.toLowerCase().includes('sell') && !oldGrade.toLowerCase().includes('sell')) {
+      return { 
+        icon: <ArrowDownIcon className="h-5 w-5 text-red-500" />, 
+        colorClass: "text-red-500" 
+      };
+    }
     
-    const grades = ['F', 'D-', 'D', 'D+', 'C-', 'C', 'C+', 'B-', 'B', 'B+', 'A-', 'A', 'A+'];
-    const newIndex = grades.indexOf(newGrade);
-    const prevIndex = grades.indexOf(previousGrade);
-    
-    if (newIndex === -1 || prevIndex === -1) return 'same';
-    if (newIndex > prevIndex) return 'up';
-    if (newIndex < prevIndex) return 'down';
-    return 'same';
+    return { 
+      icon: <MinusIcon className="h-5 w-5 text-muted-foreground" />, 
+      colorClass: "text-muted-foreground" 
+    };
   };
 
   return (
-    <Card>
+    <Card className="mt-6">
       <CardHeader>
-        <CardTitle className="text-xl flex items-center gap-2">
-          <GraduationCap className="h-5 w-5 text-primary" />
-          <span>Analyst Grade Updates</span>
-        </CardTitle>
+        <CardTitle className="text-xl">Analyst Ratings & Upgrades</CardTitle>
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
-          {gradeNews.map((news, index) => {
-            const direction = getGradeChangeDirection(news.newGrade, news.previousGrade);
+          {gradeNews.map((item, index) => {
+            const { icon, colorClass } = getGradeChangeInfo(
+              item.newGrade || "", 
+              item.previousGrade
+            );
             
             return (
-              <div key={index} className="border rounded-lg p-4">
+              <div key={index} className="border-b border-border pb-4 last:border-0 last:pb-0">
                 <div className="flex justify-between items-start">
                   <div>
-                    <h3 className="font-medium text-lg">
-                      {news.newsTitle || `${news.symbol} Grade ${news.action || 'Update'} by ${news.gradingCompany}`}
-                    </h3>
+                    <h4 className="font-medium">{item.gradingCompany || "Unknown Analyst"}</h4>
                     <p className="text-sm text-muted-foreground">
-                      {news.gradingCompany} • {formatDistanceToNow(new Date(news.publishedDate), { addSuffix: true })}
+                      {safeFormatDate(item.publishedDate || "")}
                     </p>
                   </div>
-                  <a 
-                    href={news.newsURL} 
-                    target="_blank" 
-                    rel="noopener noreferrer" 
-                    className="text-blue-500 hover:text-blue-700"
-                  >
-                    <ExternalLink size={16} />
-                  </a>
-                </div>
-
-                <div className="mt-2 flex items-center gap-4">
-                  <div className="flex items-center">
-                    <span className="text-sm font-medium">Previous:</span>
-                    <span className={`ml-1 rounded-full px-2 py-0.5 text-xs font-medium ${
-                      news.previousGrade?.startsWith('A') ? 'bg-green-100 text-green-800' :
-                      news.previousGrade?.startsWith('B') ? 'bg-blue-100 text-blue-800' :
-                      news.previousGrade?.startsWith('C') ? 'bg-yellow-100 text-yellow-800' :
-                      news.previousGrade?.startsWith('D') ? 'bg-orange-100 text-orange-800' :
-                      'bg-red-100 text-red-800'
-                    }`}>
-                      {news.previousGrade || 'N/A'}
+                  <div className="flex items-center gap-2">
+                    {icon}
+                    <span className={`font-semibold ${colorClass}`}>
+                      {item.newGrade || "N/A"}
                     </span>
-                  </div>
-
-                  <div className="flex items-center">
-                    {direction === 'up' && <TrendingUp size={18} className="text-green-500" />}
-                    {direction === 'down' && <TrendingDown size={18} className="text-red-500" />}
-                    {direction === 'same' && <Minus size={18} className="text-gray-500" />}
-                  </div>
-
-                  <div className="flex items-center">
-                    <span className="text-sm font-medium">New:</span>
-                    <span className={`ml-1 rounded-full px-2 py-0.5 text-xs font-medium ${
-                      news.newGrade?.startsWith('A') ? 'bg-green-100 text-green-800' :
-                      news.newGrade?.startsWith('B') ? 'bg-blue-100 text-blue-800' :
-                      news.newGrade?.startsWith('C') ? 'bg-yellow-100 text-yellow-800' :
-                      news.newGrade?.startsWith('D') ? 'bg-orange-100 text-orange-800' :
-                      'bg-red-100 text-red-800'
-                    }`}>
-                      {news.newGrade || 'N/A'}
-                    </span>
-                  </div>
-                  
-                  {news.priceWhenPosted && (
-                    <div className="flex items-center">
-                      <span className="text-sm font-medium">Price:</span>
-                      <span className="ml-1 text-xs">
-                        ${news.priceWhenPosted.toFixed(2)}
+                    {item.previousGrade && (
+                      <span className="text-sm text-muted-foreground">
+                        from {item.previousGrade}
                       </span>
-                    </div>
-                  )}
+                    )}
+                  </div>
                 </div>
+                {item.actionComment && (
+                  <p className="mt-2 text-sm">{item.actionComment}</p>
+                )}
               </div>
             );
           })}

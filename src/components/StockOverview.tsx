@@ -3,6 +3,8 @@ import { useStockOverviewData } from "@/hooks/useStockOverviewData";
 import StockOverviewSkeleton from "./stock-overview/StockOverviewSkeleton";
 import ErrorDisplay from "./stock-overview/ErrorDisplay";
 import StockOverviewContent from "./stock-overview/StockOverviewContent";
+import { toast } from "@/components/ui/use-toast";
+import { useEffect } from "react";
 
 interface StockOverviewProps {
   symbol: string;
@@ -22,6 +24,17 @@ const StockOverview = ({ symbol }: StockOverviewProps) => {
     ratingsLoading,
     refetch
   } = useStockOverviewData(symbol);
+
+  // Show a toast when data fails to load but there's no critical error
+  useEffect(() => {
+    if (!loading && !error && (!profile || !quote)) {
+      toast({
+        title: "Data Loading Issue",
+        description: `Some data for ${symbol} could not be loaded. Please try again later.`,
+        variant: "destructive",
+      });
+    }
+  }, [loading, error, profile, quote, symbol]);
 
   // Enhanced logging for debugging
   console.log("StockOverview rendering for", symbol, "with data:", { 
