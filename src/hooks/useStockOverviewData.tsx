@@ -102,6 +102,7 @@ export const useStockOverviewData = (symbol: string) => {
   const loadRatingsData = useCallback(async () => {
     try {
       setRatingsLoading(true);
+      console.log(`Starting to load ratings data for ${symbol}`);
       
       const [snapshotData, newsData] = await Promise.all([
         fetchRatingSnapshot(symbol).catch(err => {
@@ -113,6 +114,11 @@ export const useStockOverviewData = (symbol: string) => {
           return [];
         })
       ]);
+      
+      console.log("Ratings data loaded:", {
+        hasRatingSnapshot: !!snapshotData,
+        gradeNewsCount: newsData?.length || 0
+      });
       
       setRatingSnapshot(snapshotData);
       setGradeNews(newsData);

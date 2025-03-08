@@ -40,6 +40,7 @@ const StockOverviewContent = ({
       
       <CompanyDescription description={profile.description} />
       
+      {/* Ratings section - Ensure these appear before SEC Filings */}
       <RatingsSnapshotSection 
         ratingSnapshot={ratingSnapshot} 
         isLoading={ratingsLoading} 

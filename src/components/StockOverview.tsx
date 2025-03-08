@@ -31,6 +31,12 @@ const StockOverview = ({ symbol }: StockOverviewProps) => {
     return <ErrorDisplay errorMessage={error} onRetry={refetch} />;
   }
 
+  console.log("Ratings data before rendering:", { 
+    hasRatingSnapshot: !!ratingSnapshot, 
+    gradeNewsCount: gradeNews?.length || 0,
+    isRatingsLoading: ratingsLoading
+  });
+
   return (
     <StockOverviewContent
       profile={profile}
