@@ -8,10 +8,23 @@ export const API_BASE_URLS = {
 };
 
 // API Keys
-export const FMP_API_KEY = 
-  typeof Deno !== 'undefined' ? Deno.env.get("FMP_API_KEY") || "" : "";
-export const OPENAI_API_KEY = 
-  typeof Deno !== 'undefined' ? Deno.env.get("OPENAI_API_KEY") || "" : "";
+export const FMP_API_KEY = (() => {
+  try {
+    // @ts-ignore - Deno will exist at runtime in Supabase Edge Functions
+    return Deno?.env?.get("FMP_API_KEY") || "";
+  } catch {
+    return "";
+  }
+})();
+
+export const OPENAI_API_KEY = (() => {
+  try {
+    // @ts-ignore - Deno will exist at runtime in Supabase Edge Functions
+    return Deno?.env?.get("OPENAI_API_KEY") || "";
+  } catch {
+    return "";
+  }
+})();
 
 // OpenAI Models
 export const OPENAI_MODELS = {
