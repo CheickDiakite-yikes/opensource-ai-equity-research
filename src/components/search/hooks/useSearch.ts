@@ -65,6 +65,25 @@ export const useSearch = ({ featuredSymbols = commonTickers }: UseSearchProps = 
     // Always set dropdown to open when user is typing
     setIsOpen(true);
     
+    // Special case handling for common search terms
+    const lowerValue = value.toLowerCase();
+    
+    // Special handling for Disney searches
+    if (lowerValue === 'dis' || lowerValue.includes('disney')) {
+      const disneyTicker = commonTickers.find(ticker => ticker.symbol === 'DIS');
+      if (disneyTicker) {
+        const disneyQuote = createCommonTickerQuote(
+          disneyTicker.symbol, 
+          disneyTicker.name, 
+          lowerValue === 'dis' ? StockCategory.EXACT_MATCH : StockCategory.COMMON
+        );
+        
+        if (isMounted.current) {
+          setResults([disneyQuote]);
+        }
+      }
+    }
+    
     // First check if we have an exact match with a common ticker
     const upperValue = value.toUpperCase();
     const exactCommonMatch = commonTickers.find(ticker => ticker.symbol === upperValue);
@@ -84,15 +103,7 @@ export const useSearch = ({ featuredSymbols = commonTickers }: UseSearchProps = 
     // Immediately show common tickers even before API call
     const commonTickerMatches = findMatchingCommonTickers(value, featuredSymbols);
     
-    if (exactCommonMatch) {
-      // If we have an exact match, add other matches below it
-      if (isMounted.current) {
-        setResults([
-          ...results.filter(r => r.category === StockCategory.EXACT_MATCH),
-          ...commonTickerMatches.filter(r => r.category !== StockCategory.EXACT_MATCH)
-        ]);
-      }
-    } else if (isMounted.current) {
+    if (isMounted.current) {
       setResults(commonTickerMatches);
     }
     
@@ -107,7 +118,7 @@ export const useSearch = ({ featuredSymbols = commonTickers }: UseSearchProps = 
     }
     
     try {
-      // Use our new intelligent search for better results
+      // Use our intelligent search for better results
       const intelligentResults = await getIntelligentSearchResults(value);
       
       // Then also fetch from API for additional results
@@ -142,9 +153,6 @@ export const useSearch = ({ featuredSymbols = commonTickers }: UseSearchProps = 
       
       if (finalResults.length > 0) {
         setResults(finalResults);
-      } else if (exactCommonMatch) {
-        // Keep any exact matches we found earlier
-        // Don't change the results array if we already have an exact match
       } else if (commonTickerMatches.length === 0) {
         // If no API results and no common matches, try exact match with uppercase
         const featuredSymbol = featuredSymbols.find(s => s.symbol === upperValue);

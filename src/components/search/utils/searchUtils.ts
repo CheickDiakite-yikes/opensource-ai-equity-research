@@ -68,7 +68,7 @@ export const findMatchingCommonTickers = (
   const upperQuery = searchQuery.toUpperCase();
   const lowerQuery = searchQuery.toLowerCase();
   
-  // First check for exact match - highest priority
+  // First prioritize exact ticker matches
   const exactSymbol = combinedTickers.find(s => s.symbol === upperQuery);
   if (exactSymbol) {
     matches.push(createCommonTickerQuote(
@@ -78,22 +78,53 @@ export const findMatchingCommonTickers = (
     ));
   }
   
-  // Special case for Disney
-  if (lowerQuery.includes('disney')) {
-    const disneyTicker = combinedTickers.find(s => s.symbol === 'DIS');
-    if (disneyTicker && !matches.some(m => m.symbol === 'DIS')) {
-      matches.push(createCommonTickerQuote(
-        disneyTicker.symbol,
-        disneyTicker.name,
-        exactSymbol?.symbol === 'DIS' ? StockCategory.EXACT_MATCH : StockCategory.COMMON
-      ));
+  // Priority check for common ticker abbreviations and popular companies
+  // This ensures Disney appears when searching for "dis"
+  const commonAbbreviations: Record<string, string[]> = {
+    'dis': ['disney', 'walt disney'],
+    'aapl': ['apple'],
+    'msft': ['microsoft'],
+    'amzn': ['amazon'],
+    'goog': ['google', 'alphabet'],
+    'meta': ['facebook', 'fb'],
+    'tsla': ['tesla']
+  };
+  
+  // Check if query matches any abbreviation key or value
+  Object.entries(commonAbbreviations).forEach(([ticker, terms]) => {
+    // If searching by ticker abbreviation
+    if (ticker.includes(lowerQuery) || lowerQuery.includes(ticker)) {
+      const matchingTicker = combinedTickers.find(t => t.symbol.toLowerCase() === ticker);
+      if (matchingTicker && !matches.some(m => m.symbol === matchingTicker.symbol)) {
+        matches.push(createCommonTickerQuote(
+          matchingTicker.symbol,
+          matchingTicker.name,
+          matchingTicker.symbol === upperQuery ? StockCategory.EXACT_MATCH : StockCategory.COMMON
+        ));
+      }
     }
-  }
+    
+    // If searching by company name
+    terms.forEach(term => {
+      if (term.includes(lowerQuery) || lowerQuery.includes(term)) {
+        const matchingTicker = combinedTickers.find(t => 
+          t.symbol.toLowerCase() === ticker || 
+          t.name.toLowerCase().includes(term)
+        );
+        if (matchingTicker && !matches.some(m => m.symbol === matchingTicker.symbol)) {
+          matches.push(createCommonTickerQuote(
+            matchingTicker.symbol,
+            matchingTicker.name,
+            matchingTicker.symbol === upperQuery ? StockCategory.EXACT_MATCH : StockCategory.COMMON
+          ));
+        }
+      }
+    });
+  });
   
   // Then check for symbols that start with the query (second priority)
   combinedTickers.forEach(({symbol, name}) => {
-    if (symbol === upperQuery) return; // Skip exact matches we already added
-    if (matches.some(m => m.symbol === symbol)) return; // Skip already added symbols (like Disney)
+    if (matches.some(m => m.symbol === symbol)) return; // Skip already added symbols
     
     if (symbol.startsWith(upperQuery)) {
       matches.push(createCommonTickerQuote(symbol, name, StockCategory.COMMON));
@@ -102,7 +133,6 @@ export const findMatchingCommonTickers = (
   
   // Then check for symbols that contain the query or names that contain the query (third priority)
   combinedTickers.forEach(({symbol, name}) => {
-    if (symbol === upperQuery || symbol.startsWith(upperQuery)) return; // Skip those we already added
     if (matches.some(m => m.symbol === symbol)) return; // Skip already added symbols
     
     if (symbol.includes(upperQuery) || 
@@ -119,21 +149,31 @@ export const findMatchingCommonTickers = (
       if (b.category === StockCategory.EXACT_MATCH) return 1;
     }
     
-    // Special case for Disney, always prioritize it when searching for "disney"
-    if (lowerQuery.includes('disney')) {
-      if (a.symbol === 'DIS') return -1;
-      if (b.symbol === 'DIS') return 1;
+    // Special prioritization for common tickers when they match the query
+    const aSym = a.symbol.toLowerCase();
+    const bSym = b.symbol.toLowerCase();
+    const aName = a.name.toLowerCase();
+    const bName = b.name.toLowerCase();
+    
+    // Special case for Disney and other very popular stocks
+    if (lowerQuery === 'dis' || lowerQuery.includes('disney')) {
+      if (aSym === 'dis' || aName.includes('disney')) return -1;
+      if (bSym === 'dis' || bName.includes('disney')) return 1;
     }
     
+    // Check for exact ticker matches
+    if (aSym === lowerQuery) return -1;
+    if (bSym === lowerQuery) return 1;
+    
     // Then by whether they start with the query
-    const aStartsWith = a.symbol.startsWith(upperQuery);
-    const bStartsWith = b.symbol.startsWith(upperQuery);
+    const aStartsWith = aSym.startsWith(lowerQuery);
+    const bStartsWith = bSym.startsWith(lowerQuery);
     
     if (aStartsWith && !bStartsWith) return -1;
     if (!aStartsWith && bStartsWith) return 1;
     
     // Then by symbol length
-    return a.symbol.length - b.symbol.length;
+    return aSym.length - bSym.length;
   });
 };
 

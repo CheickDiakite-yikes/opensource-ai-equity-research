@@ -34,10 +34,26 @@ export const getIntelligentSearchResults = async (query: string): Promise<StockQ
       score: 100 // Maximum score
     });
   }
+  
+  // Special case for Disney - always prioritize it highly when searching for "dis" or "disney"
+  if (upperQuery === 'DIS' || lowerQuery.includes('disney')) {
+    const disneyTicker = commonTickers.find(t => t.symbol === 'DIS');
+    if (disneyTicker) {
+      // If not already added as exact match
+      if (!allMatches.some(m => m.symbol === 'DIS')) {
+        allMatches.push({
+          symbol: disneyTicker.symbol,
+          name: disneyTicker.name,
+          score: upperQuery === 'DIS' ? 100 : 90 // Very high score
+        });
+      }
+    }
+  }
 
   // Score symbols that start with the query (high priority)
   commonTickers.forEach(ticker => {
     if (ticker.symbol === upperQuery) return; // Skip exact matches already added
+    if (allMatches.some(m => m.symbol === ticker.symbol)) return; // Skip already added matches
     
     let score = 0;
     
@@ -241,6 +257,10 @@ export const getIntelligentSearchResults = async (query: string): Promise<StockQ
     if (match.symbol === upperQuery) {
       category = StockCategory.EXACT_MATCH;
     }
+    // Special case for Disney - make it an exact match when searching for 'dis'
+    else if (match.symbol === 'DIS' && (upperQuery === 'DIS' || lowerQuery.includes('disney'))) {
+      category = StockCategory.EXACT_MATCH;
+    }
     
     return createCommonTickerQuote(match.symbol, match.name, category);
   });
@@ -265,8 +285,14 @@ export const getIntelligentSearchResults = async (query: string): Promise<StockQ
       }
     });
     
-    // Sort by category
+    // Sort by category with special handling
     return combinedResults.sort((a, b) => {
+      // First, handle special case for Disney
+      if (lowerQuery === 'dis' || lowerQuery.includes('disney')) {
+        if (a.symbol === 'DIS') return -1;
+        if (b.symbol === 'DIS') return 1;
+      }
+      
       // Exact matches first
       if (a.category === StockCategory.EXACT_MATCH && b.category !== StockCategory.EXACT_MATCH) return -1;
       if (a.category !== StockCategory.EXACT_MATCH && b.category === StockCategory.EXACT_MATCH) return 1;
