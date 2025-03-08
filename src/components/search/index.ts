@@ -1,8 +1,5 @@
 
 export { default as SearchBar } from "./SearchBar";
-export { default as SearchInputContainer } from "./SearchInputContainer";
-export { default as KeyboardNavigationHints } from "./KeyboardNavigationHints";
-export { default as AutoCompleteSuggestion } from "./AutoCompleteSuggestion";
 export * from "./SearchResults";
 export * from "./SearchResultItem";
 export * from "./FeaturedSymbolItem";
@@ -12,7 +9,6 @@ export * from "./useSearchHistory";
 export * from "./types";
 export * from "./hooks/useSearch";
 export * from "./hooks/useSearchInteractions";
-export * from "./hooks/useKeyboardNavigation";
 export * from "./utils/searchUtils";
 export { default as SearchResultSkeleton } from "./SearchResultSkeleton";
 export { default as EmptySearchState } from "./EmptySearchState";
