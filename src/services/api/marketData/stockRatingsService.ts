@@ -3,6 +3,9 @@ import { RatingSnapshot, GradeNews } from "@/types/ratings/ratingTypes";
 import { API_BASE_URLS, FMP_API_KEY } from "../../../../supabase/functions/_shared/constants";
 import { fetchWithRetry, handleFetchResponse } from "../../../../supabase/functions/_shared/fetch-utils";
 
+// Fallback API key to use when environment variable is not available
+const FALLBACK_API_KEY = "d4pXGs1r5epkkuckDZxOzSiG7DTd7BEg";
+
 /**
  * Fetch stock rating snapshot from FMP API
  */
@@ -10,21 +13,15 @@ export const fetchRatingSnapshot = async (symbol: string): Promise<RatingSnapsho
   try {
     console.log(`Fetching rating snapshot for ${symbol}`);
     
-    // Check if API key is available
-    if (!FMP_API_KEY) {
-      console.warn("FMP_API_KEY is not set. Using fallback from API_KEY in fmpApi");
-      // Try to use the API key from fmpApi.ts as fallback
-      const fallbackKey = "d4pXGs1r5epkkuckDZxOzSiG7DTd7BEg";
-      
-      const url = `${API_BASE_URLS.FMP}/rating/${symbol}?apikey=${fallbackKey}`;
-      const response = await fetchWithRetry(url);
-      const data = await handleFetchResponse<RatingSnapshot[]>(response);
-      
-      console.log(`Rating snapshot result for ${symbol}:`, data ? `Found ${data.length} results` : 'No data');
-      return data && data.length > 0 ? data[0] : null;
+    // Use environment API key or fallback
+    const apiKey = FMP_API_KEY || FALLBACK_API_KEY;
+    
+    if (!apiKey) {
+      console.error("No API key available for FMP API calls");
+      return null;
     }
     
-    const url = `${API_BASE_URLS.FMP}/rating/${symbol}?apikey=${FMP_API_KEY}`;
+    const url = `${API_BASE_URLS.FMP}/rating/${symbol}?apikey=${apiKey}`;
     const response = await fetchWithRetry(url);
     const data = await handleFetchResponse<RatingSnapshot[]>(response);
     
@@ -43,23 +40,16 @@ export const fetchGradeNews = async (symbol: string, limit: number = 5): Promise
   try {
     console.log(`Fetching grade news for ${symbol}, limit: ${limit}`);
     
-    // Check if API key is available
-    if (!FMP_API_KEY) {
-      console.warn("FMP_API_KEY is not set. Using fallback from API_KEY in fmpApi");
-      // Try to use the API key from fmpApi.ts as fallback
-      const fallbackKey = "d4pXGs1r5epkkuckDZxOzSiG7DTd7BEg";
-      
-      // We need to use the correct endpoint name "grade" (not "grades")
-      const url = `${API_BASE_URLS.FMP}/grade/${symbol}?limit=${limit}&apikey=${fallbackKey}`;
-      const response = await fetchWithRetry(url);
-      const data = await handleFetchResponse<GradeNews[]>(response);
-      
-      console.log(`Grade news result for ${symbol}:`, data ? `Found ${data.length} results` : 'No data');
-      return data || [];
+    // Use environment API key or fallback
+    const apiKey = FMP_API_KEY || FALLBACK_API_KEY;
+    
+    if (!apiKey) {
+      console.error("No API key available for FMP API calls");
+      return [];
     }
     
     // The correct endpoint is "grade" (not "grades-news" or "upgrade_downgrade")
-    const url = `${API_BASE_URLS.FMP}/grade/${symbol}?limit=${limit}&apikey=${FMP_API_KEY}`;
+    const url = `${API_BASE_URLS.FMP}/grade/${symbol}?limit=${limit}&apikey=${apiKey}`;
     const response = await fetchWithRetry(url);
     const data = await handleFetchResponse<GradeNews[]>(response);
     

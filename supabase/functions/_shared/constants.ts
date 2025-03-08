@@ -10,11 +10,13 @@ export const API_BASE_URLS = {
 // API Keys
 export const FMP_API_KEY = (() => {
   try {
-    // This is needed for TypeScript to recognize Deno
+    // Check if we're in a Deno environment safely
     // @ts-ignore - We need to use this approach because TypeScript doesn't know about Deno
-    const deno = globalThis.Deno;
-    if (deno?.env?.get) {
-      return deno.env.get("FMP_API_KEY") || "";
+    const isDeno = typeof globalThis !== 'undefined' && 'Deno' in globalThis;
+    
+    if (isDeno) {
+      // @ts-ignore - Access Deno from globalThis
+      return globalThis.Deno?.env?.get("FMP_API_KEY") || "";
     }
     return "";
   } catch {
@@ -24,11 +26,13 @@ export const FMP_API_KEY = (() => {
 
 export const OPENAI_API_KEY = (() => {
   try {
-    // This is needed for TypeScript to recognize Deno
+    // Check if we're in a Deno environment safely
     // @ts-ignore - We need to use this approach because TypeScript doesn't know about Deno
-    const deno = globalThis.Deno;
-    if (deno?.env?.get) {
-      return deno.env.get("OPENAI_API_KEY") || "";
+    const isDeno = typeof globalThis !== 'undefined' && 'Deno' in globalThis;
+    
+    if (isDeno) {
+      // @ts-ignore - Access Deno from globalThis
+      return globalThis.Deno?.env?.get("OPENAI_API_KEY") || "";
     }
     return "";
   } catch {

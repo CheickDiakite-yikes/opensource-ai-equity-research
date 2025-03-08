@@ -24,7 +24,10 @@ const StockOverview = ({ symbol }: StockOverviewProps) => {
   } = useStockOverviewData(symbol);
 
   // Enhanced logging for debugging
-  console.log("StockOverview rendering for", symbol, "with ratings data:", { 
+  console.log("StockOverview rendering for", symbol, "with data:", { 
+    hasProfile: !!profile,
+    hasQuote: !!quote,
+    hasRating: !!rating,
     hasRatingSnapshot: !!ratingSnapshot, 
     ratingSnapshotDetails: ratingSnapshot ? {
       rating: ratingSnapshot.rating,
@@ -36,7 +39,11 @@ const StockOverview = ({ symbol }: StockOverviewProps) => {
       date: gradeNews[0].publishedDate,
       newGrade: gradeNews[0].newGrade
     } : null,
-    isRatingsLoading: ratingsLoading
+    secFilingsCount: secFilings?.length || 0,
+    isMainLoading: loading,
+    isRatingsLoading: ratingsLoading,
+    isDocumentsLoading: documentsLoading,
+    error: error
   });
 
   if (loading) {
