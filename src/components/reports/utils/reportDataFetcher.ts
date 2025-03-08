@@ -17,6 +17,7 @@ import {
   fetchSECFilings
 } from "@/services/api";
 import { DataLoadingStatus } from "../types/reportTypes";
+import { KeyRatio } from "@/types/financial/ratioTypes";
 
 /**
  * Fetches data with status tracking for the report
@@ -108,7 +109,7 @@ export const fetchAllReportData = async (
       balanceTTM,
       cashflow: Array.isArray(cashflow) ? cashflow : [],
       cashflowTTM,
-      ratios: Array.isArray(ratios) ? ratios as KeyRatio[] : [],
+      ratios: Array.isArray(ratios) ? ratios : [],
       ratiosTTM,
       news: Array.isArray(news) ? news : [],
       peers: Array.isArray(peers) ? peers : [],
