@@ -7,9 +7,15 @@ export const API_BASE_URLS = {
   OPENAI: "https://api.openai.com/v1"
 };
 
-// API Keys
-export const FMP_API_KEY = Deno.env.get("FMP_API_KEY") || "";
-export const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY") || "";
+// API Keys - Use process.env for Node environments
+// This should work in both Deno and Node environments
+export const FMP_API_KEY = typeof Deno !== 'undefined' 
+  ? Deno.env.get("FMP_API_KEY") || "" 
+  : process.env.FMP_API_KEY || "";
+
+export const OPENAI_API_KEY = typeof Deno !== 'undefined'
+  ? Deno.env.get("OPENAI_API_KEY") || ""
+  : process.env.OPENAI_API_KEY || "";
 
 // OpenAI Models
 export const OPENAI_MODELS = {
