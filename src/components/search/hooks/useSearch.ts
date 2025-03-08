@@ -1,19 +1,26 @@
-
 import { useState, useEffect } from "react";
 import { StockQuote } from "@/types";
 import { StockCategory } from "../types";
 import { searchStocks } from "@/lib/api/fmpApi";
 import { createCommonTickerQuote, findMatchingCommonTickers } from "../utils/searchUtils";
+import { commonTickers } from "@/constants/commonTickers";
 
 interface UseSearchProps {
-  featuredSymbols: { symbol: string; name: string }[];
+  featuredSymbols?: { symbol: string; name: string }[];
 }
 
-export const useSearch = ({ featuredSymbols }: UseSearchProps) => {
+export const useSearch = ({ featuredSymbols = commonTickers }: UseSearchProps = {}) => {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<StockQuote[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
+
+  useEffect(() => {
+    // Show featured symbols by default when dropdown is opened
+    if (isOpen && query.length === 0) {
+      setResults(findMatchingCommonTickers("", featuredSymbols));
+    }
+  }, [isOpen, featuredSymbols]);
 
   const handleSearch = async (value: string) => {
     setQuery(value);
@@ -21,9 +28,31 @@ export const useSearch = ({ featuredSymbols }: UseSearchProps) => {
     // Always set dropdown to open when user is typing
     setIsOpen(true);
     
+    // First check if we have an exact match with a common ticker
+    const upperValue = value.toUpperCase();
+    const exactCommonMatch = commonTickers.find(ticker => ticker.symbol === upperValue);
+    
+    if (exactCommonMatch) {
+      const exactMatchQuote = createCommonTickerQuote(
+        exactCommonMatch.symbol, 
+        exactCommonMatch.name, 
+        StockCategory.EXACT_MATCH
+      );
+      setResults([exactMatchQuote]);
+    }
+    
     // Immediately show common tickers even before API call
     const commonTickerMatches = findMatchingCommonTickers(value, featuredSymbols);
-    setResults(commonTickerMatches);
+    
+    if (exactCommonMatch) {
+      // If we have an exact match, add other matches below it
+      setResults([
+        ...results.filter(r => r.category === StockCategory.EXACT_MATCH),
+        ...commonTickerMatches.filter(r => r.category !== StockCategory.EXACT_MATCH)
+      ]);
+    } else {
+      setResults(commonTickerMatches);
+    }
     
     if (value.length < 1) {
       // Still show the dropdown even with empty query
@@ -34,7 +63,7 @@ export const useSearch = ({ featuredSymbols }: UseSearchProps) => {
     setIsLoading(true);
     
     try {
-      // Then fetch from API
+      // Then fetch from API for additional results
       const searchResults = await searchStocks(value);
       
       if (searchResults && searchResults.length > 0) {
@@ -57,11 +86,14 @@ export const useSearch = ({ featuredSymbols }: UseSearchProps) => {
         const exactMatches = filteredCommonTickers.filter(t => t.category === StockCategory.EXACT_MATCH);
         const regularCommonTickers = filteredCommonTickers.filter(t => t.category === StockCategory.COMMON);
         
+        // Prioritize exact matches, then API results, then regular common tickers
         const combinedResults = [...exactMatches, ...categorizedApiResults, ...regularCommonTickers];
         setResults(combinedResults);
+      } else if (exactCommonMatch) {
+        // Keep any exact matches we found earlier
+        // Don't change the results array if we already have an exact match
       } else if (commonTickerMatches.length === 0) {
         // If no API results and no common matches, try exact match with uppercase
-        const upperValue = value.toUpperCase();
         const featuredSymbol = featuredSymbols.find(s => s.symbol === upperValue);
         
         if (featuredSymbol) {

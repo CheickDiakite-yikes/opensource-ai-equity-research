@@ -5,6 +5,9 @@ import LandingView from "@/components/home/LandingView";
 import StockView from "@/components/stocks/StockView";
 import { toast } from "sonner";
 import { useSearchParams, useNavigate } from "react-router-dom";
+import { featuredSymbols as defaultFeaturedSymbols } from "@/constants/featuredSymbols";
+import SearchBar from "@/components/search/SearchBar";
+import AppHeader from "@/components/layout/AppHeader";
 
 const Index = () => {
   const [symbol, setSymbol] = useState<string>("");
@@ -14,20 +17,7 @@ const Index = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
   
-  const [featuredSymbols] = useState<{symbol: string, name: string}[]>([
-    { symbol: "AAPL", name: "Apple Inc." },
-    { symbol: "MSFT", name: "Microsoft Corporation" },
-    { symbol: "AMZN", name: "Amazon.com Inc." },
-    { symbol: "GOOG", name: "Alphabet Inc." },
-    { symbol: "META", name: "Meta Platforms Inc." },
-    { symbol: "TSLA", name: "Tesla Inc." },
-    { symbol: "NVDA", name: "NVIDIA Corporation" },
-    { symbol: "JPM", name: "JPMorgan Chase & Co." },
-    { symbol: "V", name: "Visa Inc." },
-    { symbol: "MA", name: "Mastercard Inc." },
-    { symbol: "PYPL", name: "PayPal Holdings, Inc." },
-    { symbol: "NFLX", name: "Netflix, Inc." }
-  ]);
+  const [featuredSymbols] = useState<{symbol: string, name: string}[]>(defaultFeaturedSymbols);
 
   useEffect(() => {
     const savedSearches = localStorage.getItem('recentSearches');
@@ -113,13 +103,17 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background to-muted/30">
-      <Header 
-        symbol={symbol}
-        setSymbol={setSymbol}
-        handleSearch={handleSearch}
-        isLoading={isLoading}
-        handleKeyDown={handleKeyDown}
-      />
+      {!searchedSymbol ? (
+        <AppHeader featuredSymbols={featuredSymbols} />
+      ) : (
+        <Header 
+          symbol={symbol}
+          setSymbol={setSymbol}
+          handleSearch={handleSearch}
+          isLoading={isLoading}
+          handleKeyDown={handleKeyDown}
+        />
+      )}
 
       <main className="container mx-auto px-4 sm:px-6 md:px-0 max-w-[1400px]">
         {!searchedSymbol ? (

@@ -6,31 +6,40 @@ import { motion, AnimatePresence } from "framer-motion";
 import { SearchResults } from "./SearchResults";
 import { ClearButton } from "./ClearButton";
 import { featuredSymbols as defaultFeaturedSymbols } from "@/constants/featuredSymbols";
+import { commonTickers } from "@/constants/commonTickers";
 import { useSearch } from "./hooks/useSearch";
 import { useSearchInteractions } from "./hooks/useSearchInteractions";
+import { useEffect } from "react";
 
 interface SearchBarProps {
   placeholder?: string;
   className?: string;
   featuredSymbols?: { symbol: string; name: string }[];
+  autoFocus?: boolean;
 }
 
 const SearchBar = ({ 
   placeholder = "Search for a stock...", 
   className,
-  featuredSymbols = defaultFeaturedSymbols
+  featuredSymbols = defaultFeaturedSymbols,
+  autoFocus = false
 }: SearchBarProps) => {
+  // Combine featured symbols with common tickers
+  const allSymbols = [...featuredSymbols, ...commonTickers.filter(
+    ticker => !featuredSymbols.some(fs => fs.symbol === ticker.symbol)
+  )];
+  
   const { 
     query, 
     setQuery, 
     results, 
-    setResults,  // Get setResults from useSearch hook
+    setResults,
     isLoading, 
     isOpen, 
     setIsOpen,
     handleSearch,
     findMatchingCommonTickers
-  } = useSearch({ featuredSymbols });
+  } = useSearch({ featuredSymbols: allSymbols });
   
   const {
     handleFocus,
@@ -39,6 +48,13 @@ const SearchBar = ({
     searchInputRef,
     recentSearches
   } = useSearchInteractions();
+  
+  useEffect(() => {
+    // Auto focus the search input if requested
+    if (autoFocus && searchInputRef.current) {
+      searchInputRef.current.focus();
+    }
+  }, [autoFocus]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && query.trim() !== '') {
@@ -49,6 +65,7 @@ const SearchBar = ({
         // Try to navigate to the exact query as a symbol
         handleSelectStock(query.toUpperCase());
       }
+      e.preventDefault();
     }
   };
 

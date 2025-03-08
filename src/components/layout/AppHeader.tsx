@@ -1,6 +1,6 @@
 
 import React from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import SearchBar from "@/components/search/SearchBar";
 import UserMenu from "./UserMenu";
 import { motion } from "framer-motion";
@@ -8,12 +8,10 @@ import { useTheme } from "@/components/theme-provider";
 
 // Define props interface
 interface AppHeaderProps {
-  // Make featuredSymbols optional since SearchBar has a default value
   featuredSymbols?: { symbol: string; name: string }[];
 }
 
 const AppHeader: React.FC<AppHeaderProps> = ({ featuredSymbols }) => {
-  const navigate = useNavigate();
   const { theme } = useTheme();
   
   return (

@@ -1,6 +1,7 @@
 
 import { StockQuote } from "@/types";
 import { StockCategory } from "../types";
+import { commonTickers } from "@/constants/commonTickers";
 
 /**
  * Create a stock quote object for common tickers
@@ -43,37 +44,92 @@ export const createCommonTickerQuote = (
  */
 export const findMatchingCommonTickers = (
   searchQuery: string,
-  featuredSymbols: {symbol: string, name: string}[]
+  featuredSymbols: {symbol: string, name: string}[] = commonTickers
 ): StockQuote[] => {
+  // Combine featured symbols with common tickers for a more comprehensive search
+  const combinedTickers = [...featuredSymbols];
+  
+  // Add common tickers if they're not already in featured
+  const featuredSymbolSet = new Set(featuredSymbols.map(s => s.symbol));
+  commonTickers.forEach(ticker => {
+    if (!featuredSymbolSet.has(ticker.symbol)) {
+      combinedTickers.push(ticker);
+    }
+  });
+  
   if (!searchQuery) {
-    // When no query, show all featured symbols
-    return featuredSymbols.map(({symbol, name}) => 
+    // When no query, show a subset of featured symbols
+    return featuredSymbols.slice(0, 10).map(({symbol, name}) => 
       createCommonTickerQuote(symbol, name)
     );
   }
   
   const matches: StockQuote[] = [];
   const upperQuery = searchQuery.toUpperCase();
+  const lowerQuery = searchQuery.toLowerCase();
   
   // First check for exact match - highest priority
-  const featuredSymbol = featuredSymbols.find(s => s.symbol === upperQuery);
-  if (featuredSymbol) {
+  const exactSymbol = combinedTickers.find(s => s.symbol === upperQuery);
+  if (exactSymbol) {
     matches.push(createCommonTickerQuote(
-      featuredSymbol.symbol, 
-      featuredSymbol.name, 
+      exactSymbol.symbol, 
+      exactSymbol.name, 
       StockCategory.EXACT_MATCH
     ));
   }
   
-  // Then add other matching symbols
-  featuredSymbols.forEach(({symbol, name}) => {
+  // Then check for symbols that start with the query (second priority)
+  combinedTickers.forEach(({symbol, name}) => {
     if (symbol === upperQuery) return; // Skip exact matches we already added
     
-    if (symbol.includes(upperQuery) || 
-        name.toLowerCase().includes(searchQuery.toLowerCase())) {
-      matches.push(createCommonTickerQuote(symbol, name));
+    if (symbol.startsWith(upperQuery)) {
+      matches.push(createCommonTickerQuote(symbol, name, StockCategory.COMMON));
     }
   });
   
-  return matches;
+  // Then check for symbols that contain the query or names that contain the query (third priority)
+  combinedTickers.forEach(({symbol, name}) => {
+    if (symbol === upperQuery || symbol.startsWith(upperQuery)) return; // Skip those we already added
+    
+    if (symbol.includes(upperQuery) || 
+        name.toLowerCase().includes(lowerQuery)) {
+      matches.push(createCommonTickerQuote(symbol, name, StockCategory.COMMON));
+    }
+  });
+  
+  // Sort by symbol length (shorter first) after respecting the priority groups
+  return matches.sort((a, b) => {
+    // First by category priority
+    if (a.category !== b.category) {
+      if (a.category === StockCategory.EXACT_MATCH) return -1;
+      if (b.category === StockCategory.EXACT_MATCH) return 1;
+    }
+    
+    // Then by whether they start with the query
+    const aStartsWith = a.symbol.startsWith(upperQuery);
+    const bStartsWith = b.symbol.startsWith(upperQuery);
+    
+    if (aStartsWith && !bStartsWith) return -1;
+    if (!aStartsWith && bStartsWith) return 1;
+    
+    // Then by symbol length
+    return a.symbol.length - b.symbol.length;
+  });
+};
+
+/**
+ * Get all available tickers, combining common tickers with featured symbols
+ */
+export const getAllTickers = (featuredSymbols: {symbol: string, name: string}[] = []): {symbol: string, name: string}[] => {
+  const combined = [...commonTickers];
+  
+  // Add any featured symbols that aren't in commonTickers
+  const commonTickerSymbols = new Set(commonTickers.map(t => t.symbol));
+  featuredSymbols.forEach(symbol => {
+    if (!commonTickerSymbols.has(symbol.symbol)) {
+      combined.push(symbol);
+    }
+  });
+  
+  return combined;
 };
