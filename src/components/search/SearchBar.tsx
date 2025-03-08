@@ -24,7 +24,7 @@ const SearchBar = ({
     query, 
     setQuery, 
     results, 
-    setResults,
+    setResults,  // Get setResults from useSearch hook
     isLoading, 
     isOpen, 
     setIsOpen,
@@ -72,7 +72,6 @@ const SearchBar = ({
           onFocus={handleFocus}
           onKeyDown={handleKeyDown}
           className="w-full h-11 pl-10 pr-10 rounded-lg border-input bg-background text-foreground transition-all focus:ring-2 focus:ring-primary/20 focus:border-primary/50"
-          autoComplete="off"
         />
         <ClearButton 
           query={query} 

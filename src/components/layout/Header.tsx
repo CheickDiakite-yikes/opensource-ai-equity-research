@@ -1,20 +1,18 @@
 
-import React from 'react';
-import { Link, useLocation } from 'react-router-dom';
-import { Moon, Sun, Search, Menu, X } from 'lucide-react';
+import React from "react";
+import { Link } from "react-router-dom";
+import { Search, ChevronRight } from "lucide-react";
+import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { useTheme } from '@/components/theme-provider';
-import { SearchBar } from '@/components/search';
-import { cn } from '@/lib/utils';
-import UserMenu from './UserMenu';
-import { featuredSymbols } from '@/constants/featuredSymbols';
+import { motion } from "framer-motion";
+import UserMenu from "./UserMenu";
 
 interface HeaderProps {
-  symbol?: string;
-  setSymbol?: (symbol: string) => void;
-  handleSearch?: () => void;
-  isLoading?: boolean;
-  handleKeyDown?: (e: React.KeyboardEvent) => void;
+  symbol: string;
+  setSymbol: (symbol: string) => void;
+  handleSearch: () => void;
+  isLoading: boolean;
+  handleKeyDown: (e: React.KeyboardEvent) => void;
 }
 
 const Header: React.FC<HeaderProps> = ({
@@ -24,60 +22,65 @@ const Header: React.FC<HeaderProps> = ({
   isLoading,
   handleKeyDown
 }) => {
-  const { theme, setTheme } = useTheme();
-  const location = useLocation();
-  const [isMenuOpen, setIsMenuOpen] = React.useState(false);
-  
-  const toggleTheme = () => {
-    setTheme(theme === 'dark' ? 'light' : 'dark');
-  };
-
   return (
-    <header className="sticky top-0 z-50 w-full bg-background/95 backdrop-blur-sm border-b shadow-sm">
-      <div className="container flex h-16 items-center justify-between mx-auto px-4 sm:px-6 md:px-8">
-        <div className="flex items-center">
-          <Link to="/" className="flex items-center space-x-2">
-            <div className="w-6 h-6 bg-blue-600 rounded-sm flex items-center justify-center">
-              <span className="text-white text-xs font-bold">AI</span>
-            </div>
-            <span className="font-bold hidden sm:block text-xl">Equity Research</span>
-          </Link>
-        </div>
-
-        <div className={cn(
-          "md:flex items-center md:space-x-4",
-          "fixed md:static inset-0 flex-col justify-start pt-16 px-4 md:pt-0 md:flex-row",
-          "bg-background/95 md:bg-transparent backdrop-blur-sm md:backdrop-blur-none",
-          "transform transition-transform duration-300 ease-in-out",
-          isMenuOpen ? "flex translate-x-0" : "hidden md:flex -translate-x-full md:translate-x-0",
-          "z-40 md:z-auto"
-        )}>
-          <nav className="flex flex-col md:flex-row space-y-4 md:space-y-0 md:space-x-4 mb-8 md:mb-0">
-            <Link to="/" className="text-foreground/90 hover:text-foreground font-medium">Home</Link>
-            <Link to="/saved-content" className="text-foreground/90 hover:text-foreground font-medium">Saved Content</Link>
-          </nav>
-          
-          <div className="w-full md:w-auto md:ml-4">
-            <SearchBar 
-              featuredSymbols={featuredSymbols}
-              className="w-full md:w-[300px] lg:w-[320px]"
+    <header className="border-b border-border/40 py-4 px-6 bg-gradient-to-r from-background to-secondary/10 backdrop-blur-sm sticky top-0 z-10 shadow-sm">
+      <div className="container mx-auto flex flex-col sm:flex-row justify-between items-center gap-4">
+        <motion.div
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.5 }}
+          className="flex items-center"
+        >
+          <Link to="/" className="flex items-center gap-2">
+            <img 
+              src="/lovable-uploads/288626b2-84b1-4aca-9399-864c39d76976.png" 
+              alt="DiDi Equity Research" 
+              className="h-10"
             />
-          </div>
-          
-          <button onClick={toggleTheme} className="mt-6 md:mt-0 md:ml-2 p-2 rounded-full hover:bg-muted">
-            {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
-          </button>
-        </div>
-
-        <div className="flex items-center space-x-2">
-          <UserMenu />
-          
-          <button 
-            className="md:hidden p-2 rounded-md hover:bg-muted"
-            onClick={() => setIsMenuOpen(!isMenuOpen)}
+            <span className="bg-clip-text text-transparent bg-gradient-to-r from-primary to-blue-600 text-2xl font-bold">
+              Equity Research
+            </span>
+          </Link>
+        </motion.div>
+        
+        <div className="flex items-center gap-4">
+          <motion.div 
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.2 }}
+            className="flex items-center gap-2 w-full sm:w-auto"
           >
-            {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
-          </button>
+            <div className="relative flex-1 sm:w-64">
+              <Input
+                type="text"
+                placeholder="Search ticker symbol..."
+                value={symbol}
+                onChange={(e) => setSymbol(e.target.value)}
+                onKeyDown={handleKeyDown}
+                className="pl-10 bg-background/80 backdrop-blur-sm pr-4 border-border/50 focus:border-primary/50 transition-colors h-10"
+              />
+              <Search className="absolute left-3 top-2.5 h-5 w-5 text-muted-foreground" />
+            </div>
+            <Button 
+              onClick={handleSearch} 
+              disabled={isLoading || !symbol.trim()} 
+              className="gap-1 px-4 h-10"
+            >
+              {isLoading ? (
+                <span className="flex items-center gap-2">
+                  <div className="h-4 w-4 rounded-full border-2 border-white border-t-transparent animate-spin" />
+                  Searching...
+                </span>
+              ) : (
+                <>
+                  Search
+                  <ChevronRight className="h-3.5 w-3.5" />
+                </>
+              )}
+            </Button>
+          </motion.div>
+          
+          <UserMenu />
         </div>
       </div>
     </header>
