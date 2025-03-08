@@ -1,8 +1,7 @@
-
 import { invokeSupabaseFunction } from "./base";
 import { fetchCompanyPeers } from "./marketDataService";
 import { fetchKeyRatiosTTM } from "./financialService";
-import { StockProfile, StockQuote } from "@/types";
+import { StockProfile, StockQuote } from "@/types/profile/companyTypes";
 
 export interface PeerCompany {
   symbol: string;

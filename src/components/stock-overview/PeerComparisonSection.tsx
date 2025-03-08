@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Download, RefreshCw } from "lucide-react";
-import { StockProfile, StockQuote } from "@/types";
+import { StockProfile, StockQuote } from "@/types/profile/companyTypes";
 import { PeerCompany, fetchPeerComparisonData } from "@/services/api/peerComparisonService";
 import { formatLargeNumber, formatPercentage } from "@/utils/financial/formatUtils";
 
