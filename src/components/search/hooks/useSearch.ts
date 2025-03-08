@@ -3,8 +3,10 @@ import { useState, useEffect, useRef } from "react";
 import { StockQuote } from "@/types";
 import { StockCategory } from "../types";
 import { searchStocks } from "@/lib/api/fmpApi";
-import { createCommonTickerQuote, findMatchingCommonTickers } from "../utils/searchUtils";
+import { getIntelligentSearchResults } from "@/services/api/marketData/searchService";
+import { createCommonTickerQuote, findMatchingCommonTickers, getAllTickers } from "../utils/searchUtils";
 import { commonTickers } from "@/constants/commonTickers";
+import { toast } from "sonner";
 
 interface UseSearchProps {
   featuredSymbols?: { symbol: string; name: string }[];
@@ -99,34 +101,41 @@ export const useSearch = ({ featuredSymbols = commonTickers }: UseSearchProps = 
     }
     
     try {
-      // Then fetch from API for additional results
-      const searchResults = await searchStocks(value);
+      // Use our new intelligent search for better results
+      const intelligentResults = await getIntelligentSearchResults(value);
+      
+      // Then also fetch from API for additional results
+      const apiResults = await searchStocks(value);
       
       if (!isMounted.current) return;
       
-      if (searchResults && searchResults.length > 0) {
-        // Add category to API results
-        const categorizedApiResults = searchResults.map(result => ({
+      let finalResults: StockQuote[] = [];
+      
+      // First get exact matches from intelligent results
+      const exactMatches = intelligentResults.filter(r => r.category === StockCategory.EXACT_MATCH);
+      
+      // Next get API results, but don't duplicate symbols from intelligent results
+      const intelligentSymbols = new Set(intelligentResults.map(r => r.symbol));
+      const filteredApiResults = apiResults
+        .filter(r => !intelligentSymbols.has(r.symbol))
+        .map(result => ({
           ...result,
           category: StockCategory.API,
           isCommonTicker: false
         }));
-        
-        // Get symbols from API to avoid duplicates
-        const apiSymbols = new Set(categorizedApiResults.map(r => r.symbol));
-        
-        // Filter common tickers to avoid duplicates
-        const filteredCommonTickers = commonTickerMatches.filter(
-          match => !apiSymbols.has(match.symbol)
-        );
-        
-        // Combine results with exact matches first
-        const exactMatches = filteredCommonTickers.filter(t => t.category === StockCategory.EXACT_MATCH);
-        const regularCommonTickers = filteredCommonTickers.filter(t => t.category === StockCategory.COMMON);
-        
-        // Prioritize exact matches, then API results, then regular common tickers
-        const combinedResults = [...exactMatches, ...categorizedApiResults, ...regularCommonTickers];
-        setResults(combinedResults);
+      
+      // Next get other intelligent results that aren't exact matches
+      const otherIntelligentResults = intelligentResults.filter(r => r.category !== StockCategory.EXACT_MATCH);
+      
+      // Combine results with prioritized ordering
+      finalResults = [
+        ...exactMatches,
+        ...filteredApiResults,
+        ...otherIntelligentResults
+      ];
+      
+      if (finalResults.length > 0) {
+        setResults(finalResults);
       } else if (exactCommonMatch) {
         // Keep any exact matches we found earlier
         // Don't change the results array if we already have an exact match

@@ -26,6 +26,13 @@ export const commonTickers = [
   { symbol: "NFLX", name: "Netflix Inc." },
   { symbol: "PYPL", name: "PayPal Holdings Inc." },
   { symbol: "QCOM", name: "Qualcomm Inc." },
+  { symbol: "TXN", name: "Texas Instruments Inc." },
+  { symbol: "MU", name: "Micron Technology Inc." },
+  { symbol: "AVGO", name: "Broadcom Inc." },
+  { symbol: "AMAT", name: "Applied Materials Inc." },
+  { symbol: "LRCX", name: "Lam Research Corporation" },
+  { symbol: "TSM", name: "Taiwan Semiconductor Manufacturing" },
+  { symbol: "ASML", name: "ASML Holding N.V." },
   
   // Financial
   { symbol: "JPM", name: "JPMorgan Chase & Co." },
@@ -38,6 +45,10 @@ export const commonTickers = [
   { symbol: "MA", name: "Mastercard Inc." },
   { symbol: "AXP", name: "American Express Co." },
   { symbol: "BLK", name: "BlackRock Inc." },
+  { symbol: "COF", name: "Capital One Financial Corp." },
+  { symbol: "SCHW", name: "Charles Schwab Corporation" },
+  { symbol: "PNC", name: "PNC Financial Services Group" },
+  { symbol: "USB", name: "U.S. Bancorp" },
   
   // Healthcare
   { symbol: "JNJ", name: "Johnson & Johnson" },
@@ -49,6 +60,14 @@ export const commonTickers = [
   { symbol: "CVS", name: "CVS Health Corp." },
   { symbol: "ABT", name: "Abbott Laboratories" },
   { symbol: "TMO", name: "Thermo Fisher Scientific Inc." },
+  { symbol: "DHR", name: "Danaher Corporation" },
+  { symbol: "BMY", name: "Bristol-Myers Squibb Co." },
+  { symbol: "AMGN", name: "Amgen Inc." },
+  { symbol: "GILD", name: "Gilead Sciences Inc." },
+  { symbol: "BIIB", name: "Biogen Inc." },
+  { symbol: "ISRG", name: "Intuitive Surgical Inc." },
+  { symbol: "REGN", name: "Regeneron Pharmaceuticals Inc." },
+  { symbol: "VRTX", name: "Vertex Pharmaceuticals Inc." },
   
   // Consumer
   { symbol: "KO", name: "Coca-Cola Co." },
@@ -61,30 +80,62 @@ export const commonTickers = [
   { symbol: "SBUX", name: "Starbucks Corp." },
   { symbol: "HD", name: "Home Depot Inc." },
   { symbol: "PG", name: "Procter & Gamble Co." },
+  { symbol: "TGT", name: "Target Corp." },
+  { symbol: "LOW", name: "Lowe's Companies Inc." },
+  { symbol: "BKNG", name: "Booking Holdings Inc." },
+  { symbol: "AMZN", name: "Amazon.com Inc." },
+  { symbol: "EXPE", name: "Expedia Group Inc." },
+  { symbol: "ABNB", name: "Airbnb Inc." },
+  { symbol: "ETSY", name: "Etsy Inc." },
   
   // Energy
   { symbol: "XOM", name: "Exxon Mobil Corp." },
   { symbol: "CVX", name: "Chevron Corp." },
   { symbol: "BP", name: "BP p.l.c." },
   { symbol: "COP", name: "ConocoPhillips" },
+  { symbol: "SLB", name: "Schlumberger Limited" },
+  { symbol: "EOG", name: "EOG Resources Inc." },
+  { symbol: "PXD", name: "Pioneer Natural Resources Co." },
+  { symbol: "PSX", name: "Phillips 66" },
+  { symbol: "OXY", name: "Occidental Petroleum Corp." },
   
   // Telecommunications
   { symbol: "T", name: "AT&T Inc." },
   { symbol: "VZ", name: "Verizon Communications Inc." },
+  { symbol: "TMUS", name: "T-Mobile US Inc." },
+  { symbol: "CMCSA", name: "Comcast Corporation" },
+  { symbol: "CHTR", name: "Charter Communications Inc." },
   
   // Industrial
   { symbol: "GE", name: "General Electric Co." },
   { symbol: "BA", name: "Boeing Co." },
   { symbol: "CAT", name: "Caterpillar Inc." },
   { symbol: "MMM", name: "3M Co." },
+  { symbol: "HON", name: "Honeywell International Inc." },
+  { symbol: "UNP", name: "Union Pacific Corporation" },
+  { symbol: "FDX", name: "FedEx Corporation" },
+  { symbol: "UPS", name: "United Parcel Service Inc." },
+  { symbol: "LMT", name: "Lockheed Martin Corporation" },
+  { symbol: "RTX", name: "Raytheon Technologies Corp." },
   
   // Automotive
   { symbol: "F", name: "Ford Motor Co." },
   { symbol: "GM", name: "General Motors Co." },
+  { symbol: "TSLA", name: "Tesla Inc." },
+  { symbol: "TM", name: "Toyota Motor Corp." },
+  { symbol: "HMC", name: "Honda Motor Co. Ltd." },
+  { symbol: "RIVN", name: "Rivian Automotive Inc." },
+  { symbol: "LCID", name: "Lucid Group Inc." },
   
   // Retail
   { symbol: "AMZN", name: "Amazon.com Inc." },
   { symbol: "TGT", name: "Target Corp." },
+  { symbol: "WMT", name: "Walmart Inc." },
+  { symbol: "COST", name: "Costco Wholesale Corp." },
+  { symbol: "HD", name: "Home Depot Inc." },
+  { symbol: "LOW", name: "Lowe's Companies Inc." },
+  { symbol: "TJX", name: "The TJX Companies Inc." },
+  { symbol: "ULTA", name: "Ulta Beauty Inc." },
   
   // Popular Growth Stocks
   { symbol: "SQ", name: "Block Inc. (Square)" },
@@ -97,17 +148,57 @@ export const commonTickers = [
   { symbol: "TTD", name: "The Trade Desk Inc." },
   { symbol: "U", name: "Unity Software Inc." },
   { symbol: "NET", name: "Cloudflare Inc." },
+  { symbol: "CRWD", name: "CrowdStrike Holdings Inc." },
+  { symbol: "ZS", name: "Zscaler Inc." },
+  { symbol: "OKTA", name: "Okta Inc." },
+  { symbol: "RBLX", name: "Roblox Corporation" },
+  { symbol: "DOCU", name: "DocuSign Inc." },
+  { symbol: "TWLO", name: "Twilio Inc." },
+  { symbol: "TEAM", name: "Atlassian Corporation" },
   
   // Crypto-related
   { symbol: "COIN", name: "Coinbase Global Inc." },
   { symbol: "MSTR", name: "MicroStrategy Inc." },
   { symbol: "MARA", name: "Marathon Digital Holdings Inc." },
   { symbol: "RIOT", name: "Riot Platforms Inc." },
+  { symbol: "SQ", name: "Block Inc. (Square)" },
+  { symbol: "BITF", name: "Bitfarms Ltd." },
+  { symbol: "HUT", name: "Hut 8 Mining Corp." },
   
   // Major International
   { symbol: "BABA", name: "Alibaba Group Holding Ltd." },
   { symbol: "TSM", name: "Taiwan Semiconductor Manufacturing" },
   { symbol: "NVO", name: "Novo Nordisk A/S" },
   { symbol: "TM", name: "Toyota Motor Corp." },
-  { symbol: "ASML", name: "ASML Holding N.V." }
+  { symbol: "ASML", name: "ASML Holding N.V." },
+  { symbol: "PDD", name: "PDD Holdings Inc." },
+  { symbol: "TCEHY", name: "Tencent Holdings Ltd." },
+  { symbol: "BIDU", name: "Baidu Inc." },
+  { symbol: "JD", name: "JD.com Inc." },
+  { symbol: "NIO", name: "NIO Inc." },
+  { symbol: "SE", name: "Sea Limited" },
+  { symbol: "AZN", name: "AstraZeneca PLC" },
+  { symbol: "GSK", name: "GSK plc" },
+  { symbol: "SAP", name: "SAP SE" },
+  
+  // Semiconductor focused
+  { symbol: "NVDA", name: "NVIDIA Corporation" },
+  { symbol: "AMD", name: "Advanced Micro Devices Inc." },
+  { symbol: "INTC", name: "Intel Corporation" },
+  { symbol: "AVGO", name: "Broadcom Inc." },
+  { symbol: "TSM", name: "Taiwan Semiconductor Manufacturing" },
+  { symbol: "MU", name: "Micron Technology Inc." },
+  { symbol: "QCOM", name: "Qualcomm Inc." },
+  { symbol: "TXN", name: "Texas Instruments Inc." },
+  { symbol: "AMAT", name: "Applied Materials Inc." },
+  { symbol: "LRCX", name: "Lam Research Corporation" },
+  { symbol: "ASML", name: "ASML Holding N.V." },
+  { symbol: "KLAC", name: "KLA Corporation" },
+  { symbol: "ADI", name: "Analog Devices Inc." },
+  { symbol: "MRVL", name: "Marvell Technology Inc." },
+  { symbol: "NXPI", name: "NXP Semiconductors N.V." },
+  { symbol: "ON", name: "ON Semiconductor Corporation" },
+  { symbol: "MPWR", name: "Monolithic Power Systems Inc." },
+  { symbol: "SWKS", name: "Skyworks Solutions Inc." },
+  { symbol: "MCHP", name: "Microchip Technology Inc." }
 ];
