@@ -22,21 +22,20 @@ interface AnalysisTabsProps {
 
 const AnalysisTabs: React.FC<AnalysisTabsProps> = ({ 
   symbol, 
-  financials = [], 
-  ratioData = [], 
+  financials, 
+  ratioData, 
   transcripts = [], 
   filings = [] 
 }) => {
   const [activeTab, setActiveTab] = useState("financials");
   
-  // Error handling if financials data is missing or empty
+  // Error handling if financials data is missing
   if (!financials || financials.length === 0) {
     return (
       <ErrorState 
         symbol={symbol} 
         onRetry={() => {}} 
         isRetrying={false} 
-        customMessage="No financial data available for analysis. Please try another ticker symbol or check back later."
       />
     );
   }

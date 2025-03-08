@@ -1,15 +1,13 @@
 
 import { useState, useEffect, useCallback } from "react";
-import { StockProfile, StockQuote } from "@/types/profile/companyTypes";
-import { RatingSnapshot, GradeNews } from "@/types/ratings/ratingTypes";
-import { SECFiling } from "@/types/documentTypes";
+import { StockProfile, StockQuote, EarningsCall, SECFiling } from "@/types";
 import { 
   fetchStockProfile, 
   fetchStockQuote, 
+  fetchEarningsTranscripts, 
   fetchSECFilings,
+  generateTranscriptHighlights,
   fetchStockRating,
-  fetchRatingSnapshot,
-  fetchGradeNews,
   withRetry
 } from "@/services/api";
 import { toast } from "@/components/ui/use-toast";
@@ -17,39 +15,20 @@ import { toast } from "@/components/ui/use-toast";
 export const useStockOverviewData = (symbol: string) => {
   const [profile, setProfile] = useState<StockProfile | null>(null);
   const [quote, setQuote] = useState<StockQuote | null>(null);
+  const [earningsCalls, setEarningsCalls] = useState<EarningsCall[]>([]);
   const [secFilings, setSecFilings] = useState<SECFiling[]>([]);
   const [loading, setLoading] = useState(true);
   const [documentsLoading, setDocumentsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [rating, setRating] = useState<string | null>(null);
-  const [ratingSnapshot, setRatingSnapshot] = useState<RatingSnapshot | null>(null);
-  const [gradeNews, setGradeNews] = useState<GradeNews[]>([]);
-  const [ratingsLoading, setRatingsLoading] = useState(true);
 
-  useEffect(() => {
-    if (symbol) {
-      setProfile(null);
-      setQuote(null);
-      setSecFilings([]);
-      setRating(null);
-      setRatingSnapshot(null);
-      setGradeNews([]);
-      setError(null);
-      setLoading(true);
-      setDocumentsLoading(true);
-      setRatingsLoading(true);
-      
-      console.log(`State reset for new symbol: ${symbol}`);
-    }
-  }, [symbol]);
-
+  // Load main company data
   const loadData = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
       
-      console.log(`Loading core data for symbol: ${symbol}`);
-      
+      // Use retry mechanism for core data
       const [profileData, quoteData, ratingData] = await Promise.all([
         withRetry(() => fetchStockProfile(symbol), { retries: 2 }),
         withRetry(() => fetchStockQuote(symbol), { retries: 2 }),
@@ -70,6 +49,7 @@ export const useStockOverviewData = (symbol: string) => {
       console.error("Error loading stock overview data:", err);
       setError(err.message || `Failed to load data for ${symbol}`);
       
+      // Show a helpful toast message
       toast({
         title: "Error Loading Data",
         description: `Could not load data for ${symbol}. ${err.message || "Please try again later."}`,
@@ -80,20 +60,67 @@ export const useStockOverviewData = (symbol: string) => {
     }
   }, [symbol]);
 
+  // Load document data (earnings transcripts and SEC filings)
   const loadDocuments = useCallback(async () => {
     try {
       setDocumentsLoading(true);
       
-      console.log(`Loading documents for symbol: ${symbol}`);
+      const [earningsData, filingsData] = await Promise.all([
+        fetchEarningsTranscripts(symbol).catch(err => {
+          console.warn("Error loading transcripts:", err);
+          return [];
+        }),
+        fetchSECFilings(symbol).catch(err => {
+          console.warn("Error loading SEC filings:", err);
+          return [];
+        })
+      ]);
       
-      const filingsData = await fetchSECFilings(symbol).catch(err => {
-        console.warn("Error loading SEC filings:", err);
-        return [];
-      });
+      if (earningsData && earningsData.length > 0) {
+        const processedCalls = await Promise.all(
+          earningsData.slice(0, 3).map(async (call) => {
+            if (call.content && !call.highlights) {
+              try {
+                const highlights = await generateTranscriptHighlights(call.content, {
+                  symbol: call.symbol,
+                  quarter: call.quarter,
+                  year: call.year,
+                  date: call.date
+                });
+                return { ...call, highlights };
+              } catch (e) {
+                console.error("Error generating highlights:", e);
+                return call;
+              }
+            }
+            return call;
+          })
+        );
+        
+        setEarningsCalls(processedCalls);
+      } else {
+        // Fallback data if no real data is available
+        setEarningsCalls([
+          {
+            symbol,
+            date: "2023-10-25",
+            quarter: "Q3",
+            year: "2023",
+            content: "",
+            url: `https://financialmodelingprep.com/api/v4/earning_call_transcript/${symbol}`,
+            highlights: [
+              "No transcript data available for this symbol",
+              "Check back later for updated information",
+              "You can also view other sections for available data"
+            ]
+          }
+        ]);
+      }
       
       if (filingsData && filingsData.length > 0) {
         setSecFilings(filingsData);
       } else {
+        // Fallback empty state for filings
         setSecFilings([
           {
             symbol,
@@ -109,60 +136,17 @@ export const useStockOverviewData = (symbol: string) => {
       }
     } catch (err) {
       console.error("Error loading document data:", err);
+      // Document loading errors don't prevent the main view from loading
     } finally {
       setDocumentsLoading(false);
     }
   }, [symbol]);
 
-  const loadRatingsData = useCallback(async () => {
-    try {
-      setRatingsLoading(true);
-      
-      console.log(`Starting to load ratings data for ${symbol}`);
-      
-      console.log("Attempting to fetch rating snapshot...");
-      const snapshotData = await fetchRatingSnapshot(symbol);
-      
-      if (snapshotData && snapshotData.symbol.toUpperCase() !== symbol.toUpperCase()) {
-        console.error(`Symbol mismatch detected! Requested: ${symbol}, Received: ${snapshotData.symbol}`);
-      } else {
-        console.log("Rating snapshot result:", snapshotData ? "Success" : "No data");
-        setRatingSnapshot(snapshotData);
-      }
-      
-      console.log("Attempting to fetch grade news...");
-      const newsData = await fetchGradeNews(symbol, 10);
-      
-      if (newsData && newsData.length > 0 && 
-          newsData[0].symbol && 
-          newsData[0].symbol.toUpperCase() !== symbol.toUpperCase()) {
-        console.error(`Symbol mismatch in news data! Requested: ${symbol}, Received: ${newsData[0].symbol}`);
-      } else {
-        console.log("Grade news result:", newsData && newsData.length > 0 ? `Found ${newsData.length} items` : "No data");
-        setGradeNews(newsData || []);
-      }
-      
-      console.log("Completed loading ratings data:", { 
-        hasRatingSnapshot: !!snapshotData,
-        snapshotDetails: snapshotData ? {
-          symbol: snapshotData.symbol,
-          rating: snapshotData.rating,
-          overallScore: snapshotData.overallScore
-        } : null,
-        gradeNewsCount: newsData?.length || 0 
-      });
-    } catch (err) {
-      console.error("Error loading ratings data:", err);
-    } finally {
-      setRatingsLoading(false);
-    }
-  }, [symbol]);
-
+  // Refetch all data
   const refetch = useCallback(() => {
     loadData();
     loadDocuments();
-    loadRatingsData(); // Fixed: was incorrectly named loadRatingsLoading
-  }, [loadData, loadDocuments, loadRatingsData]);
+  }, [loadData, loadDocuments]);
 
   useEffect(() => {
     if (symbol) {
@@ -173,21 +157,18 @@ export const useStockOverviewData = (symbol: string) => {
   useEffect(() => {
     if (symbol && profile) {
       loadDocuments();
-      loadRatingsData();
     }
-  }, [symbol, profile, loadDocuments, loadRatingsData]);
+  }, [symbol, profile, loadDocuments]);
 
   return {
     profile,
     quote,
+    earningsCalls,
     secFilings,
     loading,
     documentsLoading,
     error,
     rating,
-    ratingSnapshot,
-    gradeNews,
-    ratingsLoading,
     refetch
   };
 };

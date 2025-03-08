@@ -8,41 +8,8 @@ export const API_BASE_URLS = {
 };
 
 // API Keys
-export const FMP_API_KEY = (() => {
-  try {
-    // Check if we're in a Deno environment safely
-    // Approach that works in both TypeScript compilation and runtime
-    const hasDeno = typeof globalThis !== 'undefined' && 
-                    'Deno' in globalThis && 
-                    typeof globalThis.Deno?.env?.get === 'function';
-    
-    if (hasDeno) {
-      // @ts-ignore - Access Deno from globalThis
-      return globalThis.Deno?.env?.get("FMP_API_KEY") || "";
-    }
-    return "";
-  } catch {
-    return "";
-  }
-})();
-
-export const OPENAI_API_KEY = (() => {
-  try {
-    // Check if we're in a Deno environment safely
-    // Approach that works in both TypeScript compilation and runtime
-    const hasDeno = typeof globalThis !== 'undefined' && 
-                    'Deno' in globalThis && 
-                    typeof globalThis.Deno?.env?.get === 'function';
-    
-    if (hasDeno) {
-      // @ts-ignore - Access Deno from globalThis
-      return globalThis.Deno?.env?.get("OPENAI_API_KEY") || "";
-    }
-    return "";
-  } catch {
-    return "";
-  }
-})();
+export const FMP_API_KEY = Deno.env.get("FMP_API_KEY") || "";
+export const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY") || "";
 
 // OpenAI Models
 export const OPENAI_MODELS = {

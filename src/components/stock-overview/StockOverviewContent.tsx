@@ -1,36 +1,30 @@
 
 import { StockProfile, StockQuote } from "@/types/profile/companyTypes";
-import { SECFiling } from "@/types/documentTypes";
-import { RatingSnapshot, GradeNews } from "@/types/ratings/ratingTypes";
+import { EarningsCall, SECFiling } from "@/types/documentTypes";
 import CompanyHeader from "./CompanyHeader";
 import InfoCards from "./InfoCards";
 import CompanyDescription from "./CompanyDescription";
+import EarningsCallSection from "./EarningsCallSection";
 import SECFilingsSection from "./SECFilingsSection";
-import RatingsSnapshotSection from "./RatingsSnapshotSection";
-import GradeNewsSection from "./GradeNewsSection";
 
 interface StockOverviewContentProps {
   profile: StockProfile;
   quote: StockQuote;
   rating: string | null;
+  earningsCalls: EarningsCall[];
   secFilings: SECFiling[];
   documentsLoading: boolean;
   symbol: string;
-  ratingSnapshot: RatingSnapshot | null;
-  gradeNews: GradeNews[];
-  ratingsLoading: boolean;
 }
 
 const StockOverviewContent = ({
   profile,
   quote,
   rating,
+  earningsCalls,
   secFilings,
   documentsLoading,
-  symbol,
-  ratingSnapshot,
-  gradeNews,
-  ratingsLoading
+  symbol
 }: StockOverviewContentProps) => {
   return (
     <div className="space-y-6">
@@ -40,15 +34,9 @@ const StockOverviewContent = ({
       
       <CompanyDescription description={profile.description} />
       
-      {/* Ratings sections - Ensuring these always appear before SEC Filings */}
-      <RatingsSnapshotSection 
-        ratingSnapshot={ratingSnapshot} 
-        isLoading={ratingsLoading} 
-      />
-      
-      <GradeNewsSection 
-        gradeNews={gradeNews} 
-        isLoading={ratingsLoading} 
+      <EarningsCallSection 
+        earningsCalls={earningsCalls} 
+        isLoading={documentsLoading} 
       />
       
       <SECFilingsSection 
