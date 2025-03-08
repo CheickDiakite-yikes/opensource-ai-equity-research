@@ -1,12 +1,13 @@
 
 import React from "react";
 import { Link } from "react-router-dom";
-import { Search, ChevronRight } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
 import { useTheme } from "@/components/theme-provider";
 import UserMenu from "./UserMenu";
+import { SearchBar } from "@/components/search";
+import { ChevronRight } from "lucide-react";
 
 interface HeaderProps {
   symbol: string;
@@ -46,41 +47,17 @@ const Header: React.FC<HeaderProps> = ({
           </Link>
         </motion.div>
         
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-4 w-full sm:w-auto">
           <motion.div 
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.2 }}
-            className="flex items-center gap-2 w-full sm:w-auto"
+            className="w-full max-w-md"
           >
-            <div className="relative flex-1 sm:w-64">
-              <Input
-                type="text"
-                placeholder="Search ticker symbol..."
-                value={symbol}
-                onChange={(e) => setSymbol(e.target.value)}
-                onKeyDown={handleKeyDown}
-                className="pl-10 bg-background/80 backdrop-blur-sm pr-4 border-border/50 focus:border-primary/50 transition-colors h-10"
-              />
-              <Search className="absolute left-3 top-2.5 h-5 w-5 text-muted-foreground" />
-            </div>
-            <Button 
-              onClick={handleSearch} 
-              disabled={isLoading || !symbol.trim()} 
-              className="gap-1 px-4 h-10"
-            >
-              {isLoading ? (
-                <span className="flex items-center gap-2">
-                  <div className="h-4 w-4 rounded-full border-2 border-white border-t-transparent animate-spin" />
-                  Searching...
-                </span>
-              ) : (
-                <>
-                  Search
-                  <ChevronRight className="h-3.5 w-3.5" />
-                </>
-              )}
-            </Button>
+            <SearchBar 
+              placeholder="Search ticker symbol..."
+              className="w-full"
+            />
           </motion.div>
           
           <UserMenu />
