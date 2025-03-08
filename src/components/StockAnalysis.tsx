@@ -15,13 +15,26 @@ interface StockAnalysisProps {
 
 const StockAnalysis = ({ symbol }: StockAnalysisProps) => {
   const [isRetrying, setIsRetrying] = useState(false);
+  const [componentMounted, setComponentMounted] = useState(false);
+  
+  // Track component mount for proper initialization
+  useEffect(() => {
+    console.log(`StockAnalysis for ${symbol} - Component mounted`);
+    setComponentMounted(true);
+    
+    return () => {
+      console.log(`StockAnalysis for ${symbol} - Component unmounted`);
+      setComponentMounted(false);
+    };
+  }, [symbol]);
   
   // We'll use the useResearchReportData hook to get all financial data
   const { 
     isLoading, 
     data, 
     error, 
-    dataLoadingStatus
+    dataLoadingStatus,
+    hasStockData
   } = useResearchReportData(symbol);
   
   // Use the direct financial data hook to handle missing data
@@ -73,14 +86,34 @@ const StockAnalysis = ({ symbol }: StockAnalysisProps) => {
       hasMinimumData: hasCombinedMinimumData,
       isLoading,
       isDirectFetchLoading,
-      isRetrying
+      isRetrying,
+      componentMounted
     });
-  }, [combinedData, symbol, hasCombinedMinimumData, isLoading, isDirectFetchLoading, isRetrying]);
+    
+    // Auto-retry if data is missing but not already retrying
+    if (componentMounted && !isLoading && !isDirectFetchLoading && !isRetrying && !hasCombinedMinimumData && hasStockData) {
+      console.log(`StockAnalysis - Automatic retry for ${symbol}`);
+      handleRetry();
+    }
+  }, [
+    combinedData, 
+    symbol, 
+    hasCombinedMinimumData, 
+    isLoading, 
+    isDirectFetchLoading, 
+    isRetrying, 
+    componentMounted, 
+    hasStockData
+  ]);
 
   // Function to handle retry
   const handleRetry = async () => {
+    if (isRetrying) return; // Prevent multiple retries
+    
     setIsRetrying(true);
-    toast.info(`Retrying data fetch for ${symbol}...`);
+    toast.info(`Fetching financial data for ${symbol}...`, {
+      id: `retry-fetch-${symbol}`,
+    });
     
     try {
       const success = await retryFetchingData();

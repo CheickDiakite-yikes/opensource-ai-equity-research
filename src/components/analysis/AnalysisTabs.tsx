@@ -28,16 +28,26 @@ const AnalysisTabs: React.FC<AnalysisTabsProps> = ({
   filings = [] 
 }) => {
   const [activeTab, setActiveTab] = useState("financials");
+  const [isLoaded, setIsLoaded] = useState(false);
   
   useEffect(() => {
+    // Mark component as loaded after a short delay to prevent flickering
+    const timer = setTimeout(() => {
+      setIsLoaded(true);
+    }, 100);
+    
     // Log data availability for debugging
     console.log(`AnalysisTabs for ${symbol} - Data status:`, {
       financialsLength: financials?.length || 0,
       ratioDataLength: ratioData?.length || 0,
       hasFinancials: Boolean(financials && financials.length > 0),
       hasRatios: Boolean(ratioData && ratioData.length > 0),
+      transcriptsLength: transcripts?.length || 0,
+      filingsLength: filings?.length || 0,
     });
-  }, [financials, ratioData, symbol]);
+    
+    return () => clearTimeout(timer);
+  }, [financials, ratioData, symbol, transcripts, filings]);
   
   // Error handling if financials data is missing
   if (!financials || financials.length === 0) {
@@ -54,6 +64,10 @@ const AnalysisTabs: React.FC<AnalysisTabsProps> = ({
     );
   }
 
+  if (!isLoaded) {
+    return <LoadingSkeleton />;
+  }
+
   return (
     <Tabs defaultValue="financials" value={activeTab} onValueChange={setActiveTab} className="w-full">
       <TabsList className="grid grid-cols-5 mb-4">
@@ -65,23 +79,23 @@ const AnalysisTabs: React.FC<AnalysisTabsProps> = ({
       </TabsList>
       
       <TabsContent value="financials" className="mt-4">
-        <FinancialsTabContent financials={financials} />
+        {activeTab === "financials" && <FinancialsTabContent financials={financials} />}
       </TabsContent>
       
       <TabsContent value="balance-sheet" className="mt-4">
-        <BalanceSheetTabContent financials={financials} />
+        {activeTab === "balance-sheet" && <BalanceSheetTabContent financials={financials} />}
       </TabsContent>
       
       <TabsContent value="cash-flow" className="mt-4">
-        <CashFlowTabContent financials={financials} />
+        {activeTab === "cash-flow" && <CashFlowTabContent financials={financials} />}
       </TabsContent>
       
       <TabsContent value="ratios" className="mt-4">
-        <RatiosTabContent ratioData={ratioData} symbol={symbol} />
+        {activeTab === "ratios" && <RatiosTabContent ratioData={ratioData} symbol={symbol} />}
       </TabsContent>
       
       <TabsContent value="growth" className="mt-4">
-        <GrowthTabContent financials={financials} symbol={symbol} />
+        {activeTab === "growth" && <GrowthTabContent financials={financials} symbol={symbol} />}
       </TabsContent>
     </Tabs>
   );
