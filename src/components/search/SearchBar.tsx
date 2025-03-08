@@ -1,4 +1,3 @@
-
 import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
@@ -10,20 +9,25 @@ import { commonTickers } from "@/constants/commonTickers";
 import { useSearch } from "./hooks/useSearch";
 import { useSearchInteractions } from "./hooks/useSearchInteractions";
 import { useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 
 interface SearchBarProps {
   placeholder?: string;
   className?: string;
   featuredSymbols?: { symbol: string; name: string }[];
   autoFocus?: boolean;
+  onSelectCallback?: (symbol: string) => void;
 }
 
 const SearchBar = ({ 
   placeholder = "Search for a stock...", 
   className,
   featuredSymbols = defaultFeaturedSymbols,
-  autoFocus = false
+  autoFocus = false,
+  onSelectCallback
 }: SearchBarProps) => {
+  const navigate = useNavigate();
+  
   // Combine featured symbols with common tickers
   const allSymbols = [...featuredSymbols, ...commonTickers.filter(
     ticker => !featuredSymbols.some(fs => fs.symbol === ticker.symbol)
@@ -43,18 +47,35 @@ const SearchBar = ({
   
   const {
     handleFocus,
-    handleSelectStock,
+    handleSelectStock: baseHandleSelectStock,
     commandRef,
     searchInputRef,
     recentSearches
-  } = useSearchInteractions();
+  } = useSearchInteractions(onSelectCallback);
+  
+  // Custom handler that ensures proper navigation
+  const handleSelectStock = (symbol: string) => {
+    if (onSelectCallback) {
+      // If a callback is provided, use it (for custom handling)
+      onSelectCallback(symbol);
+    } else {
+      // Otherwise use default navigation behavior
+      const params = new URLSearchParams();
+      params.set('symbol', symbol);
+      params.set('tab', 'overview');
+      navigate(`/?${params.toString()}`);
+    }
+    
+    // Close the dropdown
+    setIsOpen(false);
+  };
   
   useEffect(() => {
     // Auto focus the search input if requested
     if (autoFocus && searchInputRef.current) {
       searchInputRef.current.focus();
     }
-  }, [autoFocus]);
+  }, [autoFocus, searchInputRef]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && query.trim() !== '') {

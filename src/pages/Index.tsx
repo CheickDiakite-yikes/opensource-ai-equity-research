@@ -39,6 +39,7 @@ const Index = () => {
     setIsLoading(true);
     setSearchedSymbol(symbolUpperCase);
     
+    // Update recent searches
     const updatedSearches = [
       symbolUpperCase,
       ...recentSearches.filter(s => s !== symbolUpperCase)
@@ -71,32 +72,41 @@ const Index = () => {
   const clearSearch = () => {
     setSearchedSymbol("");
     setSymbol("");
-    navigate('/');
+    // Clear symbol from URL
+    searchParams.delete('symbol');
+    setSearchParams(searchParams);
     toast.info("Returned to home view", {
       duration: 2000,
     });
   };
 
   const searchSymbol = (sym: string) => {
-    setSymbol(sym);
-    setSearchedSymbol(sym);
+    if (!sym || sym.trim() === '') return;
     
+    const upperSym = sym.toUpperCase();
+    setSymbol(upperSym);
+    setSearchedSymbol(upperSym);
+    
+    // Update recent searches
     const updatedSearches = [
-      sym,
-      ...recentSearches.filter(s => s !== sym)
+      upperSym,
+      ...recentSearches.filter(s => s !== upperSym)
     ].slice(0, 5);
     
     setRecentSearches(updatedSearches);
     localStorage.setItem('recentSearches', JSON.stringify(updatedSearches));
     
+    // Set up URL parameters for the stock view
+    const newParams = new URLSearchParams();
+    newParams.set('symbol', upperSym);
+    
     // Preserve the current tab or default to overview
     const currentTab = searchParams.get('tab');
-    const newParams = new URLSearchParams();
-    newParams.set('symbol', sym);
     newParams.set('tab', currentTab || 'overview');
+    
     setSearchParams(newParams);
     
-    toast.success(`Loading research data for ${sym}`, {
+    toast.success(`Loading research data for ${upperSym}`, {
       duration: 3000,
     });
   };

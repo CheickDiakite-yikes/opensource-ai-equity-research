@@ -24,14 +24,19 @@ const StockView: React.FC<StockViewProps> = ({ symbol, onClear }) => {
     if (tabParam && ["overview", "analysis", "report"].includes(tabParam)) {
       setActiveTab(tabParam);
       console.log("Setting active tab to:", tabParam);
+    } else {
+      // If no valid tab parameter, default to overview and update URL
+      setActiveTab("overview");
+      searchParams.set("tab", "overview");
+      setSearchParams(searchParams);
     }
-  }, [searchParams]);
+  }, [searchParams, setSearchParams]);
 
   // Handle tab change to update URL
   const handleTabChange = (tab: string) => {
     setActiveTab(tab);
     
-    // Update URL with new tab parameter
+    // Update URL with new tab parameter while preserving the symbol
     searchParams.set("tab", tab);
     setSearchParams(searchParams);
     
