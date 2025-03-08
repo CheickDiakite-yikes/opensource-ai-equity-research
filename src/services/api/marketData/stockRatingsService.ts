@@ -22,7 +22,9 @@ export const fetchRatingSnapshot = async (symbol: string): Promise<RatingSnapsho
       return null;
     }
     
-    const url = `${API_BASE_URLS.FMP}/rating/${symbol}?apikey=${apiKey}`;
+    // Add timestamp to prevent caching
+    const timestamp = new Date().getTime();
+    const url = `${API_BASE_URLS.FMP}/rating/${symbol}?apikey=${apiKey}&_nocache=${timestamp}`;
     console.log(`Making request to: ${url.replace(apiKey, "API_KEY_HIDDEN")}`);
     
     const response = await fetchWithRetry(url);
@@ -36,6 +38,12 @@ export const fetchRatingSnapshot = async (symbol: string): Promise<RatingSnapsho
     
     if (!data || !Array.isArray(data) || data.length === 0) {
       console.warn(`No rating snapshot data found for ${symbol}`);
+      return null;
+    }
+    
+    // Verify that the returned data is for the requested symbol
+    if (data[0].symbol && data[0].symbol.toUpperCase() !== symbol.toUpperCase()) {
+      console.error(`Symbol mismatch: requested ${symbol} but received ${data[0].symbol}`);
       return null;
     }
     
@@ -87,8 +95,9 @@ export const fetchGradeNews = async (symbol: string, limit: number = 5): Promise
       return [];
     }
     
-    // The correct endpoint is "grade" according to FMP API docs
-    const url = `${API_BASE_URLS.FMP}/grade/${symbol}?limit=${limit}&apikey=${apiKey}`;
+    // Add timestamp to prevent caching
+    const timestamp = new Date().getTime();
+    const url = `${API_BASE_URLS.FMP}/grade/${symbol}?limit=${limit}&apikey=${apiKey}&_nocache=${timestamp}`;
     
     console.log(`Making request to: ${url.replace(apiKey, "API_KEY_HIDDEN")}`);
     
@@ -100,6 +109,17 @@ export const fetchGradeNews = async (symbol: string, limit: number = 5): Promise
     }
     
     const data = await response.json();
+    
+    // Verify we have valid data for the requested symbol
+    if (Array.isArray(data) && data.length > 0 && data[0].symbol) {
+      const dataSymbol = data[0].symbol.toUpperCase();
+      const requestedSymbol = symbol.toUpperCase();
+      
+      if (dataSymbol !== requestedSymbol) {
+        console.error(`Symbol mismatch in grade news: requested ${requestedSymbol} but received ${dataSymbol}`);
+        return [];
+      }
+    }
     
     // Validate and normalize data format
     const validData = Array.isArray(data) ? data.map(item => {

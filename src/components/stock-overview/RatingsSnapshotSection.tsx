@@ -71,9 +71,8 @@ const RatingsSnapshotSection = ({ ratingSnapshot, isLoading }: RatingsSnapshotSe
     return (score / 5) * 100;
   };
 
-  // Add debugging for the current rating snapshot
-  console.log("Rendering rating snapshot:", {
-    symbol: ratingSnapshot.symbol,
+  // Ensure symbol is prominently displayed in the header
+  console.log(`Rendering rating snapshot for ${ratingSnapshot.symbol}:`, {
     rating: ratingSnapshot.rating,
     overallScore: ratingSnapshot.overallScore
   });

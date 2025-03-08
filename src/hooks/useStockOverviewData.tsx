@@ -1,5 +1,6 @@
+
 import { useState, useEffect, useCallback } from "react";
-import { StockProfile, StockQuote } from "@/types";
+import { StockProfile, StockQuote } from "@/types/profile/companyTypes";
 import { RatingSnapshot, GradeNews } from "@/types/ratings/ratingTypes";
 import { SECFiling } from "@/types/documentTypes";
 import { 
@@ -25,10 +26,31 @@ export const useStockOverviewData = (symbol: string) => {
   const [gradeNews, setGradeNews] = useState<GradeNews[]>([]);
   const [ratingsLoading, setRatingsLoading] = useState(true);
 
+  // Reset all state when symbol changes
+  useEffect(() => {
+    if (symbol) {
+      // Reset state on symbol change to prevent showing stale data
+      setProfile(null);
+      setQuote(null);
+      setSecFilings([]);
+      setRating(null);
+      setRatingSnapshot(null);
+      setGradeNews([]);
+      setError(null);
+      setLoading(true);
+      setDocumentsLoading(true);
+      setRatingsLoading(true);
+      
+      console.log(`State reset for new symbol: ${symbol}`);
+    }
+  }, [symbol]);
+
   const loadData = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
+      
+      console.log(`Loading core data for symbol: ${symbol}`);
       
       const [profileData, quoteData, ratingData] = await Promise.all([
         withRetry(() => fetchStockProfile(symbol), { retries: 2 }),
@@ -64,6 +86,8 @@ export const useStockOverviewData = (symbol: string) => {
     try {
       setDocumentsLoading(true);
       
+      console.log(`Loading documents for symbol: ${symbol}`);
+      
       const filingsData = await fetchSECFilings(symbol).catch(err => {
         console.warn("Error loading SEC filings:", err);
         return [];
@@ -94,22 +118,36 @@ export const useStockOverviewData = (symbol: string) => {
 
   const loadRatingsData = useCallback(async () => {
     try {
-      setRatingSnapshot(null);
-      setGradeNews([]);
       setRatingsLoading(true);
       
       console.log(`Starting to load ratings data for ${symbol}`);
       
+      // Fetch rating snapshot with explicit symbol verification
       console.log("Attempting to fetch rating snapshot...");
       const snapshotData = await fetchRatingSnapshot(symbol);
-      console.log("Rating snapshot result:", snapshotData ? "Success" : "No data");
+      
+      // Verify the returned data matches our requested symbol
+      if (snapshotData && snapshotData.symbol.toUpperCase() !== symbol.toUpperCase()) {
+        console.error(`Symbol mismatch detected! Requested: ${symbol}, Received: ${snapshotData.symbol}`);
+        // Do not set invalid data
+      } else {
+        console.log("Rating snapshot result:", snapshotData ? "Success" : "No data");
+        setRatingSnapshot(snapshotData);
+      }
       
       console.log("Attempting to fetch grade news...");
       const newsData = await fetchGradeNews(symbol, 10);
-      console.log("Grade news result:", newsData && newsData.length > 0 ? `Found ${newsData.length} items` : "No data");
       
-      setRatingSnapshot(snapshotData);
-      setGradeNews(newsData || []);
+      // Verify at least the first news item matches our symbol
+      if (newsData && newsData.length > 0 && 
+          newsData[0].symbol && 
+          newsData[0].symbol.toUpperCase() !== symbol.toUpperCase()) {
+        console.error(`Symbol mismatch in news data! Requested: ${symbol}, Received: ${newsData[0].symbol}`);
+        // Do not set invalid data
+      } else {
+        console.log("Grade news result:", newsData && newsData.length > 0 ? `Found ${newsData.length} items` : "No data");
+        setGradeNews(newsData || []);
+      }
       
       console.log("Completed loading ratings data:", { 
         hasRatingSnapshot: !!snapshotData,
@@ -131,12 +169,10 @@ export const useStockOverviewData = (symbol: string) => {
     loadData();
     loadDocuments();
     loadRatingsData();
-  }, [loadData, loadDocuments, loadRatingsData]);
+  }, [loadData, loadDocuments, loadRatingsLoading]);
 
   useEffect(() => {
     if (symbol) {
-      setRatingSnapshot(null);
-      setGradeNews([]);
       loadData();
     }
   }, [symbol, loadData]);
