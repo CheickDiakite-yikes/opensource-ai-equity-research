@@ -5,9 +5,12 @@ import {
   Command,
   CommandEmpty,
   CommandInput,
-  CommandList
+  CommandList,
+  CommandGroup,
+  CommandSeparator
 } from "@/components/ui/command";
 import { History, BarChart4, Sparkles, TrendingUp, Info } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 import SearchResultSkeleton from "./SearchResultSkeleton";
 import EmptySearchState from "./EmptySearchState";
 import SearchResultsSection from "./SearchResultsSection";
