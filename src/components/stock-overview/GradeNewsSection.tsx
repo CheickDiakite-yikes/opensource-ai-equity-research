@@ -131,8 +131,8 @@ const GradeNewsSection = ({ gradeNews, isLoading }: GradeNewsSectionProps) => {
                     )}
                   </div>
                 </div>
-                {item.actionComment && (
-                  <p className="mt-2 text-sm">{item.actionComment}</p>
+                {item.action && (
+                  <p className="mt-2 text-sm">{item.action}</p>
                 )}
               </div>
             );

@@ -20,17 +20,19 @@ export interface RatingSnapshot {
 
 /**
  * Stock grade news from FMP API
+ * Based on the /grade endpoint from FMP API
  */
 export interface GradeNews {
   symbol: string;
-  publishedDate: string;
-  newsURL: string;
-  newsTitle: string;
-  newsBaseURL: string;
-  newsPublisher: string;
-  newGrade: string;
-  previousGrade: string;
+  date?: string;        // Alternative date field
+  publishedDate: string; // Primary date field
   gradingCompany: string;
-  action: string;
-  priceWhenPosted: number;
+  previousGrade: string;
+  newGrade: string;
+  action: string;       // 'upgrade', 'downgrade', 'maintain', etc.
+  newsURL?: string;
+  newsTitle?: string;
+  newsBaseURL?: string;
+  newsPublisher?: string;
+  priceWhenPosted?: number;
 }
