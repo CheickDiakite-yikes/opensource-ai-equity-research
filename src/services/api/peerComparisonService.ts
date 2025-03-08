@@ -1,5 +1,6 @@
+
 import { invokeSupabaseFunction } from "./base";
-import { fetchCompanyPeers } from "./marketDataService";
+import { fetchCompanyPeers } from "./marketData";
 import { fetchKeyRatiosTTM } from "./financialService";
 import { StockProfile, StockQuote } from "@/types/profile/companyTypes";
 
@@ -47,7 +48,7 @@ export const fetchPeerComparisonData = async (
           peerQuote = quote;
           peerProfile = profile;
         } else {
-          // Use peers-controller from the API for more efficient API usage
+          // Use get-stock-data endpoint for more efficient API usage
           const peersData = await invokeSupabaseFunction<any>('get-stock-data', {
             symbol: peerSymbol,
             endpoint: 'quote'
