@@ -13,9 +13,6 @@ export const useLocalSearch = (
     const exactMatch = commonTickers.find(ticker => ticker.symbol === upperValue);
     const commonTickerMatches = findMatchingCommonTickers(value, featuredSymbols);
 
-    return {
-      exactMatch,
-      commonTickerMatches
-    };
+    return { exactMatch, commonTickerMatches };
   }, [featuredSymbols]);
 };
