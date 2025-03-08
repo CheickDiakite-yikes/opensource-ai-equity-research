@@ -1,3 +1,4 @@
+
 /**
  * Financial Modeling Prep (FMP) API client
  */
@@ -42,7 +43,8 @@ async function fetchFromFMP<T>(endpoint: string): Promise<T> {
     return data;
   } catch (error) {
     console.error(`Error fetching ${endpoint}:`, error);
-    throw error; // Let the calling function handle the error
+    toast.error(`Failed to fetch data: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    throw error;
   }
 }
 
@@ -113,18 +115,11 @@ export async function getCompanyNews(symbol: string, limit: number = 10): Promis
 }
 
 /**
- * Search for stocks - improved with better error handling
+ * Search for stocks
  */
 export async function searchStocks(query: string): Promise<StockQuote[]> {
   if (!query || query.length < 1) return [];
-  
-  try {
-    return await fetchFromFMP<StockQuote[]>(`/search?query=${query}&limit=10`);
-  } catch (error) {
-    console.error(`Error searching for ${query}:`, error);
-    // Return empty array instead of throwing, so the UI can still show common tickers
-    return [];
-  }
+  return fetchFromFMP<StockQuote[]>(`/search?query=${query}&limit=10`);
 }
 
 /**

@@ -25,9 +25,8 @@ export const ClearButton = ({ query, isLoading, onClear }: ClearButtonProps) => 
           size="sm"
           className="h-7 w-7 p-0 rounded-full hover:bg-primary/10"
           onClick={onClear}
-          aria-label="Clear search"
         >
-          <X size={16} strokeWidth={2.5} />
+          <X size={16} />
         </Button>
       </div>
     );
