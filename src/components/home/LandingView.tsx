@@ -7,6 +7,10 @@ import FeatureCards from "./FeatureCards";
 import HowToUse from "./HowToUse";
 import MarketNews from "./MarketNews";
 import RecentSearches from "./RecentSearches";
+import { MarketNewsArticle } from "@/services/api/marketData/newsService";
+import { MarketRegion } from "@/services/api/marketData/indicesService";
+import { useQuery } from "@tanstack/react-query";
+import { fetchMarketIndices } from "@/services/api/marketData/indicesService";
 
 interface LandingViewProps {
   recentSearches: string[];
@@ -19,6 +23,12 @@ const LandingView: React.FC<LandingViewProps> = ({
   featuredSymbols,
   onSelectSymbol 
 }) => {
+  // Use React Query to fetch market indices
+  const { data: marketData, isLoading: isIndicesLoading } = useQuery({
+    queryKey: ['marketIndices'],
+    queryFn: fetchMarketIndices,
+  });
+
   return (
     <div className="space-y-10 pb-10">
       <HeroSection featuredSymbols={featuredSymbols} />
@@ -30,7 +40,10 @@ const LandingView: React.FC<LandingViewProps> = ({
         />
       )}
       
-      <MarketPerformance />
+      <MarketPerformance 
+        marketData={marketData || []} 
+        isLoading={isIndicesLoading} 
+      />
       
       <FeaturedCompanies 
         featuredSymbols={featuredSymbols}
@@ -41,7 +54,7 @@ const LandingView: React.FC<LandingViewProps> = ({
       
       <HowToUse />
       
-      <MarketNews />
+      <MarketNews newsData={[]} />
     </div>
   );
 };
