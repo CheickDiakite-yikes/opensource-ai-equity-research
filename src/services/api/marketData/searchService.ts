@@ -92,7 +92,7 @@ export const getIntelligentSearchResults = async (query: string): Promise<StockQ
       'jpm': ['jpmorgan', 'morgan'],
       'pg': ['procter', 'gamble', 'proctor'],
       'unh': ['united', 'health'],
-      'dis': ['disney'],
+      'dis': ['disney', 'walt'],
       'hd': ['home', 'depot'],
       'bac': ['bank', 'america'],
       'abbv': ['abbvie'],
@@ -128,6 +128,11 @@ export const getIntelligentSearchResults = async (query: string): Promise<StockQ
           }
         }
       }
+    }
+
+    // Special case for Disney since it's a common search term
+    if (ticker.symbol === 'DIS' && lowerQuery.includes('disney')) {
+      score += 75; // Give Disney a high priority when searching for "disney"
     }
     
     // Special case for semiconductor companies

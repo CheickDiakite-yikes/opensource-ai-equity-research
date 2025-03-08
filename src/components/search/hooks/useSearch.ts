@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useRef } from "react";
 import { StockQuote } from "@/types";
 import { StockCategory } from "../types";
@@ -20,6 +21,7 @@ export const useSearch = ({ featuredSymbols = commonTickers }: UseSearchProps = 
   
   // Track if the component is mounted to prevent state updates after unmounting
   const isMounted = useRef(true);
+  const isInitialRender = useRef(true);
   
   useEffect(() => {
     return () => {
@@ -29,11 +31,16 @@ export const useSearch = ({ featuredSymbols = commonTickers }: UseSearchProps = 
 
   // Initialize with featured symbols when dropdown is opened with empty query
   useEffect(() => {
-    if (isOpen && query.length === 0) {
+    if (isOpen && query.length === 0 && !isInitialRender.current) {
       const featuredResults = findMatchingCommonTickers("", featuredSymbols);
       setResults(featuredResults);
     }
-  }, [isOpen, featuredSymbols]);
+    
+    // Mark that we've handled the initial render
+    if (isInitialRender.current) {
+      isInitialRender.current = false;
+    }
+  }, [isOpen, featuredSymbols, query]);
 
   // Generate suggestions for autocomplete
   useEffect(() => {
