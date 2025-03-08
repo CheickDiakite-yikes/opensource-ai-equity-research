@@ -10,9 +10,11 @@ export const API_BASE_URLS = {
 // API Keys
 export const FMP_API_KEY = (() => {
   try {
-    // @ts-ignore - Deno will exist at runtime in Supabase Edge Functions
-    if (typeof Deno !== 'undefined' && Deno?.env?.get) {
-      return Deno.env.get("FMP_API_KEY") || "";
+    // This is needed for TypeScript to recognize Deno
+    // @ts-ignore - We need to use this approach because TypeScript doesn't know about Deno
+    const deno = globalThis.Deno;
+    if (deno?.env?.get) {
+      return deno.env.get("FMP_API_KEY") || "";
     }
     return "";
   } catch {
@@ -22,9 +24,11 @@ export const FMP_API_KEY = (() => {
 
 export const OPENAI_API_KEY = (() => {
   try {
-    // @ts-ignore - Deno will exist at runtime in Supabase Edge Functions
-    if (typeof Deno !== 'undefined' && Deno?.env?.get) {
-      return Deno.env.get("OPENAI_API_KEY") || "";
+    // This is needed for TypeScript to recognize Deno
+    // @ts-ignore - We need to use this approach because TypeScript doesn't know about Deno
+    const deno = globalThis.Deno;
+    if (deno?.env?.get) {
+      return deno.env.get("OPENAI_API_KEY") || "";
     }
     return "";
   } catch {
