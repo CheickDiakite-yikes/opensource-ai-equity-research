@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import LoadingSkeleton from "@/components/LoadingSkeleton";
 import ErrorDisplay from "@/components/reports/ErrorDisplay";
 import ResearchReportContent from "@/components/reports/ResearchReportContent";
-import { useResearchReportData } from "@/components/reports/useResearchReportData";
+import { useResearchReportData } from "@/hooks/research-report";
 import { useReportGeneration } from "@/components/reports/useReportGeneration";
 
 interface ResearchReportGeneratorProps {

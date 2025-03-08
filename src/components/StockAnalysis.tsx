@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from "react";
-import { useResearchReportData } from "@/components/reports/useResearchReportData";
+import { useResearchReportData } from "@/hooks/research-report";
 import LoadingSkeleton from "@/components/LoadingSkeleton";
 import { prepareFinancialData, prepareRatioData } from "@/utils/financial";
 import { toast } from "sonner";
