@@ -5,7 +5,13 @@ import SearchBar from "@/components/search/SearchBar";
 import UserMenu from "./UserMenu";
 import { motion } from "framer-motion";
 
-const AppHeader: React.FC = () => {
+// Define props interface
+interface AppHeaderProps {
+  // Make featuredSymbols optional since SearchBar has a default value
+  featuredSymbols?: { symbol: string; name: string }[];
+}
+
+const AppHeader: React.FC<AppHeaderProps> = ({ featuredSymbols }) => {
   const navigate = useNavigate();
   
   return (
@@ -39,6 +45,7 @@ const AppHeader: React.FC = () => {
             <SearchBar 
               placeholder="Search ticker symbol..."
               className="w-full"
+              featuredSymbols={featuredSymbols}
             />
           </motion.div>
           
