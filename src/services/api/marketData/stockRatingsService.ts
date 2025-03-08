@@ -9,7 +9,14 @@ import { fetchWithRetry, handleFetchResponse } from "../../../../supabase/functi
 export const fetchRatingSnapshot = async (symbol: string): Promise<RatingSnapshot | null> => {
   try {
     console.log(`Fetching rating snapshot for ${symbol}`);
-    const url = `${API_BASE_URLS.FMP}/rating-snapshot/${symbol}?apikey=${FMP_API_KEY}`;
+    
+    // Check if API key is available
+    if (!FMP_API_KEY) {
+      console.warn("FMP_API_KEY is not set. Unable to fetch rating snapshot");
+      return null;
+    }
+    
+    const url = `${API_BASE_URLS.FMP}/rating/${symbol}?apikey=${FMP_API_KEY}`;
     const response = await fetchWithRetry(url);
     const data = await handleFetchResponse<RatingSnapshot[]>(response);
     
@@ -27,8 +34,15 @@ export const fetchRatingSnapshot = async (symbol: string): Promise<RatingSnapsho
 export const fetchGradeNews = async (symbol: string, limit: number = 5): Promise<GradeNews[]> => {
   try {
     console.log(`Fetching grade news for ${symbol}, limit: ${limit}`);
-    // Updated endpoint from 'grade-news' to 'grades-news' as per the API documentation
-    const url = `${API_BASE_URLS.FMP}/grades-news?symbol=${symbol}&limit=${limit}&apikey=${FMP_API_KEY}`;
+    
+    // Check if API key is available
+    if (!FMP_API_KEY) {
+      console.warn("FMP_API_KEY is not set. Unable to fetch grade news");
+      return [];
+    }
+    
+    // Updated endpoint from 'grade-news' to 'upgrade_downgrade' as per the API documentation
+    const url = `${API_BASE_URLS.FMP}/upgrade_downgrade?symbol=${symbol}&limit=${limit}&apikey=${FMP_API_KEY}`;
     const response = await fetchWithRetry(url);
     const data = await handleFetchResponse<GradeNews[]>(response);
     

@@ -104,20 +104,25 @@ export const useStockOverviewData = (symbol: string) => {
       setRatingsLoading(true);
       console.log(`Starting to load ratings data for ${symbol}`);
       
-      const [snapshotData, newsData] = await Promise.all([
-        fetchRatingSnapshot(symbol).catch(err => {
-          console.warn("Error loading rating snapshot:", err);
-          return null;
-        }),
-        fetchGradeNews(symbol, 5).catch(err => {
-          console.warn("Error loading grade news:", err);
-          return [];
-        })
+      // Use Promise.allSettled to continue even if some promises fail
+      const results = await Promise.allSettled([
+        fetchRatingSnapshot(symbol),
+        fetchGradeNews(symbol, 10)
       ]);
+      
+      // Handle rating snapshot result
+      const snapshotResult = results[0];
+      const snapshotData = snapshotResult.status === 'fulfilled' ? snapshotResult.value : null;
+      
+      // Handle grade news result
+      const newsResult = results[1];
+      const newsData = newsResult.status === 'fulfilled' ? newsResult.value : [];
       
       console.log("Ratings data loaded:", {
         hasRatingSnapshot: !!snapshotData,
-        gradeNewsCount: newsData?.length || 0
+        gradeNewsCount: newsData?.length || 0,
+        snapshotStatus: snapshotResult.status,
+        newsStatus: newsResult.status
       });
       
       setRatingSnapshot(snapshotData);

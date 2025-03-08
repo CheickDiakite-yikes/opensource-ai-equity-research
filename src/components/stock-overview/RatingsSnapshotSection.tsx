@@ -3,6 +3,7 @@ import { RatingSnapshot } from "@/types/ratings/ratingTypes";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Progress } from "@/components/ui/progress";
+import { AlertCircle } from "lucide-react";
 
 interface RatingsSnapshotSectionProps {
   ratingSnapshot: RatingSnapshot | null;
@@ -26,8 +27,23 @@ const RatingsSnapshotSection = ({ ratingSnapshot, isLoading }: RatingsSnapshotSe
     );
   }
 
+  // If no data but not loading, show placeholder with explanation
   if (!ratingSnapshot) {
-    return null;
+    return (
+      <Card className="border-dashed border-muted-foreground/50">
+        <CardHeader>
+          <CardTitle className="text-xl flex items-center gap-2">
+            <span>Ratings Snapshot</span>
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center gap-2 text-muted-foreground">
+            <AlertCircle size={16} />
+            <p>Analyst ratings data is not available for this stock at the moment. This could be due to API limitations or because no ratings have been issued recently.</p>
+          </div>
+        </CardContent>
+      </Card>
+    );
   }
 
   // Map score to a more human-readable label
