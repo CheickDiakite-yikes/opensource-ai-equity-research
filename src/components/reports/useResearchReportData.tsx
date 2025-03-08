@@ -91,10 +91,33 @@ export const useResearchReportData = (symbol: string) => {
 
   useEffect(() => {
     const fetchData = async () => {
+      if (!symbol) {
+        console.warn("No symbol provided to useResearchReportData.");
+        return;
+      }
+      
       try {
         setIsLoading(true);
         setError(null);
         setDataLoadingStatus({});
+        
+        // Clear all previous data
+        setData({
+          profile: null,
+          quote: null,
+          income: [],
+          incomeTTM: null,
+          balance: [],
+          balanceTTM: null,
+          cashflow: [],
+          cashflowTTM: null,
+          ratios: [],
+          ratiosTTM: null,
+          news: [],
+          peers: [],
+          transcripts: [],
+          filings: []
+        });
         
         const statusTracker: {[key: string]: string} = {};
         const updateStatus = (key: string, status: string) => {
@@ -159,18 +182,18 @@ export const useResearchReportData = (symbol: string) => {
         setData({
           profile,
           quote,
-          income,
+          income: Array.isArray(income) ? income : [],
           incomeTTM,
-          balance,
+          balance: Array.isArray(balance) ? balance : [],
           balanceTTM,
-          cashflow,
+          cashflow: Array.isArray(cashflow) ? cashflow : [],
           cashflowTTM,
-          ratios: ratios as KeyRatio[], // Ensure we cast this to KeyRatio[] from types/financial/statementTypes
+          ratios: Array.isArray(ratios) ? ratios as KeyRatio[] : [], // Ensure we cast this to KeyRatio[] from types/financial/statementTypes
           ratiosTTM,
-          news,
-          peers,
-          transcripts,
-          filings
+          news: Array.isArray(news) ? news : [],
+          peers: Array.isArray(peers) ? peers : [],
+          transcripts: Array.isArray(transcripts) ? transcripts : [],
+          filings: Array.isArray(filings) ? filings : []
         });
         
         console.log(`Data loaded for ${symbol}:`, {
@@ -192,10 +215,10 @@ export const useResearchReportData = (symbol: string) => {
         
       } catch (err) {
         console.error("Error fetching report data:", err);
-        setError(err.message);
+        setError(err instanceof Error ? err.message : String(err));
         toast({
           title: "Error Loading Data",
-          description: `Failed to load data for ${symbol}: ${err.message}`,
+          description: `Failed to load data for ${symbol}: ${err instanceof Error ? err.message : String(err)}`,
           variant: "destructive",
         });
       } finally {

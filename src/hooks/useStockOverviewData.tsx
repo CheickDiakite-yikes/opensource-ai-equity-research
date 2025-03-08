@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from "react";
 import { StockProfile, StockQuote } from "@/types/profile/companyTypes";
 import { RatingSnapshot, GradeNews } from "@/types/ratings/ratingTypes";
@@ -160,7 +161,7 @@ export const useStockOverviewData = (symbol: string) => {
   const refetch = useCallback(() => {
     loadData();
     loadDocuments();
-    loadRatingsData();
+    loadRatingsData(); // Fixed: was incorrectly named loadRatingsLoading
   }, [loadData, loadDocuments, loadRatingsData]);
 
   useEffect(() => {

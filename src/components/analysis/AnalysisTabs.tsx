@@ -36,6 +36,7 @@ const AnalysisTabs: React.FC<AnalysisTabsProps> = ({
         symbol={symbol} 
         onRetry={() => {}} 
         isRetrying={false} 
+        customMessage="No financial data available for analysis. Please try another ticker symbol or check back later."
       />
     );
   }
