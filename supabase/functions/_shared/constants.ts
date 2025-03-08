@@ -8,8 +8,10 @@ export const API_BASE_URLS = {
 };
 
 // API Keys
-export const FMP_API_KEY = Deno.env.get("FMP_API_KEY") || "";
-export const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY") || "";
+export const FMP_API_KEY = 
+  typeof Deno !== 'undefined' ? Deno.env.get("FMP_API_KEY") || "" : "";
+export const OPENAI_API_KEY = 
+  typeof Deno !== 'undefined' ? Deno.env.get("OPENAI_API_KEY") || "" : "";
 
 // OpenAI Models
 export const OPENAI_MODELS = {
