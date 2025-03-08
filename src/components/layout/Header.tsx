@@ -5,6 +5,7 @@ import { Search, ChevronRight } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
+import { useTheme } from "@/components/theme-provider";
 import UserMenu from "./UserMenu";
 
 interface HeaderProps {
@@ -22,6 +23,8 @@ const Header: React.FC<HeaderProps> = ({
   isLoading,
   handleKeyDown
 }) => {
+  const { theme } = useTheme();
+  
   return (
     <header className="border-b border-border/40 py-4 px-6 bg-gradient-to-r from-background to-secondary/10 backdrop-blur-sm sticky top-0 z-10 shadow-sm">
       <div className="container mx-auto flex flex-col sm:flex-row justify-between items-center gap-4">

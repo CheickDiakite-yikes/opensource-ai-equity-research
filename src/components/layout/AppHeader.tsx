@@ -4,6 +4,7 @@ import { Link, useNavigate } from "react-router-dom";
 import SearchBar from "@/components/search/SearchBar";
 import UserMenu from "./UserMenu";
 import { motion } from "framer-motion";
+import { useTheme } from "@/components/theme-provider";
 
 // Define props interface
 interface AppHeaderProps {
@@ -13,6 +14,7 @@ interface AppHeaderProps {
 
 const AppHeader: React.FC<AppHeaderProps> = ({ featuredSymbols }) => {
   const navigate = useNavigate();
+  const { theme } = useTheme();
   
   return (
     <header className="border-b border-border/40 py-4 px-6 bg-gradient-to-r from-background to-secondary/10 backdrop-blur-sm sticky top-0 z-20 shadow-sm">
