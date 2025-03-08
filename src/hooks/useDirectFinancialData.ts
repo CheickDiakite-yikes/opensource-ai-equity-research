@@ -27,15 +27,21 @@ export const useDirectFinancialData = (
   // Try to fetch missing data directly when needed
   useEffect(() => {
     const fetchMissingData = async () => {
+      if (!symbol) {
+        console.error("No symbol provided to useDirectFinancialData");
+        return;
+      }
+      
       // First, check if we need to fetch any missing data
       const hasMinimumFinancialData = (
-        (initialData.income.length > 0 ? 1 : 0) + 
-        (initialData.balance.length > 0 ? 1 : 0) + 
-        (initialData.cashflow.length > 0 ? 1 : 0)
+        ((initialData.income?.length || 0) > 0 ? 1 : 0) + 
+        ((initialData.balance?.length || 0) > 0 ? 1 : 0) + 
+        ((initialData.cashflow?.length || 0) > 0 ? 1 : 0)
       ) >= 2;
       
       if (!hasMinimumFinancialData) {
         console.log("Attempting to fetch missing financial data directly for", symbol);
+        setIsLoading(true);
         
         try {
           // Start with data from initialData
@@ -43,7 +49,7 @@ export const useDirectFinancialData = (
           let dataImproved = false;
           
           // Try to fetch income statements if missing
-          if (initialData.income.length === 0) {
+          if (!initialData.income || initialData.income.length === 0) {
             try {
               console.log(`Fetching income statements for ${symbol}...`);
               const incomeData = await withRetry(() => fetchIncomeStatements(symbol), {
@@ -60,7 +66,7 @@ export const useDirectFinancialData = (
           }
           
           // Try to fetch balance sheets if missing
-          if (initialData.balance.length === 0) {
+          if (!initialData.balance || initialData.balance.length === 0) {
             try {
               console.log(`Fetching balance sheets for ${symbol}...`);
               const balanceData = await withRetry(() => fetchBalanceSheets(symbol), {
@@ -77,7 +83,7 @@ export const useDirectFinancialData = (
           }
           
           // Try to fetch cash flow statements if missing
-          if (initialData.cashflow.length === 0) {
+          if (!initialData.cashflow || initialData.cashflow.length === 0) {
             try {
               console.log(`Fetching cash flow statements for ${symbol}...`);
               const cashflowData = await withRetry(() => fetchCashFlowStatements(symbol), {
@@ -94,7 +100,7 @@ export const useDirectFinancialData = (
           }
           
           // Try to fetch ratios if missing
-          if (initialData.ratios.length === 0) {
+          if (!initialData.ratios || initialData.ratios.length === 0) {
             try {
               console.log(`Fetching key ratios for ${symbol}...`);
               const ratiosData = await withRetry(() => fetchKeyRatios(symbol), {
@@ -114,21 +120,26 @@ export const useDirectFinancialData = (
           if (dataImproved) {
             setDirectFinancials(newFinancials);
             toast.success("Retrieved additional financial data");
-          } else {
-            toast.error(`Could not retrieve financial data for ${symbol}`);
           }
         } catch (err) {
           console.error("Error fetching missing financial data:", err);
           toast.error(`Failed to retrieve financial data: ${err instanceof Error ? err.message : 'Unknown error'}`);
+        } finally {
+          setIsLoading(false);
         }
       }
     };
     
     fetchMissingData();
-  }, [symbol, initialData]);
+  }, [symbol, initialData, directFinancials]);
 
   // Function to manually retry fetching data
   const retryFetchingData = async (): Promise<boolean> => {
+    if (!symbol) {
+      console.error("No symbol provided to retryFetchingData");
+      return false;
+    }
+    
     setIsLoading(true);
     toast.info(`Attempting to fetch financial data for ${symbol}...`);
     
@@ -143,17 +154,17 @@ export const useDirectFinancialData = (
       
       // Update the direct financials state
       setDirectFinancials({
-        income,
-        balance,
-        cashflow,
-        ratios
+        income: income || [],
+        balance: balance || [],
+        cashflow: cashflow || [],
+        ratios: ratios || []
       });
       
       // Check if we got enough data
       const gotEnoughData = (
-        (income.length > 0 ? 1 : 0) + 
-        (balance.length > 0 ? 1 : 0) + 
-        (cashflow.length > 0 ? 1 : 0)
+        ((income?.length || 0) > 0 ? 1 : 0) + 
+        ((balance?.length || 0) > 0 ? 1 : 0) + 
+        ((cashflow?.length || 0) > 0 ? 1 : 0)
       ) >= 2;
       
       if (gotEnoughData) {

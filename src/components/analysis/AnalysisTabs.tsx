@@ -22,14 +22,14 @@ interface AnalysisTabsProps {
 
 const AnalysisTabs: React.FC<AnalysisTabsProps> = ({ 
   symbol, 
-  financials, 
-  ratioData, 
+  financials = [], 
+  ratioData = [], 
   transcripts = [], 
   filings = [] 
 }) => {
   const [activeTab, setActiveTab] = useState("financials");
   
-  // Error handling if financials data is missing
+  // Error handling if financials data is missing or empty
   if (!financials || financials.length === 0) {
     return (
       <ErrorState 
