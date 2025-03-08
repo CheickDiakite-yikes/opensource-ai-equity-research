@@ -7,6 +7,7 @@ import StockAnalysis from "@/components/StockAnalysis";
 import ResearchReportGenerator from "@/components/ResearchReportGenerator";
 import StockHeader from "./StockHeader";
 import { useSearchParams, useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 
 interface StockViewProps {
   symbol: string;
@@ -35,6 +36,9 @@ const StockView: React.FC<StockViewProps> = ({ symbol, onClear }) => {
 
   // Handle tab change to update URL
   const handleTabChange = (tab: string) => {
+    // Reset any previous errors that might be lingering
+    console.log(`Switching to tab: ${tab} from ${activeTab}`);
+    
     setActiveTab(tab);
     
     // Update URL with new tab parameter while preserving the symbol
@@ -42,7 +46,13 @@ const StockView: React.FC<StockViewProps> = ({ symbol, onClear }) => {
     newParams.set("tab", tab);
     setSearchParams(newParams);
     
-    console.log(`Tab changed to: ${tab}`);
+    // Show toast when switching to Analysis tab for better UX
+    if (tab === "analysis") {
+      toast.info(`Loading financial analysis for ${symbol}...`, {
+        duration: 3000,
+        id: "loading-analysis",
+      });
+    }
   };
 
   return (
@@ -66,13 +76,13 @@ const StockView: React.FC<StockViewProps> = ({ symbol, onClear }) => {
         </TabsList>
         
         <TabsContent value="overview" className="mt-4 animate-fade-in">
-          <StockOverview symbol={symbol} />
+          {activeTab === "overview" && <StockOverview symbol={symbol} />}
         </TabsContent>
         <TabsContent value="analysis" className="mt-4 animate-fade-in">
-          <StockAnalysis symbol={symbol} />
+          {activeTab === "analysis" && <StockAnalysis symbol={symbol} />}
         </TabsContent>
         <TabsContent value="report" className="mt-4 animate-fade-in">
-          <ResearchReportGenerator symbol={symbol} />
+          {activeTab === "report" && <ResearchReportGenerator symbol={symbol} />}
         </TabsContent>
       </Tabs>
     </div>

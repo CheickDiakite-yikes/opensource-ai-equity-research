@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import FinancialsTabContent from '../sections/FinancialsTabContent';
 import BalanceSheetTabContent from '../sections/BalanceSheetTabContent';
@@ -10,6 +10,7 @@ import LoadingSkeleton from '../LoadingSkeleton';
 import ErrorState from './ErrorState';
 import { FinancialData, RatioData } from '@/types';
 import { EarningsCall, SECFiling } from '@/types/documentTypes';
+import { toast } from 'sonner';
 
 interface AnalysisTabsProps {
   symbol: string;
@@ -28,9 +29,22 @@ const AnalysisTabs: React.FC<AnalysisTabsProps> = ({
 }) => {
   const [activeTab, setActiveTab] = useState("financials");
   
+  useEffect(() => {
+    // Log data availability for debugging
+    console.log(`AnalysisTabs for ${symbol} - Data status:`, {
+      financialsLength: financials?.length || 0,
+      ratioDataLength: ratioData?.length || 0,
+      hasFinancials: Boolean(financials && financials.length > 0),
+      hasRatios: Boolean(ratioData && ratioData.length > 0),
+    });
+  }, [financials, ratioData, symbol]);
+  
   // Error handling if financials data is missing
   if (!financials || financials.length === 0) {
-    console.error(`No financial data available for ${symbol}`);
+    console.error(`No financial data available for ${symbol} in AnalysisTabs`);
+    toast.error(`Could not load financial data for ${symbol}`, {
+      id: 'missing-financial-data',
+    });
     return (
       <ErrorState 
         symbol={symbol} 

@@ -70,22 +70,30 @@ const StockAnalysis = ({ symbol }: StockAnalysisProps) => {
       balance: combinedData.balance.length,
       cashflow: combinedData.cashflow.length,
       ratios: combinedData.ratios.length,
-      hasMinimumData: hasCombinedMinimumData
+      hasMinimumData: hasCombinedMinimumData,
+      isLoading,
+      isDirectFetchLoading,
+      isRetrying
     });
-  }, [combinedData, symbol, hasCombinedMinimumData]);
+  }, [combinedData, symbol, hasCombinedMinimumData, isLoading, isDirectFetchLoading, isRetrying]);
 
   // Function to handle retry
   const handleRetry = async () => {
     setIsRetrying(true);
+    toast.info(`Retrying data fetch for ${symbol}...`);
+    
     try {
       const success = await retryFetchingData();
       
       if (!success) {
         toast.error(`Could not retrieve financial data for ${symbol} after multiple attempts.`);
+      } else {
+        toast.success(`Successfully loaded data for ${symbol}`);
       }
     } catch (err) {
       console.error(`Error retrying data fetch for ${symbol}:`, err);
-      toast.error(`Error loading data: ${err instanceof Error ? err.message : 'Unknown error'}`);
+      const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+      toast.error(`Error loading data: ${errorMessage}`);
     } finally {
       setIsRetrying(false);
     }
