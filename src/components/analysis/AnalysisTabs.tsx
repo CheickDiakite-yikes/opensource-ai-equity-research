@@ -49,12 +49,16 @@ const AnalysisTabs: React.FC<AnalysisTabsProps> = ({
     return () => clearTimeout(timer);
   }, [financials, ratioData, symbol, transcripts, filings]);
   
-  // Error handling if financials data is missing
+  // Error handling if financials data is missing or empty
   if (!financials || financials.length === 0) {
     console.error(`No financial data available for ${symbol} in AnalysisTabs`);
+    
+    // Show toast only once
     toast.error(`Could not load financial data for ${symbol}`, {
       id: 'missing-financial-data',
+      duration: 3000
     });
+    
     return (
       <ErrorState 
         symbol={symbol} 

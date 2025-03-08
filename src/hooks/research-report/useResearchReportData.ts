@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { toast } from "@/components/ui/use-toast";
 import { 
@@ -26,6 +27,7 @@ export const useResearchReportData = (symbol: string): ResearchReportDataResult 
   const [data, setData] = useState<ReportData>(createEmptyReportData());
   const [error, setError] = useState<string | null>(null);
   const [dataLoadingStatus, setDataLoadingStatus] = useState<DataLoadingStatus>({});
+  const [loadCount, setLoadCount] = useState(0);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -35,11 +37,16 @@ export const useResearchReportData = (symbol: string): ResearchReportDataResult 
         setIsLoading(true);
         setError(null);
         setDataLoadingStatus({});
+        setLoadCount(prev => prev + 1);
+        const currentLoadCount = loadCount + 1;
         
         const statusTracker: {[key: string]: string} = {};
         const updateStatus = (key: string, status: string) => {
           statusTracker[key] = status;
-          setDataLoadingStatus({...statusTracker});
+          // Only update if this is still the current fetch operation
+          if (currentLoadCount === loadCount + 1) {
+            setDataLoadingStatus({...statusTracker});
+          }
         };
         
         // First fetch core profile and quote data
@@ -95,25 +102,28 @@ export const useResearchReportData = (symbol: string): ResearchReportDataResult 
             () => fetchSECFilings(symbol), [])
         ]);
         
-        const newData: ReportData = {
-          profile,
-          quote,
-          income,
-          incomeTTM,
-          balance,
-          balanceTTM,
-          cashflow,
-          cashflowTTM,
-          ratios: ratios as KeyRatio[],
-          ratiosTTM,
-          news,
-          peers,
-          transcripts,
-          filings
-        };
-        
-        setData(newData);
-        logDataStatus(symbol, newData);
+        // Only update state if this is still the current fetch operation
+        if (currentLoadCount === loadCount + 1) {
+          const newData: ReportData = {
+            profile,
+            quote,
+            income,
+            incomeTTM,
+            balance,
+            balanceTTM,
+            cashflow,
+            cashflowTTM,
+            ratios: ratios as KeyRatio[],
+            ratiosTTM,
+            news,
+            peers,
+            transcripts,
+            filings
+          };
+          
+          setData(newData);
+          logDataStatus(symbol, newData);
+        }
         
       } catch (err) {
         console.error("Error fetching report data:", err);
@@ -125,12 +135,15 @@ export const useResearchReportData = (symbol: string): ResearchReportDataResult 
           variant: "destructive",
         });
       } finally {
-        setIsLoading(false);
+        // Only update loading state if this is still the current fetch
+        if (currentLoadCount === loadCount + 1) {
+          setIsLoading(false);
+        }
       }
     };
 
     fetchData();
-  }, [symbol]);
+  }, [symbol, loadCount]);
 
   const hasStockData = Boolean(data.profile && data.quote);
   const hasFinancialData = data.income.length > 0 && data.balance.length > 0;

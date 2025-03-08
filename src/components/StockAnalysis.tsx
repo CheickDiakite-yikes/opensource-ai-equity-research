@@ -16,6 +16,7 @@ interface StockAnalysisProps {
 const StockAnalysis = ({ symbol }: StockAnalysisProps) => {
   const [isRetrying, setIsRetrying] = useState(false);
   const [componentMounted, setComponentMounted] = useState(false);
+  const [initialLoadComplete, setInitialLoadComplete] = useState(false);
   
   // Track component mount for proper initialization
   useEffect(() => {
@@ -76,6 +77,13 @@ const StockAnalysis = ({ symbol }: StockAnalysisProps) => {
     (combinedData.cashflow.length > 0 ? 1 : 0)
   ) >= 2;
 
+  // Mark initial load complete after data is fetched
+  useEffect(() => {
+    if (!isLoading && !isDirectFetchLoading) {
+      setInitialLoadComplete(true);
+    }
+  }, [isLoading, isDirectFetchLoading]);
+
   useEffect(() => {
     // Add debug logging to track data loading
     console.log(`StockAnalysis for ${symbol} - Data loading status:`, {
@@ -87,11 +95,18 @@ const StockAnalysis = ({ symbol }: StockAnalysisProps) => {
       isLoading,
       isDirectFetchLoading,
       isRetrying,
-      componentMounted
+      componentMounted,
+      initialLoadComplete
     });
     
     // Auto-retry if data is missing but not already retrying
-    if (componentMounted && !isLoading && !isDirectFetchLoading && !isRetrying && !hasCombinedMinimumData && hasStockData) {
+    if (componentMounted && 
+        initialLoadComplete && 
+        !isLoading && 
+        !isDirectFetchLoading && 
+        !isRetrying && 
+        !hasCombinedMinimumData && 
+        hasStockData) {
       console.log(`StockAnalysis - Automatic retry for ${symbol}`);
       handleRetry();
     }
@@ -103,7 +118,8 @@ const StockAnalysis = ({ symbol }: StockAnalysisProps) => {
     isDirectFetchLoading, 
     isRetrying, 
     componentMounted, 
-    hasStockData
+    hasStockData,
+    initialLoadComplete
   ]);
 
   // Function to handle retry
