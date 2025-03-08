@@ -1,4 +1,3 @@
-
 import { StockQuote } from "@/types";
 import { StockCategory } from "../types";
 import { commonTickers } from "@/constants/commonTickers";
@@ -105,7 +104,6 @@ export const findMatchingCommonTickers = (
   
   // Priority check for common ticker abbreviations and popular companies
   const commonAbbreviations: Record<string, string[]> = {
-    'dis': ['disney', 'walt disney'],
     'aapl': ['apple'],
     'msft': ['microsoft'],
     'amzn': ['amazon'],
@@ -113,7 +111,7 @@ export const findMatchingCommonTickers = (
     'meta': ['facebook', 'fb'],
     'tsla': ['tesla'],
     'nflx': ['netflix'],
-    'dis': ['disney', 'walt'],
+    'dis': ['disney', 'walt disney', 'walt'],
     'wmt': ['walmart'],
     'jpm': ['jpmorgan', 'jp morgan'],
     'v': ['visa'],
