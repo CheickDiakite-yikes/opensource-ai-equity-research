@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from "react";
 import { useSearchParams } from "react-router-dom";
 import { Search } from "lucide-react";
@@ -11,7 +10,7 @@ import { ClearButton } from "./ClearButton";
 import { searchStocks } from "@/lib/api/fmpApi";
 import { toast } from "sonner";
 import { useSearchHistory } from "./useSearchHistory";
-import { featuredSymbols } from "@/constants/featuredSymbols";
+import { featuredSymbols as defaultFeaturedSymbols } from "@/constants/featuredSymbols";
 
 // Stock categories for better search results 
 enum StockCategory {
@@ -23,11 +22,13 @@ enum StockCategory {
 interface SearchBarProps {
   placeholder?: string;
   className?: string;
+  featuredSymbols?: { symbol: string; name: string }[];
 }
 
 const SearchBar = ({ 
   placeholder = "Search for a stock...", 
-  className
+  className,
+  featuredSymbols = defaultFeaturedSymbols
 }: SearchBarProps) => {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<StockQuote[]>([]);
