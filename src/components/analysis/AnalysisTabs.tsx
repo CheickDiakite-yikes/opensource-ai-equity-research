@@ -29,8 +29,14 @@ const AnalysisTabs: React.FC<AnalysisTabsProps> = ({
 }) => {
   const [activeTab, setActiveTab] = useState("financials");
   const [isLoaded, setIsLoaded] = useState(false);
+  const [tabsInitialized, setTabsInitialized] = useState(false);
   
   useEffect(() => {
+    // Mark tabs as initialized immediately to prevent multiple initialization
+    if (!tabsInitialized) {
+      setTabsInitialized(true);
+    }
+    
     // Mark component as loaded after a short delay to prevent flickering
     const timer = setTimeout(() => {
       setIsLoaded(true);
@@ -47,7 +53,7 @@ const AnalysisTabs: React.FC<AnalysisTabsProps> = ({
     });
     
     return () => clearTimeout(timer);
-  }, [financials, ratioData, symbol, transcripts, filings]);
+  }, [financials, ratioData, symbol, transcripts, filings, tabsInitialized]);
   
   // Error handling if financials data is missing or empty
   if (!financials || financials.length === 0) {

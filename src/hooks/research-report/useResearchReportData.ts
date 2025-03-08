@@ -37,14 +37,16 @@ export const useResearchReportData = (symbol: string): ResearchReportDataResult 
         setIsLoading(true);
         setError(null);
         setDataLoadingStatus({});
-        setLoadCount(prev => prev + 1);
-        const currentLoadCount = loadCount + 1;
+        
+        // Increment the load count to track the current fetch operation
+        const fetchOperationId = loadCount + 1;
+        setLoadCount(fetchOperationId);
         
         const statusTracker: {[key: string]: string} = {};
         const updateStatus = (key: string, status: string) => {
           statusTracker[key] = status;
           // Only update if this is still the current fetch operation
-          if (currentLoadCount === loadCount + 1) {
+          if (fetchOperationId === loadCount + 1) {
             setDataLoadingStatus({...statusTracker});
           }
         };
@@ -103,7 +105,7 @@ export const useResearchReportData = (symbol: string): ResearchReportDataResult 
         ]);
         
         // Only update state if this is still the current fetch operation
-        if (currentLoadCount === loadCount + 1) {
+        if (fetchOperationId === loadCount + 1) {
           const newData: ReportData = {
             profile,
             quote,
@@ -136,9 +138,7 @@ export const useResearchReportData = (symbol: string): ResearchReportDataResult 
         });
       } finally {
         // Only update loading state if this is still the current fetch
-        if (currentLoadCount === loadCount + 1) {
-          setIsLoading(false);
-        }
+        setIsLoading(false);
       }
     };
 

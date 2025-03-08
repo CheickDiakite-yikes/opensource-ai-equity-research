@@ -34,6 +34,11 @@ const StockView: React.FC<StockViewProps> = ({ symbol, onClear }) => {
     if (tabParam && ["overview", "analysis", "report"].includes(tabParam)) {
       setActiveTab(tabParam);
       console.log("Setting active tab to:", tabParam);
+      
+      // Force refresh when switching to analysis tab
+      if (tabParam === "analysis") {
+        setForceRefresh(prev => prev + 1);
+      }
     } else {
       // If no valid tab parameter, default to overview and update URL
       setActiveTab("overview");
@@ -45,7 +50,7 @@ const StockView: React.FC<StockViewProps> = ({ symbol, onClear }) => {
 
   // Handle tab change to update URL
   const handleTabChange = useCallback((tab: string) => {
-    // Don't proceed if we're already on this tab (unless forced)
+    // Skip if already on this tab (except for analysis which we always force refresh)
     if (tab === activeTab && tab !== "analysis") return;
     
     console.log(`Switching to tab: ${tab} from ${activeTab}`);
@@ -53,26 +58,27 @@ const StockView: React.FC<StockViewProps> = ({ symbol, onClear }) => {
     // Brief loading state to ensure components reinitialize properly
     setIsTabLoading(true);
     
-    // Force a full remount of all components when switching tabs
+    // Update active tab immediately to show loading state
+    setActiveTab(tab);
+    
+    // Update URL with new tab parameter while preserving the symbol
+    const newParams = new URLSearchParams(searchParams);
+    newParams.set("tab", tab);
+    setSearchParams(newParams);
+    
+    // Force refresh for analysis tab
+    if (tab === "analysis") {
+      setForceRefresh(prev => prev + 1);
+      toast.info(`Loading financial analysis for ${symbol}...`, {
+        duration: 3000,
+        id: "loading-analysis",
+      });
+    }
+    
+    // Small delay to ensure proper state updates
     setTimeout(() => {
-      setActiveTab(tab);
-      
-      // Update URL with new tab parameter while preserving the symbol
-      const newParams = new URLSearchParams(searchParams);
-      newParams.set("tab", tab);
-      setSearchParams(newParams);
-      
-      // Force refresh for analysis tab
-      if (tab === "analysis") {
-        setForceRefresh(prev => prev + 1);
-        toast.info(`Loading financial analysis for ${symbol}...`, {
-          duration: 3000,
-          id: "loading-analysis",
-        });
-      }
-      
       setIsTabLoading(false);
-    }, 100); // Small delay to ensure proper state updates
+    }, 100);
   }, [activeTab, searchParams, setSearchParams, symbol]);
 
   return (
@@ -88,7 +94,6 @@ const StockView: React.FC<StockViewProps> = ({ symbol, onClear }) => {
           <TabsTrigger 
             value="analysis" 
             className="flex items-center gap-2 py-3"
-            onClick={() => handleTabChange("analysis")}
           >
             <BarChart4 className="h-4 w-4" />
             <span>Analysis</span>
@@ -111,7 +116,12 @@ const StockView: React.FC<StockViewProps> = ({ symbol, onClear }) => {
           )}
         </TabsContent>
         <TabsContent value="report" className="mt-4 animate-fade-in">
-          {!isTabLoading && activeTab === "report" && <ResearchReportGenerator symbol={symbol} />}
+          {!isTabLoading && activeTab === "report" && (
+            <ResearchReportGenerator 
+              symbol={symbol}
+              key={`report-${symbol}-${forceRefresh}`}
+            />
+          )}
         </TabsContent>
       </Tabs>
     </div>
