@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { toast } from "@/components/ui/use-toast";
 import { 
@@ -18,6 +17,7 @@ import {
   fetchSECFilings
 } from "@/services/api";
 
+import { KeyRatio } from "@/types/financial/ratioTypes";
 import { DataLoadingStatus, ReportData, ResearchReportDataResult } from "./types";
 import { createEmptyReportData, fetchWithStatus, logDataStatus } from "./fetchUtils";
 
@@ -104,7 +104,7 @@ export const useResearchReportData = (symbol: string): ResearchReportDataResult 
           balanceTTM,
           cashflow,
           cashflowTTM,
-          ratios: ratios as KeyRatio[], // Ensure we cast this to KeyRatio[]
+          ratios: ratios as KeyRatio[],
           ratiosTTM,
           news,
           peers,
