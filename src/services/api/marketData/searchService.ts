@@ -4,6 +4,7 @@ import { commonTickers } from "@/constants/commonTickers";
 import { type StockQuote } from "@/types";
 import { StockCategory } from "@/components/search/types";
 import { createCommonTickerQuote } from "@/components/search/utils/searchUtils";
+import { enhancedSymbolSearch } from "./fmpSearchService";
 
 interface CompanyMatch {
   symbol: string;
@@ -13,6 +14,7 @@ interface CompanyMatch {
 
 /**
  * More intelligent search using fuzzy matching and scoring
+ * Enhanced with direct API integration
  */
 export const getIntelligentSearchResults = async (query: string): Promise<StockQuote[]> => {
   if (!query || query.length < 1) return [];
@@ -228,8 +230,8 @@ export const getIntelligentSearchResults = async (query: string): Promise<StockQ
     .sort((a, b) => b.score - a.score)
     .slice(0, 15);
   
-  // Convert to StockQuote objects
-  const results: StockQuote[] = sortedMatches.map(match => {
+  // Convert to StockQuote objects for local results
+  const localResults: StockQuote[] = sortedMatches.map(match => {
     // Determine category based on score and exact match
     let category = StockCategory.COMMON;
     if (match.symbol === upperQuery) {
@@ -239,7 +241,38 @@ export const getIntelligentSearchResults = async (query: string): Promise<StockQ
     return createCommonTickerQuote(match.symbol, match.name, category);
   });
   
-  return results;
+  try {
+    // Also fetch from the FMP API directly for more comprehensive search
+    const apiResults = await enhancedSymbolSearch(query);
+    
+    // Combine local and API results, removing duplicates
+    const combinedResults: StockQuote[] = [...localResults];
+    const localSymbols = new Set(localResults.map(r => r.symbol));
+    
+    apiResults.forEach(result => {
+      if (!localSymbols.has(result.symbol)) {
+        combinedResults.push(result);
+      }
+    });
+    
+    // Sort by category
+    return combinedResults.sort((a, b) => {
+      // Exact matches first
+      if (a.category === StockCategory.EXACT_MATCH && b.category !== StockCategory.EXACT_MATCH) return -1;
+      if (a.category !== StockCategory.EXACT_MATCH && b.category === StockCategory.EXACT_MATCH) return 1;
+      
+      // Then common tickers
+      if (a.category === StockCategory.COMMON && b.category !== StockCategory.COMMON) return -1;
+      if (a.category !== StockCategory.COMMON && b.category === StockCategory.COMMON) return 1;
+      
+      // Then by symbol
+      return a.symbol.localeCompare(b.symbol);
+    });
+  } catch (error) {
+    console.error("Error fetching API results:", error);
+    // Fallback to local results if API fails
+    return localResults;
+  }
 };
 
 // Re-export from marketData as well

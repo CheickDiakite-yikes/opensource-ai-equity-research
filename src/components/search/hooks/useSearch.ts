@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from "react";
 import { StockQuote } from "@/types";
 import { StockCategory } from "../types";
