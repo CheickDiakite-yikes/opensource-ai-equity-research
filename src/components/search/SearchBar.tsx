@@ -1,5 +1,4 @@
 
-import { useState } from "react";
 import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
@@ -25,6 +24,7 @@ const SearchBar = ({
     query, 
     setQuery, 
     results, 
+    setResults,  // Get setResults from useSearch hook
     isLoading, 
     isOpen, 
     setIsOpen,
