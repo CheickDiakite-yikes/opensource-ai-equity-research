@@ -12,12 +12,14 @@ const StockOverview = ({ symbol }: StockOverviewProps) => {
   const {
     profile,
     quote,
-    earningsCalls,
     secFilings,
     loading,
     documentsLoading,
     error,
     rating,
+    ratingSnapshot,
+    gradeNews,
+    ratingsLoading,
     refetch
   } = useStockOverviewData(symbol);
 
@@ -34,10 +36,12 @@ const StockOverview = ({ symbol }: StockOverviewProps) => {
       profile={profile}
       quote={quote}
       rating={rating}
-      earningsCalls={earningsCalls}
       secFilings={secFilings}
       documentsLoading={documentsLoading}
       symbol={symbol}
+      ratingSnapshot={ratingSnapshot}
+      gradeNews={gradeNews}
+      ratingsLoading={ratingsLoading}
     />
   );
 };

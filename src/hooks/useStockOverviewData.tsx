@@ -1,13 +1,14 @@
 
 import { useState, useEffect, useCallback } from "react";
-import { StockProfile, StockQuote, EarningsCall, SECFiling } from "@/types";
+import { StockProfile, StockQuote, SECFiling } from "@/types";
+import { RatingSnapshot, GradeNews } from "@/types/ratings/ratingTypes";
 import { 
   fetchStockProfile, 
   fetchStockQuote, 
-  fetchEarningsTranscripts, 
   fetchSECFilings,
-  generateTranscriptHighlights,
   fetchStockRating,
+  fetchRatingSnapshot,
+  fetchGradeNews,
   withRetry
 } from "@/services/api";
 import { toast } from "@/components/ui/use-toast";
@@ -15,12 +16,14 @@ import { toast } from "@/components/ui/use-toast";
 export const useStockOverviewData = (symbol: string) => {
   const [profile, setProfile] = useState<StockProfile | null>(null);
   const [quote, setQuote] = useState<StockQuote | null>(null);
-  const [earningsCalls, setEarningsCalls] = useState<EarningsCall[]>([]);
   const [secFilings, setSecFilings] = useState<SECFiling[]>([]);
   const [loading, setLoading] = useState(true);
   const [documentsLoading, setDocumentsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [rating, setRating] = useState<string | null>(null);
+  const [ratingSnapshot, setRatingSnapshot] = useState<RatingSnapshot | null>(null);
+  const [gradeNews, setGradeNews] = useState<GradeNews[]>([]);
+  const [ratingsLoading, setRatingsLoading] = useState(true);
 
   // Load main company data
   const loadData = useCallback(async () => {
@@ -60,62 +63,15 @@ export const useStockOverviewData = (symbol: string) => {
     }
   }, [symbol]);
 
-  // Load document data (earnings transcripts and SEC filings)
+  // Load document data (SEC filings)
   const loadDocuments = useCallback(async () => {
     try {
       setDocumentsLoading(true);
       
-      const [earningsData, filingsData] = await Promise.all([
-        fetchEarningsTranscripts(symbol).catch(err => {
-          console.warn("Error loading transcripts:", err);
-          return [];
-        }),
-        fetchSECFilings(symbol).catch(err => {
-          console.warn("Error loading SEC filings:", err);
-          return [];
-        })
-      ]);
-      
-      if (earningsData && earningsData.length > 0) {
-        const processedCalls = await Promise.all(
-          earningsData.slice(0, 3).map(async (call) => {
-            if (call.content && !call.highlights) {
-              try {
-                const highlights = await generateTranscriptHighlights(call.content, {
-                  symbol: call.symbol,
-                  quarter: call.quarter,
-                  year: call.year,
-                  date: call.date
-                });
-                return { ...call, highlights };
-              } catch (e) {
-                console.error("Error generating highlights:", e);
-                return call;
-              }
-            }
-            return call;
-          })
-        );
-        
-        setEarningsCalls(processedCalls);
-      } else {
-        // Fallback data if no real data is available
-        setEarningsCalls([
-          {
-            symbol,
-            date: "2023-10-25",
-            quarter: "Q3",
-            year: "2023",
-            content: "",
-            url: `https://financialmodelingprep.com/api/v4/earning_call_transcript/${symbol}`,
-            highlights: [
-              "No transcript data available for this symbol",
-              "Check back later for updated information",
-              "You can also view other sections for available data"
-            ]
-          }
-        ]);
-      }
+      const filingsData = await fetchSECFilings(symbol).catch(err => {
+        console.warn("Error loading SEC filings:", err);
+        return [];
+      });
       
       if (filingsData && filingsData.length > 0) {
         setSecFilings(filingsData);
@@ -142,11 +98,38 @@ export const useStockOverviewData = (symbol: string) => {
     }
   }, [symbol]);
 
+  // Load ratings data
+  const loadRatingsData = useCallback(async () => {
+    try {
+      setRatingsLoading(true);
+      
+      const [snapshotData, newsData] = await Promise.all([
+        fetchRatingSnapshot(symbol).catch(err => {
+          console.warn("Error loading rating snapshot:", err);
+          return null;
+        }),
+        fetchGradeNews(symbol, 5).catch(err => {
+          console.warn("Error loading grade news:", err);
+          return [];
+        })
+      ]);
+      
+      setRatingSnapshot(snapshotData);
+      setGradeNews(newsData);
+    } catch (err) {
+      console.error("Error loading ratings data:", err);
+      // Rating errors don't prevent the main view from loading
+    } finally {
+      setRatingsLoading(false);
+    }
+  }, [symbol]);
+
   // Refetch all data
   const refetch = useCallback(() => {
     loadData();
     loadDocuments();
-  }, [loadData, loadDocuments]);
+    loadRatingsData();
+  }, [loadData, loadDocuments, loadRatingsData]);
 
   useEffect(() => {
     if (symbol) {
@@ -157,18 +140,21 @@ export const useStockOverviewData = (symbol: string) => {
   useEffect(() => {
     if (symbol && profile) {
       loadDocuments();
+      loadRatingsData();
     }
-  }, [symbol, profile, loadDocuments]);
+  }, [symbol, profile, loadDocuments, loadRatingsData]);
 
   return {
     profile,
     quote,
-    earningsCalls,
     secFilings,
     loading,
     documentsLoading,
     error,
     rating,
+    ratingSnapshot,
+    gradeNews,
+    ratingsLoading,
     refetch
   };
 };
