@@ -23,6 +23,22 @@ const StockOverview = ({ symbol }: StockOverviewProps) => {
     refetch
   } = useStockOverviewData(symbol);
 
+  // Enhanced logging for debugging
+  console.log("StockOverview rendering for", symbol, "with ratings data:", { 
+    hasRatingSnapshot: !!ratingSnapshot, 
+    ratingSnapshotDetails: ratingSnapshot ? {
+      rating: ratingSnapshot.rating,
+      overallScore: ratingSnapshot.overallScore
+    } : null,
+    gradeNewsCount: gradeNews?.length || 0,
+    gradeNewsFirstItem: gradeNews && gradeNews.length > 0 ? {
+      company: gradeNews[0].gradingCompany,
+      date: gradeNews[0].publishedDate,
+      newGrade: gradeNews[0].newGrade
+    } : null,
+    isRatingsLoading: ratingsLoading
+  });
+
   if (loading) {
     return <StockOverviewSkeleton />;
   }
@@ -30,12 +46,6 @@ const StockOverview = ({ symbol }: StockOverviewProps) => {
   if (error || !profile || !quote) {
     return <ErrorDisplay errorMessage={error} onRetry={refetch} />;
   }
-
-  console.log("Ratings data before rendering:", { 
-    hasRatingSnapshot: !!ratingSnapshot, 
-    gradeNewsCount: gradeNews?.length || 0,
-    isRatingsLoading: ratingsLoading
-  });
 
   return (
     <StockOverviewContent

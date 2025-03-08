@@ -104,29 +104,23 @@ export const useStockOverviewData = (symbol: string) => {
       setRatingsLoading(true);
       console.log(`Starting to load ratings data for ${symbol}`);
       
-      // Use Promise.allSettled to continue even if some promises fail
-      const results = await Promise.allSettled([
-        fetchRatingSnapshot(symbol),
-        fetchGradeNews(symbol, 10)
-      ]);
+      // Try both endpoints with more detailed logging
+      console.log("Attempting to fetch rating snapshot...");
+      const snapshotData = await fetchRatingSnapshot(symbol);
+      console.log("Rating snapshot result:", snapshotData ? "Success" : "No data");
       
-      // Handle rating snapshot result
-      const snapshotResult = results[0];
-      const snapshotData = snapshotResult.status === 'fulfilled' ? snapshotResult.value : null;
+      console.log("Attempting to fetch grade news...");
+      const newsData = await fetchGradeNews(symbol, 10);
+      console.log("Grade news result:", newsData && newsData.length > 0 ? `Found ${newsData.length} items` : "No data");
       
-      // Handle grade news result
-      const newsResult = results[1];
-      const newsData = newsResult.status === 'fulfilled' ? newsResult.value : [];
-      
-      console.log("Ratings data loaded:", {
-        hasRatingSnapshot: !!snapshotData,
-        gradeNewsCount: newsData?.length || 0,
-        snapshotStatus: snapshotResult.status,
-        newsStatus: newsResult.status
-      });
-      
+      // Set the data even if one or both are null/empty
       setRatingSnapshot(snapshotData);
-      setGradeNews(newsData);
+      setGradeNews(newsData || []);
+      
+      console.log("Completed loading ratings data:", { 
+        hasRatingSnapshot: !!snapshotData, 
+        gradeNewsCount: newsData?.length || 0 
+      });
     } catch (err) {
       console.error("Error loading ratings data:", err);
       // Rating errors don't prevent the main view from loading

@@ -12,8 +12,16 @@ export const fetchRatingSnapshot = async (symbol: string): Promise<RatingSnapsho
     
     // Check if API key is available
     if (!FMP_API_KEY) {
-      console.warn("FMP_API_KEY is not set. Unable to fetch rating snapshot");
-      return null;
+      console.warn("FMP_API_KEY is not set. Using fallback from API_KEY in fmpApi");
+      // Try to use the API key from fmpApi.ts as fallback
+      const fallbackKey = "d4pXGs1r5epkkuckDZxOzSiG7DTd7BEg";
+      
+      const url = `${API_BASE_URLS.FMP}/rating/${symbol}?apikey=${fallbackKey}`;
+      const response = await fetchWithRetry(url);
+      const data = await handleFetchResponse<RatingSnapshot[]>(response);
+      
+      console.log(`Rating snapshot result for ${symbol}:`, data ? `Found ${data.length} results` : 'No data');
+      return data && data.length > 0 ? data[0] : null;
     }
     
     const url = `${API_BASE_URLS.FMP}/rating/${symbol}?apikey=${FMP_API_KEY}`;
@@ -37,12 +45,21 @@ export const fetchGradeNews = async (symbol: string, limit: number = 5): Promise
     
     // Check if API key is available
     if (!FMP_API_KEY) {
-      console.warn("FMP_API_KEY is not set. Unable to fetch grade news");
-      return [];
+      console.warn("FMP_API_KEY is not set. Using fallback from API_KEY in fmpApi");
+      // Try to use the API key from fmpApi.ts as fallback
+      const fallbackKey = "d4pXGs1r5epkkuckDZxOzSiG7DTd7BEg";
+      
+      // We need to use the correct endpoint name "grade" (not "grades")
+      const url = `${API_BASE_URLS.FMP}/grade/${symbol}?limit=${limit}&apikey=${fallbackKey}`;
+      const response = await fetchWithRetry(url);
+      const data = await handleFetchResponse<GradeNews[]>(response);
+      
+      console.log(`Grade news result for ${symbol}:`, data ? `Found ${data.length} results` : 'No data');
+      return data || [];
     }
     
-    // Updated endpoint from 'grade-news' to 'upgrade_downgrade' as per the API documentation
-    const url = `${API_BASE_URLS.FMP}/upgrade_downgrade?symbol=${symbol}&limit=${limit}&apikey=${FMP_API_KEY}`;
+    // The correct endpoint is "grade" (not "grades-news" or "upgrade_downgrade")
+    const url = `${API_BASE_URLS.FMP}/grade/${symbol}?limit=${limit}&apikey=${FMP_API_KEY}`;
     const response = await fetchWithRetry(url);
     const data = await handleFetchResponse<GradeNews[]>(response);
     

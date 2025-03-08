@@ -3,7 +3,7 @@ import { RatingSnapshot } from "@/types/ratings/ratingTypes";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Progress } from "@/components/ui/progress";
-import { AlertCircle } from "lucide-react";
+import { AlertCircle, BarChart3 } from "lucide-react";
 
 interface RatingsSnapshotSectionProps {
   ratingSnapshot: RatingSnapshot | null;
@@ -16,7 +16,8 @@ const RatingsSnapshotSection = ({ ratingSnapshot, isLoading }: RatingsSnapshotSe
       <Card>
         <CardHeader>
           <CardTitle className="text-xl flex items-center gap-2">
-            <Skeleton className="h-6 w-40" />
+            <BarChart3 className="h-5 w-5 text-primary" />
+            <span>Ratings Snapshot</span>
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -33,6 +34,7 @@ const RatingsSnapshotSection = ({ ratingSnapshot, isLoading }: RatingsSnapshotSe
       <Card className="border-dashed border-muted-foreground/50">
         <CardHeader>
           <CardTitle className="text-xl flex items-center gap-2">
+            <BarChart3 className="h-5 w-5 text-primary" />
             <span>Ratings Snapshot</span>
           </CardTitle>
         </CardHeader>
@@ -73,6 +75,7 @@ const RatingsSnapshotSection = ({ ratingSnapshot, isLoading }: RatingsSnapshotSe
     <Card>
       <CardHeader>
         <CardTitle className="text-xl flex items-center gap-2">
+          <BarChart3 className="h-5 w-5 text-primary" />
           <span>Ratings Snapshot</span>
           <span className={`text-sm rounded-full px-2 py-0.5 ${
             ratingSnapshot.rating === 'A' || ratingSnapshot.rating === 'A+' || ratingSnapshot.rating === 'A-' ? 'bg-green-100 text-green-800' :

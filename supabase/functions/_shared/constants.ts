@@ -11,7 +11,10 @@ export const API_BASE_URLS = {
 export const FMP_API_KEY = (() => {
   try {
     // @ts-ignore - Deno will exist at runtime in Supabase Edge Functions
-    return Deno?.env?.get("FMP_API_KEY") || "";
+    if (typeof Deno !== 'undefined' && Deno?.env?.get) {
+      return Deno.env.get("FMP_API_KEY") || "";
+    }
+    return "";
   } catch {
     return "";
   }
@@ -20,7 +23,10 @@ export const FMP_API_KEY = (() => {
 export const OPENAI_API_KEY = (() => {
   try {
     // @ts-ignore - Deno will exist at runtime in Supabase Edge Functions
-    return Deno?.env?.get("OPENAI_API_KEY") || "";
+    if (typeof Deno !== 'undefined' && Deno?.env?.get) {
+      return Deno.env.get("OPENAI_API_KEY") || "";
+    }
+    return "";
   } catch {
     return "";
   }
