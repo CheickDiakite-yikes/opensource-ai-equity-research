@@ -30,27 +30,27 @@ const StockAnalysis = ({ symbol }: StockAnalysisProps) => {
     retryFetchingData, 
     isLoading: isDirectFetchLoading 
   } = useDirectFinancialData(symbol, {
-    income: data.income,
-    balance: data.balance,
-    cashflow: data.cashflow,
-    ratios: data.ratios
+    income: data?.income || [],
+    balance: data?.balance || [],
+    cashflow: data?.cashflow || [],
+    ratios: data?.ratios || []
   });
 
   // Combine data from both sources (useResearchReportData and direct fetch)
   const combinedData = {
-    income: data.income.length > 0 ? data.income : directFinancials.income,
-    balance: data.balance.length > 0 ? data.balance : directFinancials.balance,
-    cashflow: data.cashflow.length > 0 ? data.cashflow : directFinancials.cashflow,
-    ratios: data.ratios.length > 0 ? data.ratios : directFinancials.ratios,
-    transcripts: data.transcripts,
-    filings: data.filings
+    income: data?.income?.length > 0 ? data.income : directFinancials.income,
+    balance: data?.balance?.length > 0 ? data.balance : directFinancials.balance,
+    cashflow: data?.cashflow?.length > 0 ? data.cashflow : directFinancials.cashflow,
+    ratios: data?.ratios?.length > 0 ? data.ratios : directFinancials.ratios,
+    transcripts: data?.transcripts,
+    filings: data?.filings
   };
   
   // Check if combined data has minimum requirements
   const hasCombinedMinimumData = (
-    (combinedData.income.length > 0 ? 1 : 0) + 
-    (combinedData.balance.length > 0 ? 1 : 0) + 
-    (combinedData.cashflow.length > 0 ? 1 : 0)
+    (combinedData.income?.length > 0 ? 1 : 0) + 
+    (combinedData.balance?.length > 0 ? 1 : 0) + 
+    (combinedData.cashflow?.length > 0 ? 1 : 0)
   ) >= 2;
 
   // Function to handle retry
@@ -75,15 +75,15 @@ const StockAnalysis = ({ symbol }: StockAnalysisProps) => {
 
   // Prepare financial data from combined data
   const financials: FinancialData[] = prepareFinancialData(
-    combinedData.income, 
-    combinedData.balance, 
-    combinedData.cashflow
+    combinedData.income || [], 
+    combinedData.balance || [], 
+    combinedData.cashflow || []
   );
   // Cast to KeyRatio[] to ensure type compatibility
-  const ratioData: RatioData[] = prepareRatioData(combinedData.ratios as KeyRatio[]);
+  const ratioData: RatioData[] = prepareRatioData((combinedData.ratios || []) as KeyRatio[]);
 
   // Generate empty mock data for any missing statement type
-  if (combinedData.income.length === 0 || combinedData.balance.length === 0 || combinedData.cashflow.length === 0) {
+  if (!combinedData.income?.length || !combinedData.balance?.length || !combinedData.cashflow?.length) {
     toast.info(`Some financial statements are missing for ${symbol}. Analysis may be limited.`, {
       duration: 5000,
       id: "missing-data-warning" // Prevent duplicate toasts
@@ -96,8 +96,8 @@ const StockAnalysis = ({ symbol }: StockAnalysisProps) => {
         financials={financials} 
         ratioData={ratioData} 
         symbol={symbol} 
-        transcripts={combinedData.transcripts}
-        filings={combinedData.filings}
+        transcripts={combinedData.transcripts || []}
+        filings={combinedData.filings || []}
       />
     </div>
   );
