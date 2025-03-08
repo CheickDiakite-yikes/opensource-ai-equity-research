@@ -1,3 +1,4 @@
+
 import { commonTickers } from "@/constants/commonTickers";
 import { type StockQuote } from "@/types";
 import { StockCategory } from "@/components/search/types";
@@ -12,7 +13,7 @@ interface CompanyMatch {
 
 /**
  * More intelligent search using fuzzy matching and scoring
- * Enhanced with direct API integration
+ * Enhanced with direct API integration and fallback to local search
  */
 export const getIntelligentSearchResults = async (query: string): Promise<StockQuote[]> => {
   if (!query || query.length < 1) return [];
@@ -242,6 +243,12 @@ export const getIntelligentSearchResults = async (query: string): Promise<StockQ
   try {
     // Also fetch from the FMP API directly for more comprehensive search
     const apiResults = await enhancedSymbolSearch(query);
+    
+    // If API results are empty (possibly due to invalid API key), just return local results
+    if (apiResults.length === 0) {
+      console.log("API search returned no results, using local search only");
+      return localResults;
+    }
     
     // Combine local and API results, removing duplicates
     const combinedResults: StockQuote[] = [...localResults];

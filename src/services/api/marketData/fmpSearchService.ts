@@ -19,12 +19,19 @@ interface FmpSearchResult {
  * Endpoint: https://financialmodelingprep.com/api/v3/search?query={query}
  */
 export async function searchSymbols(query: string, limit: number = 20): Promise<FmpSearchResult[]> {
-  if (!query || query.length < 1) return [];
+  if (!query || query.length < 1 || !FMP_API_KEY) return [];
 
   const url = `${API_BASE_URLS.FMP}/search?query=${encodeURIComponent(query)}&limit=${limit}&apikey=${FMP_API_KEY}`;
   
   try {
     const response = await fetchWithRetry(url);
+    
+    // Handle 401 Unauthorized specifically to avoid repeated failed API calls
+    if (response.status === 401) {
+      console.warn("API key unauthorized for FMP search. Please check your API key.");
+      return [];
+    }
+    
     return await handleFetchResponse<FmpSearchResult[]>(response, "Failed to search symbols");
   } catch (error) {
     console.error("Error searching symbols:", error);
@@ -37,12 +44,19 @@ export async function searchSymbols(query: string, limit: number = 20): Promise<
  * Endpoint: https://financialmodelingprep.com/api/v3/search-name?query={query}
  */
 export async function searchCompanyNames(query: string, limit: number = 20): Promise<FmpSearchResult[]> {
-  if (!query || query.length < 1) return [];
+  if (!query || query.length < 1 || !FMP_API_KEY) return [];
 
   const url = `${API_BASE_URLS.FMP}/search-name?query=${encodeURIComponent(query)}&limit=${limit}&apikey=${FMP_API_KEY}`;
   
   try {
     const response = await fetchWithRetry(url);
+    
+    // Handle 401 Unauthorized specifically
+    if (response.status === 401) {
+      console.warn("API key unauthorized for FMP name search. Please check your API key.");
+      return [];
+    }
+    
     return await handleFetchResponse<FmpSearchResult[]>(response, "Failed to search company names");
   } catch (error) {
     console.error("Error searching company names:", error);
@@ -52,9 +66,16 @@ export async function searchCompanyNames(query: string, limit: number = 20): Pro
 
 /**
  * Enhanced search that combines symbol and name search for better results
+ * Falls back to local search if API key is missing or invalid
  */
 export async function enhancedSymbolSearch(query: string): Promise<StockQuote[]> {
   if (!query || query.length < 1) return [];
+  
+  // If API key is missing, don't even try API calls
+  if (!FMP_API_KEY) {
+    console.warn("FMP API key is missing. Using local search only.");
+    return [];
+  }
   
   try {
     // Run both searches in parallel for better performance
@@ -62,6 +83,11 @@ export async function enhancedSymbolSearch(query: string): Promise<StockQuote[]>
       searchSymbols(query),
       searchCompanyNames(query)
     ]);
+    
+    // If both API calls failed or returned empty results, return empty array
+    if (symbolResults.length === 0 && nameResults.length === 0) {
+      return [];
+    }
     
     // Combine and deduplicate results
     const allResults = [...symbolResults];
