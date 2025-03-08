@@ -1,5 +1,3 @@
-
-import { supabase } from "@/integrations/supabase/client";
 import { commonTickers } from "@/constants/commonTickers";
 import { type StockQuote } from "@/types";
 import { StockCategory } from "@/components/search/types";

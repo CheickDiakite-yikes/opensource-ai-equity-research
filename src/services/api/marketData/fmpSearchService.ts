@@ -1,6 +1,6 @@
 
-import { fetchWithRetry, handleFetchResponse } from "supabase/functions/_shared/fetch-utils";
-import { API_BASE_URLS, FMP_API_KEY } from "supabase/functions/_shared/constants";
+import { fetchWithRetry, handleFetchResponse } from "@/utils/fetch-utils";
+import { API_BASE_URLS, FMP_API_KEY } from "@/config/constants";
 import { StockQuote } from "@/types";
 import { StockCategory } from "@/components/search/types";
 
