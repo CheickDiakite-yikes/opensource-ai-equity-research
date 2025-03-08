@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { StockQuote } from "@/types";
 import { StockCategory } from "../types";
 import { searchStocks } from "@/lib/api/fmpApi";
@@ -16,13 +16,23 @@ export const useSearch = ({ featuredSymbols = commonTickers }: UseSearchProps = 
   const [isLoading, setIsLoading] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
   const [suggestions, setSuggestions] = useState<{symbol: string, name: string}[]>([]);
+  
+  // Track if the component is mounted to prevent state updates after unmounting
+  const isMounted = useRef(true);
+  
+  useEffect(() => {
+    return () => {
+      isMounted.current = false;
+    };
+  }, []);
 
+  // Initialize with featured symbols when dropdown is opened with empty query
   useEffect(() => {
     if (isOpen && query.length === 0) {
       const featuredResults = findMatchingCommonTickers("", featuredSymbols);
       setResults(featuredResults);
     }
-  }, [isOpen, query, featuredSymbols]);
+  }, [isOpen, featuredSymbols]);
 
   // Generate suggestions for autocomplete
   useEffect(() => {
@@ -57,7 +67,10 @@ export const useSearch = ({ featuredSymbols = commonTickers }: UseSearchProps = 
         exactCommonMatch.name, 
         StockCategory.EXACT_MATCH
       );
-      setResults([exactMatchQuote]);
+      
+      if (isMounted.current) {
+        setResults([exactMatchQuote]);
+      }
     }
     
     // Immediately show common tickers even before API call
@@ -65,11 +78,13 @@ export const useSearch = ({ featuredSymbols = commonTickers }: UseSearchProps = 
     
     if (exactCommonMatch) {
       // If we have an exact match, add other matches below it
-      setResults([
-        ...results.filter(r => r.category === StockCategory.EXACT_MATCH),
-        ...commonTickerMatches.filter(r => r.category !== StockCategory.EXACT_MATCH)
-      ]);
-    } else {
+      if (isMounted.current) {
+        setResults([
+          ...results.filter(r => r.category === StockCategory.EXACT_MATCH),
+          ...commonTickerMatches.filter(r => r.category !== StockCategory.EXACT_MATCH)
+        ]);
+      }
+    } else if (isMounted.current) {
       setResults(commonTickerMatches);
     }
     
@@ -79,11 +94,15 @@ export const useSearch = ({ featuredSymbols = commonTickers }: UseSearchProps = 
       return;
     }
     
-    setIsLoading(true);
+    if (isMounted.current) {
+      setIsLoading(true);
+    }
     
     try {
       // Then fetch from API for additional results
       const searchResults = await searchStocks(value);
+      
+      if (!isMounted.current) return;
       
       if (searchResults && searchResults.length > 0) {
         // Add category to API results
@@ -126,7 +145,9 @@ export const useSearch = ({ featuredSymbols = commonTickers }: UseSearchProps = 
       console.error("Search error:", error);
       // Silently handle error - don't show error toast as it's disruptive during typing
     } finally {
-      setIsLoading(false);
+      if (isMounted.current) {
+        setIsLoading(false);
+      }
     }
   };
 

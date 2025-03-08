@@ -9,7 +9,7 @@ import { featuredSymbols as defaultFeaturedSymbols } from "@/constants/featuredS
 import { commonTickers } from "@/constants/commonTickers";
 import { useSearch } from "./hooks/useSearch";
 import { useSearchInteractions } from "./hooks/useSearchInteractions";
-import { useEffect, useState, KeyboardEvent } from "react";
+import { useEffect, useState, KeyboardEvent, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
 
@@ -30,6 +30,7 @@ const SearchBar = ({
 }: SearchBarProps) => {
   const navigate = useNavigate();
   const [activeIndex, setActiveIndex] = useState(-1);
+  const dropdownContainerRef = useRef<HTMLDivElement>(null);
   
   // Combine featured symbols with common tickers
   const allSymbols = [...featuredSymbols, ...commonTickers.filter(
@@ -122,6 +123,7 @@ const SearchBar = ({
         "relative w-full",
         className
       )}
+      ref={dropdownContainerRef}
     >
       <div className="relative flex items-center">
         <div className="absolute left-3 z-10 text-primary">
@@ -181,9 +183,9 @@ const SearchBar = ({
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -5 }}
             transition={{ duration: 0.15 }}
-            className="fixed inset-0 z-[100] pointer-events-none"
+            className="absolute z-50 w-full"
           >
-            <div className="absolute top-[calc(100%+8px)] inset-x-0 pointer-events-auto" style={{width: searchInputRef.current?.offsetWidth}}>
+            <div className="relative mt-1 shadow-lg rounded-xl overflow-hidden">
               <SearchResults
                 ref={commandRef}
                 query={query}
