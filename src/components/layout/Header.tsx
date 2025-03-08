@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
 import { useTheme } from "@/components/theme-provider";
 import UserMenu from "./UserMenu";
+import SearchBar from "@/components/search/SearchBar";
 
 interface HeaderProps {
   symbol: string;
@@ -24,6 +25,11 @@ const Header: React.FC<HeaderProps> = ({
   handleKeyDown
 }) => {
   const { theme } = useTheme();
+  
+  const handleSymbolSelect = (selectedSymbol: string) => {
+    setSymbol(selectedSymbol);
+    setTimeout(() => handleSearch(), 0);
+  };
   
   return (
     <header className="border-b border-border/40 py-4 px-6 bg-gradient-to-r from-background to-secondary/10 backdrop-blur-sm sticky top-0 z-10 shadow-sm">
@@ -54,35 +60,13 @@ const Header: React.FC<HeaderProps> = ({
             className="flex items-center gap-2 w-full sm:w-auto"
           >
             <div className="relative flex-1 sm:w-64">
-              <Input
-                type="text"
-                placeholder="Search ticker symbol..."
-                value={symbol}
-                onChange={(e) => setSymbol(e.target.value)}
-                onKeyDown={handleKeyDown}
-                className="pl-10 bg-background/80 backdrop-blur-sm pr-4 border-border/50 focus:border-primary/50 transition-colors h-10 animate-cursor"
-                autoComplete="off"
-                autoFocus
+              <SearchBar 
+                placeholder="Search ticker symbol..." 
+                autoFocus={true}
+                onSelectCallback={handleSymbolSelect}
+                className="w-full"
               />
-              <Search className="absolute left-3 top-2.5 h-5 w-5 text-muted-foreground" />
             </div>
-            <Button 
-              onClick={handleSearch} 
-              disabled={isLoading || !symbol.trim()} 
-              className="gap-1 px-4 h-10"
-            >
-              {isLoading ? (
-                <span className="flex items-center gap-2">
-                  <div className="h-4 w-4 rounded-full border-2 border-white border-t-transparent animate-spin" />
-                  Searching...
-                </span>
-              ) : (
-                <>
-                  Search
-                  <ChevronRight className="h-3.5 w-3.5" />
-                </>
-              )}
-            </Button>
           </motion.div>
           
           <UserMenu />

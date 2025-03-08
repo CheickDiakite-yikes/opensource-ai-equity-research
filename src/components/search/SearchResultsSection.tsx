@@ -16,6 +16,8 @@ interface SearchResultsSectionProps {
   showSeparator?: boolean;
   highlightMatch?: (text: string, query: string) => string;
   query?: string;
+  activeIndex?: number;
+  activeIndexOffset?: number;
 }
 
 const SearchResultsSection = ({
@@ -26,7 +28,9 @@ const SearchResultsSection = ({
   onSelectStock,
   showSeparator = false,
   highlightMatch,
-  query = ""
+  query = "",
+  activeIndex = -1,
+  activeIndexOffset = 0
 }: SearchResultsSectionProps) => {
   if (items.length === 0) return null;
 
@@ -34,7 +38,9 @@ const SearchResultsSection = ({
     <>
       {showSeparator && <CommandSeparator />}
       <CommandGroup heading={<SearchSectionHeading icon={icon} title={title} />}>
-        {items.map((item) => {
+        {items.map((item, idx) => {
+          const isActive = activeIndex === idx + activeIndexOffset;
+          
           if (itemType === "stock") {
             const stock = item as StockQuote;
             return (
@@ -44,6 +50,7 @@ const SearchResultsSection = ({
                 onSelect={() => onSelectStock(stock.symbol)}
                 highlightMatch={highlightMatch}
                 query={query}
+                isActive={isActive}
               />
             );
           } else if (itemType === "recent") {
@@ -55,6 +62,7 @@ const SearchResultsSection = ({
                 onSelect={() => onSelectStock(symbol)}
                 highlightMatch={highlightMatch}
                 query={query}
+                isActive={isActive}
               />
             );
           } else {
@@ -68,6 +76,7 @@ const SearchResultsSection = ({
                 onSelect={() => onSelectStock(featured.symbol)}
                 highlightMatch={highlightMatch}
                 query={query}
+                isActive={isActive}
               />
             );
           }

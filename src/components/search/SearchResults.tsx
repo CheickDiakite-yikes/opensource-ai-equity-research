@@ -22,6 +22,7 @@ interface SearchResultsProps {
   recentSearches: string[];
   featuredSymbols: {symbol: string, name: string}[];
   onSelectStock: (symbol: string) => void;
+  activeIndex?: number;
 }
 
 export const SearchResults = forwardRef<HTMLDivElement, SearchResultsProps>(({
@@ -30,11 +31,15 @@ export const SearchResults = forwardRef<HTMLDivElement, SearchResultsProps>(({
   isLoading,
   recentSearches,
   featuredSymbols,
-  onSelectStock
+  onSelectStock,
+  activeIndex = -1
 }, ref) => {
   const exactMatches = results.filter(stock => stock.category === "Exact Match");
   const apiResults = results.filter(stock => stock.category === "Search Results");
   const commonResults = results.filter(stock => stock.category === "Popular Stocks");
+  
+  // All flattened results for keyboard navigation
+  const allResults = [...exactMatches, ...apiResults, ...commonResults];
   
   // Filter featured symbols based on query
   const filteredFeaturedSymbols = featuredSymbols.filter(
@@ -110,6 +115,8 @@ export const SearchResults = forwardRef<HTMLDivElement, SearchResultsProps>(({
           onSelectStock={onSelectStock}
           highlightMatch={highlightMatch}
           query={query}
+          activeIndexOffset={0}
+          activeIndex={activeIndex}
         />
         
         {/* Recent Searches Section */}
@@ -121,6 +128,8 @@ export const SearchResults = forwardRef<HTMLDivElement, SearchResultsProps>(({
           onSelectStock={onSelectStock}
           highlightMatch={highlightMatch}
           query={query}
+          activeIndexOffset={exactMatches.length}
+          activeIndex={activeIndex}
         />
         
         {/* API Results Section */}
@@ -132,6 +141,8 @@ export const SearchResults = forwardRef<HTMLDivElement, SearchResultsProps>(({
           onSelectStock={onSelectStock}
           highlightMatch={highlightMatch}
           query={query}
+          activeIndexOffset={exactMatches.length + filteredRecentSearches.length}
+          activeIndex={activeIndex}
         />
         
         {/* Common Results Section (Popular) */}
@@ -144,6 +155,8 @@ export const SearchResults = forwardRef<HTMLDivElement, SearchResultsProps>(({
           showSeparator={exactMatches.length > 0 || apiResults.length > 0 || filteredRecentSearches.length > 0}
           highlightMatch={highlightMatch}
           query={query}
+          activeIndexOffset={exactMatches.length + apiResults.length + filteredRecentSearches.length}
+          activeIndex={activeIndex}
         />
         
         {/* Featured Symbols Section */}
@@ -157,6 +170,8 @@ export const SearchResults = forwardRef<HTMLDivElement, SearchResultsProps>(({
             showSeparator={results.length > 0 || filteredRecentSearches.length > 0}
             highlightMatch={highlightMatch}
             query={query}
+            activeIndexOffset={exactMatches.length + apiResults.length + commonResults.length + filteredRecentSearches.length}
+            activeIndex={activeIndex}
           />
         )}
       </CommandList>

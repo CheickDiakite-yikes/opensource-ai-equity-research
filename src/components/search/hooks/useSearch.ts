@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { StockQuote } from "@/types";
 import { StockCategory } from "../types";
@@ -14,6 +15,7 @@ export const useSearch = ({ featuredSymbols = commonTickers }: UseSearchProps = 
   const [results, setResults] = useState<StockQuote[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
+  const [suggestions, setSuggestions] = useState<{symbol: string, name: string}[]>([]);
 
   useEffect(() => {
     if (isOpen && query.length === 0) {
@@ -21,6 +23,23 @@ export const useSearch = ({ featuredSymbols = commonTickers }: UseSearchProps = 
       setResults(featuredResults);
     }
   }, [isOpen, query, featuredSymbols]);
+
+  // Generate suggestions for autocomplete
+  useEffect(() => {
+    if (query.length > 0) {
+      // Find potential matches for autocomplete
+      const autocompleteSuggestions = commonTickers
+        .filter(ticker => 
+          ticker.symbol.toLowerCase().startsWith(query.toLowerCase()) && 
+          ticker.symbol.toLowerCase() !== query.toLowerCase()
+        )
+        .slice(0, 5);
+      
+      setSuggestions(autocompleteSuggestions);
+    } else {
+      setSuggestions([]);
+    }
+  }, [query]);
 
   const handleSearch = async (value: string) => {
     setQuery(value);
@@ -120,6 +139,7 @@ export const useSearch = ({ featuredSymbols = commonTickers }: UseSearchProps = 
     isOpen,
     setIsOpen,
     handleSearch,
-    findMatchingCommonTickers: (value: string) => findMatchingCommonTickers(value, featuredSymbols)
+    findMatchingCommonTickers: (value: string) => findMatchingCommonTickers(value, featuredSymbols),
+    suggestions
   };
 };
