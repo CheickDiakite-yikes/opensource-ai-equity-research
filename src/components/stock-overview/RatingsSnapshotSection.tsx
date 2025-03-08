@@ -48,9 +48,6 @@ const RatingsSnapshotSection = ({ ratingSnapshot, isLoading }: RatingsSnapshotSe
     );
   }
 
-  // Log the data being rendered for debugging
-  console.log(`Rendering ratings snapshot for ${ratingSnapshot.symbol} with rating ${ratingSnapshot.rating}`);
-
   // Map score to a more human-readable label
   const getScoreLabel = (score: number) => {
     if (score >= 5) return "Excellent";
@@ -73,6 +70,13 @@ const RatingsSnapshotSection = ({ ratingSnapshot, isLoading }: RatingsSnapshotSe
   const getScorePercentage = (score: number) => {
     return (score / 5) * 100;
   };
+
+  // Add debugging for the current rating snapshot
+  console.log("Rendering rating snapshot:", {
+    symbol: ratingSnapshot.symbol,
+    rating: ratingSnapshot.rating,
+    overallScore: ratingSnapshot.overallScore
+  });
 
   return (
     <Card>
