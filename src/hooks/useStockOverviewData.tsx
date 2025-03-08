@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from "react";
 import { StockProfile, StockQuote } from "@/types/profile/companyTypes";
 import { RatingSnapshot, GradeNews } from "@/types/ratings/ratingTypes";
@@ -26,10 +25,8 @@ export const useStockOverviewData = (symbol: string) => {
   const [gradeNews, setGradeNews] = useState<GradeNews[]>([]);
   const [ratingsLoading, setRatingsLoading] = useState(true);
 
-  // Reset all state when symbol changes
   useEffect(() => {
     if (symbol) {
-      // Reset state on symbol change to prevent showing stale data
       setProfile(null);
       setQuote(null);
       setSecFilings([]);
@@ -122,14 +119,11 @@ export const useStockOverviewData = (symbol: string) => {
       
       console.log(`Starting to load ratings data for ${symbol}`);
       
-      // Fetch rating snapshot with explicit symbol verification
       console.log("Attempting to fetch rating snapshot...");
       const snapshotData = await fetchRatingSnapshot(symbol);
       
-      // Verify the returned data matches our requested symbol
       if (snapshotData && snapshotData.symbol.toUpperCase() !== symbol.toUpperCase()) {
         console.error(`Symbol mismatch detected! Requested: ${symbol}, Received: ${snapshotData.symbol}`);
-        // Do not set invalid data
       } else {
         console.log("Rating snapshot result:", snapshotData ? "Success" : "No data");
         setRatingSnapshot(snapshotData);
@@ -138,12 +132,10 @@ export const useStockOverviewData = (symbol: string) => {
       console.log("Attempting to fetch grade news...");
       const newsData = await fetchGradeNews(symbol, 10);
       
-      // Verify at least the first news item matches our symbol
       if (newsData && newsData.length > 0 && 
           newsData[0].symbol && 
           newsData[0].symbol.toUpperCase() !== symbol.toUpperCase()) {
         console.error(`Symbol mismatch in news data! Requested: ${symbol}, Received: ${newsData[0].symbol}`);
-        // Do not set invalid data
       } else {
         console.log("Grade news result:", newsData && newsData.length > 0 ? `Found ${newsData.length} items` : "No data");
         setGradeNews(newsData || []);
@@ -169,7 +161,7 @@ export const useStockOverviewData = (symbol: string) => {
     loadData();
     loadDocuments();
     loadRatingsData();
-  }, [loadData, loadDocuments, loadRatingsLoading]);
+  }, [loadData, loadDocuments, loadRatingsData]);
 
   useEffect(() => {
     if (symbol) {
