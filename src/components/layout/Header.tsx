@@ -60,7 +60,9 @@ const Header: React.FC<HeaderProps> = ({
                 value={symbol}
                 onChange={(e) => setSymbol(e.target.value)}
                 onKeyDown={handleKeyDown}
-                className="pl-10 bg-background/80 backdrop-blur-sm pr-4 border-border/50 focus:border-primary/50 transition-colors h-10"
+                className="pl-10 bg-background/80 backdrop-blur-sm pr-4 border-border/50 focus:border-primary/50 transition-colors h-10 animate-cursor"
+                autoComplete="off"
+                autoFocus
               />
               <Search className="absolute left-3 top-2.5 h-5 w-5 text-muted-foreground" />
             </div>

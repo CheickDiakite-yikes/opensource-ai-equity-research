@@ -127,6 +127,17 @@
     }
   }
   
+  /* Cursor animation for input fields */
+  .animate-cursor {
+    caret-color: hsl(var(--primary));
+    caret-shape: block;
+  }
+  
+  /* Ensure blinking cursor is visible */
+  input:focus {
+    caret-color: hsl(var(--primary));
+  }
+  
   .financial-table {
     border-collapse: collapse;
     width: 100%;
