@@ -6,7 +6,7 @@ import StockOverview from "@/components/StockOverview";
 import StockAnalysis from "@/components/StockAnalysis";
 import ResearchReportGenerator from "@/components/ResearchReportGenerator";
 import StockHeader from "./StockHeader";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams, useNavigate } from "react-router-dom";
 
 interface StockViewProps {
   symbol: string;
@@ -14,7 +14,8 @@ interface StockViewProps {
 }
 
 const StockView: React.FC<StockViewProps> = ({ symbol, onClear }) => {
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<string>("overview");
   
   // Check for tab parameter in URL and set active tab
@@ -26,11 +27,22 @@ const StockView: React.FC<StockViewProps> = ({ symbol, onClear }) => {
     }
   }, [searchParams]);
 
+  // Handle tab change to update URL
+  const handleTabChange = (tab: string) => {
+    setActiveTab(tab);
+    
+    // Update URL with new tab parameter
+    searchParams.set("tab", tab);
+    setSearchParams(searchParams);
+    
+    console.log(`Tab changed to: ${tab}`);
+  };
+
   return (
     <div className="mt-6">
       <StockHeader symbol={symbol} onClear={onClear} />
       
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+      <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
         <TabsList className="grid w-full grid-cols-3 mb-6 p-1 bg-muted/30">
           <TabsTrigger value="overview" className="flex items-center gap-2 py-3">
             <Briefcase className="h-4 w-4" />

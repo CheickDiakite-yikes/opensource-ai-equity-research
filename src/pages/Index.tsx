@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import Header from "@/components/layout/Header";
 import LandingView from "@/components/home/LandingView";
@@ -56,8 +57,12 @@ const Index = () => {
     setRecentSearches(updatedSearches);
     localStorage.setItem('recentSearches', JSON.stringify(updatedSearches));
     
-    // Default to report tab when searching
-    setSearchParams({ symbol: symbolUpperCase, tab: "report" });
+    // Preserve current tab if it exists, otherwise default to overview
+    const currentTab = searchParams.get('tab');
+    const newParams = new URLSearchParams();
+    newParams.set('symbol', symbolUpperCase);
+    newParams.set('tab', currentTab || 'overview');
+    setSearchParams(newParams);
     
     setTimeout(() => {
       setIsLoading(false);
@@ -94,8 +99,12 @@ const Index = () => {
     setRecentSearches(updatedSearches);
     localStorage.setItem('recentSearches', JSON.stringify(updatedSearches));
     
-    // Always set tab to "report" when selecting from featured companies
-    setSearchParams({ symbol: sym, tab: "report" });
+    // Preserve the current tab or default to overview
+    const currentTab = searchParams.get('tab');
+    const newParams = new URLSearchParams();
+    newParams.set('symbol', sym);
+    newParams.set('tab', currentTab || 'overview');
+    setSearchParams(newParams);
     
     toast.success(`Loading research data for ${sym}`, {
       duration: 3000,
