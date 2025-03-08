@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from "react";
 import { StockProfile, StockQuote } from "@/types";
 import { RatingSnapshot, GradeNews } from "@/types/ratings/ratingTypes";
@@ -24,6 +25,23 @@ export const useStockOverviewData = (symbol: string) => {
   const [ratingSnapshot, setRatingSnapshot] = useState<RatingSnapshot | null>(null);
   const [gradeNews, setGradeNews] = useState<GradeNews[]>([]);
   const [ratingsLoading, setRatingsLoading] = useState(true);
+
+  // Reset all data when symbol changes
+  useEffect(() => {
+    if (symbol) {
+      console.log(`Symbol changed to ${symbol}, resetting all data`);
+      setProfile(null);
+      setQuote(null);
+      setSecFilings([]);
+      setRating(null);
+      setRatingSnapshot(null);
+      setGradeNews([]);
+      setLoading(true);
+      setDocumentsLoading(true);
+      setRatingsLoading(true);
+      setError(null);
+    }
+  }, [symbol]);
 
   const loadData = useCallback(async () => {
     try {
@@ -94,25 +112,47 @@ export const useStockOverviewData = (symbol: string) => {
 
   const loadRatingsData = useCallback(async () => {
     try {
+      // Reset ratings data state
       setRatingSnapshot(null);
       setGradeNews([]);
       setRatingsLoading(true);
       
       console.log(`Starting to load ratings data for ${symbol}`);
       
+      // Add small delay between API calls to avoid rate limiting
       console.log("Attempting to fetch rating snapshot...");
       const snapshotData = await fetchRatingSnapshot(symbol);
-      console.log("Rating snapshot result:", snapshotData ? "Success" : "No data");
+      console.log("Rating snapshot result:", snapshotData ? 
+        `Success - ${symbol} rated ${snapshotData.rating} with score ${snapshotData.overallScore}` : 
+        "No data");
+      
+      // Small delay
+      await new Promise(resolve => setTimeout(resolve, 300));
       
       console.log("Attempting to fetch grade news...");
       const newsData = await fetchGradeNews(symbol, 10);
-      console.log("Grade news result:", newsData && newsData.length > 0 ? `Found ${newsData.length} items` : "No data");
+      console.log("Grade news result:", newsData && newsData.length > 0 ? 
+        `Found ${newsData.length} items for ${symbol}` : 
+        `No grade news for ${symbol}`);
       
-      setRatingSnapshot(snapshotData);
-      setGradeNews(newsData || []);
+      // Only set the data if it matches the current symbol
+      // This prevents stale data from appearing for the wrong company
+      if (snapshotData && snapshotData.symbol === symbol) {
+        setRatingSnapshot(snapshotData);
+      } else {
+        console.warn(`Rating snapshot symbol mismatch or no data: ${symbol}`);
+        setRatingSnapshot(null);
+      }
+      
+      if (newsData && newsData.length > 0) {
+        setGradeNews(newsData);
+      } else {
+        setGradeNews([]);
+      }
       
       console.log("Completed loading ratings data:", { 
         hasRatingSnapshot: !!snapshotData,
+        snapshotSymbol: snapshotData?.symbol,
         snapshotDetails: snapshotData ? {
           symbol: snapshotData.symbol,
           rating: snapshotData.rating,
@@ -135,8 +175,6 @@ export const useStockOverviewData = (symbol: string) => {
 
   useEffect(() => {
     if (symbol) {
-      setRatingSnapshot(null);
-      setGradeNews([]);
       loadData();
     }
   }, [symbol, loadData]);

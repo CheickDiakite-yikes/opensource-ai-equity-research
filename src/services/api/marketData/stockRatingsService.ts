@@ -12,7 +12,9 @@ const FALLBACK_API_KEY = "d4pXGs1r5epkkuckDZxOzSiG7DTd7BEg";
  */
 export const fetchRatingSnapshot = async (symbol: string): Promise<RatingSnapshot | null> => {
   try {
-    console.log(`Fetching rating snapshot for ${symbol}`);
+    // Always clear the previous symbol's cache by using a unique request
+    const timestamp = new Date().getTime();
+    console.log(`Fetching rating snapshot for ${symbol} at ${timestamp}`);
     
     // Use environment API key or fallback
     const apiKey = FMP_API_KEY || FALLBACK_API_KEY;
@@ -22,13 +24,14 @@ export const fetchRatingSnapshot = async (symbol: string): Promise<RatingSnapsho
       return null;
     }
     
-    const url = `${API_BASE_URLS.FMP}/rating/${symbol}?apikey=${apiKey}`;
+    // Add a cache-busting parameter to ensure fresh data
+    const url = `${API_BASE_URLS.FMP}/rating/${symbol}?apikey=${apiKey}&_t=${timestamp}`;
     console.log(`Making request to: ${url.replace(apiKey, "API_KEY_HIDDEN")}`);
     
     const response = await fetchWithRetry(url);
     
     if (!response.ok) {
-      console.warn(`Error response fetching rating snapshot: ${response.status}`);
+      console.warn(`Error response fetching rating snapshot: ${response.status} ${response.statusText}`);
       return null;
     }
     
@@ -39,17 +42,18 @@ export const fetchRatingSnapshot = async (symbol: string): Promise<RatingSnapsho
       return null;
     }
     
-    // Log the first item to verify we're getting real, unique data
-    console.log(`Rating snapshot for ${symbol}:`, {
+    // Log the first few fields to verify we're getting real data for the right symbol
+    console.log(`Rating snapshot data for ${symbol}:`, {
+      dataSymbol: data[0].symbol,
       rating: data[0].rating,
-      symbol: data[0].symbol,
-      scores: {
-        overall: data[0].ratingScore || data[0].overallScore,
-        dcf: data[0].dcfScore || data[0].discountedCashFlowScore,
-        roe: data[0].roeScore || data[0].returnOnEquityScore,
-        roa: data[0].roaScore || data[0].returnOnAssetsScore
-      }
+      overallScore: data[0].ratingScore || data[0].overallScore
     });
+    
+    // Validate that the returned data matches the requested symbol
+    if (data[0].symbol !== symbol) {
+      console.error(`Symbol mismatch in rating data: requested ${symbol} but received ${data[0].symbol}`);
+      return null;
+    }
     
     // Map API response to our expected type
     const ratingSnapshot: RatingSnapshot = {
@@ -66,7 +70,7 @@ export const fetchRatingSnapshot = async (symbol: string): Promise<RatingSnapsho
     
     return ratingSnapshot;
   } catch (error) {
-    console.error("Error fetching rating snapshot:", error);
+    console.error(`Error fetching rating snapshot for ${symbol}:`, error);
     return null;
   }
 };
@@ -77,7 +81,9 @@ export const fetchRatingSnapshot = async (symbol: string): Promise<RatingSnapsho
  */
 export const fetchGradeNews = async (symbol: string, limit: number = 5): Promise<GradeNews[]> => {
   try {
-    console.log(`Fetching grade news for ${symbol}, limit: ${limit}`);
+    // Add timestamp to prevent caching
+    const timestamp = new Date().getTime();
+    console.log(`Fetching grade news for ${symbol}, limit: ${limit} at ${timestamp}`);
     
     // Use environment API key or fallback
     const apiKey = FMP_API_KEY || FALLBACK_API_KEY;
@@ -87,23 +93,44 @@ export const fetchGradeNews = async (symbol: string, limit: number = 5): Promise
       return [];
     }
     
-    // The correct endpoint is "grade" according to FMP API docs
-    const url = `${API_BASE_URLS.FMP}/grade/${symbol}?limit=${limit}&apikey=${apiKey}`;
+    // Add cache-busting parameter
+    const url = `${API_BASE_URLS.FMP}/grade/${symbol}?limit=${limit}&apikey=${apiKey}&_t=${timestamp}`;
     
     console.log(`Making request to: ${url.replace(apiKey, "API_KEY_HIDDEN")}`);
     
     const response = await fetchWithRetry(url);
     
     if (!response.ok) {
-      console.warn(`Error response fetching grade news: ${response.status}`);
+      console.warn(`Error response fetching grade news: ${response.status} ${response.statusText}`);
       return [];
     }
     
     const data = await response.json();
     
+    if (!Array.isArray(data)) {
+      console.warn(`Invalid data format for grade news: expected array but got ${typeof data}`);
+      return [];
+    }
+    
+    // Log sample of data to verify correct symbol
+    if (data.length > 0) {
+      console.log(`Grade news sample for ${symbol}:`, {
+        dataSymbol: data[0].symbol,
+        company: data[0].gradingCompany || data[0].company,
+        date: data[0].date || data[0].publishedDate
+      });
+    } else {
+      console.log(`No grade news data found for ${symbol}`);
+    }
+    
     // Validate and normalize data format
-    const validData = Array.isArray(data) ? data.map(item => {
-      // Use the API-provided date fields, handling possible field name variants
+    const validData = data.map(item => {
+      // Check if the item has the correct symbol
+      if (item.symbol && item.symbol !== symbol) {
+        console.warn(`Symbol mismatch in grade news: requested ${symbol} but received ${item.symbol}`);
+      }
+      
+      // Use the API-provided data, handling possible field name variants
       const newsItem: GradeNews = {
         symbol: item.symbol || symbol,
         publishedDate: item.date || item.publishedDate || new Date().toISOString(),
@@ -131,12 +158,12 @@ export const fetchGradeNews = async (symbol: string, limit: number = 5): Promise
       }
       
       return newsItem;
-    }) : [];
+    });
     
     console.log(`Grade news result for ${symbol}:`, validData ? `Found ${validData.length} results` : 'No data');
     return validData || [];
   } catch (error) {
-    console.error("Error fetching grade news:", error);
+    console.error(`Error fetching grade news for ${symbol}:`, error);
     return [];
   }
 };
