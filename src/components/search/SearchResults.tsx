@@ -10,7 +10,7 @@ import {
   CommandList,
   CommandSeparator
 } from "@/components/ui/command";
-import { Loader2, History, BarChart4, Sparkles, ChevronRight, Search, X, TrendingUp, Info } from "lucide-react";
+import { Loader2, History, BarChart4, Sparkles, Search, TrendingUp, Info } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { SearchResultItem } from "./SearchResultItem";
 import { FeaturedSymbolItem } from "./FeaturedSymbolItem";
@@ -73,13 +73,14 @@ export const SearchResults = forwardRef<HTMLDivElement, SearchResultsProps>(({
   // Filter featured symbols based on query
   const filteredFeaturedSymbols = featuredSymbols.filter(
     symbol => 
+      !query || 
       symbol.symbol.toLowerCase().includes(query.toLowerCase()) || 
       symbol.name.toLowerCase().includes(query.toLowerCase())
   );
 
   // Filter recent searches based on query
   const filteredRecentSearches = recentSearches.filter(
-    symbol => symbol.toLowerCase().includes(query.toLowerCase())
+    symbol => !query || symbol.toLowerCase().includes(query.toLowerCase())
   );
   
   const highlightMatch = (text: string, query: string) => {
@@ -92,6 +93,14 @@ export const SearchResults = forwardRef<HTMLDivElement, SearchResultsProps>(({
       return text;
     }
   };
+
+  // Determine if we should show the featured symbols section
+  const shouldShowFeatured = (
+    !query || // Always show if no query
+    filteredFeaturedSymbols.length > 0 // Show if there are filtered results
+  ) && (
+    apiResults.length < 5 // Only show if API results are limited
+  );
   
   return (
     <Command 
@@ -114,7 +123,7 @@ export const SearchResults = forwardRef<HTMLDivElement, SearchResultsProps>(({
           </CommandGroup>
         )}
         
-        {/* Empty State */}
+        {/* Empty State - only show when there are no results and no recent searches */}
         {!isLoading && results.length === 0 && filteredFeaturedSymbols.length === 0 && filteredRecentSearches.length === 0 && (
           <CommandEmpty>
             <div className="flex flex-col items-center py-6 gap-2">
@@ -227,8 +236,8 @@ export const SearchResults = forwardRef<HTMLDivElement, SearchResultsProps>(({
           </>
         )}
         
-        {/* Suggested Symbols Section when few results */}
-        {!isLoading && results.length < 3 && filteredFeaturedSymbols.length > 0 && (
+        {/* Featured Symbols Section */}
+        {!isLoading && shouldShowFeatured && filteredFeaturedSymbols.length > 0 && (
           <>
             <CommandSeparator />
             <CommandGroup heading={

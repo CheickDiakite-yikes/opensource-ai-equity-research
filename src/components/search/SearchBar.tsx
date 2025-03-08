@@ -1,7 +1,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useSearchParams } from "react-router-dom";
-import { Search, TrendingUp, Info } from "lucide-react";
+import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
@@ -20,13 +20,15 @@ enum StockCategory {
   API = "Search Results"
 }
 
+interface SearchBarProps {
+  placeholder?: string;
+  className?: string;
+}
+
 const SearchBar = ({ 
   placeholder = "Search for a stock...", 
   className
-}: {
-  placeholder?: string;
-  className?: string;
-}) => {
+}: SearchBarProps) => {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<StockQuote[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -48,6 +50,11 @@ const SearchBar = ({
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, []);
+
+  // Show dropdown immediately when input is focused
+  const handleFocus = () => {
+    setIsOpen(true);
+  };
 
   // Create a stock quote object for common tickers
   const createCommonTickerQuote = (symbol: string, name: string, category: StockCategory = StockCategory.COMMON): StockQuote => {
@@ -81,7 +88,12 @@ const SearchBar = ({
 
   // Find matching common tickers with categorization
   const findMatchingCommonTickers = (searchQuery: string): StockQuote[] => {
-    if (!searchQuery) return [];
+    if (!searchQuery) {
+      // When no query, show all featured symbols
+      return featuredSymbols.map(({symbol, name}) => 
+        createCommonTickerQuote(symbol, name)
+      );
+    }
     
     const matches: StockQuote[] = [];
     const upperQuery = searchQuery.toUpperCase();
@@ -108,23 +120,22 @@ const SearchBar = ({
   const handleSearch = async (value: string) => {
     setQuery(value);
     
+    // Always set dropdown to open when user is typing
+    setIsOpen(true);
+    
+    // Immediately show common tickers even before API call
+    const commonTickerMatches = findMatchingCommonTickers(value);
+    setResults(commonTickerMatches);
+    
     if (value.length < 1) {
-      setResults([]);
-      setIsOpen(false);
+      // Still show the dropdown even with empty query
+      // but only with featured symbols
       return;
     }
     
     setIsLoading(true);
-    setIsOpen(true);
     
     try {
-      // First get matches from common tickers
-      const commonTickerMatches = findMatchingCommonTickers(value);
-      
-      if (commonTickerMatches.length > 0) {
-        setResults(commonTickerMatches);
-      }
-      
       // Then fetch from API
       const searchResults = await searchStocks(value);
       
@@ -158,18 +169,28 @@ const SearchBar = ({
         if (featuredSymbol) {
           setResults([createCommonTickerQuote(upperValue, featuredSymbol.name, StockCategory.EXACT_MATCH)]);
         } else {
-          setResults([]);
+          // Show featured symbols if no matches
+          setResults(findMatchingCommonTickers(""));
         }
       }
     } catch (error) {
       console.error("Search error:", error);
       
-      const commonTickerMatches = findMatchingCommonTickers(value);
-      setResults(commonTickerMatches.length > 0 ? commonTickerMatches : []);
-      
       // Silently handle error - don't show error toast as it's disruptive during typing
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && query.trim() !== '') {
+      // If there's a query and user hits enter, navigate to the first result
+      if (results.length > 0) {
+        handleSelectStock(results[0].symbol);
+      } else {
+        // Try to navigate to the exact query as a symbol
+        handleSelectStock(query.toUpperCase());
+      }
     }
   };
 
@@ -206,9 +227,8 @@ const SearchBar = ({
           placeholder={placeholder}
           value={query}
           onChange={(e) => handleSearch(e.target.value)}
-          onFocus={() => {
-            if (query.length > 0) setIsOpen(true);
-          }}
+          onFocus={handleFocus}
+          onKeyDown={handleKeyDown}
           className="w-full h-11 pl-10 pr-10 rounded-lg border-input bg-background text-foreground transition-all focus:ring-2 focus:ring-primary/20 focus:border-primary/50"
         />
         <ClearButton 
@@ -216,8 +236,9 @@ const SearchBar = ({
           isLoading={isLoading} 
           onClear={() => {
             setQuery("");
-            setResults([]);
-            setIsOpen(false);
+            // Still show dropdown with featured symbols after clearing
+            setResults(findMatchingCommonTickers(""));
+            setIsOpen(true);
           }} 
         />
       </div>
