@@ -1,5 +1,4 @@
-
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { StockQuote } from "@/types";
 import { StockCategory } from "../types";
 import { searchStocks } from "@/lib/api/fmpApi";
@@ -20,6 +19,7 @@ export const useSearch = ({ featuredSymbols = commonTickers }: UseSearchProps = 
   // Track if the component is mounted to prevent state updates after unmounting
   const isMounted = useRef(true);
   
+  // Clean up when component unmounts
   useEffect(() => {
     return () => {
       isMounted.current = false;
@@ -28,7 +28,7 @@ export const useSearch = ({ featuredSymbols = commonTickers }: UseSearchProps = 
 
   // Initialize with featured symbols when dropdown is opened with empty query
   useEffect(() => {
-    if (isOpen && query.length === 0) {
+    if (isOpen && query.length === 0 && isMounted.current) {
       const featuredResults = findMatchingCommonTickers("", featuredSymbols);
       setResults(featuredResults);
     }
@@ -36,8 +36,10 @@ export const useSearch = ({ featuredSymbols = commonTickers }: UseSearchProps = 
 
   // Generate suggestions for autocomplete
   useEffect(() => {
+    if (!isMounted.current) return;
+    
     if (query.length > 0) {
-      // Find potential matches for autocomplete
+      // Find potential matches for autocomplete, looking only at the beginning of symbols
       const autocompleteSuggestions = commonTickers
         .filter(ticker => 
           ticker.symbol.toLowerCase().startsWith(query.toLowerCase()) && 
@@ -51,7 +53,74 @@ export const useSearch = ({ featuredSymbols = commonTickers }: UseSearchProps = 
     }
   }, [query]);
 
-  const handleSearch = async (value: string) => {
+  // Check for exact match with common tickers
+  const findExactMatch = useCallback((value: string) => {
+    const upperValue = value.toUpperCase();
+    return commonTickers.find(ticker => ticker.symbol === upperValue);
+  }, []);
+
+  // Process API search results
+  const processApiResults = useCallback((
+    apiResults: StockQuote[], 
+    commonMatches: StockQuote[], 
+    exactMatch: StockQuote | undefined
+  ) => {
+    if (!isMounted.current) return [];
+    
+    // Add category to API results
+    const categorizedApiResults = apiResults.map(result => ({
+      ...result,
+      category: StockCategory.API,
+      isCommonTicker: false
+    }));
+    
+    // Get symbols from API to avoid duplicates
+    const apiSymbols = new Set(categorizedApiResults.map(r => r.symbol));
+    
+    // Filter common tickers to avoid duplicates
+    const filteredCommonTickers = commonMatches.filter(
+      match => !apiSymbols.has(match.symbol)
+    );
+    
+    // Combine results with exact matches first
+    const exactMatches = filteredCommonTickers.filter(t => t.category === StockCategory.EXACT_MATCH);
+    const regularCommonTickers = filteredCommonTickers.filter(t => t.category === StockCategory.COMMON);
+    
+    // Prioritize exact matches, then API results, then regular common tickers
+    return [...exactMatches, ...categorizedApiResults, ...regularCommonTickers];
+  }, []);
+
+  // Handle empty or failed API results
+  const handleNoApiResults = useCallback((
+    commonMatches: StockQuote[], 
+    exactMatch: { symbol: string; name: string } | undefined, 
+    upperValue: string
+  ) => {
+    if (!isMounted.current) return [];
+    
+    if (exactMatch) {
+      // Keep any exact matches we found earlier
+      return commonMatches;
+    } 
+    
+    if (commonMatches.length === 0) {
+      // If no common matches, try exact match with uppercase
+      const featuredSymbol = featuredSymbols.find(s => s.symbol === upperValue);
+      
+      if (featuredSymbol) {
+        return [createCommonTickerQuote(upperValue, featuredSymbol.name, StockCategory.EXACT_MATCH)];
+      } 
+      
+      // Show featured symbols if no matches
+      return findMatchingCommonTickers("", featuredSymbols);
+    }
+    
+    return commonMatches;
+  }, [featuredSymbols]);
+
+  const handleSearch = useCallback(async (value: string) => {
+    if (!isMounted.current) return;
+    
     setQuery(value);
     
     // Always set dropdown to open when user is typing
@@ -59,38 +128,35 @@ export const useSearch = ({ featuredSymbols = commonTickers }: UseSearchProps = 
     
     // First check if we have an exact match with a common ticker
     const upperValue = value.toUpperCase();
-    const exactCommonMatch = commonTickers.find(ticker => ticker.symbol === upperValue);
+    const exactCommonMatch = findExactMatch(value);
     
-    if (exactCommonMatch) {
-      const exactMatchQuote = createCommonTickerQuote(
+    // Create exact match quote if found
+    let exactMatchQuote: StockQuote | undefined;
+    if (exactCommonMatch && isMounted.current) {
+      exactMatchQuote = createCommonTickerQuote(
         exactCommonMatch.symbol, 
         exactCommonMatch.name, 
         StockCategory.EXACT_MATCH
       );
-      
-      if (isMounted.current) {
-        setResults([exactMatchQuote]);
-      }
     }
     
     // Immediately show common tickers even before API call
     const commonTickerMatches = findMatchingCommonTickers(value, featuredSymbols);
     
-    if (exactCommonMatch) {
-      // If we have an exact match, add other matches below it
-      if (isMounted.current) {
+    if (isMounted.current) {
+      if (exactCommonMatch) {
+        // If we have an exact match, add other matches below it
         setResults([
-          ...results.filter(r => r.category === StockCategory.EXACT_MATCH),
+          ...(exactMatchQuote ? [exactMatchQuote] : []),
           ...commonTickerMatches.filter(r => r.category !== StockCategory.EXACT_MATCH)
         ]);
+      } else {
+        setResults(commonTickerMatches);
       }
-    } else if (isMounted.current) {
-      setResults(commonTickerMatches);
     }
     
     if (value.length < 1) {
-      // Still show the dropdown even with empty query
-      // but only with featured symbols
+      // Still show the dropdown even with empty query but only with featured symbols
       return;
     }
     
@@ -105,51 +171,41 @@ export const useSearch = ({ featuredSymbols = commonTickers }: UseSearchProps = 
       if (!isMounted.current) return;
       
       if (searchResults && searchResults.length > 0) {
-        // Add category to API results
-        const categorizedApiResults = searchResults.map(result => ({
-          ...result,
-          category: StockCategory.API,
-          isCommonTicker: false
-        }));
-        
-        // Get symbols from API to avoid duplicates
-        const apiSymbols = new Set(categorizedApiResults.map(r => r.symbol));
-        
-        // Filter common tickers to avoid duplicates
-        const filteredCommonTickers = commonTickerMatches.filter(
-          match => !apiSymbols.has(match.symbol)
+        // Process and combine results
+        const combinedResults = processApiResults(
+          searchResults, 
+          commonTickerMatches, 
+          exactMatchQuote
         );
-        
-        // Combine results with exact matches first
-        const exactMatches = filteredCommonTickers.filter(t => t.category === StockCategory.EXACT_MATCH);
-        const regularCommonTickers = filteredCommonTickers.filter(t => t.category === StockCategory.COMMON);
-        
-        // Prioritize exact matches, then API results, then regular common tickers
-        const combinedResults = [...exactMatches, ...categorizedApiResults, ...regularCommonTickers];
         setResults(combinedResults);
-      } else if (exactCommonMatch) {
-        // Keep any exact matches we found earlier
-        // Don't change the results array if we already have an exact match
-      } else if (commonTickerMatches.length === 0) {
-        // If no API results and no common matches, try exact match with uppercase
-        const featuredSymbol = featuredSymbols.find(s => s.symbol === upperValue);
-        
-        if (featuredSymbol) {
-          setResults([createCommonTickerQuote(upperValue, featuredSymbol.name, StockCategory.EXACT_MATCH)]);
-        } else {
-          // Show featured symbols if no matches
-          setResults(findMatchingCommonTickers("", featuredSymbols));
-        }
+      } else {
+        // Handle no API results case
+        const fallbackResults = handleNoApiResults(
+          commonTickerMatches, 
+          exactCommonMatch, 
+          upperValue
+        );
+        setResults(fallbackResults);
       }
     } catch (error) {
       console.error("Search error:", error);
       // Silently handle error - don't show error toast as it's disruptive during typing
+      
+      if (isMounted.current) {
+        // Fall back to local results on error
+        const fallbackResults = handleNoApiResults(
+          commonTickerMatches, 
+          exactCommonMatch, 
+          upperValue
+        );
+        setResults(fallbackResults);
+      }
     } finally {
       if (isMounted.current) {
         setIsLoading(false);
       }
     }
-  };
+  }, [featuredSymbols, findExactMatch, processApiResults, handleNoApiResults]);
 
   return {
     query,
@@ -160,7 +216,10 @@ export const useSearch = ({ featuredSymbols = commonTickers }: UseSearchProps = 
     isOpen,
     setIsOpen,
     handleSearch,
-    findMatchingCommonTickers: (value: string) => findMatchingCommonTickers(value, featuredSymbols),
+    findMatchingCommonTickers: useCallback(
+      (value: string) => findMatchingCommonTickers(value, featuredSymbols), 
+      [featuredSymbols]
+    ),
     suggestions
   };
 };
