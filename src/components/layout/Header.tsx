@@ -32,7 +32,7 @@ const Header: React.FC<HeaderProps> = ({
   };
   
   return (
-    <header className="border-b border-border/40 py-4 px-6 bg-gradient-to-r from-background to-secondary/10 backdrop-blur-sm sticky top-0 z-10 shadow-sm">
+    <header className="border-b border-border/40 py-4 px-6 bg-gradient-to-r from-background to-secondary/10 backdrop-blur-sm sticky top-0 z-50 shadow-sm">
       <div className="container mx-auto flex flex-col sm:flex-row justify-between items-center gap-4">
         <motion.div
           initial={{ opacity: 0, x: -20 }}
@@ -52,7 +52,7 @@ const Header: React.FC<HeaderProps> = ({
           </Link>
         </motion.div>
         
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-4 z-10">
           <motion.div 
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}

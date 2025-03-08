@@ -195,4 +195,27 @@
   .card-highlight {
     @apply transition-all duration-300 hover:shadow-lg hover:-translate-y-1;
   }
+  
+  /* Z-index system for overlays */
+  .z-overlay {
+    z-index: 999;
+  }
+  
+  .z-overlay-content {
+    z-index: 1000;
+  }
+  
+  .z-dropdown {
+    z-index: 100;
+  }
+  
+  .search-overlay {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    width: 100%;
+    z-index: 1000;
+    filter: drop-shadow(0 10px 8px rgb(0 0 0 / 0.04)) 
+            drop-shadow(0 4px 3px rgb(0 0 0 / 0.1));
+  }
 }

@@ -181,9 +181,9 @@ const SearchBar = ({
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -5 }}
             transition={{ duration: 0.15 }}
-            className="absolute z-[100] w-full"
+            className="fixed inset-0 z-[100] pointer-events-none"
           >
-            <div className="relative mt-1 w-full">
+            <div className="absolute top-[calc(100%+8px)] inset-x-0 pointer-events-auto" style={{width: searchInputRef.current?.offsetWidth}}>
               <SearchResults
                 ref={commandRef}
                 query={query}
