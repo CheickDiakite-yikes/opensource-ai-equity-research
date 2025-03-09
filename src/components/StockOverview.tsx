@@ -14,8 +14,10 @@ const StockOverview = ({ symbol }: StockOverviewProps) => {
     quote,
     earningsCalls,
     secFilings,
+    ownershipData,
     loading,
     documentsLoading,
+    ownershipLoading,
     error,
     rating,
     refetch
@@ -36,7 +38,9 @@ const StockOverview = ({ symbol }: StockOverviewProps) => {
       rating={rating}
       earningsCalls={earningsCalls}
       secFilings={secFilings}
+      ownershipData={ownershipData}
       documentsLoading={documentsLoading}
+      ownershipLoading={ownershipLoading}
       symbol={symbol}
     />
   );

@@ -1,6 +1,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { StockProfile, StockQuote, EarningsCall, SECFiling } from "@/types";
+import { OwnershipData } from "@/types/profile/ownershipTypes";
 import { 
   fetchStockProfile, 
   fetchStockQuote, 
@@ -8,6 +9,7 @@ import {
   fetchSECFilings,
   generateTranscriptHighlights,
   fetchStockRating,
+  fetchFinnhubOwnership,
   withRetry
 } from "@/services/api";
 import { toast } from "@/components/ui/use-toast";
@@ -17,8 +19,10 @@ export const useStockOverviewData = (symbol: string) => {
   const [quote, setQuote] = useState<StockQuote | null>(null);
   const [earningsCalls, setEarningsCalls] = useState<EarningsCall[]>([]);
   const [secFilings, setSecFilings] = useState<SECFiling[]>([]);
+  const [ownershipData, setOwnershipData] = useState<OwnershipData | null>(null);
   const [loading, setLoading] = useState(true);
   const [documentsLoading, setDocumentsLoading] = useState(true);
+  const [ownershipLoading, setOwnershipLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [rating, setRating] = useState<string | null>(null);
 
@@ -142,11 +146,27 @@ export const useStockOverviewData = (symbol: string) => {
     }
   }, [symbol]);
 
+  // Load ownership data
+  const loadOwnership = useCallback(async () => {
+    try {
+      setOwnershipLoading(true);
+      
+      const data = await fetchFinnhubOwnership(symbol);
+      setOwnershipData(data);
+    } catch (err) {
+      console.error("Error loading ownership data:", err);
+      // Ownership loading errors don't prevent the main view from loading
+    } finally {
+      setOwnershipLoading(false);
+    }
+  }, [symbol]);
+
   // Refetch all data
   const refetch = useCallback(() => {
     loadData();
     loadDocuments();
-  }, [loadData, loadDocuments]);
+    loadOwnership();
+  }, [loadData, loadDocuments, loadOwnership]);
 
   useEffect(() => {
     if (symbol) {
@@ -157,16 +177,19 @@ export const useStockOverviewData = (symbol: string) => {
   useEffect(() => {
     if (symbol && profile) {
       loadDocuments();
+      loadOwnership();
     }
-  }, [symbol, profile, loadDocuments]);
+  }, [symbol, profile, loadDocuments, loadOwnership]);
 
   return {
     profile,
     quote,
     earningsCalls,
     secFilings,
+    ownershipData,
     loading,
     documentsLoading,
+    ownershipLoading,
     error,
     rating,
     refetch

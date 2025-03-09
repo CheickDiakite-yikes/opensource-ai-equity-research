@@ -1,10 +1,10 @@
-
 import { invokeSupabaseFunction } from "./base";
 import { 
   IncomeStatement, 
   BalanceSheet, 
   CashFlowStatement 
 } from "@/types";
+import { OwnershipData, OwnershipItem } from "@/types/profile/ownershipTypes";
 
 // Types for Finnhub financial data
 interface FinnhubFinancialData {
@@ -274,5 +274,23 @@ export const fetchAllFinnhubFinancials = async (
       balance: [],
       cashflow: []
     };
+  }
+};
+
+/**
+ * Fetch ownership data from Finnhub
+ */
+export const fetchFinnhubOwnership = async (
+  symbol: string,
+  limit?: number
+): Promise<OwnershipData> => {
+  try {
+    return await invokeSupabaseFunction<OwnershipData>('get-finnhub-ownership', { 
+      symbol, 
+      limit
+    });
+  } catch (error) {
+    console.error("Error fetching Finnhub ownership data:", error);
+    return { symbol, ownership: [] };
   }
 };

@@ -1,112 +1,73 @@
+/**
+ * Format percentage with 2 decimals
+ */
+export const formatPercentage = (value: number | null | undefined): string => {
+  if (value === null || value === undefined) {
+    return "N/A";
+  }
+  return (value * 100).toFixed(2) + "%";
+};
 
 /**
- * Format currency values
+ * Format currency with 2 decimals
  */
-export const formatCurrency = (value: number, options?: { 
-  currency?: string, 
-  minimumFractionDigits?: number,
-  maximumFractionDigits?: number,
-  compact?: boolean 
-}): string => {
-  if (value === undefined || value === null || isNaN(value)) {
-    return '$0.00';
+export const formatCurrency = (value: number | null | undefined): string => {
+  if (value === null || value === undefined) {
+    return "N/A";
   }
-  
-  // Default options
-  const currency = options?.currency || 'USD';
-  const minimumFractionDigits = options?.minimumFractionDigits ?? 2;
-  const maximumFractionDigits = options?.maximumFractionDigits ?? 2;
-  
-  // Format based on magnitude
-  if (options?.compact === true || Math.abs(value) >= 1000000) {
-    return formatLargeNumber(value, {
-      style: 'currency',
-      currency
-    });
-  }
-  
-  // Regular currency formatting
-  return new Intl.NumberFormat('en-US', {
+  return value.toLocaleString('en-US', {
     style: 'currency',
-    currency,
-    minimumFractionDigits,
-    maximumFractionDigits
-  }).format(value);
+    currency: 'USD',
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
 };
 
 /**
- * Format large numbers with K, M, B, T suffixes
+ * Format number with thousand separators
  */
-export const formatLargeNumber = (value: number, options?: Intl.NumberFormatOptions): string => {
-  if (value === undefined || value === null || isNaN(value)) {
-    return '$0';
+export const formatNumber = (value: number | null | undefined): string => {
+  if (value === null || value === undefined) {
+    return "N/A";
   }
-  
-  // Default formatting options
-  const formatOptions: Intl.NumberFormatOptions = {
-    style: options?.style || 'decimal',
-    minimumFractionDigits: options?.minimumFractionDigits || 1,
-    maximumFractionDigits: options?.maximumFractionDigits || 1,
-    ...options
-  };
-  
-  // Determine the appropriate suffix and divisor
-  let suffix = '';
-  let divisor = 1;
-  
-  const absValue = Math.abs(value);
-  
-  if (absValue >= 1e12) {
-    // Trillions
-    suffix = 'T';
-    divisor = 1e12;
-  } else if (absValue >= 1e9) {
-    // Billions
-    suffix = 'B';
-    divisor = 1e9;
-  } else if (absValue >= 1e6) {
-    // Millions
-    suffix = 'M';
-    divisor = 1e6;
-  } else if (absValue >= 1e3) {
-    // Thousands
-    suffix = 'K';
-    divisor = 1e3;
-  }
-  
-  // Format the number
-  const formattedValue = new Intl.NumberFormat('en-US', formatOptions).format(value / divisor);
-  
-  return formattedValue + suffix;
+  return value.toLocaleString();
 };
 
 /**
- * Format percentage values
+ * Format a large number with appropriate suffix (K, M, B, T)
  */
-export const formatPercentage = (value: number, minimumFractionDigits = 1, maximumFractionDigits = 2): string => {
-  if (value === undefined || value === null || isNaN(value)) {
-    return '0%';
+export const formatLargeNumber = (num: number): string => {
+  if (num === null || num === undefined || isNaN(num)) return 'N/A';
+  
+  const absNum = Math.abs(num);
+  
+  if (absNum >= 1_000_000_000_000) {
+    return (num / 1_000_000_000_000).toFixed(2) + 'T';
+  } else if (absNum >= 1_000_000_000) {
+    return (num / 1_000_000_000).toFixed(2) + 'B';
+  } else if (absNum >= 1_000_000) {
+    return (num / 1_000_000).toFixed(2) + 'M';
+  } else if (absNum >= 1_000) {
+    return (num / 1_000).toFixed(2) + 'K';
+  } else {
+    return num.toFixed(2);
   }
-  
-  // Ensure value is displayed as percentage (multiply by 100 if it's in decimal form)
-  const displayValue = value > 1 ? value : value * 100;
-  
-  return new Intl.NumberFormat('en-US', {
-    style: 'percent',
-    minimumFractionDigits,
-    maximumFractionDigits,
-    // Need to divide by 100 since we're using percent style which automatically multiplies by 100
-    // and we might have already converted the value above if it was a decimal
-  }).format(displayValue / 100);
 };
 
 /**
- * Format number with commas
+ * Format a date string to a more readable format
  */
-export const formatNumber = (value: number): string => {
-  if (value === undefined || value === null || isNaN(value)) {
-    return '0';
-  }
+export const formatDate = (dateString: string): string => {
+  if (!dateString) return 'N/A';
   
-  return new Intl.NumberFormat('en-US').format(value);
+  try {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    });
+  } catch (e) {
+    return dateString;
+  }
 };
