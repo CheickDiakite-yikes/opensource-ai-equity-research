@@ -148,7 +148,7 @@ const mapFinnhubToCashFlow = (data: FinnhubFinancialData): CashFlowStatement[] =
     purchasesOfInvestments: item.purchasesOfInvestments || 0,
     salesMaturitiesOfInvestments: item.salesMaturitiesOfInvestments || 0,
     otherInvestingActivites: item.otherInvestingActivities || 0,
-    netCashUsedForInvestingActivites: item.totalCashFromInvestingActivities || 0,
+    netCashUsedForInvestingActivities: item.totalCashFromInvestingActivities || 0, // Fixed property name here
     debtRepayment: item.debtRepayment || 0,
     commonStockIssued: item.commonStockIssued || 0,
     commonStockRepurchased: item.commonStockRepurchased || 0,
