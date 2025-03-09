@@ -1,7 +1,7 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { corsHeaders } from "../_shared/cors.ts";
-import { buildFmpQueryUrl, makeApiRequest, handleApiResponse, createResponse, createErrorResponse } from "../_shared/api-utils.ts";
+import { buildFmpQueryUrl, makeApiRequest, createResponse, createErrorResponse } from "../_shared/api-utils.ts";
 
 interface InsiderTradingRequest {
   symbol: string;
@@ -23,66 +23,72 @@ serve(async (req) => {
     
     console.log(`Fetching insider trading statistics for ${symbol}`);
     
-    // Try to fetch data from multiple endpoints with fallbacks
-    let data;
-    let errorMessage = "";
+    // Try to fetch data with better error handling
+    let data = [];
+    let errorMessages = [];
     
+    // Attempt to get data from first endpoint
     try {
-      // First try the transactions-by-symbol endpoint (newer API)
-      console.log(`Trying primary endpoint: insider-trading-transactions-by-symbol for ${symbol}`);
-      const url = buildFmpQueryUrl("insider-trading-transactions-by-symbol", symbol, {
+      console.log(`Trying insider-trading endpoint for ${symbol}`);
+      const url = buildFmpQueryUrl("insider-trading", symbol, {
         limit: "100"
       });
-      data = await makeApiRequest(url);
-      console.log(`Got response from primary endpoint with ${Array.isArray(data) ? data.length : 0} items`);
-    } catch (primaryError) {
-      console.error(`Error from primary endpoint: ${primaryError.message}`);
-      errorMessage += `Primary endpoint error: ${primaryError.message}. `;
+      const response = await makeApiRequest(url);
       
+      if (Array.isArray(response) && response.length > 0) {
+        console.log(`Successfully retrieved ${response.length} insider trading records from primary endpoint`);
+        data = response;
+      } else {
+        console.log("Empty response from primary endpoint, will try alternative endpoint");
+        errorMessages.push("Primary endpoint returned empty data");
+      }
+    } catch (error) {
+      console.error(`Error fetching from primary endpoint: ${error.message}`);
+      errorMessages.push(`Primary endpoint error: ${error.message}`);
+      
+      // Try alternative endpoint
       try {
-        // Try insider-trading-transactions
-        console.log(`Trying secondary endpoint: insider-trading-transactions for ${symbol}`);
+        console.log(`Trying insider-trading-transactions endpoint for ${symbol}`);
         const backupUrl = buildFmpQueryUrl("insider-trading-transactions", symbol, {
           limit: "100"
         });
-        data = await makeApiRequest(backupUrl);
-        console.log(`Got response from secondary endpoint with ${Array.isArray(data) ? data.length : 0} items`);
-      } catch (secondaryError) {
-        console.error(`Error from secondary endpoint: ${secondaryError.message}`);
-        errorMessage += `Secondary endpoint error: ${secondaryError.message}. `;
+        const response = await makeApiRequest(backupUrl);
         
-        try {
-          // Try basic insider/trading as a last resort
-          console.log(`Trying fallback endpoint: insider/trading for ${symbol}`);
-          const fallbackUrl = buildFmpQueryUrl("insider/trading", symbol, {
-            limit: "100"
-          });
-          data = await makeApiRequest(fallbackUrl);
-          console.log(`Got response from fallback endpoint with ${Array.isArray(data) ? data.length : 0} items`);
-        } catch (fallbackError) {
-          console.error(`Error from fallback endpoint: ${fallbackError.message}`);
-          errorMessage += `Fallback endpoint error: ${fallbackError.message}`;
-          // Let this one bubble up since it's our last try
-          throw new Error(`All insider trading endpoints failed: ${errorMessage}`);
+        if (Array.isArray(response) && response.length > 0) {
+          console.log(`Successfully retrieved ${response.length} insider trading records from secondary endpoint`);
+          data = response;
+        } else {
+          console.log("Empty response from secondary endpoint");
+          errorMessages.push("Secondary endpoint returned empty data");
         }
+      } catch (secondaryError) {
+        console.error(`Error fetching from secondary endpoint: ${secondaryError.message}`);
+        errorMessages.push(`Secondary endpoint error: ${secondaryError.message}`);
       }
     }
     
-    // Check if we have valid data
-    if (!data || (Array.isArray(data) && data.length === 0)) {
-      console.log(`No insider trading data found for ${symbol} after trying all endpoints`);
-      throw new Error(`No insider trading data available for ${symbol}`);
+    // Return error if no data was found
+    if (!data || data.length === 0) {
+      console.error(`No insider trading data found for ${symbol} after trying multiple endpoints`);
+      return createErrorResponse(
+        new Error(`No insider trading data available for ${symbol}: ${errorMessages.join(", ")}`), 
+        404
+      );
     }
     
     // Process the data
+    console.log(`Processing ${data.length} insider trading records`);
     const processedData = processInsiderTradingData(data);
     
-    if (processedData.length === 0) {
-      console.log(`No valid insider trading data could be processed for ${symbol}`);
-      throw new Error(`No insider trading data could be processed for ${symbol}`);
+    if (!processedData || processedData.length === 0) {
+      console.error(`Could not process insider trading data for ${symbol}`);
+      return createErrorResponse(
+        new Error(`Could not process insider trading data for ${symbol}`), 
+        500
+      );
     }
     
-    console.log(`Successfully processed ${processedData.length} quarters of insider trading data for ${symbol}`);
+    console.log(`Successfully processed ${processedData.length} quarters of insider trading data`);
     
     return createResponse({
       symbol,
@@ -97,20 +103,25 @@ serve(async (req) => {
 /**
  * Process insider trading data to create summarized statistics by quarter
  */
-function processInsiderTradingData(data: any[]): any[] {
+function processInsiderTradingData(data) {
   if (!Array.isArray(data) || data.length === 0) {
     return [];
   }
   
   console.log(`Processing ${data.length} insider trading transactions`);
   
-  // Define a sample structure to understand data format
+  // Log a sample transaction to understand the structure
   const sampleTransaction = data[0];
-  console.log("Sample transaction structure:", JSON.stringify(sampleTransaction, null, 2).substring(0, 500) + "...");
+  console.log("Sample transaction:", JSON.stringify(sampleTransaction).substring(0, 500));
   
   // Group transactions by year and quarter
-  const groupedByQuarter = data.reduce((acc, transaction) => {
-    // Extract date from the transaction
+  const groupedByQuarter = {};
+  
+  for (const transaction of data) {
+    // Skip invalid transactions
+    if (!transaction) continue;
+    
+    // Extract date from the transaction using various possible field names
     let transactionDate;
     if (transaction.transactionDate) {
       transactionDate = new Date(transaction.transactionDate);
@@ -119,8 +130,14 @@ function processInsiderTradingData(data: any[]): any[] {
     } else if (transaction.date) {
       transactionDate = new Date(transaction.date);
     } else {
-      console.log(`Skipping transaction with no date:`, JSON.stringify(transaction).substring(0, 100));
-      return acc; // Skip this transaction
+      console.log(`Skipping transaction with no date:`, JSON.stringify(transaction).substring(0, 200));
+      continue; // Skip this transaction
+    }
+    
+    // Validate date
+    if (isNaN(transactionDate.getTime())) {
+      console.log(`Invalid date in transaction:`, JSON.stringify(transaction).substring(0, 200));
+      continue;
     }
     
     // Extract year and determine quarter
@@ -130,8 +147,9 @@ function processInsiderTradingData(data: any[]): any[] {
     
     const key = `${year}-${quarter}`;
     
-    if (!acc[key]) {
-      acc[key] = {
+    // Initialize the quarter data if it doesn't exist
+    if (!groupedByQuarter[key]) {
+      groupedByQuarter[key] = {
         year,
         quarter,
         acquiredTransactions: 0,
@@ -142,64 +160,72 @@ function processInsiderTradingData(data: any[]): any[] {
       };
     }
     
-    // Push transaction to the corresponding quarter
-    acc[key].transactions.push(transaction);
+    // Add transaction to the quarter
+    groupedByQuarter[key].transactions.push(transaction);
     
-    // Determine transaction type and amount
-    let isAcquisition = false;
-    let isDisposal = false;
+    // Determine transaction type (buy/sell) and extract amount
+    let transactionType = '';
     let transactionAmount = 0;
     
-    // Different APIs use different field names
-    const transactionType = transaction.transactionType || 
-                           transaction.type || 
-                           transaction.acquistionOrDisposition || 
-                           '';
+    // Extract type from multiple possible fields
+    if (transaction.transactionType) {
+      transactionType = transaction.transactionType;
+    } else if (transaction.type) {
+      transactionType = transaction.type;
+    } else if (transaction.acquistionOrDisposition) {
+      transactionType = transaction.acquistionOrDisposition;
+    }
     
-    // Parse transaction amount from different possible fields
+    // Extract amount from multiple possible fields
     if (transaction.transactionAmount !== undefined && transaction.transactionAmount !== null) {
-      transactionAmount = parseInt(transaction.transactionAmount, 10) || 0;
+      transactionAmount = parseFloat(transaction.transactionAmount) || 0;
     } else if (transaction.securitiesTransacted !== undefined && transaction.securitiesTransacted !== null) {
-      transactionAmount = parseInt(transaction.securitiesTransacted, 10) || 0;
+      transactionAmount = parseFloat(transaction.securitiesTransacted) || 0;
     } else if (transaction.share !== undefined && transaction.share !== null) {
-      transactionAmount = parseInt(transaction.share, 10) || 0;
+      transactionAmount = parseFloat(transaction.share) || 0;
     } else if (transaction.numberOfShares !== undefined && transaction.numberOfShares !== null) {
-      transactionAmount = parseInt(transaction.numberOfShares, 10) || 0;
+      transactionAmount = parseFloat(transaction.numberOfShares) || 0;
     } else if (transaction.shares !== undefined && transaction.shares !== null) {
-      transactionAmount = parseInt(transaction.shares, 10) || 0;
-    } else {
-      transactionAmount = 0;
+      transactionAmount = parseFloat(transaction.shares) || 0;
+    } else if (transaction.quantity !== undefined && transaction.quantity !== null) {
+      transactionAmount = parseFloat(transaction.quantity) || 0;
     }
     
-    // Normalize transaction type to determine if it's a buy or sell
-    const typeUpper = transactionType.toUpperCase();
+    // Normalize type to determine if it's a buy or sell
+    const typeUpper = String(transactionType).toUpperCase();
     
-    if (typeUpper.includes('BUY') || 
-        typeUpper.includes('ACQUIRE') || 
-        typeUpper.includes('PURCHASE') ||
-        typeUpper === 'A' ||
-        typeUpper.includes('GRANT') ||
-        typeUpper.includes('AWARD')) {
-      isAcquisition = true;
-      acc[key].acquiredTransactions++;
-      acc[key].totalAcquired += transactionAmount;
-    } else if (typeUpper.includes('SELL') || 
-              typeUpper.includes('DISPOSE') || 
-              typeUpper.includes('SALE') ||
-              typeUpper === 'D' ||
-              typeUpper.includes('TRANSFER')) {
-      isDisposal = true;
-      acc[key].disposedTransactions++;
-      acc[key].totalDisposed += transactionAmount;
-    } else {
-      console.log(`Unknown transaction type: ${transactionType}`);
+    // Check if it's an acquisition (buy)
+    if (
+      typeUpper.includes('BUY') || 
+      typeUpper.includes('ACQUIRE') || 
+      typeUpper.includes('PURCHASE') ||
+      typeUpper === 'A' ||
+      typeUpper.includes('GRANT') ||
+      typeUpper.includes('AWARD') ||
+      typeUpper.includes('EXERCISE')
+    ) {
+      groupedByQuarter[key].acquiredTransactions++;
+      groupedByQuarter[key].totalAcquired += transactionAmount;
+    } 
+    // Check if it's a disposal (sell)
+    else if (
+      typeUpper.includes('SELL') || 
+      typeUpper.includes('DISPOSE') || 
+      typeUpper.includes('SALE') ||
+      typeUpper === 'D' ||
+      typeUpper.includes('TRANSFER')
+    ) {
+      groupedByQuarter[key].disposedTransactions++;
+      groupedByQuarter[key].totalDisposed += transactionAmount;
+    } 
+    // Log unrecognized types
+    else {
+      console.log(`Unrecognized transaction type: ${transactionType}`);
     }
-    
-    return acc;
-  }, {} as Record<string, any>);
+  }
   
-  // Convert grouped data to array and calculate additional metrics
-  const stats = Object.values(groupedByQuarter).map(quarterData => {
+  // Convert grouped data to array and calculate metrics
+  const result = Object.values(groupedByQuarter).map(quarterData => {
     const {
       year,
       quarter,
@@ -223,23 +249,20 @@ function processInsiderTradingData(data: any[]): any[] {
       ? totalDisposed / disposedTransactions 
       : 0;
     
-    // Find CIK or other identifiers from the first transaction
+    // Find symbol and CIK
+    let symbol = '';
     let cik = '';
+    
     if (transactions.length > 0) {
+      // Extract symbol
+      symbol = transactions[0].symbol || transactions[0].ticker || '';
+      
+      // Extract CIK
       cik = transactions[0].reportingCik || 
             transactions[0].cik || 
             transactions[0].reportingPersonId || 
             '';
     }
-    
-    // Extract purchase and sale counts
-    const totalPurchases = acquiredTransactions;
-    const totalSales = disposedTransactions;
-    
-    const symbol = transactions.length > 0 ? 
-                  transactions[0].symbol || 
-                  transactions[0].ticker || 
-                  '' : '';
     
     return {
       symbol,
@@ -253,13 +276,13 @@ function processInsiderTradingData(data: any[]): any[] {
       totalDisposed,
       averageAcquired,
       averageDisposed,
-      totalPurchases,
-      totalSales
+      totalPurchases: acquiredTransactions,
+      totalSales: disposedTransactions
     };
   });
   
   // Sort by year and quarter (newest first)
-  return stats.sort((a, b) => {
+  return result.sort((a, b) => {
     if (a.year !== b.year) {
       return b.year - a.year;
     }
