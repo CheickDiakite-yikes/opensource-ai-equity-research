@@ -89,13 +89,15 @@ export const useAlternativeData = (symbol: string) => {
         error: { ...prev.error, congressional: null }
       }));
       
-      // Get current date and one year ago for better results
+      // Get current date and three years ago for better results with more data
       const now = new Date();
-      const oneYearAgo = new Date();
-      oneYearAgo.setFullYear(now.getFullYear() - 1);
+      const threeYearsAgo = new Date();
+      threeYearsAgo.setFullYear(now.getFullYear() - 3);
       
-      const from = Math.floor(oneYearAgo.getTime() / 1000);
+      const from = Math.floor(threeYearsAgo.getTime() / 1000);
       const to = Math.floor(now.getTime() / 1000);
+      
+      console.log(`Fetching congressional trading data for ${symbol} from ${new Date(from * 1000).toLocaleDateString()} to ${new Date(to * 1000).toLocaleDateString()}`);
       
       const congressionalData = await invokeSupabaseFunction<CongressionalTradesResponse>(
         'get-finnhub-congressional-trading', 
@@ -107,6 +109,12 @@ export const useAlternativeData = (symbol: string) => {
         congressionalTrading: congressionalData,
         loading: { ...prev.loading, congressional: false }
       }));
+      
+      if (!congressionalData?.data?.length) {
+        console.log(`No congressional trading data found for ${symbol} from Finnhub`);
+      } else {
+        console.log(`Received ${congressionalData.data.length} congressional trading records from Finnhub`);
+      }
     } catch (error) {
       console.error('Error fetching congressional trading data:', error);
       setState(prev => ({
@@ -114,7 +122,7 @@ export const useAlternativeData = (symbol: string) => {
         error: { ...prev.error, congressional: error.message },
         loading: { ...prev.loading, congressional: false }
       }));
-      toast.error('Failed to load congressional trading data');
+      toast.error('Failed to load congressional trading data from Finnhub');
     }
   }, [symbol]);
 
@@ -126,6 +134,8 @@ export const useAlternativeData = (symbol: string) => {
         error: { ...prev.error, fmpHouseTrades: null }
       }));
       
+      console.log(`Fetching FMP House trades data for ${symbol}`);
+      
       const houseTradesData = await invokeSupabaseFunction<CongressionalTradesResponse>(
         'get-fmp-house-trades', 
         { symbol }
@@ -136,6 +146,12 @@ export const useAlternativeData = (symbol: string) => {
         fmpHouseTrades: houseTradesData,
         loading: { ...prev.loading, fmpHouseTrades: false }
       }));
+      
+      if (!houseTradesData?.data?.length) {
+        console.log(`No house trades data found for ${symbol} from FMP`);
+      } else {
+        console.log(`Received ${houseTradesData.data.length} house trades records from FMP`);
+      }
     } catch (error) {
       console.error('Error fetching FMP house trades data:', error);
       setState(prev => ({
@@ -197,6 +213,8 @@ export const useAlternativeData = (symbol: string) => {
       ...trade,
       source: 'fmp' as const
     }));
+    
+    console.log(`Combining ${markedFinnhubData.length} Finnhub records with ${markedFmpData.length} FMP records`);
     
     // Combine both datasets
     return {

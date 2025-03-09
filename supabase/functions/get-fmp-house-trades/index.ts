@@ -38,6 +38,7 @@ serve(async (req) => {
     console.log(`Fetching U.S. House Trades data for symbol: ${symbol}`);
     
     const url = `https://financialmodelingprep.com/api/v3/stock/house-trading?symbol=${symbol}&apikey=${FMP_API_KEY}`;
+    console.log(`Making request to FMP API: ${url.replace(FMP_API_KEY, "API_KEY_HIDDEN")}`);
     
     try {
       const data = await makeApiRequest<HouseTrade[]>(url, "Failed to fetch House Trades data");
@@ -49,11 +50,12 @@ serve(async (req) => {
         return createResponse({
           symbol,
           data: [],
-          message: `No U.S. House Trades data available for ${symbol}`
+          message: `No U.S. House Trades data available for ${symbol}`,
+          source: "fmp"
         });
       }
       
-      // Transform the data to match our application's format
+      // Transform the data to match our CongressionalTrade type
       const transformedData = data.map(trade => ({
         // Map properties to match our CongressionalTrade type
         amountFrom: parseAmountFrom(trade.amount),
@@ -71,6 +73,8 @@ serve(async (req) => {
         comment: trade.comment,
         source: "fmp" as const
       }));
+      
+      console.log(`Transformed ${transformedData.length} House Trades records for ${symbol}`);
       
       return createResponse({
         symbol,
@@ -92,23 +96,39 @@ serve(async (req) => {
 function parseAmountFrom(amountString: string): number {
   if (!amountString) return 0;
   
-  // Extract the lower range from strings like "$10,000,001 - $25,000,000"
-  const match = amountString.match(/\$([0-9,]+)/);
-  if (match && match[1]) {
-    return Number(match[1].replace(/,/g, ''));
+  try {
+    // Handle ranges like "$10,000,001 - $25,000,000"
+    const match = amountString.match(/\$([0-9,]+)/);
+    if (match && match[1]) {
+      return Number(match[1].replace(/,/g, ''));
+    }
+    
+    // Handle exact amounts
+    if (amountString.startsWith('$')) {
+      return Number(amountString.substring(1).replace(/,/g, ''));
+    }
+    
+    return 0;
+  } catch (e) {
+    console.error("Error parsing amount:", e);
+    return 0;
   }
-  return 0;
 }
 
 function parseAmountTo(amountString: string): number {
   if (!amountString) return 0;
   
-  // Extract the upper range if exists
-  const match = amountString.match(/- \$([0-9,]+)/);
-  if (match && match[1]) {
-    return Number(match[1].replace(/,/g, ''));
+  try {
+    // Extract the upper range if exists
+    const match = amountString.match(/- \$([0-9,]+)/);
+    if (match && match[1]) {
+      return Number(match[1].replace(/,/g, ''));
+    }
+    
+    // If no range, use the first amount
+    return parseAmountFrom(amountString);
+  } catch (e) {
+    console.error("Error parsing amount:", e);
+    return 0;
   }
-  
-  // If no range, use the first amount
-  return parseAmountFrom(amountString);
 }

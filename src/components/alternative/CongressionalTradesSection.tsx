@@ -1,10 +1,10 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { CongressionalTradesResponse, CongressionalTrade } from '@/types/alternative/companyNewsTypes';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 
-// Import the new component files
+// Import the component files
 import TradesLoadingSkeleton from './congressional/TradesLoadingSkeleton';
 import TradesHeader from './congressional/TradesHeader';
 import TradesTable from './congressional/TradesTable';
@@ -32,6 +32,13 @@ const CongressionalTradesSection: React.FC<CongressionalTradesSectionProps> = ({
   const [visibleTrades, setVisibleTrades] = useState(10);
   const [dataSource, setDataSource] = useState<'all' | 'finnhub' | 'fmp'>('all');
 
+  // Debug logging
+  useEffect(() => {
+    console.log('CongressionalTradesSection data:', data);
+    console.log('isLoading:', isLoading);
+    console.log('error:', error);
+  }, [data, isLoading, error]);
+
   if (isLoading) {
     return <TradesLoadingSkeleton />;
   }
@@ -54,21 +61,29 @@ const CongressionalTradesSection: React.FC<CongressionalTradesSectionProps> = ({
     return (
       <div className="text-center p-6">
         <p className="text-muted-foreground">No congressional trading data available for this stock</p>
+        {onRetry && (
+          <Button onClick={onRetry} variant="outline" className="mt-4">
+            Try Again
+          </Button>
+        )}
       </div>
     );
   }
 
+  // Apply the source filter
   const sourcedTrades = data.data.filter(trade => {
     if (dataSource === 'all') return true;
     return trade.source === dataSource;
   });
 
+  // Apply the search filter
   const filteredTrades = sourcedTrades.filter(trade => 
-    trade.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    trade.position.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    trade.assetName.toLowerCase().includes(searchTerm.toLowerCase())
+    trade.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    trade.position?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    trade.assetName?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  // Sort the filtered trades
   const sortedTrades = [...filteredTrades].sort((a, b) => {
     const aValue = a[sortConfig.key];
     const bValue = b[sortConfig.key];
@@ -94,8 +109,13 @@ const CongressionalTradesSection: React.FC<CongressionalTradesSectionProps> = ({
   const sales = filteredTrades.filter(t => t.transactionType === 'Sale').length;
   
   // Check if we have data from multiple sources
-  const hasMultipleSources = data?.data?.some(trade => trade.source === 'fmp') && 
-                              data?.data?.some(trade => trade.source === 'finnhub');
+  const hasFinnhubData = data.data.some(trade => trade.source === 'finnhub');
+  const hasFmpData = data.data.some(trade => trade.source === 'fmp');
+  const hasMultipleSources = hasFinnhubData && hasFmpData;
+
+  // Debug logging
+  console.log('Trading data sources:', { hasFinnhubData, hasFmpData, hasMultipleSources });
+  console.log('Filtered trades count:', filteredTrades.length);
 
   const downloadCSV = () => {
     const headers = ['Name', 'Position', 'Asset', 'Transaction Type', 'Transaction Date', 'Filing Date', 'Amount From', 'Amount To', 'Source', 'Link'];
@@ -103,14 +123,14 @@ const CongressionalTradesSection: React.FC<CongressionalTradesSectionProps> = ({
       headers.join(','),
       ...sortedTrades.map(trade => {
         return [
-          `"${trade.name}"`,
-          `"${trade.position}"`,
-          `"${trade.assetName}"`,
-          trade.transactionType,
-          trade.transactionDate,
-          trade.filingDate,
-          trade.amountFrom,
-          trade.amountTo,
+          `"${trade.name || ''}"`,
+          `"${trade.position || ''}"`,
+          `"${trade.assetName || ''}"`,
+          trade.transactionType || '',
+          trade.transactionDate || '',
+          trade.filingDate || '',
+          trade.amountFrom || 0,
+          trade.amountTo || 0,
           trade.source || 'finnhub',
           trade.link || ''
         ].join(',');
