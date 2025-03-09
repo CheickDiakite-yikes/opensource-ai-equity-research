@@ -1,7 +1,6 @@
-
 import React from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { Briefcase, BarChart4, FileText } from "lucide-react";
+import { Briefcase, BarChart4, FileText, Signal } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
 
@@ -20,19 +19,13 @@ const StockTabsNavigation: React.FC<StockTabsNavigationProps> = ({
   const [searchParams] = useSearchParams();
 
   const handleTabClick = (tabName: string) => {
-    // Create a new URLSearchParams object based on current params
     const newParams = new URLSearchParams(searchParams);
-    // Update the tab parameter
     newParams.set("tab", tabName);
     
-    // Update URL without reloading the page
     navigate(`/?symbol=${symbol}&${newParams.toString()}`, { replace: true });
-    
-    // Call the onTabChange callback
     onTabChange(tabName);
   };
-  
-  // Tab configuration for easier management
+
   const tabs = [
     { 
       id: "overview", 
@@ -48,6 +41,11 @@ const StockTabsNavigation: React.FC<StockTabsNavigationProps> = ({
       id: "report", 
       label: "Research Report", 
       icon: <FileText className="h-4 w-4" /> 
+    },
+    { 
+      id: "alternative", 
+      label: "Alternative Data", 
+      icon: <Signal className="h-4 w-4" /> 
     }
   ];
 
@@ -66,7 +64,6 @@ const StockTabsNavigation: React.FC<StockTabsNavigationProps> = ({
             {tab.icon}
             <span>{tab.label}</span>
             
-            {/* Active indicator line */}
             {activeTab === tab.id && (
               <motion.div 
                 className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary" 

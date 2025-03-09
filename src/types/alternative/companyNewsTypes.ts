@@ -1,0 +1,61 @@
+
+export interface CompanyNews {
+  category: string;
+  datetime: number;
+  headline: string;
+  id: number;
+  image: string;
+  related: string;
+  source: string;
+  summary: string;
+  url: string;
+}
+
+export interface SocialSentimentData {
+  atTime: string;
+  mention: number;
+  positiveScore: number;
+  negativeScore: number;
+  positiveMention: number;
+  negativeMention: number;
+  score: number;
+}
+
+export interface SocialSentimentResponse {
+  data: SocialSentimentData[];
+  symbol: string;
+}
+
+export interface CongressionalTrade {
+  amountFrom: number;
+  amountTo: number;
+  assetName: string;
+  filingDate: string;
+  name: string;
+  ownerType: string;
+  position: string;
+  symbol: string;
+  transactionDate: string;
+  transactionType: 'Sale' | 'Purchase';
+}
+
+export interface CongressionalTradesResponse {
+  data: CongressionalTrade[];
+  symbol: string;
+}
+
+export interface AlternativeDataState {
+  companyNews: CompanyNews[];
+  socialSentiment: SocialSentimentResponse | null;
+  congressionalTrading: CongressionalTradesResponse | null;
+  loading: {
+    news: boolean;
+    sentiment: boolean;
+    congressional: boolean;
+  };
+  error: {
+    news: string | null;
+    sentiment: string | null;
+    congressional: string | null;
+  };
+}

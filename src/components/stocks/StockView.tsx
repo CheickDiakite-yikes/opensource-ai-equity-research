@@ -1,10 +1,10 @@
-
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useSearchParams } from "react-router-dom";
 import StockHeader from "./StockHeader";
 import StockOverview from "@/components/StockOverview";
 import StockAnalysis from "@/components/StockAnalysis";
 import ResearchReportGenerator from "@/components/ResearchReportGenerator";
+import AlternativeDataView from "@/components/alternative/AlternativeDataView";
 import StockTabsNavigation from "./StockTabsNavigation";
 import { toast } from "sonner";
 
@@ -21,43 +21,35 @@ const StockView: React.FC<StockViewProps> = ({ symbol, onClear }) => {
   const prevTabRef = useRef<string>("overview");
   const errorCountRef = useRef<number>(0);
   
-  // Initialize the active tab from URL or default to overview
   useEffect(() => {
     const tabParam = searchParams.get("tab");
-    if (tabParam && ["overview", "analysis", "report"].includes(tabParam)) {
+    if (tabParam && ["overview", "analysis", "report", "alternative"].includes(tabParam)) {
       setActiveTab(tabParam);
       console.log("Setting active tab from URL to:", tabParam);
     } else if (!tabParam) {
-      // If no tab parameter, default to overview
       setActiveTab("overview");
     }
     
-    // Short delay to ensure state is updated
     setTimeout(() => {
       setIsReady(true);
     }, 100);
   }, [searchParams]);
 
-  // Handle tab changes with a unique key to force component remount
   const handleTabChange = useCallback((newTab: string) => {
-    if (newTab === prevTabRef.current) return; // Avoid unnecessary re-renders
+    if (newTab === prevTabRef.current) return;
     
     console.log(`Tab changing from ${activeTab} to ${newTab}`);
     
-    // Reset error count when changing tabs
     errorCountRef.current = 0;
     
-    // Delay state update to avoid React state batch update issues
     setTimeout(() => {
       prevTabRef.current = newTab;
       setActiveTab(newTab);
       
-      // Force re-render the tab content when switching tabs
       setKey(prevKey => prevKey + 1);
     }, 10);
   }, [activeTab]);
 
-  // Monitor for errors in the Analysis tab
   const handleComponentError = useCallback((error: Error) => {
     console.error("Component error caught:", error);
     errorCountRef.current += 1;
@@ -67,12 +59,9 @@ const StockView: React.FC<StockViewProps> = ({ symbol, onClear }) => {
     }
   }, []);
 
-  // Render the active tab content
   const renderTabContent = () => {
-    // Only render if ready
     if (!isReady) return null;
     
-    // Fallback wrap components to catch errors
     const ErrorBoundary = ({ children }: { children: React.ReactNode }) => {
       try {
         return <>{children}</>;
@@ -106,6 +95,12 @@ const StockView: React.FC<StockViewProps> = ({ symbol, onClear }) => {
         return (
           <ErrorBoundary>
             <ResearchReportGenerator key={`report-${key}-${symbol}`} symbol={symbol} />
+          </ErrorBoundary>
+        );
+      case "alternative":
+        return (
+          <ErrorBoundary>
+            <AlternativeDataView key={`alternative-${key}-${symbol}`} symbol={symbol} />
           </ErrorBoundary>
         );
       default:
