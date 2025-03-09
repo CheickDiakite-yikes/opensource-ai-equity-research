@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { CongressionalTradesResponse, CongressionalTrade } from '@/types/alternative/companyNewsTypes';
 import { motion } from 'framer-motion';
@@ -67,13 +66,11 @@ const CongressionalTradesSection: React.FC<CongressionalTradesSectionProps> = ({
     );
   }
 
-  // Filter trades by source if needed
   const sourcedTrades = data.data.filter(trade => {
     if (dataSource === 'all') return true;
     return trade.source === dataSource;
   });
 
-  // Filter and sort trades
   const filteredTrades = sourcedTrades.filter(trade => 
     trade.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     trade.position.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -103,14 +100,12 @@ const CongressionalTradesSection: React.FC<CongressionalTradesSectionProps> = ({
   const displayedTrades = sortedTrades.slice(0, visibleTrades);
   const hasMoreTrades = visibleTrades < sortedTrades.length;
 
-  // Count transactions by type
   const purchases = filteredTrades.filter(t => t.transactionType === 'Purchase').length;
   const sales = filteredTrades.filter(t => t.transactionType === 'Sale').length;
 
-  // Get sources for dropdown
-  const hasMultipleSources = data.sources && data.sources.length > 1;
+  const hasMultipleSources = data?.data?.some(trade => trade.source === 'fmp') && 
+                            data?.data?.some(trade => trade.source === 'finnhub');
 
-  // Download as CSV
   const downloadCSV = () => {
     const headers = ['Name', 'Position', 'Asset', 'Transaction Type', 'Transaction Date', 'Filing Date', 'Amount From', 'Amount To', 'Source', 'Link'];
     const csvRows = [
@@ -141,7 +136,6 @@ const CongressionalTradesSection: React.FC<CongressionalTradesSectionProps> = ({
     document.body.removeChild(link);
   };
 
-  // Function to sort
   const requestSort = (key: keyof CongressionalTrade) => {
     let direction: 'asc' | 'desc' = 'asc';
     if (sortConfig.key === key && sortConfig.direction === 'asc') {
@@ -150,18 +144,16 @@ const CongressionalTradesSection: React.FC<CongressionalTradesSectionProps> = ({
     setSortConfig({ key, direction });
   };
 
-  // Function to get sort indicator
   const getSortIndicator = (key: keyof CongressionalTrade) => {
     if (sortConfig.key !== key) return null;
     return sortConfig.direction === 'asc' ? <ChevronUp className="inline h-4 w-4" /> : <ChevronDown className="inline h-4 w-4" />;
   };
 
-  // Get source badge color
   const getSourceBadgeVariant = (source?: string) => {
     switch(source) {
-      case 'fmp': return 'success';
-      case 'finnhub': return 'secondary';
-      default: return 'outline';
+      case 'fmp': return 'secondary';
+      case 'finnhub': return 'outline';
+      default: return 'default';
     }
   };
 
@@ -210,7 +202,6 @@ const CongressionalTradesSection: React.FC<CongressionalTradesSectionProps> = ({
         </div>
       </div>
       
-      {/* Trading Summary */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -233,7 +224,6 @@ const CongressionalTradesSection: React.FC<CongressionalTradesSectionProps> = ({
         />
       </motion.div>
       
-      {/* Search bar */}
       <div className="relative">
         <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
         <Input
@@ -244,7 +234,6 @@ const CongressionalTradesSection: React.FC<CongressionalTradesSectionProps> = ({
         />
       </div>
       
-      {/* Trades Table */}
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
