@@ -5,8 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Card } from '@/components/ui/card';
 import CompanyNewsSection from './CompanyNewsSection';
 import SocialSentimentSection from './SocialSentimentSection';
-import CongressionalTradesSection from './CongressionalTradesSection';
-import { Newspaper, BarChart, FileText, Layers } from 'lucide-react';
+import { Newspaper, BarChart, Layers } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import ErrorDisplay from '../reports/ErrorDisplay';
 
@@ -18,21 +17,10 @@ const AlternativeDataView: React.FC<AlternativeDataViewProps> = ({ symbol }) => 
   const { 
     companyNews, 
     socialSentiment, 
-    combinedCongressionalTrading,
-    fmpHouseTrades,
-    fmpSenateTrades,
-    congressionalTrading,
     loading, 
-    error, 
-    isCongressionalLoading,
-    congressionalError,
+    error,
     refreshData 
   } = useAlternativeData(symbol);
-
-  // Determine which data sources are available
-  const hasFinnhubData = !!congressionalTrading?.data?.length;
-  const hasFmpHouseData = !!fmpHouseTrades?.data?.length;
-  const hasFmpSenateData = !!fmpSenateTrades?.data?.length;
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -56,10 +44,6 @@ const AlternativeDataView: React.FC<AlternativeDataViewProps> = ({ symbol }) => 
           <TabsTrigger value="sentiment" className="flex items-center gap-2">
             <BarChart className="h-4 w-4" />
             <span>Social Sentiment</span>
-          </TabsTrigger>
-          <TabsTrigger value="congressional" className="flex items-center gap-2">
-            <FileText className="h-4 w-4" />
-            <span>Congressional Trading</span>
           </TabsTrigger>
         </TabsList>
 
@@ -94,36 +78,6 @@ const AlternativeDataView: React.FC<AlternativeDataViewProps> = ({ symbol }) => 
                     data={socialSentiment} 
                     isLoading={loading.sentiment} 
                     error={error.sentiment} 
-                  />
-                )}
-              </Card>
-            </TabsContent>
-
-            <TabsContent value="congressional">
-              <Card className="p-6">
-                {congressionalError ? (
-                  <ErrorDisplay 
-                    error={congressionalError} 
-                    title="Congressional Trading Data Unavailable"
-                    onRetry={() => {
-                      refreshData('congressional');
-                      refreshData('fmpHouseTrades');
-                      refreshData('fmpSenateTrades');
-                    }}
-                  />
-                ) : (
-                  <CongressionalTradesSection 
-                    data={combinedCongressionalTrading} 
-                    isLoading={isCongressionalLoading} 
-                    error={congressionalError}
-                    finnhubAvailable={hasFinnhubData}
-                    fmpHouseAvailable={hasFmpHouseData}
-                    fmpSenateAvailable={hasFmpSenateData}
-                    onRetry={() => {
-                      refreshData('congressional');
-                      refreshData('fmpHouseTrades');
-                      refreshData('fmpSenateTrades');
-                    }}
                   />
                 )}
               </Card>
