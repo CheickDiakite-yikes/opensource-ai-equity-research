@@ -89,3 +89,12 @@ verify_jwt = false
 
 [functions.optimize-database]
 verify_jwt = false
+
+[functions.get-finnhub-company-news]
+verify_jwt = false
+
+[functions.get-finnhub-social-sentiment]
+verify_jwt = false
+
+[functions.get-finnhub-congressional-trading]
+verify_jwt = false
