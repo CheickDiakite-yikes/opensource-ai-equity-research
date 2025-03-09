@@ -1,7 +1,7 @@
 
 import React from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { Briefcase, BarChart4, FileText } from "lucide-react";
+import { Briefcase, BarChart4, FileText, Database } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
 
@@ -43,6 +43,11 @@ const StockTabsNavigation: React.FC<StockTabsNavigationProps> = ({
       id: "analysis", 
       label: "Analysis", 
       icon: <BarChart4 className="h-4 w-4" /> 
+    },
+    { 
+      id: "alternative", 
+      label: "Alternative Data", 
+      icon: <Database className="h-4 w-4" /> 
     },
     { 
       id: "report", 
