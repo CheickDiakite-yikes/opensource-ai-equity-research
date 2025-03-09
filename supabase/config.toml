@@ -96,5 +96,9 @@ verify_jwt = false
 [functions.get-finnhub-social-sentiment]
 verify_jwt = false
 
-[functions.get-finnhub-congressional-trading]
+[functions.get-fmp-acquisition-ownership]
 verify_jwt = false
+
+[functions.get-fmp-insider-trading-stats]
+verify_jwt = false
+
