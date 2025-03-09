@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { CongressionalTradesResponse, CongressionalTrade } from '@/types/alternative/companyNewsTypes';
 import { motion } from 'framer-motion';

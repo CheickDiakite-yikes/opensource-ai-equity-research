@@ -201,8 +201,7 @@ export const useAlternativeData = (symbol: string) => {
     // Combine both datasets
     return {
       symbol: symbol,
-      data: [...markedFinnhubData, ...markedFmpData],
-      sources: ['finnhub', 'fmp']
+      data: [...markedFinnhubData, ...markedFmpData]
     };
   }, [state.congressionalTrading, state.fmpHouseTrades, symbol]);
 

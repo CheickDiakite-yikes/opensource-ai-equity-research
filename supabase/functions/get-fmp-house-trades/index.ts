@@ -68,7 +68,8 @@ serve(async (req) => {
         transactionType: trade.type === "Sale" ? "Sale" : "Purchase",
         // Additional FMP-specific data
         link: trade.link,
-        comment: trade.comment
+        comment: trade.comment,
+        source: "fmp" as const
       }));
       
       return createResponse({
