@@ -1,12 +1,11 @@
 
-import React, { useState, useEffect } from "react";
-import { Briefcase, BarChart4, FileText } from "lucide-react";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import React, { useState, useEffect, useCallback } from "react";
+import { useSearchParams } from "react-router-dom";
+import StockHeader from "./StockHeader";
 import StockOverview from "@/components/StockOverview";
 import StockAnalysis from "@/components/StockAnalysis";
 import ResearchReportGenerator from "@/components/ResearchReportGenerator";
-import StockHeader from "./StockHeader";
-import { useSearchParams } from "react-router-dom";
+import StockTabsNavigation from "./StockTabsNavigation";
 
 interface StockViewProps {
   symbol: string;
@@ -16,46 +15,53 @@ interface StockViewProps {
 const StockView: React.FC<StockViewProps> = ({ symbol, onClear }) => {
   const [searchParams] = useSearchParams();
   const [activeTab, setActiveTab] = useState<string>("overview");
+  const [key, setKey] = useState<number>(0); // Used to force re-render components
   
-  // Check for tab parameter in URL and set active tab
+  // Initialize the active tab from URL or default to overview
   useEffect(() => {
     const tabParam = searchParams.get("tab");
     if (tabParam && ["overview", "analysis", "report"].includes(tabParam)) {
       setActiveTab(tabParam);
-      console.log("Setting active tab to:", tabParam);
+      console.log("Setting active tab from URL to:", tabParam);
+    } else if (!tabParam) {
+      // If no tab parameter, default to overview
+      setActiveTab("overview");
     }
   }, [searchParams]);
 
+  // Handle tab changes with a unique key to force component remount
+  const handleTabChange = useCallback((newTab: string) => {
+    console.log(`Tab changed from ${activeTab} to ${newTab}`);
+    setActiveTab(newTab);
+    // Force re-render the tab content when switching tabs
+    setKey(prevKey => prevKey + 1);
+  }, [activeTab]);
+
+  // Render the active tab content
+  const renderTabContent = () => {
+    switch (activeTab) {
+      case "overview":
+        return <StockOverview key={`overview-${key}-${symbol}`} symbol={symbol} />;
+      case "analysis":
+        return <StockAnalysis key={`analysis-${key}-${symbol}`} symbol={symbol} />;
+      case "report":
+        return <ResearchReportGenerator key={`report-${key}-${symbol}`} symbol={symbol} />;
+      default:
+        return <StockOverview key={`overview-${key}-${symbol}`} symbol={symbol} />;
+    }
+  };
+
   return (
-    <div className="mt-6">
+    <div className="mt-6 animate-fade-in">
       <StockHeader symbol={symbol} onClear={onClear} />
       
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-3 mb-6 p-1 bg-muted/30">
-          <TabsTrigger value="overview" className="flex items-center gap-2 py-3">
-            <Briefcase className="h-4 w-4" />
-            <span>Overview</span>
-          </TabsTrigger>
-          <TabsTrigger value="analysis" className="flex items-center gap-2 py-3">
-            <BarChart4 className="h-4 w-4" />
-            <span>Analysis</span>
-          </TabsTrigger>
-          <TabsTrigger value="report" className="flex items-center gap-2 py-3">
-            <FileText className="h-4 w-4" />
-            <span>Research Report</span>
-          </TabsTrigger>
-        </TabsList>
-        
-        <TabsContent value="overview" className="mt-4 animate-fade-in">
-          <StockOverview symbol={symbol} />
-        </TabsContent>
-        <TabsContent value="analysis" className="mt-4 animate-fade-in">
-          <StockAnalysis symbol={symbol} />
-        </TabsContent>
-        <TabsContent value="report" className="mt-4 animate-fade-in">
-          <ResearchReportGenerator symbol={symbol} />
-        </TabsContent>
-      </Tabs>
+      <StockTabsNavigation 
+        symbol={symbol}
+        activeTab={activeTab}
+        onTabChange={handleTabChange}
+      />
+      
+      {renderTabContent()}
     </div>
   );
 };

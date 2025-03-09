@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useResearchReportData } from "@/components/reports/useResearchReportData";
 import LoadingSkeleton from "@/components/LoadingSkeleton";
 import { prepareFinancialData, prepareRatioData } from "@/utils/financial";
@@ -15,6 +15,7 @@ interface StockAnalysisProps {
 
 const StockAnalysis = ({ symbol }: StockAnalysisProps) => {
   const [isRetrying, setIsRetrying] = useState(false);
+  const [componentMounted, setComponentMounted] = useState(false);
   
   // We'll use the useResearchReportData hook to get all financial data
   const { 
@@ -36,21 +37,32 @@ const StockAnalysis = ({ symbol }: StockAnalysisProps) => {
     ratios: data.ratios
   });
 
+  // Mark component as mounted
+  useEffect(() => {
+    console.log(`StockAnalysis mounted for symbol: ${symbol}`);
+    setComponentMounted(true);
+    
+    return () => {
+      console.log(`StockAnalysis unmounted for symbol: ${symbol}`);
+      setComponentMounted(false);
+    };
+  }, [symbol]);
+
   // Combine data from both sources (useResearchReportData and direct fetch)
   const combinedData = {
-    income: data.income.length > 0 ? data.income : directFinancials.income,
-    balance: data.balance.length > 0 ? data.balance : directFinancials.balance,
-    cashflow: data.cashflow.length > 0 ? data.cashflow : directFinancials.cashflow,
-    ratios: data.ratios.length > 0 ? data.ratios : directFinancials.ratios,
+    income: data.income?.length > 0 ? data.income : directFinancials.income,
+    balance: data.balance?.length > 0 ? data.balance : directFinancials.balance,
+    cashflow: data.cashflow?.length > 0 ? data.cashflow : directFinancials.cashflow,
+    ratios: data.ratios?.length > 0 ? data.ratios : directFinancials.ratios,
     transcripts: data.transcripts,
     filings: data.filings
   };
   
   // Check if combined data has minimum requirements
   const hasCombinedMinimumData = (
-    (combinedData.income.length > 0 ? 1 : 0) + 
-    (combinedData.balance.length > 0 ? 1 : 0) + 
-    (combinedData.cashflow.length > 0 ? 1 : 0)
+    (combinedData.income?.length > 0 ? 1 : 0) + 
+    (combinedData.balance?.length > 0 ? 1 : 0) + 
+    (combinedData.cashflow?.length > 0 ? 1 : 0)
   ) >= 2;
 
   // Function to handle retry
@@ -65,7 +77,14 @@ const StockAnalysis = ({ symbol }: StockAnalysisProps) => {
   };
 
   if (isLoading || isRetrying || isDirectFetchLoading) {
-    return <LoadingSkeleton />;
+    return (
+      <div>
+        <LoadingSkeleton />
+        <div className="text-sm text-muted-foreground text-center mt-4">
+          Loading financial data for {symbol}...
+        </div>
+      </div>
+    );
   }
 
   // If there's still not enough data after both attempts, show error
@@ -75,19 +94,23 @@ const StockAnalysis = ({ symbol }: StockAnalysisProps) => {
 
   // Prepare financial data from combined data
   const financials: FinancialData[] = prepareFinancialData(
-    combinedData.income, 
-    combinedData.balance, 
-    combinedData.cashflow
+    combinedData.income || [], 
+    combinedData.balance || [], 
+    combinedData.cashflow || []
   );
   // Cast to KeyRatio[] to ensure type compatibility
-  const ratioData: RatioData[] = prepareRatioData(combinedData.ratios as KeyRatio[]);
+  const ratioData: RatioData[] = prepareRatioData(combinedData.ratios as KeyRatio[] || []);
 
   // Generate empty mock data for any missing statement type
-  if (combinedData.income.length === 0 || combinedData.balance.length === 0 || combinedData.cashflow.length === 0) {
-    toast.info(`Some financial statements are missing for ${symbol}. Analysis may be limited.`, {
-      duration: 5000,
-      id: "missing-data-warning" // Prevent duplicate toasts
-    });
+  if (!combinedData.income?.length || !combinedData.balance?.length || !combinedData.cashflow?.length) {
+    console.warn(`Some financial data missing for ${symbol}. Using available data.`);
+    
+    if (componentMounted) {
+      toast.info(`Some financial statements are missing for ${symbol}. Analysis may be limited.`, {
+        duration: 5000,
+        id: `missing-data-warning-${symbol}` // Prevent duplicate toasts
+      });
+    }
   }
 
   return (
@@ -96,8 +119,8 @@ const StockAnalysis = ({ symbol }: StockAnalysisProps) => {
         financials={financials} 
         ratioData={ratioData} 
         symbol={symbol} 
-        transcripts={combinedData.transcripts}
-        filings={combinedData.filings}
+        transcripts={combinedData.transcripts || []}
+        filings={combinedData.filings || []}
       />
     </div>
   );
