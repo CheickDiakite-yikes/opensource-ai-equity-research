@@ -1,20 +1,21 @@
 
 import React from 'react';
 import { useAlternativeData } from '@/hooks/useAlternativeData';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Card } from '@/components/ui/card';
 import CompanyNewsSection from './CompanyNewsSection';
 import SocialSentimentSection from './SocialSentimentSection';
 import CongressionalTradesSection from './CongressionalTradesSection';
 import { Newspaper, BarChart, FileText, Layers } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import ErrorDisplay from '../reports/ErrorDisplay';
 
 interface AlternativeDataViewProps {
   symbol: string;
 }
 
 const AlternativeDataView: React.FC<AlternativeDataViewProps> = ({ symbol }) => {
-  const { companyNews, socialSentiment, congressionalTrading, loading, error } = useAlternativeData(symbol);
+  const { companyNews, socialSentiment, congressionalTrading, loading, error, refreshData } = useAlternativeData(symbol);
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -45,41 +46,61 @@ const AlternativeDataView: React.FC<AlternativeDataViewProps> = ({ symbol }) => 
           </TabsTrigger>
         </TabsList>
 
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.5 }}
-        >
-          <TabsContent value="news">
-            <Card className="p-6">
-              <CompanyNewsSection 
-                news={companyNews} 
-                isLoading={loading.news} 
-                error={error.news} 
-              />
-            </Card>
-          </TabsContent>
+        <AnimatePresence mode="wait">
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.3 }}
+          >
+            <TabsContent value="news">
+              <Card className="p-6">
+                <CompanyNewsSection 
+                  news={companyNews} 
+                  isLoading={loading.news} 
+                  error={error.news} 
+                  onRetry={() => refreshData('news')}
+                />
+              </Card>
+            </TabsContent>
 
-          <TabsContent value="sentiment">
-            <Card className="p-6">
-              <SocialSentimentSection 
-                data={socialSentiment} 
-                isLoading={loading.sentiment} 
-                error={error.sentiment} 
-              />
-            </Card>
-          </TabsContent>
+            <TabsContent value="sentiment">
+              <Card className="p-6">
+                {error.sentiment ? (
+                  <ErrorDisplay 
+                    error={error.sentiment} 
+                    title="Social Sentiment Data Unavailable"
+                    onRetry={() => refreshData('sentiment')}
+                  />
+                ) : (
+                  <SocialSentimentSection 
+                    data={socialSentiment} 
+                    isLoading={loading.sentiment} 
+                    error={error.sentiment} 
+                  />
+                )}
+              </Card>
+            </TabsContent>
 
-          <TabsContent value="congressional">
-            <Card className="p-6">
-              <CongressionalTradesSection 
-                data={congressionalTrading} 
-                isLoading={loading.congressional} 
-                error={error.congressional} 
-              />
-            </Card>
-          </TabsContent>
-        </motion.div>
+            <TabsContent value="congressional">
+              <Card className="p-6">
+                {error.congressional ? (
+                  <ErrorDisplay 
+                    error={error.congressional} 
+                    title="Congressional Trading Data Unavailable"
+                    onRetry={() => refreshData('congressional')}
+                  />
+                ) : (
+                  <CongressionalTradesSection 
+                    data={congressionalTrading} 
+                    isLoading={loading.congressional} 
+                    error={error.congressional} 
+                  />
+                )}
+              </Card>
+            </TabsContent>
+          </motion.div>
+        </AnimatePresence>
       </Tabs>
     </div>
   );

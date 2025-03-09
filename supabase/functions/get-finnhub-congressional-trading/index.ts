@@ -6,7 +6,8 @@ import {
   FINNHUB_API_KEY, 
   createCorsResponse, 
   createCorsErrorResponse,
-  fetchFromFinnhub 
+  fetchFromFinnhub,
+  logFinnhubApiCall
 } from "../_shared/finnhub-utils.ts";
 
 serve(async (req) => {
@@ -21,19 +22,48 @@ serve(async (req) => {
       return createCorsErrorResponse("Symbol is required", 400);
     }
 
+    console.log(`Fetching congressional trading data for symbol: ${symbol}`);
+    
     // Build query parameters
     const queryParams = new URLSearchParams();
     queryParams.append("symbol", symbol);
-    if (from) queryParams.append("from", from);
-    if (to) queryParams.append("to", to);
+    
+    // Add date parameters if provided (with defaults for better results)
+    const currentDate = new Date();
+    const oneYearAgo = new Date();
+    oneYearAgo.setFullYear(currentDate.getFullYear() - 1);
+    
+    const fromDate = from || Math.floor(oneYearAgo.getTime() / 1000);
+    const toDate = to || Math.floor(currentDate.getTime() / 1000);
+    
+    queryParams.append("from", fromDate.toString());
+    queryParams.append("to", toDate.toString());
     queryParams.append("token", FINNHUB_API_KEY);
     
     const url = `${FINNHUB_API_BASE}/stock/congressional-trading?${queryParams.toString()}`;
-    const data = await fetchFromFinnhub(url);
+    logFinnhubApiCall(url);
     
-    return createCorsResponse(data);
+    try {
+      const data = await fetchFromFinnhub(url);
+      console.log(`Received congressional trading data for ${symbol}. Data length: ${data?.data?.length || 0}`);
+      
+      // If no data was returned, provide a more specific message
+      if (!data.data || data.data.length === 0) {
+        console.log(`No congressional trading data available for ${symbol}`);
+        return createCorsResponse({
+          symbol,
+          data: [],
+          message: `No congressional trading data available for ${symbol} in the specified time period.`
+        });
+      }
+      
+      return createCorsResponse(data);
+    } catch (apiError) {
+      console.error(`Finnhub API error for congressional trading data (${symbol}):`, apiError);
+      return createCorsErrorResponse(`Failed to fetch congressional trading data from Finnhub: ${apiError.message}`);
+    }
   } catch (error) {
     console.error("Error in get-finnhub-congressional-trading:", error);
-    return createCorsErrorResponse(error.message);
+    return createCorsErrorResponse(`Server error processing congressional trading request: ${error.message}`);
   }
 });

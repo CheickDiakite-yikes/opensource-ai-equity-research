@@ -7,9 +7,16 @@ import { Button } from "@/components/ui/button";
 interface ErrorDisplayProps {
   error: string;
   onRetry?: () => void;
+  title?: string;
+  className?: string;
 }
 
-const ErrorDisplay: React.FC<ErrorDisplayProps> = ({ error, onRetry }) => {
+const ErrorDisplay: React.FC<ErrorDisplayProps> = ({ 
+  error, 
+  onRetry, 
+  title = "Error Loading Data",
+  className = ""
+}) => {
   // Check if it's an API error
   const isApiError = error.includes("API") || 
                      error.includes("2xx") || 
@@ -17,10 +24,10 @@ const ErrorDisplay: React.FC<ErrorDisplayProps> = ({ error, onRetry }) => {
                      error.includes("Failed to");
   
   return (
-    <Card className="p-6">
+    <Card className={`p-6 ${className}`}>
       <div className="text-center py-8">
         <AlertCircle className="mx-auto h-12 w-12 text-red-600 mb-4" />
-        <h3 className="text-lg font-medium text-red-600 mb-2">Error Loading Data</h3>
+        <h3 className="text-lg font-medium text-red-600 mb-2">{title}</h3>
         <p className="text-muted-foreground mb-4">{error}</p>
         
         {isApiError && (

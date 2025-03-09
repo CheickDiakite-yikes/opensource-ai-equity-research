@@ -34,6 +34,7 @@ const CongressionalTradesSection: React.FC<CongressionalTradesSectionProps> = ({
     return (
       <div className="text-center p-6">
         <p className="text-red-500">Failed to load congressional trading data</p>
+        <p className="text-sm text-muted-foreground mt-2">{error}</p>
       </div>
     );
   }
@@ -220,7 +221,7 @@ const CongressionalTradesSection: React.FC<CongressionalTradesSectionProps> = ({
                   <TableCell>{trade.position}</TableCell>
                   <TableCell>
                     <Badge 
-                      variant={trade.transactionType === 'Purchase' ? 'success' : 'destructive'}
+                      variant={trade.transactionType === 'Purchase' ? 'secondary' : 'destructive'}
                     >
                       {trade.transactionType}
                     </Badge>

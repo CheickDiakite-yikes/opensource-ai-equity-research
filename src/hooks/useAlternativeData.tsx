@@ -1,8 +1,10 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { invokeSupabaseFunction } from '@/services/api/base';
 import { AlternativeDataState, CompanyNews, SocialSentimentResponse, CongressionalTradesResponse } from '@/types/alternative/companyNewsTypes';
 import { toast } from 'sonner';
+
+type DataType = 'news' | 'sentiment' | 'congressional' | 'all';
 
 export const useAlternativeData = (symbol: string) => {
   const [state, setState] = useState<AlternativeDataState>({
@@ -21,74 +23,128 @@ export const useAlternativeData = (symbol: string) => {
     }
   });
 
-  useEffect(() => {
-    if (!symbol) return;
-
-    const fetchData = async () => {
-      try {
-        // Fetch company news
-        const newsData = await invokeSupabaseFunction<CompanyNews[]>('get-finnhub-company-news', { symbol });
-        
-        setState(prev => ({
-          ...prev,
-          companyNews: newsData || [],
-          loading: { ...prev.loading, news: false },
-          error: { ...prev.error, news: null }
-        }));
-
-        // Fetch social sentiment data
-        try {
-          const sentimentData = await invokeSupabaseFunction<SocialSentimentResponse>('get-finnhub-social-sentiment', { symbol });
-          
-          setState(prev => ({
-            ...prev,
-            socialSentiment: sentimentData,
-            loading: { ...prev.loading, sentiment: false },
-            error: { ...prev.error, sentiment: null }
-          }));
-        } catch (error) {
-          console.error('Error fetching social sentiment data:', error);
-          setState(prev => ({
-            ...prev,
-            error: { ...prev.error, sentiment: error.message },
-            loading: { ...prev.loading, sentiment: false }
-          }));
-          toast.error('Failed to load social sentiment data');
-        }
-
-        // Fetch congressional trading data
-        try {
-          const congressionalData = await invokeSupabaseFunction<CongressionalTradesResponse>('get-finnhub-congressional-trading', { symbol });
-          
-          setState(prev => ({
-            ...prev,
-            congressionalTrading: congressionalData,
-            loading: { ...prev.loading, congressional: false },
-            error: { ...prev.error, congressional: null }
-          }));
-        } catch (error) {
-          console.error('Error fetching congressional trading data:', error);
-          setState(prev => ({
-            ...prev,
-            error: { ...prev.error, congressional: error.message },
-            loading: { ...prev.loading, congressional: false }
-          }));
-          toast.error('Failed to load congressional trading data');
-        }
-
-      } catch (error) {
-        console.error('Error fetching alternative data:', error);
-        setState(prev => ({
-          ...prev,
-          error: { ...prev.error, news: error.message },
-          loading: { ...prev.loading, news: false }
-        }));
-        toast.error('Failed to load news data');
-      }
-    };
-
-    fetchData();
+  const fetchCompanyNews = useCallback(async () => {
+    try {
+      setState(prev => ({
+        ...prev,
+        loading: { ...prev.loading, news: true },
+        error: { ...prev.error, news: null }
+      }));
+      
+      const newsData = await invokeSupabaseFunction<CompanyNews[]>('get-finnhub-company-news', { symbol });
+      
+      setState(prev => ({
+        ...prev,
+        companyNews: newsData || [],
+        loading: { ...prev.loading, news: false }
+      }));
+    } catch (error) {
+      console.error('Error fetching company news:', error);
+      setState(prev => ({
+        ...prev,
+        error: { ...prev.error, news: error.message },
+        loading: { ...prev.loading, news: false }
+      }));
+      toast.error('Failed to load company news data');
+    }
   }, [symbol]);
 
-  return state;
+  const fetchSocialSentiment = useCallback(async () => {
+    try {
+      setState(prev => ({
+        ...prev,
+        loading: { ...prev.loading, sentiment: true },
+        error: { ...prev.error, sentiment: null }
+      }));
+      
+      const sentimentData = await invokeSupabaseFunction<SocialSentimentResponse>(
+        'get-finnhub-social-sentiment', 
+        { symbol }
+      );
+      
+      setState(prev => ({
+        ...prev,
+        socialSentiment: sentimentData,
+        loading: { ...prev.loading, sentiment: false }
+      }));
+    } catch (error) {
+      console.error('Error fetching social sentiment data:', error);
+      setState(prev => ({
+        ...prev,
+        error: { ...prev.error, sentiment: error.message },
+        loading: { ...prev.loading, sentiment: false }
+      }));
+      toast.error('Failed to load social sentiment data');
+    }
+  }, [symbol]);
+
+  const fetchCongressionalTrading = useCallback(async () => {
+    try {
+      setState(prev => ({
+        ...prev,
+        loading: { ...prev.loading, congressional: true },
+        error: { ...prev.error, congressional: null }
+      }));
+      
+      // Get current date and one year ago for better results
+      const now = new Date();
+      const oneYearAgo = new Date();
+      oneYearAgo.setFullYear(now.getFullYear() - 1);
+      
+      const from = Math.floor(oneYearAgo.getTime() / 1000);
+      const to = Math.floor(now.getTime() / 1000);
+      
+      const congressionalData = await invokeSupabaseFunction<CongressionalTradesResponse>(
+        'get-finnhub-congressional-trading', 
+        { symbol, from, to }
+      );
+      
+      setState(prev => ({
+        ...prev,
+        congressionalTrading: congressionalData,
+        loading: { ...prev.loading, congressional: false }
+      }));
+    } catch (error) {
+      console.error('Error fetching congressional trading data:', error);
+      setState(prev => ({
+        ...prev,
+        error: { ...prev.error, congressional: error.message },
+        loading: { ...prev.loading, congressional: false }
+      }));
+      toast.error('Failed to load congressional trading data');
+    }
+  }, [symbol]);
+
+  const fetchAllData = useCallback(async () => {
+    await Promise.all([
+      fetchCompanyNews(),
+      fetchSocialSentiment(),
+      fetchCongressionalTrading()
+    ]);
+  }, [fetchCompanyNews, fetchSocialSentiment, fetchCongressionalTrading]);
+
+  const refreshData = useCallback((dataType: DataType = 'all') => {
+    if (dataType === 'all') {
+      fetchAllData();
+      return;
+    }
+    
+    if (dataType === 'news') {
+      fetchCompanyNews();
+    } else if (dataType === 'sentiment') {
+      fetchSocialSentiment();
+    } else if (dataType === 'congressional') {
+      fetchCongressionalTrading();
+    }
+  }, [fetchAllData, fetchCompanyNews, fetchSocialSentiment, fetchCongressionalTrading]);
+
+  useEffect(() => {
+    if (!symbol) return;
+    fetchAllData();
+  }, [symbol, fetchAllData]);
+
+  return {
+    ...state,
+    refreshData
+  };
 };
