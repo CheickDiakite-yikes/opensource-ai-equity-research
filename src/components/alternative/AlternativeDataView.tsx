@@ -5,7 +5,9 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Card } from '@/components/ui/card';
 import CompanyNewsSection from './CompanyNewsSection';
 import SocialSentimentSection from './SocialSentimentSection';
-import { Newspaper, BarChart, Layers } from 'lucide-react';
+import AcquisitionOwnershipSection from './AcquisitionOwnershipSection';
+import InsiderTradingStatsSection from './InsiderTradingStatsSection';
+import { Newspaper, BarChart, Layers, Building, UserPlus } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import ErrorDisplay from '../reports/ErrorDisplay';
 
@@ -16,7 +18,9 @@ interface AlternativeDataViewProps {
 const AlternativeDataView: React.FC<AlternativeDataViewProps> = ({ symbol }) => {
   const { 
     companyNews, 
-    socialSentiment, 
+    socialSentiment,
+    acquisitionOwnership,
+    insiderTradingStats,
     loading, 
     error,
     refreshData 
@@ -44,6 +48,14 @@ const AlternativeDataView: React.FC<AlternativeDataViewProps> = ({ symbol }) => 
           <TabsTrigger value="sentiment" className="flex items-center gap-2">
             <BarChart className="h-4 w-4" />
             <span>Social Sentiment</span>
+          </TabsTrigger>
+          <TabsTrigger value="ownership" className="flex items-center gap-2">
+            <Building className="h-4 w-4" />
+            <span>Acquisition Ownership</span>
+          </TabsTrigger>
+          <TabsTrigger value="insiderTrading" className="flex items-center gap-2">
+            <UserPlus className="h-4 w-4" />
+            <span>Insider Trading</span>
           </TabsTrigger>
         </TabsList>
 
@@ -80,6 +92,28 @@ const AlternativeDataView: React.FC<AlternativeDataViewProps> = ({ symbol }) => 
                     error={error.sentiment} 
                   />
                 )}
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="ownership">
+              <Card className="p-6">
+                <AcquisitionOwnershipSection 
+                  data={acquisitionOwnership} 
+                  isLoading={loading.ownership} 
+                  error={error.ownership}
+                  onRetry={() => refreshData('ownership')}
+                />
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="insiderTrading">
+              <Card className="p-6">
+                <InsiderTradingStatsSection 
+                  data={insiderTradingStats} 
+                  isLoading={loading.insiderTrading} 
+                  error={error.insiderTrading}
+                  onRetry={() => refreshData('insiderTrading')}
+                />
               </Card>
             </TabsContent>
           </motion.div>
