@@ -54,16 +54,19 @@ export interface AlternativeDataState {
   socialSentiment: SocialSentimentResponse | null;
   congressionalTrading: CongressionalTradesResponse | null;
   fmpHouseTrades: CongressionalTradesResponse | null;
+  fmpSenateTrades: CongressionalTradesResponse | null;
   loading: {
     news: boolean;
     sentiment: boolean;
     congressional: boolean;
     fmpHouseTrades: boolean;
+    fmpSenateTrades: boolean;
   };
   error: {
     news: string | null;
     sentiment: string | null;
     congressional: string | null;
     fmpHouseTrades: string | null;
+    fmpSenateTrades: string | null;
   };
 }

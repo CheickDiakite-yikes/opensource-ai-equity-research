@@ -16,13 +16,19 @@ interface CongressionalTradesSectionProps {
   isLoading: boolean;
   error: string | null;
   onRetry?: () => void;
+  fmpHouseAvailable?: boolean;
+  fmpSenateAvailable?: boolean;
+  finnhubAvailable?: boolean;
 }
 
 const CongressionalTradesSection: React.FC<CongressionalTradesSectionProps> = ({ 
   data, 
   isLoading, 
   error,
-  onRetry
+  onRetry,
+  fmpHouseAvailable = false,
+  fmpSenateAvailable = false,
+  finnhubAvailable = false
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [sortConfig, setSortConfig] = useState<{ key: keyof CongressionalTrade; direction: 'asc' | 'desc' }>({ 
@@ -37,7 +43,12 @@ const CongressionalTradesSection: React.FC<CongressionalTradesSectionProps> = ({
     console.log('CongressionalTradesSection data:', data);
     console.log('isLoading:', isLoading);
     console.log('error:', error);
-  }, [data, isLoading, error]);
+    console.log('Data sources available:', {
+      fmpHouse: fmpHouseAvailable,
+      fmpSenate: fmpSenateAvailable,
+      finnhub: finnhubAvailable
+    });
+  }, [data, isLoading, error, fmpHouseAvailable, fmpSenateAvailable, finnhubAvailable]);
 
   if (isLoading) {
     return <TradesLoadingSkeleton />;
@@ -114,7 +125,7 @@ const CongressionalTradesSection: React.FC<CongressionalTradesSectionProps> = ({
   const hasMultipleSources = hasFinnhubData && hasFmpData;
 
   // Debug logging
-  console.log('Trading data sources:', { hasFinnhubData, hasFmpData, hasMultipleSources });
+  console.log('Trading data sources detected:', { hasFinnhubData, hasFmpData, hasMultipleSources });
   console.log('Filtered trades count:', filteredTrades.length);
 
   const downloadCSV = () => {
@@ -163,6 +174,11 @@ const CongressionalTradesSection: React.FC<CongressionalTradesSectionProps> = ({
         dataSource={dataSource}
         onSourceChange={setDataSource}
         onExportCSV={downloadCSV}
+        sourcesAvailable={{
+          finnhub: finnhubAvailable || hasFinnhubData,
+          fmpHouse: fmpHouseAvailable,
+          fmpSenate: fmpSenateAvailable
+        }}
       />
       
       <TradesSummary 
@@ -174,6 +190,7 @@ const CongressionalTradesSection: React.FC<CongressionalTradesSectionProps> = ({
       <TradesSearchBar 
         searchTerm={searchTerm} 
         onSearchChange={setSearchTerm} 
+        placeholder="Search by name, position, asset, or chamber (House/Senate)..."
       />
       
       <motion.div

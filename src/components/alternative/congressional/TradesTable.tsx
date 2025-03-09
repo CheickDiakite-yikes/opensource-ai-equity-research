@@ -135,6 +135,13 @@ const TradesTable: React.FC<TradesTableProps> = ({
                 </TableCell>
               </TableRow>
             ))}
+            {trades.length === 0 && (
+              <TableRow>
+                <TableCell colSpan={hasMultipleSources ? 8 : 7} className="text-center py-8">
+                  No trading data found for this symbol.
+                </TableCell>
+              </TableRow>
+            )}
           </TableBody>
         </Table>
       </div>

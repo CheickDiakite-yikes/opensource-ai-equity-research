@@ -19,12 +19,20 @@ const AlternativeDataView: React.FC<AlternativeDataViewProps> = ({ symbol }) => 
     companyNews, 
     socialSentiment, 
     combinedCongressionalTrading,
+    fmpHouseTrades,
+    fmpSenateTrades,
+    congressionalTrading,
     loading, 
     error, 
     isCongressionalLoading,
     congressionalError,
     refreshData 
   } = useAlternativeData(symbol);
+
+  // Determine which data sources are available
+  const hasFinnhubData = !!congressionalTrading?.data?.length;
+  const hasFmpHouseData = !!fmpHouseTrades?.data?.length;
+  const hasFmpSenateData = !!fmpSenateTrades?.data?.length;
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -97,16 +105,24 @@ const AlternativeDataView: React.FC<AlternativeDataViewProps> = ({ symbol }) => 
                   <ErrorDisplay 
                     error={congressionalError} 
                     title="Congressional Trading Data Unavailable"
-                    onRetry={() => refreshData('congressional')}
+                    onRetry={() => {
+                      refreshData('congressional');
+                      refreshData('fmpHouseTrades');
+                      refreshData('fmpSenateTrades');
+                    }}
                   />
                 ) : (
                   <CongressionalTradesSection 
                     data={combinedCongressionalTrading} 
                     isLoading={isCongressionalLoading} 
                     error={congressionalError}
+                    finnhubAvailable={hasFinnhubData}
+                    fmpHouseAvailable={hasFmpHouseData}
+                    fmpSenateAvailable={hasFmpSenateData}
                     onRetry={() => {
                       refreshData('congressional');
                       refreshData('fmpHouseTrades');
+                      refreshData('fmpSenateTrades');
                     }}
                   />
                 )}
