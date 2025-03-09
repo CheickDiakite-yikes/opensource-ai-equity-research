@@ -151,7 +151,8 @@ export const useStockOverviewData = (symbol: string) => {
     try {
       setOwnershipLoading(true);
       
-      const data = await fetchFinnhubOwnership(symbol);
+      // Request up to 100 ownership records
+      const data = await fetchFinnhubOwnership(symbol, 100);
       setOwnershipData(data);
     } catch (err) {
       console.error("Error loading ownership data:", err);

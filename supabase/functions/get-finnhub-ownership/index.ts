@@ -23,7 +23,7 @@ serve(async (req) => {
     }
 
     // Build the API URL
-    const limitParam = limit ? `&limit=${limit}` : '';
+    const limitParam = limit && limit <= 100 ? `&limit=${limit}` : '&limit=100';
     const url = `${FINNHUB_API_BASE}/stock/ownership?symbol=${symbol}${limitParam}&token=${FINNHUB_API_KEY}`;
 
     // Fetch data from Finnhub

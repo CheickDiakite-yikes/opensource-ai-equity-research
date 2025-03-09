@@ -285,12 +285,16 @@ export const fetchFinnhubOwnership = async (
   limit?: number
 ): Promise<OwnershipData> => {
   try {
+    // Set a higher limit (up to 100) to get more ownership data
+    const requestLimit = limit || 100;
+    
     return await invokeSupabaseFunction<OwnershipData>('get-finnhub-ownership', { 
       symbol, 
-      limit
+      limit: requestLimit
     });
   } catch (error) {
     console.error("Error fetching Finnhub ownership data:", error);
     return { symbol, ownership: [] };
   }
 };
+
