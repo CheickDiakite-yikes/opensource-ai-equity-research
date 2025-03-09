@@ -9,15 +9,13 @@ interface SearchResultItemProps {
   onSelect: () => void;
   highlightMatch?: (text: string, query: string) => string;
   query?: string;
-  isActive?: boolean;
 }
 
 export const SearchResultItem = ({ 
   stock, 
   onSelect,
   highlightMatch,
-  query = "",
-  isActive = false
+  query = ""
 }: SearchResultItemProps) => {
   // Format market cap in a readable way
   const formatMarketCap = (marketCap: number): string => {
@@ -47,10 +45,7 @@ export const SearchResultItem = ({
   return (
     <CommandItem
       onSelect={onSelect}
-      className={cn(
-        "flex items-center justify-between py-3 px-4 hover:bg-accent/50 transition-colors",
-        isActive && "bg-accent/60"
-      )}
+      className="flex items-center justify-between py-3 px-4 hover:bg-accent/50 transition-colors"
     >
       <div className="flex flex-col">
         <div className="flex items-center gap-2">

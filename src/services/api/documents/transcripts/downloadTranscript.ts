@@ -2,22 +2,10 @@
 import { invokeSupabaseFunction, withRetry } from "../../base";
 import { supabase } from "@/integrations/supabase/client";
 
-interface DownloadTranscriptParams {
-  symbol: string;
-  quarter: string;
-  year: string;
-  filename?: string;
-}
-
 /**
  * Download an earnings transcript - returns the full content if available
  */
-export const downloadEarningsTranscript = async ({
-  symbol,
-  quarter,
-  year,
-  filename
-}: DownloadTranscriptParams): Promise<string | null> => {
+export const downloadEarningsTranscript = async (symbol: string, quarter: string, year: string): Promise<string | null> => {
   try {
     // Check if we have it in our database
     const { data, error } = await supabase
@@ -34,19 +22,6 @@ export const downloadEarningsTranscript = async ({
     }
     
     if (data && data.content) {
-      // If filename is provided, trigger a download
-      if (filename) {
-        const blob = new Blob([data.content], { type: 'text/plain' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = filename;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-      }
-      
       return data.content;
     }
     
@@ -77,19 +52,6 @@ export const downloadEarningsTranscript = async ({
           });
       } catch (err) {
         console.error("Error caching transcript:", err);
-      }
-      
-      // If filename is provided, trigger a download
-      if (filename) {
-        const blob = new Blob([content], { type: 'text/plain' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = filename;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
       }
         
       return content;

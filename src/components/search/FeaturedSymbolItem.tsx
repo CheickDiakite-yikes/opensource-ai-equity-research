@@ -1,7 +1,6 @@
 
 import { CommandItem } from "@/components/ui/command";
 import { ChevronRight, Sparkles } from "lucide-react";
-import { cn } from "@/lib/utils";
 
 interface FeaturedSymbolItemProps {
   symbol: string;
@@ -9,7 +8,6 @@ interface FeaturedSymbolItemProps {
   onSelect: () => void;
   highlightMatch?: (text: string, query: string) => string;
   query?: string;
-  isActive?: boolean;
 }
 
 export const FeaturedSymbolItem = ({ 
@@ -17,16 +15,12 @@ export const FeaturedSymbolItem = ({
   name, 
   onSelect,
   highlightMatch,
-  query = "",
-  isActive = false
+  query = ""
 }: FeaturedSymbolItemProps) => {
   return (
     <CommandItem
       onSelect={onSelect}
-      className={cn(
-        "flex items-center justify-between py-3 px-4 hover:bg-accent/50 transition-colors",
-        isActive && "bg-accent/60"
-      )}
+      className="flex items-center justify-between py-3 px-4 hover:bg-accent/50 transition-colors"
     >
       <div className="flex items-center gap-2">
         <div className="bg-primary/10 p-1.5 rounded-full">

@@ -1,18 +1,18 @@
 
 import React from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import SearchBar from "@/components/search/SearchBar";
 import UserMenu from "./UserMenu";
 import { motion } from "framer-motion";
-import { useTheme } from "@/components/theme-provider";
 
 // Define props interface
 interface AppHeaderProps {
+  // Make featuredSymbols optional since SearchBar has a default value
   featuredSymbols?: { symbol: string; name: string }[];
 }
 
 const AppHeader: React.FC<AppHeaderProps> = ({ featuredSymbols }) => {
-  const { theme } = useTheme();
+  const navigate = useNavigate();
   
   return (
     <header className="border-b border-border/40 py-4 px-6 bg-gradient-to-r from-background to-secondary/10 backdrop-blur-sm sticky top-0 z-20 shadow-sm">

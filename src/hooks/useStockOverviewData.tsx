@@ -76,17 +76,10 @@ export const useStockOverviewData = (symbol: string) => {
         })
       ]);
       
-      // Process and sort earnings calls by date (newest first)
       if (earningsData && earningsData.length > 0) {
-        // Sort by date (newest first)
-        const sortedCalls = [...earningsData].sort((a, b) => {
-          return new Date(b.date).getTime() - new Date(a.date).getTime();
-        });
-        
-        // Process transcripts to add highlights if needed
         const processedCalls = await Promise.all(
-          sortedCalls.slice(0, 3).map(async (call) => {
-            if (call.content && !call.highlights?.length) {
+          earningsData.slice(0, 3).map(async (call) => {
+            if (call.content && !call.highlights) {
               try {
                 const highlights = await generateTranscriptHighlights(call.content, {
                   symbol: call.symbol,
@@ -106,19 +99,40 @@ export const useStockOverviewData = (symbol: string) => {
         
         setEarningsCalls(processedCalls);
       } else {
-        // Empty state - we'll handle this in the UI
-        setEarningsCalls([]);
+        // Fallback data if no real data is available
+        setEarningsCalls([
+          {
+            symbol,
+            date: "2023-10-25",
+            quarter: "Q3",
+            year: "2023",
+            content: "",
+            url: `https://financialmodelingprep.com/api/v4/earning_call_transcript/${symbol}`,
+            highlights: [
+              "No transcript data available for this symbol",
+              "Check back later for updated information",
+              "You can also view other sections for available data"
+            ]
+          }
+        ]);
       }
       
       if (filingsData && filingsData.length > 0) {
-        // Sort filings by date (newest first)
-        const sortedFilings = [...filingsData].sort((a, b) => {
-          return new Date(b.filingDate).getTime() - new Date(a.filingDate).getTime();
-        });
-        setSecFilings(sortedFilings);
+        setSecFilings(filingsData);
       } else {
         // Fallback empty state for filings
-        setSecFilings([]);
+        setSecFilings([
+          {
+            symbol,
+            type: "No SEC filings data available",
+            filingDate: new Date().toISOString().split('T')[0],
+            reportDate: new Date().toISOString().split('T')[0],
+            cik: "0000000000",
+            form: "N/A",
+            url: `https://www.sec.gov/edgar/search/#/entityName=${symbol}`,
+            filingNumber: "000-00000"
+          }
+        ]);
       }
     } catch (err) {
       console.error("Error loading document data:", err);

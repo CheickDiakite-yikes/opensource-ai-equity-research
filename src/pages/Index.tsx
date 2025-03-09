@@ -1,13 +1,9 @@
-
 import { useState, useEffect } from "react";
 import Header from "@/components/layout/Header";
 import LandingView from "@/components/home/LandingView";
 import StockView from "@/components/stocks/StockView";
 import { toast } from "sonner";
 import { useSearchParams, useNavigate } from "react-router-dom";
-import { featuredSymbols as defaultFeaturedSymbols } from "@/constants/featuredSymbols";
-import SearchBar from "@/components/search/SearchBar";
-import AppHeader from "@/components/layout/AppHeader";
 
 const Index = () => {
   const [symbol, setSymbol] = useState<string>("");
@@ -17,7 +13,20 @@ const Index = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
   
-  const [featuredSymbols] = useState<{symbol: string, name: string}[]>(defaultFeaturedSymbols);
+  const [featuredSymbols] = useState<{symbol: string, name: string}[]>([
+    { symbol: "AAPL", name: "Apple Inc." },
+    { symbol: "MSFT", name: "Microsoft Corporation" },
+    { symbol: "AMZN", name: "Amazon.com Inc." },
+    { symbol: "GOOG", name: "Alphabet Inc." },
+    { symbol: "META", name: "Meta Platforms Inc." },
+    { symbol: "TSLA", name: "Tesla Inc." },
+    { symbol: "NVDA", name: "NVIDIA Corporation" },
+    { symbol: "JPM", name: "JPMorgan Chase & Co." },
+    { symbol: "V", name: "Visa Inc." },
+    { symbol: "MA", name: "Mastercard Inc." },
+    { symbol: "PYPL", name: "PayPal Holdings, Inc." },
+    { symbol: "NFLX", name: "Netflix, Inc." }
+  ]);
 
   useEffect(() => {
     const savedSearches = localStorage.getItem('recentSearches');
@@ -39,7 +48,6 @@ const Index = () => {
     setIsLoading(true);
     setSearchedSymbol(symbolUpperCase);
     
-    // Update recent searches
     const updatedSearches = [
       symbolUpperCase,
       ...recentSearches.filter(s => s !== symbolUpperCase)
@@ -48,14 +56,8 @@ const Index = () => {
     setRecentSearches(updatedSearches);
     localStorage.setItem('recentSearches', JSON.stringify(updatedSearches));
     
-    // Preserve current tab if it exists, otherwise default to overview
-    const currentTab = searchParams.get('tab') || 'overview';
-    
-    // Use navigate for consistent routing behavior
-    const params = new URLSearchParams();
-    params.set('symbol', symbolUpperCase);
-    params.set('tab', currentTab);
-    navigate(`/?${params.toString()}`);
+    // Default to report tab when searching
+    setSearchParams({ symbol: symbolUpperCase, tab: "report" });
     
     setTimeout(() => {
       setIsLoading(false);
@@ -74,7 +76,6 @@ const Index = () => {
   const clearSearch = () => {
     setSearchedSymbol("");
     setSymbol("");
-    // Clear symbol from URL and navigate to home
     navigate('/');
     toast.info("Returned to home view", {
       duration: 2000,
@@ -82,45 +83,34 @@ const Index = () => {
   };
 
   const searchSymbol = (sym: string) => {
-    if (!sym || sym.trim() === '') return;
+    setSymbol(sym);
+    setSearchedSymbol(sym);
     
-    const upperSym = sym.toUpperCase();
-    setSymbol(upperSym);
-    setSearchedSymbol(upperSym);
-    
-    // Update recent searches
     const updatedSearches = [
-      upperSym,
-      ...recentSearches.filter(s => s !== upperSym)
+      sym,
+      ...recentSearches.filter(s => s !== sym)
     ].slice(0, 5);
     
     setRecentSearches(updatedSearches);
     localStorage.setItem('recentSearches', JSON.stringify(updatedSearches));
     
-    // Navigate to ensure consistent routing
-    const params = new URLSearchParams();
-    params.set('symbol', upperSym);
-    params.set('tab', 'overview');
-    navigate(`/?${params.toString()}`);
+    // Always set tab to "report" when selecting from featured companies
+    setSearchParams({ symbol: sym, tab: "report" });
     
-    toast.success(`Loading research data for ${upperSym}`, {
+    toast.success(`Loading research data for ${sym}`, {
       duration: 3000,
     });
   };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background to-muted/30">
-      {!searchedSymbol ? (
-        <AppHeader featuredSymbols={featuredSymbols} />
-      ) : (
-        <Header 
-          symbol={symbol}
-          setSymbol={setSymbol}
-          handleSearch={handleSearch}
-          isLoading={isLoading}
-          handleKeyDown={handleKeyDown}
-        />
-      )}
+      <Header 
+        symbol={symbol}
+        setSymbol={setSymbol}
+        handleSearch={handleSearch}
+        isLoading={isLoading}
+        handleKeyDown={handleKeyDown}
+      />
 
       <main className="container mx-auto px-4 sm:px-6 md:px-0 max-w-[1400px]">
         {!searchedSymbol ? (

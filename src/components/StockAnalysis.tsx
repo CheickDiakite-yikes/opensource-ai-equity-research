@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useResearchReportData } from "@/components/reports/useResearchReportData";
 import LoadingSkeleton from "@/components/LoadingSkeleton";
 import { prepareFinancialData, prepareRatioData } from "@/utils/financial";
@@ -15,26 +15,13 @@ interface StockAnalysisProps {
 
 const StockAnalysis = ({ symbol }: StockAnalysisProps) => {
   const [isRetrying, setIsRetrying] = useState(false);
-  const [componentMounted, setComponentMounted] = useState(false);
-  
-  // Track component mount for proper initialization
-  useEffect(() => {
-    console.log(`StockAnalysis for ${symbol} - Component mounted`);
-    setComponentMounted(true);
-    
-    return () => {
-      console.log(`StockAnalysis for ${symbol} - Component unmounted`);
-      setComponentMounted(false);
-    };
-  }, [symbol]);
   
   // We'll use the useResearchReportData hook to get all financial data
   const { 
     isLoading, 
     data, 
     error, 
-    dataLoadingStatus,
-    hasStockData
+    dataLoadingStatus
   } = useResearchReportData(symbol);
   
   // Use the direct financial data hook to handle missing data
@@ -43,30 +30,20 @@ const StockAnalysis = ({ symbol }: StockAnalysisProps) => {
     retryFetchingData, 
     isLoading: isDirectFetchLoading 
   } = useDirectFinancialData(symbol, {
-    income: data?.income || [],
-    balance: data?.balance || [],
-    cashflow: data?.cashflow || [],
-    ratios: data?.ratios || []
+    income: data.income,
+    balance: data.balance,
+    cashflow: data.cashflow,
+    ratios: data.ratios
   });
-
-  // Safely access data with fallbacks
-  const safeData = {
-    income: data?.income || [],
-    balance: data?.balance || [],
-    cashflow: data?.cashflow || [],
-    ratios: data?.ratios || [],
-    transcripts: data?.transcripts || [],
-    filings: data?.filings || []
-  };
 
   // Combine data from both sources (useResearchReportData and direct fetch)
   const combinedData = {
-    income: safeData.income.length > 0 ? safeData.income : directFinancials.income,
-    balance: safeData.balance.length > 0 ? safeData.balance : directFinancials.balance,
-    cashflow: safeData.cashflow.length > 0 ? safeData.cashflow : directFinancials.cashflow,
-    ratios: safeData.ratios.length > 0 ? safeData.ratios : directFinancials.ratios,
-    transcripts: safeData.transcripts,
-    filings: safeData.filings
+    income: data.income.length > 0 ? data.income : directFinancials.income,
+    balance: data.balance.length > 0 ? data.balance : directFinancials.balance,
+    cashflow: data.cashflow.length > 0 ? data.cashflow : directFinancials.cashflow,
+    ratios: data.ratios.length > 0 ? data.ratios : directFinancials.ratios,
+    transcripts: data.transcripts,
+    filings: data.filings
   };
   
   // Check if combined data has minimum requirements
@@ -76,59 +53,14 @@ const StockAnalysis = ({ symbol }: StockAnalysisProps) => {
     (combinedData.cashflow.length > 0 ? 1 : 0)
   ) >= 2;
 
-  useEffect(() => {
-    // Add debug logging to track data loading
-    console.log(`StockAnalysis for ${symbol} - Data loading status:`, {
-      income: combinedData.income.length,
-      balance: combinedData.balance.length,
-      cashflow: combinedData.cashflow.length,
-      ratios: combinedData.ratios.length,
-      hasMinimumData: hasCombinedMinimumData,
-      isLoading,
-      isDirectFetchLoading,
-      isRetrying,
-      componentMounted
-    });
-    
-    // Auto-retry if data is missing but not already retrying
-    if (componentMounted && !isLoading && !isDirectFetchLoading && !isRetrying && !hasCombinedMinimumData && hasStockData) {
-      console.log(`StockAnalysis - Automatic retry for ${symbol}`);
-      handleRetry();
-    }
-  }, [
-    combinedData, 
-    symbol, 
-    hasCombinedMinimumData, 
-    isLoading, 
-    isDirectFetchLoading, 
-    isRetrying, 
-    componentMounted, 
-    hasStockData
-  ]);
-
   // Function to handle retry
   const handleRetry = async () => {
-    if (isRetrying) return; // Prevent multiple retries
-    
     setIsRetrying(true);
-    toast.info(`Fetching financial data for ${symbol}...`, {
-      id: `retry-fetch-${symbol}`,
-    });
+    const success = await retryFetchingData();
+    setIsRetrying(false);
     
-    try {
-      const success = await retryFetchingData();
-      
-      if (!success) {
-        toast.error(`Could not retrieve financial data for ${symbol} after multiple attempts.`);
-      } else {
-        toast.success(`Successfully loaded data for ${symbol}`);
-      }
-    } catch (err) {
-      console.error(`Error retrying data fetch for ${symbol}:`, err);
-      const errorMessage = err instanceof Error ? err.message : 'Unknown error';
-      toast.error(`Error loading data: ${errorMessage}`);
-    } finally {
-      setIsRetrying(false);
+    if (!success) {
+      toast.error(`Could not retrieve financial data for ${symbol} after multiple attempts.`);
     }
   };
 
@@ -138,7 +70,6 @@ const StockAnalysis = ({ symbol }: StockAnalysisProps) => {
 
   // If there's still not enough data after both attempts, show error
   if (error || !hasCombinedMinimumData) {
-    console.error(`Insufficient data for analysis of ${symbol}:`, error);
     return <ErrorState symbol={symbol} onRetry={handleRetry} isRetrying={isRetrying} />;
   }
 
@@ -148,7 +79,6 @@ const StockAnalysis = ({ symbol }: StockAnalysisProps) => {
     combinedData.balance, 
     combinedData.cashflow
   );
-  
   // Cast to KeyRatio[] to ensure type compatibility
   const ratioData: RatioData[] = prepareRatioData(combinedData.ratios as KeyRatio[]);
 

@@ -26,26 +26,6 @@ const StockOverviewContent = ({
   documentsLoading,
   symbol
 }: StockOverviewContentProps) => {
-  // Process earnings calls to identify if they're recent
-  const currentDate = new Date();
-  const currentYear = currentDate.getFullYear();
-  const currentQuarter = Math.ceil((currentDate.getMonth() + 1) / 3);
-  
-  // Consider a transcript recent if it's from the current or previous two quarters
-  const isRecentTranscript = (call: EarningsCall) => {
-    const callYear = parseInt(call.year);
-    const callQuarter = parseInt(call.quarter.replace('Q', ''));
-    
-    if (callYear > currentYear) return true;
-    if (callYear === currentYear && callQuarter >= currentQuarter - 2) return true;
-    if (callYear === currentYear - 1 && callQuarter >= 4 - (2 - currentQuarter)) return true;
-    
-    return false;
-  };
-  
-  // Filter to recent transcripts only
-  const recentTranscripts = earningsCalls.filter(isRecentTranscript);
-  
   return (
     <div className="space-y-6">
       <CompanyHeader profile={profile} quote={quote} />
@@ -55,10 +35,8 @@ const StockOverviewContent = ({
       <CompanyDescription description={profile.description} />
       
       <EarningsCallSection 
-        earningsCalls={recentTranscripts} 
-        allTranscripts={earningsCalls}
+        earningsCalls={earningsCalls} 
         isLoading={documentsLoading} 
-        symbol={symbol}
       />
       
       <SECFilingsSection 

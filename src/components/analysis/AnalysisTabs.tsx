@@ -1,16 +1,16 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import FinancialsTabContent from '../sections/FinancialsTabContent';
 import BalanceSheetTabContent from '../sections/BalanceSheetTabContent';
 import CashFlowTabContent from '../sections/CashFlowTabContent';
 import RatiosTabContent from '../sections/RatiosTabContent';
 import GrowthTabContent from '../sections/GrowthTabContent';
+import { useDirectFinancialData } from '@/hooks/useDirectFinancialData';
 import LoadingSkeleton from '../LoadingSkeleton';
 import ErrorState from './ErrorState';
 import { FinancialData, RatioData } from '@/types';
 import { EarningsCall, SECFiling } from '@/types/documentTypes';
-import { toast } from 'sonner';
 
 interface AnalysisTabsProps {
   symbol: string;
@@ -28,33 +28,9 @@ const AnalysisTabs: React.FC<AnalysisTabsProps> = ({
   filings = [] 
 }) => {
   const [activeTab, setActiveTab] = useState("financials");
-  const [isLoaded, setIsLoaded] = useState(false);
-  
-  useEffect(() => {
-    // Mark component as loaded after a short delay to prevent flickering
-    const timer = setTimeout(() => {
-      setIsLoaded(true);
-    }, 100);
-    
-    // Log data availability for debugging
-    console.log(`AnalysisTabs for ${symbol} - Data status:`, {
-      financialsLength: financials?.length || 0,
-      ratioDataLength: ratioData?.length || 0,
-      hasFinancials: Boolean(financials && financials.length > 0),
-      hasRatios: Boolean(ratioData && ratioData.length > 0),
-      transcriptsLength: transcripts?.length || 0,
-      filingsLength: filings?.length || 0,
-    });
-    
-    return () => clearTimeout(timer);
-  }, [financials, ratioData, symbol, transcripts, filings]);
   
   // Error handling if financials data is missing
   if (!financials || financials.length === 0) {
-    console.error(`No financial data available for ${symbol} in AnalysisTabs`);
-    toast.error(`Could not load financial data for ${symbol}`, {
-      id: 'missing-financial-data',
-    });
     return (
       <ErrorState 
         symbol={symbol} 
@@ -62,10 +38,6 @@ const AnalysisTabs: React.FC<AnalysisTabsProps> = ({
         isRetrying={false} 
       />
     );
-  }
-
-  if (!isLoaded) {
-    return <LoadingSkeleton />;
   }
 
   return (
@@ -78,24 +50,24 @@ const AnalysisTabs: React.FC<AnalysisTabsProps> = ({
         <TabsTrigger value="growth">Growth</TabsTrigger>
       </TabsList>
       
-      <TabsContent value="financials" className="mt-4">
-        {activeTab === "financials" && <FinancialsTabContent financials={financials} />}
+      <TabsContent value="financials">
+        <FinancialsTabContent financials={financials} />
       </TabsContent>
       
-      <TabsContent value="balance-sheet" className="mt-4">
-        {activeTab === "balance-sheet" && <BalanceSheetTabContent financials={financials} />}
+      <TabsContent value="balance-sheet">
+        <BalanceSheetTabContent financials={financials} />
       </TabsContent>
       
-      <TabsContent value="cash-flow" className="mt-4">
-        {activeTab === "cash-flow" && <CashFlowTabContent financials={financials} />}
+      <TabsContent value="cash-flow">
+        <CashFlowTabContent financials={financials} />
       </TabsContent>
       
-      <TabsContent value="ratios" className="mt-4">
-        {activeTab === "ratios" && <RatiosTabContent ratioData={ratioData} symbol={symbol} />}
+      <TabsContent value="ratios">
+        <RatiosTabContent ratioData={ratioData} symbol={symbol} />
       </TabsContent>
       
-      <TabsContent value="growth" className="mt-4">
-        {activeTab === "growth" && <GrowthTabContent financials={financials} symbol={symbol} />}
+      <TabsContent value="growth">
+        <GrowthTabContent financials={financials} symbol={symbol} />
       </TabsContent>
     </Tabs>
   );
