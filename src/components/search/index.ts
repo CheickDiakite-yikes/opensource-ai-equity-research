@@ -1,7 +1,7 @@
 
 // Export individual components and utilities
 export { default as SearchBar } from "./SearchBar";
-// Export types directly instead of default exports that don't exist
+// Export named exports
 export { SearchResults } from "./SearchResults";
 export { SearchResultItem } from "./SearchResultItem";
 export { FeaturedSymbolItem } from "./FeaturedSymbolItem";

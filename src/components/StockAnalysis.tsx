@@ -1,5 +1,5 @@
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useResearchReportData } from "@/components/reports/useResearchReportData";
 import LoadingSkeleton from "@/components/LoadingSkeleton";
 import { prepareFinancialData, prepareRatioData } from "@/utils/financial";
@@ -8,6 +8,7 @@ import { useDirectFinancialData } from "@/hooks/useDirectFinancialData";
 import ErrorState from "@/components/analysis/ErrorState";
 import AnalysisTabs from "@/components/analysis/AnalysisTabs";
 import { FinancialData, RatioData, KeyRatio } from "@/types";
+import { fetchAllFinnhubFinancials } from "@/services/api/finnhubService";
 
 interface StockAnalysisProps {
   symbol: string;
@@ -17,6 +18,13 @@ const StockAnalysis = ({ symbol }: StockAnalysisProps) => {
   const [isRetrying, setIsRetrying] = useState(false);
   const [componentMounted, setComponentMounted] = useState(false);
   const [dataReady, setDataReady] = useState(false);
+  const [usedDataSource, setUsedDataSource] = useState<'fmp' | 'finnhub' | 'combined'>('fmp');
+  const [finnhubData, setFinnhubData] = useState<{
+    income: any[];
+    balance: any[];
+    cashflow: any[];
+  }>({ income: [], balance: [], cashflow: [] });
+  const [loadingFinnhub, setLoadingFinnhub] = useState(false);
   const mountedRef = useRef(false);
   
   // We'll use the useResearchReportData hook to get all financial data
@@ -52,9 +60,58 @@ const StockAnalysis = ({ symbol }: StockAnalysisProps) => {
     };
   }, [symbol]);
 
+  // Fetch Finnhub financial data as an alternative source
+  const fetchFinnhubData = useCallback(async () => {
+    if (!symbol) return;
+    
+    try {
+      setLoadingFinnhub(true);
+      console.log(`Fetching Finnhub data for ${symbol}`);
+      
+      const finnhubFinancials = await fetchAllFinnhubFinancials(symbol);
+      
+      if (mountedRef.current) {
+        setFinnhubData(finnhubFinancials);
+        console.log(`Finnhub data loaded for ${symbol}:`, {
+          income: finnhubFinancials.income.length,
+          balance: finnhubFinancials.balance.length,
+          cashflow: finnhubFinancials.cashflow.length
+        });
+        
+        // If Finnhub data is available but FMP data is not, use Finnhub
+        const hasFinnhubData = 
+          finnhubFinancials.income.length > 0 || 
+          finnhubFinancials.balance.length > 0 || 
+          finnhubFinancials.cashflow.length > 0;
+          
+        if (hasFinnhubData) {
+          const hasFMPData = (data?.income?.length || 0) + (directFinancials?.income?.length || 0) > 0;
+          
+          if (!hasFMPData) {
+            setUsedDataSource('finnhub');
+            toast.info(`Using Finnhub as alternative data source for ${symbol}`);
+          } else {
+            setUsedDataSource('combined');
+          }
+        }
+      }
+    } catch (error) {
+      console.error(`Error fetching Finnhub data for ${symbol}:`, error);
+    } finally {
+      setLoadingFinnhub(false);
+    }
+  }, [symbol, data]);
+
+  // Fetch Finnhub data when component mounts
+  useEffect(() => {
+    if (componentMounted && !loadingFinnhub) {
+      fetchFinnhubData();
+    }
+  }, [componentMounted, fetchFinnhubData, loadingFinnhub]);
+
   // Prepare data after loading is complete
   useEffect(() => {
-    if (!isLoading && !isDirectFetchLoading && !isRetrying && mountedRef.current) {
+    if (!isLoading && !isDirectFetchLoading && !loadingFinnhub && !isRetrying && mountedRef.current) {
       // Small timeout to ensure state updates have propagated
       const timer = setTimeout(() => {
         if (mountedRef.current) {
@@ -64,14 +121,28 @@ const StockAnalysis = ({ symbol }: StockAnalysisProps) => {
       
       return () => clearTimeout(timer);
     }
-  }, [isLoading, isDirectFetchLoading, isRetrying]);
+  }, [isLoading, isDirectFetchLoading, loadingFinnhub, isRetrying]);
 
-  // Combine data from both sources (useResearchReportData and direct fetch)
+  // Combine data from both sources (useResearchReportData, direct fetch, and Finnhub)
   const combinedData = {
-    income: data?.income?.length > 0 ? data.income : directFinancials.income,
-    balance: data?.balance?.length > 0 ? data.balance : directFinancials.balance,
-    cashflow: data?.cashflow?.length > 0 ? data.cashflow : directFinancials.cashflow,
-    ratios: data?.ratios?.length > 0 ? data.ratios : directFinancials.ratios,
+    income: data?.income?.length > 0 
+      ? data.income 
+      : directFinancials.income.length > 0 
+        ? directFinancials.income 
+        : finnhubData.income,
+    balance: data?.balance?.length > 0 
+      ? data.balance 
+      : directFinancials.balance.length > 0 
+        ? directFinancials.balance 
+        : finnhubData.balance,
+    cashflow: data?.cashflow?.length > 0 
+      ? data.cashflow 
+      : directFinancials.cashflow.length > 0 
+        ? directFinancials.cashflow 
+        : finnhubData.cashflow,
+    ratios: data?.ratios?.length > 0 
+      ? data.ratios 
+      : directFinancials.ratios,
     transcripts: data?.transcripts || [],
     filings: data?.filings || []
   };
@@ -87,16 +158,22 @@ const StockAnalysis = ({ symbol }: StockAnalysisProps) => {
   const handleRetry = async () => {
     setIsRetrying(true);
     setDataReady(false);
-    const success = await retryFetchingData();
+    
+    // Try all data sources again
+    const [fmpSuccess, finnhubSuccess] = await Promise.all([
+      retryFetchingData(),
+      fetchFinnhubData().then(() => true).catch(() => false)
+    ]);
+    
     setIsRetrying(false);
     
-    if (!success && mountedRef.current) {
+    if (!fmpSuccess && !finnhubSuccess && mountedRef.current) {
       toast.error(`Could not retrieve financial data for ${symbol} after multiple attempts.`);
     }
   };
 
   // Show loading state
-  if (isLoading || isRetrying || isDirectFetchLoading || !dataReady) {
+  if (isLoading || isRetrying || isDirectFetchLoading || loadingFinnhub || !dataReady) {
     return (
       <div>
         <LoadingSkeleton />
@@ -114,6 +191,7 @@ const StockAnalysis = ({ symbol }: StockAnalysisProps) => {
       onRetry={handleRetry} 
       isRetrying={isRetrying}
       message={error || `Insufficient financial data available for ${symbol}`}
+      dataSource="all"
     />;
   }
 
@@ -145,6 +223,9 @@ const StockAnalysis = ({ symbol }: StockAnalysisProps) => {
         symbol={symbol} 
         transcripts={combinedData.transcripts || []}
         filings={combinedData.filings || []}
+        dataSource={usedDataSource}
+        onRetry={handleRetry}
+        isRetrying={isRetrying}
       />
     </div>
   );

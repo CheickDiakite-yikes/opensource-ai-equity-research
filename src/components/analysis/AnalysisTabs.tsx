@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import FinancialsTabContent from '../sections/FinancialsTabContent';
 import BalanceSheetTabContent from '../sections/BalanceSheetTabContent';
@@ -10,6 +10,7 @@ import LoadingSkeleton from '../LoadingSkeleton';
 import ErrorState from './ErrorState';
 import { FinancialData, RatioData } from '@/types';
 import { EarningsCall, SECFiling } from '@/types/documentTypes';
+import { toast } from "sonner";
 
 interface AnalysisTabsProps {
   symbol: string;
@@ -17,6 +18,9 @@ interface AnalysisTabsProps {
   ratioData: RatioData[];
   transcripts?: EarningsCall[];
   filings?: SECFiling[];
+  dataSource?: 'fmp' | 'finnhub' | 'combined';
+  onRetry?: () => void;
+  isRetrying?: boolean;
 }
 
 const AnalysisTabs: React.FC<AnalysisTabsProps> = ({ 
@@ -24,7 +28,10 @@ const AnalysisTabs: React.FC<AnalysisTabsProps> = ({
   financials, 
   ratioData, 
   transcripts = [], 
-  filings = [] 
+  filings = [],
+  dataSource = 'combined',
+  onRetry = () => {},
+  isRetrying = false
 }) => {
   const [activeTab, setActiveTab] = useState("financials");
   const [isInitialized, setIsInitialized] = useState(false);
@@ -33,8 +40,20 @@ const AnalysisTabs: React.FC<AnalysisTabsProps> = ({
   // Set component as initialized after first render
   useEffect(() => {
     if (!isInitialized) {
-      console.log(`AnalysisTabs initialized for ${symbol} with ${financials.length} financial records`);
+      console.log(`AnalysisTabs initialized for ${symbol} with ${financials.length} financial records from ${dataSource}`);
       setIsInitialized(true);
+      
+      if (dataSource === 'finnhub') {
+        toast.info("Using Finnhub as alternative data source", { 
+          id: `finnhub-source-${symbol}`,
+          duration: 3000
+        });
+      } else if (dataSource === 'combined') {
+        toast.success("Using combined financial data sources", {
+          id: `combined-sources-${symbol}`,
+          duration: 3000
+        });
+      }
     }
     
     // Mark tab as mounted with a small delay to ensure state is updated
@@ -46,7 +65,7 @@ const AnalysisTabs: React.FC<AnalysisTabsProps> = ({
       clearTimeout(timer);
       setIsTabMounted(false);
     };
-  }, [isInitialized, symbol, financials.length]);
+  }, [isInitialized, symbol, financials.length, dataSource]);
   
   // Error handling if financials data is missing
   if (!isInitialized) {
@@ -57,9 +76,10 @@ const AnalysisTabs: React.FC<AnalysisTabsProps> = ({
     return (
       <ErrorState 
         symbol={symbol} 
-        onRetry={() => {}} 
-        isRetrying={false} 
+        onRetry={onRetry} 
+        isRetrying={isRetrying} 
         message="No financial data available for this company"
+        dataSource="all"
       />
     );
   }
@@ -95,7 +115,12 @@ const AnalysisTabs: React.FC<AnalysisTabsProps> = ({
             {hasFinancialsData ? (
               <FinancialsTabContent financials={financials} />
             ) : (
-              <ErrorState symbol={symbol} onRetry={() => {}} isRetrying={false} />
+              <ErrorState 
+                symbol={symbol} 
+                onRetry={onRetry} 
+                isRetrying={isRetrying} 
+                dataSource="primary"
+              />
             )}
           </TabsContent>
           
@@ -103,7 +128,12 @@ const AnalysisTabs: React.FC<AnalysisTabsProps> = ({
             {hasFinancialsData ? (
               <BalanceSheetTabContent financials={financials} />
             ) : (
-              <ErrorState symbol={symbol} onRetry={() => {}} isRetrying={false} />
+              <ErrorState 
+                symbol={symbol} 
+                onRetry={onRetry} 
+                isRetrying={isRetrying} 
+                dataSource="primary"
+              />
             )}
           </TabsContent>
           
@@ -111,7 +141,12 @@ const AnalysisTabs: React.FC<AnalysisTabsProps> = ({
             {hasFinancialsData ? (
               <CashFlowTabContent financials={financials} />
             ) : (
-              <ErrorState symbol={symbol} onRetry={() => {}} isRetrying={false} />
+              <ErrorState 
+                symbol={symbol} 
+                onRetry={onRetry} 
+                isRetrying={isRetrying} 
+                dataSource="primary"
+              />
             )}
           </TabsContent>
           
@@ -119,7 +154,12 @@ const AnalysisTabs: React.FC<AnalysisTabsProps> = ({
             {hasRatiosData ? (
               <RatiosTabContent ratioData={ratioData} symbol={symbol} />
             ) : (
-              <ErrorState symbol={symbol} onRetry={() => {}} isRetrying={false} />
+              <ErrorState 
+                symbol={symbol} 
+                onRetry={onRetry} 
+                isRetrying={isRetrying} 
+                dataSource="primary"
+              />
             )}
           </TabsContent>
           
@@ -127,7 +167,12 @@ const AnalysisTabs: React.FC<AnalysisTabsProps> = ({
             {hasFinancialsData ? (
               <GrowthTabContent financials={financials} symbol={symbol} />
             ) : (
-              <ErrorState symbol={symbol} onRetry={() => {}} isRetrying={false} />
+              <ErrorState 
+                symbol={symbol} 
+                onRetry={onRetry} 
+                isRetrying={isRetrying} 
+                dataSource="primary"
+              />
             )}
           </TabsContent>
         </>
