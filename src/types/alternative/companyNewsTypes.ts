@@ -1,4 +1,5 @@
 
+// If the file doesn't exist, create it with the updated type definition
 export interface CompanyNews {
   category: string;
   datetime: number;
@@ -11,7 +12,7 @@ export interface CompanyNews {
   url: string;
 }
 
-export interface SocialSentimentData {
+export interface SocialSentiment {
   atTime: string;
   mention: number;
   positiveScore: number;
@@ -22,28 +23,22 @@ export interface SocialSentimentData {
 }
 
 export interface SocialSentimentResponse {
-  data: SocialSentimentData[];
   symbol: string;
+  data: {
+    reddit: SocialSentiment[];
+    twitter: SocialSentiment[];
+  }
 }
-
-// Import the new types
-import { AcquisitionOwnershipResponse, InsiderTradingStatsResponse } from "./ownershipTypes";
 
 export interface AlternativeDataState {
   companyNews: CompanyNews[];
   socialSentiment: SocialSentimentResponse | null;
-  acquisitionOwnership: AcquisitionOwnershipResponse | null;
-  insiderTradingStats: InsiderTradingStatsResponse | null;
   loading: {
     news: boolean;
     sentiment: boolean;
-    ownership: boolean;
-    insiderTrading: boolean;
   };
   error: {
     news: string | null;
     sentiment: string | null;
-    ownership: string | null;
-    insiderTrading: string | null;
   };
 }
