@@ -4,7 +4,6 @@ import { useSearchParams } from "react-router-dom";
 import StockHeader from "./StockHeader";
 import StockOverview from "@/components/StockOverview";
 import StockAnalysis from "@/components/StockAnalysis";
-import StockAlternativeData from "@/components/StockAlternativeData";
 import ResearchReportGenerator from "@/components/ResearchReportGenerator";
 import StockTabsNavigation from "./StockTabsNavigation";
 import { toast } from "sonner";
@@ -25,7 +24,7 @@ const StockView: React.FC<StockViewProps> = ({ symbol, onClear }) => {
   // Initialize the active tab from URL or default to overview
   useEffect(() => {
     const tabParam = searchParams.get("tab");
-    if (tabParam && ["overview", "analysis", "alternative", "report"].includes(tabParam)) {
+    if (tabParam && ["overview", "analysis", "report"].includes(tabParam)) {
       setActiveTab(tabParam);
       console.log("Setting active tab from URL to:", tabParam);
     } else if (!tabParam) {
@@ -101,12 +100,6 @@ const StockView: React.FC<StockViewProps> = ({ symbol, onClear }) => {
         return (
           <ErrorBoundary>
             <StockAnalysis key={`analysis-${key}-${symbol}`} symbol={symbol} />
-          </ErrorBoundary>
-        );
-      case "alternative":
-        return (
-          <ErrorBoundary>
-            <StockAlternativeData key={`alternative-${key}-${symbol}`} symbol={symbol} />
           </ErrorBoundary>
         );
       case "report":
