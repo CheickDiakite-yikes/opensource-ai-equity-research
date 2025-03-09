@@ -2,7 +2,7 @@
 import React from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { RefreshCw, AlertCircle } from "lucide-react";
+import { RefreshCw } from "lucide-react";
 
 interface ErrorStateProps {
   symbol: string;
@@ -14,7 +14,6 @@ const ErrorState: React.FC<ErrorStateProps> = ({ symbol, onRetry, isRetrying }) 
   return (
     <Card className="p-6">
       <div className="text-center py-8">
-        <AlertCircle className="mx-auto h-12 w-12 text-red-600 mb-4" />
         <h3 className="text-xl font-medium text-red-600 mb-4">No Financial Data Available</h3>
         <p className="text-muted-foreground mb-6">
           We couldn't load the financial data required for analysis. This may be due to:

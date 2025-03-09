@@ -1,6 +1,6 @@
 
-import { useState, useEffect, useRef } from "react";
-import { useResearchReportData } from "@/hooks/research-report";
+import { useState, useEffect } from "react";
+import { useResearchReportData } from "@/components/reports/useResearchReportData";
 import LoadingSkeleton from "@/components/LoadingSkeleton";
 import { prepareFinancialData, prepareRatioData } from "@/utils/financial";
 import { toast } from "sonner";
@@ -16,17 +16,14 @@ interface StockAnalysisProps {
 const StockAnalysis = ({ symbol }: StockAnalysisProps) => {
   const [isRetrying, setIsRetrying] = useState(false);
   const [componentMounted, setComponentMounted] = useState(false);
-  const [initialLoadComplete, setInitialLoadComplete] = useState(false);
-  const mountTimeRef = useRef(Date.now());
   
   // Track component mount for proper initialization
   useEffect(() => {
-    console.log(`StockAnalysis for ${symbol} - Component mounted (${new Date().toISOString()})`);
+    console.log(`StockAnalysis for ${symbol} - Component mounted`);
     setComponentMounted(true);
-    mountTimeRef.current = Date.now();
     
     return () => {
-      console.log(`StockAnalysis for ${symbol} - Component unmounted after ${(Date.now() - mountTimeRef.current)/1000}s`);
+      console.log(`StockAnalysis for ${symbol} - Component unmounted`);
       setComponentMounted(false);
     };
   }, [symbol]);
@@ -79,14 +76,6 @@ const StockAnalysis = ({ symbol }: StockAnalysisProps) => {
     (combinedData.cashflow.length > 0 ? 1 : 0)
   ) >= 2;
 
-  // Mark initial load complete after data is fetched
-  useEffect(() => {
-    if (!isLoading && !isDirectFetchLoading) {
-      console.log(`StockAnalysis for ${symbol} - Initial load complete after ${(Date.now() - mountTimeRef.current)/1000}s`);
-      setInitialLoadComplete(true);
-    }
-  }, [isLoading, isDirectFetchLoading, symbol]);
-
   useEffect(() => {
     // Add debug logging to track data loading
     console.log(`StockAnalysis for ${symbol} - Data loading status:`, {
@@ -98,19 +87,11 @@ const StockAnalysis = ({ symbol }: StockAnalysisProps) => {
       isLoading,
       isDirectFetchLoading,
       isRetrying,
-      componentMounted,
-      initialLoadComplete,
-      timeElapsed: (Date.now() - mountTimeRef.current)/1000
+      componentMounted
     });
     
     // Auto-retry if data is missing but not already retrying
-    if (componentMounted && 
-        initialLoadComplete && 
-        !isLoading && 
-        !isDirectFetchLoading && 
-        !isRetrying && 
-        !hasCombinedMinimumData && 
-        hasStockData) {
+    if (componentMounted && !isLoading && !isDirectFetchLoading && !isRetrying && !hasCombinedMinimumData && hasStockData) {
       console.log(`StockAnalysis - Automatic retry for ${symbol}`);
       handleRetry();
     }
@@ -122,8 +103,7 @@ const StockAnalysis = ({ symbol }: StockAnalysisProps) => {
     isDirectFetchLoading, 
     isRetrying, 
     componentMounted, 
-    hasStockData,
-    initialLoadComplete
+    hasStockData
   ]);
 
   // Function to handle retry
@@ -152,7 +132,6 @@ const StockAnalysis = ({ symbol }: StockAnalysisProps) => {
     }
   };
 
-  // Show a clean loading state
   if (isLoading || isRetrying || isDirectFetchLoading) {
     return <LoadingSkeleton />;
   }

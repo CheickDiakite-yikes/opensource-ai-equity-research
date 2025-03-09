@@ -19,7 +19,6 @@ const StockView: React.FC<StockViewProps> = ({ symbol, onClear }) => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<string>("overview");
   const [isTabLoading, setIsTabLoading] = useState<boolean>(false);
-  const [forceRefresh, setForceRefresh] = useState<number>(0);
   
   // Clean up any stale data when the component unmounts or symbol changes
   useEffect(() => {
@@ -34,11 +33,6 @@ const StockView: React.FC<StockViewProps> = ({ symbol, onClear }) => {
     if (tabParam && ["overview", "analysis", "report"].includes(tabParam)) {
       setActiveTab(tabParam);
       console.log("Setting active tab to:", tabParam);
-      
-      // Force refresh when switching to analysis tab
-      if (tabParam === "analysis") {
-        setForceRefresh(prev => prev + 1);
-      }
     } else {
       // If no valid tab parameter, default to overview and update URL
       setActiveTab("overview");
@@ -50,36 +44,50 @@ const StockView: React.FC<StockViewProps> = ({ symbol, onClear }) => {
 
   // Handle tab change to update URL
   const handleTabChange = useCallback((tab: string) => {
-    // Skip if already on this tab (except for analysis which we always force refresh)
-    if (tab === activeTab && tab !== "analysis") return;
-    
+    // Reset any previous errors that might be lingering
     console.log(`Switching to tab: ${tab} from ${activeTab}`);
     
     // Brief loading state to ensure components reinitialize properly
     setIsTabLoading(true);
     
-    // Update active tab immediately to show loading state
-    setActiveTab(tab);
-    
-    // Update URL with new tab parameter while preserving the symbol
-    const newParams = new URLSearchParams(searchParams);
-    newParams.set("tab", tab);
-    setSearchParams(newParams);
-    
-    // Force refresh for analysis tab
-    if (tab === "analysis") {
-      setForceRefresh(prev => prev + 1);
-      toast.info(`Loading financial analysis for ${symbol}...`, {
-        duration: 3000,
-        id: "loading-analysis",
-      });
-    }
-    
-    // Small delay to ensure proper state updates
+    // Use setTimeout to ensure components fully unmount before changing tab
     setTimeout(() => {
+      setActiveTab(tab);
+      
+      // Update URL with new tab parameter while preserving the symbol
+      const newParams = new URLSearchParams(searchParams);
+      newParams.set("tab", tab);
+      setSearchParams(newParams);
+      
       setIsTabLoading(false);
-    }, 100);
+      
+      // Show toast when switching to Analysis tab for better UX
+      if (tab === "analysis") {
+        toast.info(`Loading financial analysis for ${symbol}...`, {
+          duration: 3000,
+          id: "loading-analysis",
+        });
+      }
+    }, 50); // Small delay to ensure proper state updates
   }, [activeTab, searchParams, setSearchParams, symbol]);
+
+  // Force refresh for analysis tab
+  const handleAnalysisTabClick = () => {
+    if (activeTab === "analysis") {
+      // If already on analysis tab, force a refresh
+      const newParams = new URLSearchParams(searchParams);
+      newParams.set("tab", "overview");
+      setSearchParams(newParams);
+      
+      setTimeout(() => {
+        const analysisParams = new URLSearchParams(searchParams);
+        analysisParams.set("tab", "analysis");
+        setSearchParams(analysisParams);
+      }, 50);
+    } else {
+      handleTabChange("analysis");
+    }
+  };
 
   return (
     <div className="mt-6">
@@ -94,6 +102,7 @@ const StockView: React.FC<StockViewProps> = ({ symbol, onClear }) => {
           <TabsTrigger 
             value="analysis" 
             className="flex items-center gap-2 py-3"
+            onClick={handleAnalysisTabClick}
           >
             <BarChart4 className="h-4 w-4" />
             <span>Analysis</span>
@@ -108,20 +117,10 @@ const StockView: React.FC<StockViewProps> = ({ symbol, onClear }) => {
           {!isTabLoading && activeTab === "overview" && <StockOverview symbol={symbol} />}
         </TabsContent>
         <TabsContent value="analysis" className="mt-4 animate-fade-in">
-          {!isTabLoading && activeTab === "analysis" && (
-            <StockAnalysis 
-              symbol={symbol} 
-              key={`analysis-${symbol}-${forceRefresh}`} 
-            />
-          )}
+          {!isTabLoading && activeTab === "analysis" && <StockAnalysis symbol={symbol} key={`analysis-${symbol}-${Date.now()}`} />}
         </TabsContent>
         <TabsContent value="report" className="mt-4 animate-fade-in">
-          {!isTabLoading && activeTab === "report" && (
-            <ResearchReportGenerator 
-              symbol={symbol}
-              key={`report-${symbol}-${forceRefresh}`}
-            />
-          )}
+          {!isTabLoading && activeTab === "report" && <ResearchReportGenerator symbol={symbol} />}
         </TabsContent>
       </Tabs>
     </div>
