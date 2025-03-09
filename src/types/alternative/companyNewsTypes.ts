@@ -37,25 +37,33 @@ export interface CongressionalTrade {
   symbol: string;
   transactionDate: string;
   transactionType: 'Sale' | 'Purchase';
+  // Additional fields for FMP data
+  link?: string;
+  comment?: string;
+  source?: 'finnhub' | 'fmp';
 }
 
 export interface CongressionalTradesResponse {
   data: CongressionalTrade[];
   symbol: string;
+  source?: 'finnhub' | 'fmp';
 }
 
 export interface AlternativeDataState {
   companyNews: CompanyNews[];
   socialSentiment: SocialSentimentResponse | null;
   congressionalTrading: CongressionalTradesResponse | null;
+  fmpHouseTrades: CongressionalTradesResponse | null;
   loading: {
     news: boolean;
     sentiment: boolean;
     congressional: boolean;
+    fmpHouseTrades: boolean;
   };
   error: {
     news: string | null;
     sentiment: string | null;
     congressional: string | null;
+    fmpHouseTrades: string | null;
   };
 }

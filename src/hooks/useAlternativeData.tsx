@@ -4,22 +4,25 @@ import { invokeSupabaseFunction } from '@/services/api/base';
 import { AlternativeDataState, CompanyNews, SocialSentimentResponse, CongressionalTradesResponse } from '@/types/alternative/companyNewsTypes';
 import { toast } from 'sonner';
 
-type DataType = 'news' | 'sentiment' | 'congressional' | 'all';
+type DataType = 'news' | 'sentiment' | 'congressional' | 'fmpHouseTrades' | 'all';
 
 export const useAlternativeData = (symbol: string) => {
   const [state, setState] = useState<AlternativeDataState>({
     companyNews: [],
     socialSentiment: null,
     congressionalTrading: null,
+    fmpHouseTrades: null,
     loading: {
       news: true,
       sentiment: true,
-      congressional: true
+      congressional: true,
+      fmpHouseTrades: true
     },
     error: {
       news: null,
       sentiment: null,
-      congressional: null
+      congressional: null,
+      fmpHouseTrades: null
     }
   });
 
@@ -115,13 +118,43 @@ export const useAlternativeData = (symbol: string) => {
     }
   }, [symbol]);
 
+  const fetchFmpHouseTrades = useCallback(async () => {
+    try {
+      setState(prev => ({
+        ...prev,
+        loading: { ...prev.loading, fmpHouseTrades: true },
+        error: { ...prev.error, fmpHouseTrades: null }
+      }));
+      
+      const houseTradesData = await invokeSupabaseFunction<CongressionalTradesResponse>(
+        'get-fmp-house-trades', 
+        { symbol }
+      );
+      
+      setState(prev => ({
+        ...prev,
+        fmpHouseTrades: houseTradesData,
+        loading: { ...prev.loading, fmpHouseTrades: false }
+      }));
+    } catch (error) {
+      console.error('Error fetching FMP house trades data:', error);
+      setState(prev => ({
+        ...prev,
+        error: { ...prev.error, fmpHouseTrades: error.message },
+        loading: { ...prev.loading, fmpHouseTrades: false }
+      }));
+      toast.error('Failed to load FMP house trades data');
+    }
+  }, [symbol]);
+
   const fetchAllData = useCallback(async () => {
     await Promise.all([
       fetchCompanyNews(),
       fetchSocialSentiment(),
-      fetchCongressionalTrading()
+      fetchCongressionalTrading(),
+      fetchFmpHouseTrades()
     ]);
-  }, [fetchCompanyNews, fetchSocialSentiment, fetchCongressionalTrading]);
+  }, [fetchCompanyNews, fetchSocialSentiment, fetchCongressionalTrading, fetchFmpHouseTrades]);
 
   const refreshData = useCallback((dataType: DataType = 'all') => {
     if (dataType === 'all') {
@@ -135,16 +168,58 @@ export const useAlternativeData = (symbol: string) => {
       fetchSocialSentiment();
     } else if (dataType === 'congressional') {
       fetchCongressionalTrading();
+    } else if (dataType === 'fmpHouseTrades') {
+      fetchFmpHouseTrades();
     }
-  }, [fetchAllData, fetchCompanyNews, fetchSocialSentiment, fetchCongressionalTrading]);
+  }, [fetchAllData, fetchCompanyNews, fetchSocialSentiment, fetchCongressionalTrading, fetchFmpHouseTrades]);
 
   useEffect(() => {
     if (!symbol) return;
     fetchAllData();
   }, [symbol, fetchAllData]);
 
+  // Combine congressional trading data from both sources
+  const combinedCongressionalTrading = useCallback(() => {
+    if (!state.congressionalTrading && !state.fmpHouseTrades) {
+      return null;
+    }
+
+    const finnhubData = state.congressionalTrading?.data || [];
+    const fmpData = state.fmpHouseTrades?.data || [];
+    
+    // Mark the source of each trade
+    const markedFinnhubData = finnhubData.map(trade => ({
+      ...trade,
+      source: 'finnhub' as const
+    }));
+    
+    const markedFmpData = fmpData.map(trade => ({
+      ...trade,
+      source: 'fmp' as const
+    }));
+    
+    // Combine both datasets
+    return {
+      symbol: symbol,
+      data: [...markedFinnhubData, ...markedFmpData],
+      sources: ['finnhub', 'fmp']
+    };
+  }, [state.congressionalTrading, state.fmpHouseTrades, symbol]);
+
+  // Loading state for congressional trades (both sources)
+  const isCongressionalLoading = state.loading.congressional || state.loading.fmpHouseTrades;
+  
+  // Error state for congressional trades (if both sources fail)
+  const congressionalError = 
+    state.error.congressional && state.error.fmpHouseTrades
+      ? "Failed to load congressional trading data from all sources"
+      : null;
+
   return {
     ...state,
+    combinedCongressionalTrading: combinedCongressionalTrading(),
+    isCongressionalLoading,
+    congressionalError,
     refreshData
   };
 };

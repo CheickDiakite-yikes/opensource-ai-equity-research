@@ -15,7 +15,16 @@ interface AlternativeDataViewProps {
 }
 
 const AlternativeDataView: React.FC<AlternativeDataViewProps> = ({ symbol }) => {
-  const { companyNews, socialSentiment, congressionalTrading, loading, error, refreshData } = useAlternativeData(symbol);
+  const { 
+    companyNews, 
+    socialSentiment, 
+    combinedCongressionalTrading,
+    loading, 
+    error, 
+    isCongressionalLoading,
+    congressionalError,
+    refreshData 
+  } = useAlternativeData(symbol);
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -84,17 +93,21 @@ const AlternativeDataView: React.FC<AlternativeDataViewProps> = ({ symbol }) => 
 
             <TabsContent value="congressional">
               <Card className="p-6">
-                {error.congressional ? (
+                {congressionalError ? (
                   <ErrorDisplay 
-                    error={error.congressional} 
+                    error={congressionalError} 
                     title="Congressional Trading Data Unavailable"
                     onRetry={() => refreshData('congressional')}
                   />
                 ) : (
                   <CongressionalTradesSection 
-                    data={congressionalTrading} 
-                    isLoading={loading.congressional} 
-                    error={error.congressional} 
+                    data={combinedCongressionalTrading} 
+                    isLoading={isCongressionalLoading} 
+                    error={congressionalError}
+                    onRetry={() => {
+                      refreshData('congressional');
+                      refreshData('fmpHouseTrades');
+                    }}
                   />
                 )}
               </Card>

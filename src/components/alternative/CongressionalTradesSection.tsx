@@ -5,26 +5,41 @@ import { motion } from 'framer-motion';
 import { Card } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { format } from 'date-fns';
-import { BadgeInfo, ChevronDown, ChevronUp, Download, Search } from 'lucide-react';
+import { BadgeInfo, ChevronDown, ChevronUp, Download, ExternalLink, Search, Filter } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { 
+  DropdownMenu, 
+  DropdownMenuContent, 
+  DropdownMenuItem, 
+  DropdownMenuTrigger,
+  DropdownMenuSeparator,
+  DropdownMenuLabel
+} from '@/components/ui/dropdown-menu';
 
 interface CongressionalTradesSectionProps {
   data: CongressionalTradesResponse | null;
   isLoading: boolean;
   error: string | null;
+  onRetry?: () => void;
 }
 
-const CongressionalTradesSection: React.FC<CongressionalTradesSectionProps> = ({ data, isLoading, error }) => {
+const CongressionalTradesSection: React.FC<CongressionalTradesSectionProps> = ({ 
+  data, 
+  isLoading, 
+  error,
+  onRetry
+}) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [sortConfig, setSortConfig] = useState<{ key: keyof CongressionalTrade; direction: 'asc' | 'desc' }>({ 
     key: 'transactionDate', 
     direction: 'desc' 
   });
   const [visibleTrades, setVisibleTrades] = useState(10);
+  const [dataSource, setDataSource] = useState<'all' | 'finnhub' | 'fmp'>('all');
 
   if (isLoading) {
     return <TradesLoadingSkeleton />;
@@ -35,6 +50,11 @@ const CongressionalTradesSection: React.FC<CongressionalTradesSectionProps> = ({
       <div className="text-center p-6">
         <p className="text-red-500">Failed to load congressional trading data</p>
         <p className="text-sm text-muted-foreground mt-2">{error}</p>
+        {onRetry && (
+          <Button onClick={onRetry} variant="outline" className="mt-4">
+            Try Again
+          </Button>
+        )}
       </div>
     );
   }
@@ -47,8 +67,14 @@ const CongressionalTradesSection: React.FC<CongressionalTradesSectionProps> = ({
     );
   }
 
+  // Filter trades by source if needed
+  const sourcedTrades = data.data.filter(trade => {
+    if (dataSource === 'all') return true;
+    return trade.source === dataSource;
+  });
+
   // Filter and sort trades
-  const filteredTrades = data.data.filter(trade => 
+  const filteredTrades = sourcedTrades.filter(trade => 
     trade.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     trade.position.toLowerCase().includes(searchTerm.toLowerCase()) ||
     trade.assetName.toLowerCase().includes(searchTerm.toLowerCase())
@@ -77,9 +103,16 @@ const CongressionalTradesSection: React.FC<CongressionalTradesSectionProps> = ({
   const displayedTrades = sortedTrades.slice(0, visibleTrades);
   const hasMoreTrades = visibleTrades < sortedTrades.length;
 
+  // Count transactions by type
+  const purchases = filteredTrades.filter(t => t.transactionType === 'Purchase').length;
+  const sales = filteredTrades.filter(t => t.transactionType === 'Sale').length;
+
+  // Get sources for dropdown
+  const hasMultipleSources = data.sources && data.sources.length > 1;
+
   // Download as CSV
   const downloadCSV = () => {
-    const headers = ['Name', 'Position', 'Asset', 'Transaction Type', 'Transaction Date', 'Filing Date', 'Amount From', 'Amount To'];
+    const headers = ['Name', 'Position', 'Asset', 'Transaction Type', 'Transaction Date', 'Filing Date', 'Amount From', 'Amount To', 'Source', 'Link'];
     const csvRows = [
       headers.join(','),
       ...sortedTrades.map(trade => {
@@ -91,7 +124,9 @@ const CongressionalTradesSection: React.FC<CongressionalTradesSectionProps> = ({
           trade.transactionDate,
           trade.filingDate,
           trade.amountFrom,
-          trade.amountTo
+          trade.amountTo,
+          trade.source || 'finnhub',
+          trade.link || ''
         ].join(',');
       })
     ];
@@ -121,19 +156,58 @@ const CongressionalTradesSection: React.FC<CongressionalTradesSectionProps> = ({
     return sortConfig.direction === 'asc' ? <ChevronUp className="inline h-4 w-4" /> : <ChevronDown className="inline h-4 w-4" />;
   };
 
+  // Get source badge color
+  const getSourceBadgeVariant = (source?: string) => {
+    switch(source) {
+      case 'fmp': return 'success';
+      case 'finnhub': return 'secondary';
+      default: return 'outline';
+    }
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between flex-wrap gap-4">
         <h3 className="text-xl font-semibold">Congressional Trading</h3>
-        <Button 
-          size="sm" 
-          variant="outline" 
-          onClick={downloadCSV}
-          className="flex items-center gap-2"
-        >
-          <Download className="h-4 w-4" />
-          <span>Export CSV</span>
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          {hasMultipleSources && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button 
+                  size="sm" 
+                  variant="outline" 
+                  className="flex items-center gap-2"
+                >
+                  <Filter className="h-4 w-4" />
+                  <span>Data Source: {dataSource === 'all' ? 'All' : dataSource.toUpperCase()}</span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuLabel>Select Data Source</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => setDataSource('all')}>
+                  All Sources
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setDataSource('finnhub')}>
+                  Finnhub
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setDataSource('fmp')}>
+                  FMP
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
+          
+          <Button 
+            size="sm" 
+            variant="outline" 
+            onClick={downloadCSV}
+            className="flex items-center gap-2"
+          >
+            <Download className="h-4 w-4" />
+            <span>Export CSV</span>
+          </Button>
+        </div>
       </div>
       
       {/* Trading Summary */}
@@ -144,17 +218,17 @@ const CongressionalTradesSection: React.FC<CongressionalTradesSectionProps> = ({
       >
         <TradingSummaryCard
           title="Total Transactions"
-          value={data.data.length.toString()}
+          value={filteredTrades.length.toString()}
           icon={<BadgeInfo className="h-5 w-5" />}
         />
         <TradingSummaryCard
           title="Purchases"
-          value={data.data.filter(t => t.transactionType === 'Purchase').length.toString()}
+          value={purchases.toString()}
           icon={<BadgeInfo className="h-5 w-5 text-green-500" />}
         />
         <TradingSummaryCard
           title="Sales"
-          value={data.data.filter(t => t.transactionType === 'Sale').length.toString()}
+          value={sales.toString()}
           icon={<BadgeInfo className="h-5 w-5 text-red-500" />}
         />
       </motion.div>
@@ -212,6 +286,10 @@ const CongressionalTradesSection: React.FC<CongressionalTradesSectionProps> = ({
                   Amount {getSortIndicator('amountFrom')}
                 </TableHead>
                 <TableHead>Asset</TableHead>
+                {hasMultipleSources && (
+                  <TableHead>Source</TableHead>
+                )}
+                <TableHead>Link</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -245,6 +323,25 @@ const CongressionalTradesSection: React.FC<CongressionalTradesSectionProps> = ({
                     }
                   </TableCell>
                   <TableCell>{trade.assetName}</TableCell>
+                  {hasMultipleSources && (
+                    <TableCell>
+                      <Badge variant={getSourceBadgeVariant(trade.source)}>
+                        {trade.source || 'finnhub'}
+                      </Badge>
+                    </TableCell>
+                  )}
+                  <TableCell>
+                    {trade.link && (
+                      <a 
+                        href={trade.link} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="text-blue-500 hover:text-blue-700 flex items-center"
+                      >
+                        <ExternalLink className="h-4 w-4" />
+                      </a>
+                    )}
+                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>
