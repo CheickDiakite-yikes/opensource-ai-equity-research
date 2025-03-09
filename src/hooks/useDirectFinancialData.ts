@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { 
   fetchIncomeStatements, 
   fetchBalanceSheets, 
@@ -23,9 +23,24 @@ export const useDirectFinancialData = (
 ) => {
   const [directFinancials, setDirectFinancials] = useState<DirectFinancialData>(initialData);
   const [isLoading, setIsLoading] = useState(false);
+  const isMounted = useRef(true);
+  const hasAttemptedFetch = useRef(false);
+
+  // Reset the mounted state on cleanup
+  useEffect(() => {
+    isMounted.current = true;
+    hasAttemptedFetch.current = false;
+    
+    return () => {
+      isMounted.current = false;
+    };
+  }, [symbol]);
 
   // Try to fetch missing data directly when needed
   useEffect(() => {
+    // Skip if we already have data or have tried fetching
+    if (hasAttemptedFetch.current) return;
+    
     const fetchMissingData = async () => {
       // First, check if we need to fetch any missing data
       const hasMinimumFinancialData = (
@@ -35,6 +50,8 @@ export const useDirectFinancialData = (
       ) >= 2;
       
       if (!hasMinimumFinancialData) {
+        hasAttemptedFetch.current = true;
+        setIsLoading(true);
         console.log("Attempting to fetch missing financial data directly for", symbol);
         
         try {
@@ -49,7 +66,7 @@ export const useDirectFinancialData = (
               const incomeData = await withRetry(() => fetchIncomeStatements(symbol), {
                 retries: 2
               });
-              if (incomeData && incomeData.length > 0) {
+              if (incomeData && incomeData.length > 0 && isMounted.current) {
                 newFinancials.income = incomeData;
                 dataImproved = true;
                 console.log(`Retrieved ${incomeData.length} income statements directly`);
@@ -66,7 +83,7 @@ export const useDirectFinancialData = (
               const balanceData = await withRetry(() => fetchBalanceSheets(symbol), {
                 retries: 2
               });
-              if (balanceData && balanceData.length > 0) {
+              if (balanceData && balanceData.length > 0 && isMounted.current) {
                 newFinancials.balance = balanceData;
                 dataImproved = true;
                 console.log(`Retrieved ${balanceData.length} balance sheets directly`);
@@ -83,7 +100,7 @@ export const useDirectFinancialData = (
               const cashflowData = await withRetry(() => fetchCashFlowStatements(symbol), {
                 retries: 2
               });
-              if (cashflowData && cashflowData.length > 0) {
+              if (cashflowData && cashflowData.length > 0 && isMounted.current) {
                 newFinancials.cashflow = cashflowData;
                 dataImproved = true;
                 console.log(`Retrieved ${cashflowData.length} cash flow statements directly`);
@@ -100,7 +117,7 @@ export const useDirectFinancialData = (
               const ratiosData = await withRetry(() => fetchKeyRatios(symbol), {
                 retries: 2
               });
-              if (ratiosData && ratiosData.length > 0) {
+              if (ratiosData && ratiosData.length > 0 && isMounted.current) {
                 newFinancials.ratios = ratiosData;
                 dataImproved = true;
                 console.log(`Retrieved ${ratiosData.length} financial ratios directly`);
@@ -110,25 +127,33 @@ export const useDirectFinancialData = (
             }
           }
           
-          // Update state if we improved the data
-          if (dataImproved) {
+          // Update state if we improved the data and component is still mounted
+          if (dataImproved && isMounted.current) {
             setDirectFinancials(newFinancials);
             toast.success("Retrieved additional financial data");
-          } else {
+          } else if (isMounted.current) {
             toast.error(`Could not retrieve financial data for ${symbol}`);
           }
         } catch (err) {
           console.error("Error fetching missing financial data:", err);
-          toast.error(`Failed to retrieve financial data: ${err instanceof Error ? err.message : 'Unknown error'}`);
+          if (isMounted.current) {
+            toast.error(`Failed to retrieve financial data: ${err instanceof Error ? err.message : 'Unknown error'}`);
+          }
+        } finally {
+          if (isMounted.current) {
+            setIsLoading(false);
+          }
         }
       }
     };
     
     fetchMissingData();
-  }, [symbol, initialData]);
+  }, [symbol, initialData, directFinancials]);
 
   // Function to manually retry fetching data
   const retryFetchingData = async (): Promise<boolean> => {
+    if (!isMounted.current) return false;
+    
     setIsLoading(true);
     toast.info(`Attempting to fetch financial data for ${symbol}...`);
     
@@ -141,13 +166,15 @@ export const useDirectFinancialData = (
         withRetry(() => fetchKeyRatios(symbol), { retries: 3 })
       ]);
       
-      // Update the direct financials state
-      setDirectFinancials({
-        income,
-        balance,
-        cashflow,
-        ratios
-      });
+      // Update the direct financials state if component still mounted
+      if (isMounted.current) {
+        setDirectFinancials({
+          income,
+          balance,
+          cashflow,
+          ratios
+        });
+      }
       
       // Check if we got enough data
       const gotEnoughData = (
@@ -156,19 +183,25 @@ export const useDirectFinancialData = (
         (cashflow.length > 0 ? 1 : 0)
       ) >= 2;
       
-      if (gotEnoughData) {
+      if (gotEnoughData && isMounted.current) {
         toast.success(`Successfully retrieved financial data for ${symbol}`);
         return true;
-      } else {
+      } else if (isMounted.current) {
         toast.error(`Could not retrieve enough financial data for ${symbol}`);
         return false;
       }
+      
+      return gotEnoughData;
     } catch (err) {
       console.error("Error in retry operation:", err);
-      toast.error(`Retry failed: ${err instanceof Error ? err.message : 'Unknown error'}`);
+      if (isMounted.current) {
+        toast.error(`Retry failed: ${err instanceof Error ? err.message : 'Unknown error'}`);
+      }
       return false;
     } finally {
-      setIsLoading(false);
+      if (isMounted.current) {
+        setIsLoading(false);
+      }
     }
   };
 

@@ -1,11 +1,13 @@
 
+// Export individual components and utilities
 export { default as SearchBar } from "./SearchBar";
-export { default as SearchResults } from "./SearchResults";
-export { default as SearchResultItem } from "./SearchResultItem";
-export { default as FeaturedSymbolItem } from "./FeaturedSymbolItem";
-export { default as RecentSearchItem } from "./RecentSearchItem";
-export { default as ClearButton } from "./ClearButton";
-export { default as useSearchHistory } from "./useSearchHistory";
+// Export types directly instead of default exports that don't exist
+export { SearchResults } from "./SearchResults";
+export { SearchResultItem } from "./SearchResultItem";
+export { FeaturedSymbolItem } from "./FeaturedSymbolItem";
+export { RecentSearchItem } from "./RecentSearchItem";
+export { ClearButton } from "./ClearButton";
+export { useSearchHistory } from "./useSearchHistory";
 export * from "./types";
 export * from "./hooks/useSearch";
 export * from "./hooks/useSearchInteractions";

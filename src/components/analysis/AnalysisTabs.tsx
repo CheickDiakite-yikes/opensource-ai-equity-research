@@ -28,6 +28,7 @@ const AnalysisTabs: React.FC<AnalysisTabsProps> = ({
 }) => {
   const [activeTab, setActiveTab] = useState("financials");
   const [isInitialized, setIsInitialized] = useState(false);
+  const [isTabMounted, setIsTabMounted] = useState(false);
   
   // Set component as initialized after first render
   useEffect(() => {
@@ -35,6 +36,16 @@ const AnalysisTabs: React.FC<AnalysisTabsProps> = ({
       console.log(`AnalysisTabs initialized for ${symbol} with ${financials.length} financial records`);
       setIsInitialized(true);
     }
+    
+    // Mark tab as mounted with a small delay to ensure state is updated
+    const timer = setTimeout(() => {
+      setIsTabMounted(true);
+    }, 100);
+    
+    return () => {
+      clearTimeout(timer);
+      setIsTabMounted(false);
+    };
   }, [isInitialized, symbol, financials.length]);
   
   // Error handling if financials data is missing
@@ -59,6 +70,10 @@ const AnalysisTabs: React.FC<AnalysisTabsProps> = ({
     setActiveTab(value);
   };
 
+  // Check if we have data for the current tab
+  const hasRatiosData = ratioData && ratioData.length > 0;
+  const hasFinancialsData = financials && financials.length > 0;
+
   return (
     <Tabs 
       defaultValue="financials" 
@@ -74,25 +89,49 @@ const AnalysisTabs: React.FC<AnalysisTabsProps> = ({
         <TabsTrigger value="growth">Growth</TabsTrigger>
       </TabsList>
       
-      <TabsContent value="financials">
-        <FinancialsTabContent financials={financials} />
-      </TabsContent>
-      
-      <TabsContent value="balance-sheet">
-        <BalanceSheetTabContent financials={financials} />
-      </TabsContent>
-      
-      <TabsContent value="cash-flow">
-        <CashFlowTabContent financials={financials} />
-      </TabsContent>
-      
-      <TabsContent value="ratios">
-        <RatiosTabContent ratioData={ratioData} symbol={symbol} />
-      </TabsContent>
-      
-      <TabsContent value="growth">
-        <GrowthTabContent financials={financials} symbol={symbol} />
-      </TabsContent>
+      {isTabMounted && (
+        <>
+          <TabsContent value="financials">
+            {hasFinancialsData ? (
+              <FinancialsTabContent financials={financials} />
+            ) : (
+              <ErrorState symbol={symbol} onRetry={() => {}} isRetrying={false} />
+            )}
+          </TabsContent>
+          
+          <TabsContent value="balance-sheet">
+            {hasFinancialsData ? (
+              <BalanceSheetTabContent financials={financials} />
+            ) : (
+              <ErrorState symbol={symbol} onRetry={() => {}} isRetrying={false} />
+            )}
+          </TabsContent>
+          
+          <TabsContent value="cash-flow">
+            {hasFinancialsData ? (
+              <CashFlowTabContent financials={financials} />
+            ) : (
+              <ErrorState symbol={symbol} onRetry={() => {}} isRetrying={false} />
+            )}
+          </TabsContent>
+          
+          <TabsContent value="ratios">
+            {hasRatiosData ? (
+              <RatiosTabContent ratioData={ratioData} symbol={symbol} />
+            ) : (
+              <ErrorState symbol={symbol} onRetry={() => {}} isRetrying={false} />
+            )}
+          </TabsContent>
+          
+          <TabsContent value="growth">
+            {hasFinancialsData ? (
+              <GrowthTabContent financials={financials} symbol={symbol} />
+            ) : (
+              <ErrorState symbol={symbol} onRetry={() => {}} isRetrying={false} />
+            )}
+          </TabsContent>
+        </>
+      )}
     </Tabs>
   );
 };

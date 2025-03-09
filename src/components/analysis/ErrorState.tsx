@@ -8,15 +8,16 @@ interface ErrorStateProps {
   symbol: string;
   onRetry: () => void;
   isRetrying: boolean;
+  message?: string; // Make message optional
 }
 
-const ErrorState: React.FC<ErrorStateProps> = ({ symbol, onRetry, isRetrying }) => {
+const ErrorState: React.FC<ErrorStateProps> = ({ symbol, onRetry, isRetrying, message }) => {
   return (
     <Card className="p-6">
       <div className="text-center py-8">
         <h3 className="text-xl font-medium text-red-600 mb-4">No Financial Data Available</h3>
         <p className="text-muted-foreground mb-6">
-          We couldn't load the financial data required for analysis. This may be due to:
+          {message || `We couldn't load the financial data required for analysis. This may be due to:`}
         </p>
         <ul className="text-sm text-muted-foreground bg-muted p-4 rounded-md mb-6 mx-auto max-w-lg text-left">
           <li className="mb-2">• Data provider API limitations or rate limiting</li>
