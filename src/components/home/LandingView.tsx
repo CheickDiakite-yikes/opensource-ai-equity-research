@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import HeroSection from "./HeroSection";
@@ -130,8 +131,8 @@ const LandingView: React.FC<LandingViewProps> = ({
         </motion.div>
       </div>
       
-      {/* FAQ Section (replacing How To Use) */}
-      <div className="max-w-screen-xl mx-auto px-4 py-6">
+      {/* FAQ Section - full width with centered content */}
+      <div className="w-full py-6">
         <motion.div 
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}

@@ -2,8 +2,6 @@
 import React, { useState } from "react";
 import { Info, Search, ChartLine, LineChart, FileText, HelpCircle, Plus, Minus, BookOpen, Activity, BarChart, Landmark, Award, Target, CheckCircle2 } from "lucide-react";
 import { motion } from "framer-motion";
-import { Button } from "@/components/ui/button";
-import { Link } from "react-router-dom";
 import {
   Accordion,
   AccordionContent,
@@ -89,7 +87,7 @@ const FAQSection: React.FC = () => {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.6 }}
-      className="max-w-4xl mx-auto mt-12 mb-16 px-4"
+      className="w-full mx-auto mt-12 mb-16 px-4"
     >
       {/* Header */}
       <div className="text-center mb-10">
@@ -102,7 +100,7 @@ const FAQSection: React.FC = () => {
           <HelpCircle className="h-8 w-8 text-primary" />
         </motion.div>
         <h2 className="text-3xl font-bold mb-3">Frequently Asked Questions</h2>
-        <p className="text-muted-foreground max-w-2xl mx-auto">
+        <p className="text-muted-foreground max-w-3xl mx-auto">
           Everything you need to know about using DiDi Equity Research for professional-grade financial analysis and AI-powered insights.
         </p>
       </div>
@@ -112,25 +110,24 @@ const FAQSection: React.FC = () => {
         {categories.map((category) => {
           const Icon = category.icon;
           return (
-            <Button
+            <button
               key={category.id}
-              variant={openCategory === category.id ? "default" : "outline"}
-              className={`flex items-center gap-2 px-4 py-2 rounded-full ${
+              className={`flex items-center gap-2 px-4 py-2 rounded-full border transition-colors ${
                 openCategory === category.id 
-                  ? "bg-primary text-primary-foreground" 
-                  : "hover:bg-primary/10"
+                  ? "bg-primary text-primary-foreground border-primary" 
+                  : "bg-transparent hover:bg-primary/10 border-border"
               }`}
               onClick={() => handleCategoryChange(category.id)}
             >
               <Icon size={18} />
               <span>{category.label}</span>
-            </Button>
+            </button>
           );
         })}
       </div>
       
       {/* FAQ Accordion */}
-      <div className="bg-card rounded-xl shadow-sm border p-1">
+      <div className="max-w-5xl mx-auto bg-card rounded-xl shadow-sm border p-1">
         {openCategory && faqs[openCategory as keyof typeof faqs].map((faq, index) => (
           <Accordion key={index} type="single" collapsible className="w-full">
             <AccordionItem value={`item-${index}`} className="border-b border-border/50 last:border-0">
@@ -145,20 +142,8 @@ const FAQSection: React.FC = () => {
         ))}
       </div>
       
-      {/* Get Started Button */}
-      <div className="mt-10 text-center">
-        <div className="inline-flex items-center gap-2 p-1 px-2 mb-4 rounded-full bg-primary/10 text-primary text-sm font-medium">
-          <CheckCircle2 size={16} />
-          <span>Institutional-grade research</span>
-        </div>
-        <h3 className="text-xl font-semibold mb-3">Ready to dive into professional financial analysis?</h3>
-        <Button size="lg" className="bg-gradient-to-r from-primary to-blue-600 hover:from-primary/90 hover:to-blue-600/90 text-white rounded-full px-8 py-6">
-          Start Analyzing <ChartLine className="ml-2" />
-        </Button>
-      </div>
-      
       {/* Quick Reference Guide */}
-      <div className="mt-16 p-6 rounded-xl border border-border/60 bg-gradient-to-br from-card to-muted/20">
+      <div className="max-w-5xl mx-auto mt-16 p-6 rounded-xl border border-border/60 bg-gradient-to-br from-card to-muted/20">
         <h3 className="text-xl font-semibold mb-4 flex items-center gap-2">
           <BookOpen className="h-5 w-5 text-primary" />
           Quick Reference Guide
