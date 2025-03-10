@@ -23,15 +23,15 @@ const FAQSection: React.FC = () => {
     basics: [
       {
         question: "What is DiDi Equity Research?",
-        answer: "DiDi Equity Research is a standalone AI-powered equity research platform developed by DiDi Data. It provides institutional-grade financial analysis for investment professionals working in Private Equity, Venture Capital, Investment Banking, Hedge Funds, Equity Research, and Consulting. The platform combines powerful financial data with AI analysis to deliver comprehensive insights on public companies."
+        answer: "DiDi Equity Research is a standalone AI-powered equity research platform developed by DiDi Data. It provides institutional-grade financial analysis for investment professionals working in Private Equity, Venture Capital, Investment Banking, Hedge Funds, Equity Research, and Consulting. The platform combines financial data with AI analysis to deliver comprehensive insights on public companies."
       },
       {
         question: "How do I get started?",
-        answer: "Getting started with DiDi Equity Research is simple:\n\n1. Enter a stock ticker symbol in the search box (e.g., AAPL, MSFT, GOOG)\n2. Browse the AI-generated analysis and financial data\n3. Explore different tabs for detailed metrics on various aspects of the company\n4. Generate AI research reports for comprehensive analysis\n\nNo account is required to begin exploring the basic features of the platform."
+        answer: "Getting started with DiDi Equity Research is simple:\n\n1. Enter a stock ticker symbol in the search box (e.g., AAPL, MSFT, GOOG)\n2. Browse the company information and financial data\n3. Explore different sections for detailed metrics\n4. View AI-generated insights when available\n\nNo account is required to begin exploring the platform."
       },
       {
-        question: "Is DiDi Equity Research free to use?",
-        answer: "DiDi Equity Research offers a basic version with limited features free of charge. For advanced features, custom analysis, and unlimited research reports, premium subscription plans are available that cater to different types of investment professionals and firms."
+        question: "What companies can I research?",
+        answer: "You can research publicly traded companies listed on major exchanges. Simply enter the ticker symbol (e.g., AAPL for Apple, MSFT for Microsoft) in the search bar to access available information. The platform currently focuses on companies with sufficient public financial data."
       }
     ],
     search: [
@@ -41,39 +41,39 @@ const FAQSection: React.FC = () => {
       },
       {
         question: "What information can I find about a company?",
-        answer: "When you search for a company, DiDi Equity Research provides comprehensive information including:\n\n• Company overview and key statistics\n• Price performance and historical charts\n• Detailed financial statements (Income Statement, Balance Sheet, Cash Flow)\n• Growth metrics and trend analysis\n• Financial ratios and comparative analysis\n• AI-generated insights and research reports\n• Latest news and market sentiment\n• SEC filings and earnings call transcripts"
+        answer: "When you search for a company, DiDi Equity Research provides comprehensive information including:\n\n• Company overview and key statistics\n• Price performance data\n• Financial statements (Income Statement, Balance Sheet, Cash Flow)\n• Growth metrics and ratios\n• Financial analysis tools\n• Market news and relevant information"
       },
       {
-        question: "Can I save companies for later viewing?",
-        answer: "Yes, you can save companies to your watchlist for easy access later. Simply click the star icon next to the company name or in the company overview section. Your watchlist is accessible from the main dashboard and is stored locally on your device if you're not logged in, or synced across devices if you have a DiDi Equity Research account."
+        question: "Can I compare companies?",
+        answer: "Currently, you can research one company at a time. Our roadmap includes plans to add comparative analysis features in future updates, allowing you to benchmark companies against competitors or industry averages. For now, you can manually compare companies by searching for them individually."
       }
     ],
     analysis: [
       {
         question: "What analysis tools are available?",
-        answer: "DiDi Equity Research offers a comprehensive suite of analysis tools including:\n\n• Interactive financial charts with adjustable time periods\n• Growth rate calculators and historical trend analysis\n• Ratio comparisons against industry benchmarks\n• DCF (Discounted Cash Flow) modeling tools\n• Technical analysis indicators\n• Peer comparison tools\n• AI-powered financial health scores\n• Sentiment analysis of news and social media"
+        answer: "DiDi Equity Research offers several analysis tools including:\n\n• Interactive financial charts\n• Financial statement visualization\n• Growth rate analysis\n• Key financial ratios\n• Financial health indicators\n• AI-powered insights where available"
       },
       {
         question: "How do I use the financial data visualization?",
-        answer: "DiDi's financial visualizations are interactive and intuitive:\n\n1. Navigate to the Financials tab after searching for a company\n2. Select the specific financial statement you want to explore (Income Statement, Balance Sheet, Cash Flow)\n3. Use the time period selector to adjust the range of data displayed\n4. Hover over chart elements to see detailed figures\n5. Click on specific metrics to isolate them in the visualization\n6. Use the comparison features to benchmark against industry averages or competitors"
+        answer: "To view financial visualizations:\n\n1. Search for a company using its ticker symbol\n2. Navigate to the Financials or Analysis sections\n3. Browse through the various charts and data presentations\n4. Interact with the visualizations to focus on specific metrics or time periods"
       },
       {
-        question: "How accurate is the AI analysis?",
-        answer: "DiDi's AI analysis is based on factual financial data from reliable sources combined with advanced machine learning algorithms. The analysis is designed to identify patterns, trends, and insights that might not be immediately obvious. However, it's important to note that all financial analysis, AI or otherwise, involves projections and interpretations that may not perfectly predict future performance. The platform provides confidence scores with all AI-generated insights to help you assess reliability."
+        question: "Where does the data come from?",
+        answer: "DiDi Equity Research aggregates financial data from reliable public sources, including company filings, market data providers, and other public financial information. The platform processes this data and presents it in an accessible format, sometimes supplemented with AI-generated insights based on the raw financial figures."
       }
     ],
     reports: [
       {
-        question: "How do I generate an AI research report?",
-        answer: "To generate an AI research report:\n\n1. Search for a company and navigate to its overview page\n2. Click on the 'Research Report' tab\n3. Select the type of report you want to generate (Basic Analysis, Full Research Report, Investment Thesis, etc.)\n4. Customize the parameters if desired (time horizon, focus areas, etc.)\n5. Click 'Generate Report' and wait a few moments for the AI to compile the analysis\n6. Once complete, you can read, download, or share the report"
+        question: "What are AI research reports?",
+        answer: "AI research reports are automatically generated analyses of a company based on its financial data and market position. These reports provide insights on a company's financial health, growth trajectory, and key metrics that might influence investment decisions. The AI aims to highlight important trends and patterns in the data."
       },
       {
-        question: "Can I customize the research reports?",
-        answer: "Yes, DiDi Equity Research allows for extensive customization of AI-generated reports. Before generating a report, you can specify:\n\n• Report focus (e.g., financial health, growth potential, risk assessment)\n• Time horizons for projections\n• Specific financial metrics to emphasize\n• Industry comparisons to include\n• Level of technical detail\n• Report format and sections to include\n\nPremium subscribers have access to additional customization options including branded reports and custom methodologies."
+        question: "How accurate are the AI insights?",
+        answer: "AI insights are based on factual financial data, but include interpretations and projections that should be treated as one perspective among many. While our AI strives for accuracy, all financial analysis involves assumptions and limitations. We recommend using AI insights as a starting point for your research, not as the sole basis for investment decisions."
       },
       {
-        question: "How frequently is the data updated?",
-        answer: "DiDi Equity Research updates data with the following frequency:\n\n• Market prices and basic metrics: Real-time or 15-minute delayed (depending on exchange)\n• Financial statements: Updated within 24 hours of company filings\n• News and sentiment: Updated continuously throughout the day\n• Analyst estimates: Updated as new estimates are published\n• AI insights: Recalculated with each new data point\n\nThe last update time is displayed on each data section so you always know how current the information is."
+        question: "Can I download or share insights?",
+        answer: "Currently, the platform allows you to view insights within the application. We're working on adding features to download, save, or share specific analyses in future updates. For now, you can manually save information using your browser's screenshot tools or by copying text content."
       }
     ]
   };
@@ -184,8 +184,8 @@ const FAQSection: React.FC = () => {
                 <span className="text-primary text-sm font-medium">4</span>
               </div>
               <div>
-                <h4 className="font-medium">Generate AI reports</h4>
-                <p className="text-sm text-muted-foreground">Get comprehensive analysis and price targets</p>
+                <h4 className="font-medium">View AI insights</h4>
+                <p className="text-sm text-muted-foreground">Get analysis on company performance and trends</p>
               </div>
             </div>
           </div>
