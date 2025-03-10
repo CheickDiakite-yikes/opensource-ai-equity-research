@@ -1,5 +1,7 @@
+
 import { type ClassValue, clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
+import { ResearchReport } from "@/types";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -198,4 +200,76 @@ export function generateReportHTML(title: string, content: string): string {
     </body>
     </html>
   `;
+}
+
+// Generate complete HTML report from ResearchReport object
+export function generateReportHTMLFromReport(report: ResearchReport): string {
+  // Create report content
+  let content = `
+    <h1>${report.companyName} (${report.symbol}) - Equity Research Report</h1>
+    <div class="date">Date: ${report.date}</div>
+    <div class="recommendation">Recommendation: ${report.recommendation}</div>
+    <div class="price-target">Target Price: $${report.targetPrice}</div>
+    
+    <div class="summary">
+      <h2>Executive Summary</h2>
+      <p>${report.summary || 'No summary available.'}</p>
+    </div>
+  `;
+  
+  // Add rating details if available
+  if (report.ratingDetails) {
+    content += `
+      <div class="section">
+        <h2>Rating Details</h2>
+        <ul>
+          <li><strong>Overall Rating:</strong> ${report.ratingDetails.overallRating}</li>
+          <li><strong>Financial Strength:</strong> ${report.ratingDetails.financialStrength}</li>
+          <li><strong>Growth Outlook:</strong> ${report.ratingDetails.growthOutlook}</li>
+          <li><strong>Valuation:</strong> ${report.ratingDetails.valuationAttractiveness}</li>
+          <li><strong>Competitive Position:</strong> ${report.ratingDetails.competitivePosition}</li>
+        </ul>
+      </div>
+    `;
+  }
+  
+  // Add scenario analysis if available
+  if (report.scenarioAnalysis) {
+    content += `
+      <div class="section">
+        <h2>Scenario Analysis</h2>
+        <h3>Bull Case</h3>
+        <p><strong>Price Target:</strong> ${report.scenarioAnalysis.bullCase.price}</p>
+        <p>${report.scenarioAnalysis.bullCase.description}</p>
+        
+        <h3>Base Case</h3>
+        <p><strong>Price Target:</strong> ${report.scenarioAnalysis.baseCase.price}</p>
+        <p>${report.scenarioAnalysis.baseCase.description}</p>
+        
+        <h3>Bear Case</h3>
+        <p><strong>Price Target:</strong> ${report.scenarioAnalysis.bearCase.price}</p>
+        <p>${report.scenarioAnalysis.bearCase.description}</p>
+      </div>
+    `;
+  }
+  
+  // Add all sections
+  for (const section of report.sections) {
+    content += `
+      <div class="section">
+        <h2>${section.title}</h2>
+        <p>${section.content}</p>
+      </div>
+    `;
+  }
+  
+  // Add disclaimer
+  content += `
+    <div class="section">
+      <h2>Disclaimer</h2>
+      <p>This report is for informational purposes only and does not constitute financial advice. The analysis provided is based on available data at the time of writing and is subject to change. Always conduct your own research before making investment decisions.</p>
+    </div>
+  `;
+  
+  return generateReportHTML(report.companyName, content);
 }

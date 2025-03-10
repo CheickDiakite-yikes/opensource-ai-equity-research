@@ -9,6 +9,7 @@ import { DisclaimerSection } from "./DisclaimerSection";
 import { Button } from "@/components/ui/button";
 import { Download, AlertTriangle, FileText } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { generateReportHTML } from "@/lib/utils";
 
 interface ResearchReportDisplayProps {
   report: ResearchReport;
@@ -40,6 +41,48 @@ const ResearchReportDisplay: React.FC<ResearchReportDisplayProps> = ({
     section.title.toLowerCase().includes("financials")
   );
   
+  // Handle downloading the report if no callback provided
+  const handleDownloadReport = () => {
+    if (onDownloadHtml) {
+      onDownloadHtml();
+      return;
+    }
+    
+    // If no html content or callback, generate it on the fly
+    const htmlContent = generateReportHTML(report.companyName, createReportContent(report));
+    const blob = new Blob([htmlContent], { type: 'text/html' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${report.symbol}_research_report.html`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+  
+  // Create basic report content for download
+  const createReportContent = (report: ResearchReport): string => {
+    return `
+      <h1>${report.companyName} (${report.symbol}) - Equity Research Report</h1>
+      <div class="date">Date: ${report.date}</div>
+      <div class="recommendation">Recommendation: ${report.recommendation}</div>
+      <div class="price-target">Target Price: $${report.targetPrice}</div>
+      
+      <div class="summary">
+        <h2>Executive Summary</h2>
+        <p>${report.summary}</p>
+      </div>
+      
+      ${report.sections.map(section => `
+        <div class="section">
+          <h2>${section.title}</h2>
+          <p>${section.content}</p>
+        </div>
+      `).join('')}
+    `;
+  };
+  
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -50,17 +93,16 @@ const ResearchReportDisplay: React.FC<ResearchReportDisplayProps> = ({
           </h2>
         </div>
         
-        {htmlContent && onDownloadHtml && (
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={onDownloadHtml}
-            className="flex items-center gap-1 shadow-sm hover:shadow-md transition-shadow"
-          >
-            <Download className="h-4 w-4" />
-            <span>Download HTML</span>
-          </Button>
-        )}
+        {/* Always show download button */}
+        <Button 
+          variant="outline" 
+          size="sm" 
+          onClick={handleDownloadReport}
+          className="flex items-center gap-1 shadow-sm hover:shadow-md transition-shadow"
+        >
+          <Download className="h-4 w-4" />
+          <span>Download HTML</span>
+        </Button>
       </div>
       
       {isLowQualityReport && (

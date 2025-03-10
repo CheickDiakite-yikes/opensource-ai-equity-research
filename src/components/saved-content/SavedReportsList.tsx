@@ -71,15 +71,13 @@ const SavedReportsList: React.FC<SavedReportsListProps> = ({
             </div>
             
             <div className="flex space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
-              {report.html_content && (
-                <button
-                  className="p-1.5 rounded-full hover:bg-primary/10 transition-colors"
-                  onClick={(e) => onDownloadHtml(report, e)}
-                  title="Download HTML"
-                >
-                  <Download className="h-3.5 w-3.5 text-primary" />
-                </button>
-              )}
+              <button
+                className="p-1.5 rounded-full hover:bg-primary/10 transition-colors"
+                onClick={(e) => onDownloadHtml(report, e)}
+                title="Download HTML"
+              >
+                <Download className="h-3.5 w-3.5 text-primary" />
+              </button>
               <button
                 className="p-1.5 rounded-full hover:bg-destructive/10 hover:text-destructive transition-colors"
                 onClick={(e) => onDeleteReport(report.id, e)}

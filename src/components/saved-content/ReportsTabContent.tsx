@@ -27,6 +27,12 @@ const ReportsTabContent: React.FC<ReportsTabContentProps> = ({
     return <EmptyContentState type="reports" />;
   }
 
+  // Handler for the download button in the list
+  const handleDownloadFromList = (report: SavedReport, e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent row selection
+    onDownloadHtml(report);
+  };
+
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
       <div className="col-span-1 space-y-4">
@@ -44,7 +50,7 @@ const ReportsTabContent: React.FC<ReportsTabContentProps> = ({
               selectedReport={selectedReport}
               onSelectReport={onSelectReport}
               onDeleteReport={onDeleteReport}
-              onDownloadHtml={onDownloadHtml}
+              onDownloadHtml={handleDownloadFromList}
             />
           </div>
         </div>
