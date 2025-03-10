@@ -66,6 +66,20 @@ Deno.serve(async (req) => {
       return section;
     });
     
+    // Ensure rating details have the correct scale
+    if (report.ratingDetails) {
+      report.ratingDetails.ratingScale = "Buy, Sell, Hold, Overweight, Underweight";
+    } else {
+      report.ratingDetails = {
+        overallRating: report.recommendation || "Hold",
+        financialStrength: "Average",
+        growthOutlook: "Stable",
+        valuationAttractiveness: "Fair",
+        competitivePosition: "Average",
+        ratingScale: "Buy, Sell, Hold, Overweight, Underweight"
+      };
+    }
+    
     // Check for required sections and add them if missing
     const requiredSections = [
       'Financial Analysis', 

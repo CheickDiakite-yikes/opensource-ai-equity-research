@@ -9,7 +9,7 @@ import { DisclaimerSection } from "./DisclaimerSection";
 import { Button } from "@/components/ui/button";
 import { Download, AlertTriangle, FileText } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { generateReportHTML } from "@/lib/utils";
+import { generateReportHTML } from "@/services/api/userContent/htmlGenerator";
 
 interface ResearchReportDisplayProps {
   report: ResearchReport;
@@ -49,7 +49,7 @@ const ResearchReportDisplay: React.FC<ResearchReportDisplayProps> = ({
     }
     
     // If no html content or callback, generate it on the fly
-    const htmlContent = generateReportHTML(report.companyName, createReportContent(report));
+    const htmlContent = generateReportHTML(report);
     const blob = new Blob([htmlContent], { type: 'text/html' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -59,28 +59,6 @@ const ResearchReportDisplay: React.FC<ResearchReportDisplayProps> = ({
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
-  };
-  
-  // Create basic report content for download
-  const createReportContent = (report: ResearchReport): string => {
-    return `
-      <h1>${report.companyName} (${report.symbol}) - Equity Research Report</h1>
-      <div class="date">Date: ${report.date}</div>
-      <div class="recommendation">Recommendation: ${report.recommendation}</div>
-      <div class="price-target">Target Price: $${report.targetPrice}</div>
-      
-      <div class="summary">
-        <h2>Executive Summary</h2>
-        <p>${report.summary}</p>
-      </div>
-      
-      ${report.sections.map(section => `
-        <div class="section">
-          <h2>${section.title}</h2>
-          <p>${section.content}</p>
-        </div>
-      `).join('')}
-    `;
   };
   
   return (
