@@ -26,6 +26,25 @@ serve(async (req) => {
       );
     }
     
+    // Ensure reportType is normalized to a known value
+    if (reportRequest.reportType) {
+      // Convert to lowercase and normalize
+      const reportType = reportRequest.reportType.toLowerCase();
+      if (reportType.includes('financial')) {
+        reportRequest.reportType = 'financial';
+      } else if (reportType.includes('valuation')) {
+        reportRequest.reportType = 'valuation';
+      } else {
+        reportRequest.reportType = 'comprehensive';
+      }
+      
+      console.log(`Normalized report type: ${reportRequest.reportType}`);
+    } else {
+      // Set default if missing
+      reportRequest.reportType = 'comprehensive';
+      console.log('Report type not specified, defaulting to comprehensive');
+    }
+    
     // Calculate date ranges for API calls
     const today = new Date();
     const oneMonthAgo = new Date();
@@ -70,6 +89,7 @@ serve(async (req) => {
     console.log(`- Earnings calendar entries: ${earningsCalendar?.earningsCalendar?.length || 0} items`);
     console.log(`- Enterprise value: ${enterpriseValue?.length || 0} items`);
     console.log(`- Analyst estimates: ${analystEstimates?.length || 0} items`);
+    console.log(`- Report type: ${reportRequest.reportType}`);
     
     // Generate the research report
     const report = await generateResearchReport(reportRequest);

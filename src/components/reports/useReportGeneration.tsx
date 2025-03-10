@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { toast } from "@/components/ui/use-toast";
 import { generateResearchReport, generateStockPrediction } from "@/services/api";
@@ -46,7 +47,7 @@ export const useReportGeneration = (symbol: string, data: ReportData) => {
         },
         news: data.news,
         peers: data.peers,
-        reportType: reportType
+        reportType: reportType // Ensure this is passed correctly
       };
       
       toast({
@@ -58,7 +59,7 @@ export const useReportGeneration = (symbol: string, data: ReportData) => {
       console.log("Sending report request:", {
         symbol,
         companyName: data.profile.companyName,
-        reportType,
+        reportType, // Log the report type
         hasFinancials: !!data.income?.length,
         newsCount: data.news?.length,
         peersCount: data.peers?.length
@@ -78,9 +79,11 @@ export const useReportGeneration = (symbol: string, data: ReportData) => {
         hasRatingDetails: !!generatedReport.ratingDetails,
         hasScenarioAnalysis: !!generatedReport.scenarioAnalysis,
         hasCatalysts: !!generatedReport.catalysts,
-        summaryLength: generatedReport.summary?.length || 0
+        summaryLength: generatedReport.summary?.length || 0,
+        reportFocus: reportType // Log the report focus for debugging
       });
       
+      // Additional validation to ensure we have all sections
       if (!generatedReport.sections || generatedReport.sections.length === 0) {
         console.warn("Report received without sections, creating default sections");
         generatedReport.sections = [
@@ -134,7 +137,7 @@ export const useReportGeneration = (symbol: string, data: ReportData) => {
       
       toast({
         title: "AI Report Generated",
-        description: `Research report for ${data.profile.companyName} successfully generated with ${generatedReport.sections.length} sections.`,
+        description: `${reportType.charAt(0).toUpperCase() + reportType.slice(1)} report for ${data.profile.companyName} successfully generated with ${generatedReport.sections.length} sections.`,
         variant: "default",
       });
     } catch (err: any) {
