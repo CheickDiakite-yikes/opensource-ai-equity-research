@@ -45,6 +45,12 @@ serve(async (req) => {
       console.log('Report type not specified, defaulting to comprehensive');
     }
     
+    // Set current date for the report if not provided
+    if (!reportRequest.reportDate) {
+      reportRequest.reportDate = new Date().toISOString().split('T')[0];
+      console.log(`Setting report date to current date: ${reportRequest.reportDate}`);
+    }
+    
     // Calculate date ranges for API calls
     const today = new Date();
     const oneMonthAgo = new Date();
@@ -90,9 +96,15 @@ serve(async (req) => {
     console.log(`- Enterprise value: ${enterpriseValue?.length || 0} items`);
     console.log(`- Analyst estimates: ${analystEstimates?.length || 0} items`);
     console.log(`- Report type: ${reportRequest.reportType}`);
+    console.log(`- Report date: ${reportRequest.reportDate}`);
     
     // Generate the research report
     const report = await generateResearchReport(reportRequest);
+    
+    // Ensure the report has the current date
+    if (!report.date) {
+      report.date = reportRequest.reportDate;
+    }
     
     // Return the report
     return new Response(

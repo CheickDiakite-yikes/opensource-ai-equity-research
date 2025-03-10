@@ -32,6 +32,9 @@ export const useReportGeneration = (symbol: string, data: ReportData) => {
       setIsGenerating(true);
       setGenerationError(null);
       
+      // Get current date for the report
+      const currentDate = new Date().toISOString().split('T')[0];
+      
       const reportRequest: ReportRequest = {
         symbol,
         companyName: data.profile.companyName,
@@ -47,7 +50,8 @@ export const useReportGeneration = (symbol: string, data: ReportData) => {
         },
         news: data.news,
         peers: data.peers,
-        reportType: reportType // Pass the report type to the API
+        reportType: reportType, // Pass the report type to the API
+        reportDate: currentDate // Add the current date for the report
       };
       
       toast({
@@ -62,7 +66,8 @@ export const useReportGeneration = (symbol: string, data: ReportData) => {
         reportType, // Log the report type
         hasFinancials: !!data.income?.length,
         newsCount: data.news?.length,
-        peersCount: data.peers?.length
+        peersCount: data.peers?.length,
+        reportDate: currentDate // Log the report date
       });
       
       const generatedReport = await generateResearchReport(reportRequest);
@@ -71,9 +76,15 @@ export const useReportGeneration = (symbol: string, data: ReportData) => {
         throw new Error("Failed to generate report - no data returned");
       }
       
+      // Ensure the report has today's date
+      if (!generatedReport.date || new Date(generatedReport.date).getFullYear() < 2025) {
+        generatedReport.date = currentDate;
+      }
+      
       console.log("Report received from API:", {
         symbol: generatedReport.symbol,
         recommendation: generatedReport.recommendation,
+        date: generatedReport.date, // Log the date from the response
         sectionsReceived: generatedReport.sections?.length || 0, 
         sectionsData: generatedReport.sections?.map(s => s.title) || [],
         hasRatingDetails: !!generatedReport.ratingDetails,

@@ -12,6 +12,11 @@ export const generateResearchReport = async (reportRequest: any): Promise<Resear
   try {
     console.log(`Generating AI research report for ${reportRequest.symbol} (type: ${reportRequest.reportType || 'standard'})`);
     
+    // Add current date to ensure report is up to date
+    if (!reportRequest.reportDate) {
+      reportRequest.reportDate = new Date().toISOString().split('T')[0];
+    }
+    
     // Enhanced retry mechanism for better reliability with complex reports
     const data = await withRetry(async () => {
       return await invokeSupabaseFunction<ResearchReport>('generate-research-report', {
@@ -25,9 +30,15 @@ export const generateResearchReport = async (reportRequest: any): Promise<Resear
     }
     
     // Enhanced validation for more comprehensive reports
-    if (!data.symbol || !data.companyName || !data.date) {
+    if (!data.symbol || !data.companyName) {
       console.error("Research report response is missing required fields:", data);
       throw new Error("Invalid research report format received");
+    }
+    
+    // Ensure report has current date
+    if (!data.date || new Date(data.date).getFullYear() < 2025) {
+      data.date = reportRequest.reportDate || new Date().toISOString().split('T')[0];
+      console.log(`Updated report date to current: ${data.date}`);
     }
     
     // Verify sections array exists and is properly formatted
@@ -71,7 +82,7 @@ export const generateResearchReport = async (reportRequest: any): Promise<Resear
       }
     }
     
-    console.log(`AI research report generated for ${reportRequest.symbol} with ${data.sections?.length || 0} sections`);
+    console.log(`AI research report generated for ${reportRequest.symbol} with ${data.sections?.length || 0} sections and date ${data.date}`);
     return data;
   } catch (error: any) {
     console.error("Error generating research report:", error);
