@@ -31,7 +31,7 @@ const ResearchReportGenerator = ({ symbol }: ResearchReportGeneratorProps) => {
     handlePredictPrice
   } = useReportGeneration(symbol, data);
 
-  // Debug report structure if available
+  // Enhanced debugging for better report troubleshooting
   useEffect(() => {
     if (report) {
       console.log("Report data available:", {
@@ -44,18 +44,19 @@ const ResearchReportGenerator = ({ symbol }: ResearchReportGeneratorProps) => {
         hasCatalysts: !!report.catalysts,
         sections: report.sections.map(s => s.title),
         sectionCount: report.sections.length,
-        firstSectionContentLength: report.sections[0]?.content.length || 0,
+        sectionSizes: report.sections.map(s => s.content.length),
         summaryLength: report.summary?.length || 0
       });
     }
   }, [report]);
 
-  // If we have a report but it's too basic, show a warning
+  // Check for report quality issues
   const isReportTooBasic = report && (
     !report.ratingDetails || 
     !report.scenarioAnalysis || 
     !report.catalysts ||
-    report.sections.some(s => s.content.length < 200)
+    report.sections.some(s => s.content.length < 300) ||
+    (report.summary && report.summary.length < 150)
   );
 
   if (isLoading) {

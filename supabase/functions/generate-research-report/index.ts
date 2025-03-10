@@ -35,16 +35,16 @@ Deno.serve(async (req) => {
     console.log("Sending data to OpenAI for processing");
     const report = await generateReportWithOpenAI(formattedData, reportRequest, OPENAI_API_KEY);
     
-    // Make sure we have sections before returning
+    // Enhanced section generation and quality checks
     if (!report.sections || report.sections.length === 0) {
-      console.warn("No sections returned from OpenAI, adding default sections");
+      console.warn("No sections returned from OpenAI, adding comprehensive default sections");
       report.sections = createDefaultSections(formattedData);
     }
     
-    // Validate all sections have sufficient content
+    // Validate all sections have substantial content
     report.sections = report.sections.map(section => {
       // Different minimum content length requirements for different section types
-      let minLength = 300;
+      let minLength = 350; // Increased minimum section length for better quality
       
       if (section.title.toLowerCase().includes('financial')) {
         minLength = 1000; // Financial sections need more detail
@@ -54,7 +54,7 @@ Deno.serve(async (req) => {
         section.title.toLowerCase().includes('thesis') ||
         section.title.toLowerCase().includes('esg')
       ) {
-        minLength = 600; // Other important analysis sections need substantial detail
+        minLength = 700; // Other important analysis sections need substantial detail
       }
       
       if (!section.content || section.content.length < minLength) {
@@ -73,7 +73,9 @@ Deno.serve(async (req) => {
       'Risk Factors', 
       'ESG Considerations',
       'Investment Thesis',
-      'Business Overview'
+      'Business Overview',
+      'Industry Analysis',
+      'Competitive Positioning'
     ];
     
     for (const sectionTitle of requiredSections) {
@@ -93,11 +95,14 @@ Deno.serve(async (req) => {
       }
     }
     
-    // Log the sections we're returning
-    console.log(`Returning report with ${report.sections.length} sections: ${report.sections.map(s => s.title).join(', ')}`);
+    // Ensure the sections are in a logical order
+    report.sections = orderSectionsLogically(report.sections);
     
     // Ensure we have all required report details
     ensureCompleteReportStructure(report, formattedData);
+    
+    // Log the sections we're returning
+    console.log(`Returning report with ${report.sections.length} sections: ${report.sections.map(s => s.title).join(', ')}`);
     
     return new Response(JSON.stringify(report), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -115,13 +120,16 @@ Deno.serve(async (req) => {
 
 // Helper function to determine the best insert position for a new section
 function determineInsertPosition(sections: Array<{title: string, content: string}>, newSectionTitle: string): number {
-  // Ideal sequence of sections (partial)
+  // Ideal sequence of sections
   const idealSequence = [
     'Executive Summary',
     'Investment Thesis',
     'Business Overview',
+    'Industry Analysis',
+    'Competitive Positioning',
     'Financial Analysis',
     'Valuation',
+    'Growth Outlook',
     'Risk Factors',
     'ESG Considerations',
     'Rating and Recommendation'
@@ -165,4 +173,42 @@ function determineInsertPosition(sections: Array<{title: string, content: string
     s.title.toLowerCase().includes('recommendation'));
   
   return ratingIndex !== -1 ? ratingIndex : sections.length;
+}
+
+// Helper function to order sections in a logical flow
+function orderSectionsLogically(sections: Array<{title: string, content: string}>): Array<{title: string, content: string}> {
+  const idealOrder = [
+    'Executive Summary',
+    'Investment Thesis',
+    'Business Overview',
+    'Industry Analysis',
+    'Competitive Positioning',
+    'Financial Analysis',
+    'Valuation',
+    'Growth Outlook',
+    'Risk Factors',
+    'ESG Considerations',
+    'Rating and Recommendation'
+  ];
+  
+  // Create a scoring function for sorting based on ideal order
+  const getSectionScore = (title: string): number => {
+    const lowerTitle = title.toLowerCase();
+    
+    for (let i = 0; i < idealOrder.length; i++) {
+      if (lowerTitle.includes(idealOrder[i].toLowerCase())) {
+        return i;
+      }
+    }
+    
+    // If not found in ideal order, place near the end
+    return idealOrder.length;
+  };
+  
+  // Sort sections based on ideal order
+  return [...sections].sort((a, b) => {
+    const scoreA = getSectionScore(a.title);
+    const scoreB = getSectionScore(b.title);
+    return scoreA - scoreB;
+  });
 }

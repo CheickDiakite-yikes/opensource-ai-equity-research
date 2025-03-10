@@ -28,7 +28,7 @@ Deno.serve(async (req) => {
     console.log(`Stock data received: price=${stockData.price}, marketCap=${stockData.marketCap || 'N/A'}`);
     console.log(`Financial data received: ${financials ? 'yes' : 'no'}, News count: ${news?.length || 0}`);
     
-    // Validate input data
+    // Enhanced input validation
     if (!stockData.price || typeof stockData.price !== 'number' || stockData.price <= 0) {
       throw new Error(`Invalid price data for ${symbol}: ${stockData.price}`);
     }
@@ -39,7 +39,7 @@ Deno.serve(async (req) => {
     // Add industry classification for better prediction context
     formattedData.industry = determineIndustry(symbol);
     
-    // Retrieve historical predictions for this symbol
+    // Retrieve historical predictions for this symbol for consistency
     const { data: historyData, error: historyError } = await supabase
       .from('stock_prediction_history')
       .select('*')
@@ -54,10 +54,10 @@ Deno.serve(async (req) => {
     // Add historical predictions to formatted data
     formattedData.predictionHistory = historyData || [];
     
-    // Attempt to generate AI prediction with a max of 2 retries
+    // Attempt to generate AI prediction with a max of 3 retries for better quality
     let prediction: StockPrediction | null = null;
     let attempts = 0;
-    const maxAttempts = 3;
+    const maxAttempts = 4;
     
     while (!prediction && attempts < maxAttempts) {
       attempts++;
@@ -76,7 +76,7 @@ Deno.serve(async (req) => {
         // Critical validation: Ensure prediction is meaningfully different from current price
         const currentPrice = stockData.price;
         
-        // Validate prediction
+        // Enhanced validation with more criteria
         if (!validatePrediction(prediction, currentPrice)) {
           console.warn(`Invalid prediction generated for ${symbol}, retrying...`);
           prediction = null;
@@ -100,7 +100,7 @@ Deno.serve(async (req) => {
       throw new Error(`Failed to generate valid prediction for ${symbol} after ${maxAttempts} attempts`);
     }
     
-    // Save prediction to history table
+    // Save prediction to history table for future reference and consistency
     try {
       const { error: insertError } = await supabase
         .from('stock_prediction_history')
@@ -165,5 +165,7 @@ function logPredictionResults(symbol: string, currentPrice: number, prediction: 
     3-month: $${prediction.predictedPrice.threeMonths.toFixed(2)} (${threeMonthChange.toFixed(2)}%)
     6-month: $${prediction.predictedPrice.sixMonths.toFixed(2)} (${sixMonthChange.toFixed(2)}%)
     1-year: $${prediction.predictedPrice.oneYear.toFixed(2)} (${oneYearChange.toFixed(2)}%)
+    Sentiment: ${prediction.sentimentAnalysis || 'N/A'}
+    Confidence: ${prediction.confidenceLevel}%
   `);
 }

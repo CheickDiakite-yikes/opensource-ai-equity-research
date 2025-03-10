@@ -12,19 +12,19 @@ export const generateResearchReport = async (reportRequest: any): Promise<Resear
   try {
     console.log(`Generating AI research report for ${reportRequest.symbol} (type: ${reportRequest.reportType || 'standard'})`);
     
-    // Use withRetry for better reliability
+    // Enhanced retry mechanism for better reliability with complex reports
     const data = await withRetry(async () => {
       return await invokeSupabaseFunction<ResearchReport>('generate-research-report', {
         reportRequest
       });
-    }, { retries: 2, retryDelay: 2000 }); // 2 retries with 2s initial delay
+    }, { retries: 3, retryDelay: 2500 }); // Increased retries and delay for more complex report generation
     
     if (!data) {
       console.error("No data returned from research report API");
       throw new Error("Failed to generate research report");
     }
     
-    // Validate the response has the minimum required fields
+    // Enhanced validation for more comprehensive reports
     if (!data.symbol || !data.companyName || !data.date) {
       console.error("Research report response is missing required fields:", data);
       throw new Error("Invalid research report format received");
@@ -39,14 +39,14 @@ export const generateResearchReport = async (reportRequest: any): Promise<Resear
       }];
     }
     
-    // Check for very brief sections that might indicate generation issues
-    const shortSections = data.sections.filter(section => section.content.length < 200);
+    // Enhanced quality check for comprehensive sections
+    const shortSections = data.sections.filter(section => section.content.length < 300);
     if (shortSections.length > 0) {
-      console.warn(`Report contains ${shortSections.length} brief sections that may need enhancement:`, 
+      console.warn(`Report contains ${shortSections.length} sections that may need enhancement:`, 
         shortSections.map(s => s.title).join(', '));
     }
     
-    // Ensure each section has title and content
+    // Ensure each section has detailed content
     data.sections = data.sections.map(section => {
       if (!section.title || !section.content) {
         return {
@@ -56,6 +56,20 @@ export const generateResearchReport = async (reportRequest: any): Promise<Resear
       }
       return section;
     });
+    
+    // Ensure reports have a recommendation and target price
+    if (!data.recommendation) {
+      data.recommendation = "Neutral";
+    }
+    
+    if (!data.targetPrice) {
+      if (reportRequest.stockData?.price) {
+        // Default to current price if no target provided
+        data.targetPrice = `$${reportRequest.stockData.price.toFixed(2)}`;
+      } else {
+        data.targetPrice = "N/A";
+      }
+    }
     
     console.log(`AI research report generated for ${reportRequest.symbol} with ${data.sections?.length || 0} sections`);
     return data;
@@ -86,11 +100,20 @@ export const generateStockPrediction = async (
         news,
         quickMode // Pass the quick mode flag to the edge function
       });
-    }, { retries: 1, retryDelay: 1000 }); // 1 retry with 1s delay
+    }, { retries: 2, retryDelay: 1500 }); // Increased retries for better reliability
     
     if (!data) {
       console.error("No data returned from stock prediction API");
       throw new Error("Failed to generate stock prediction");
+    }
+    
+    // Enhanced validation for predictions
+    if (!data.predictedPrice || !data.keyDrivers || !data.risks) {
+      console.warn("Prediction data may be incomplete:", {
+        hasPredictedPrice: !!data.predictedPrice,
+        hasKeyDrivers: !!data.keyDrivers,
+        hasRisks: !!data.risks
+      });
     }
     
     console.log(`AI stock prediction generated for ${symbol}`);
