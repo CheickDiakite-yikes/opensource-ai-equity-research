@@ -31,6 +31,8 @@ const Header: React.FC<HeaderProps> = ({
     window.history.replaceState({}, '', '/');
     // Clear the input field 
     setSymbol('');
+    // Force clear the searchedSymbol in parent component (Index.tsx)
+    window.dispatchEvent(new CustomEvent('clearSearchedSymbol'));
   };
   
   return (

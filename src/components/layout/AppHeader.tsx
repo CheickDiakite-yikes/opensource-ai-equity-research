@@ -19,6 +19,8 @@ const AppHeader: React.FC<AppHeaderProps> = ({ featuredSymbols }) => {
     navigate('/', { replace: true });
     // Clear any search parameters that might show a stock
     window.history.replaceState({}, '', '/');
+    // Force clear the searchedSymbol in parent component
+    window.dispatchEvent(new CustomEvent('clearSearchedSymbol'));
   };
   
   return (

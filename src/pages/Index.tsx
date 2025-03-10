@@ -42,6 +42,19 @@ const Index = () => {
       setSymbol(symbolParam);
       setSearchedSymbol(symbolParam);
     }
+    
+    // Listen for the custom clear event
+    const handleClearSearch = () => {
+      setSearchedSymbol("");
+      setSymbol("");
+    };
+    
+    window.addEventListener('clearSearchedSymbol', handleClearSearch);
+    
+    // Clean up event listener
+    return () => {
+      window.removeEventListener('clearSearchedSymbol', handleClearSearch);
+    };
   }, [searchParams]);
 
   const handleSearch = () => {
