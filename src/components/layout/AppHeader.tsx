@@ -15,7 +15,10 @@ const AppHeader: React.FC<AppHeaderProps> = ({ featuredSymbols }) => {
   const navigate = useNavigate();
   
   const handleLogoClick = () => {
-    navigate('/');
+    // Navigate to home and reset search params to ensure landing view is shown
+    navigate('/', { replace: true });
+    // Clear any search parameters that might show a stock
+    window.history.replaceState({}, '', '/');
   };
   
   return (

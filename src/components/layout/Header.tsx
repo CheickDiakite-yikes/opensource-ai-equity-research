@@ -25,7 +25,12 @@ const Header: React.FC<HeaderProps> = ({
   const navigate = useNavigate();
   
   const handleLogoClick = () => {
-    navigate('/');
+    // Navigate to home and ensure landing view is shown
+    navigate('/', { replace: true });
+    // Clear any search parameters that might show a stock
+    window.history.replaceState({}, '', '/');
+    // Clear the input field 
+    setSymbol('');
   };
   
   return (
