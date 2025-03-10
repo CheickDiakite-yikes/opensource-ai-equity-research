@@ -8,6 +8,8 @@ import SocialSentimentSection from './SocialSentimentSection';
 import { Newspaper, BarChart, Layers } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import ErrorDisplay from '../reports/ErrorDisplay';
+import { useMediaQuery } from '@/hooks/use-mobile';
+import { cn } from '@/lib/utils';
 
 interface AlternativeDataViewProps {
   symbol: string;

@@ -57,6 +57,17 @@
   body {
     @apply bg-background text-foreground;
   }
+  
+  /* Improved font size scaling for mobile */
+  html {
+    font-size: 14px;
+  }
+  
+  @media (min-width: 768px) {
+    html {
+      font-size: 16px;
+    }
+  }
 }
 
 @layer utilities {
@@ -183,5 +194,44 @@
   
   .card-highlight {
     @apply transition-all duration-300 hover:shadow-lg hover:-translate-y-1;
+  }
+  
+  /* Mobile optimization utilities */
+  .mobile-container {
+    @apply px-3 md:px-6;
+  }
+  
+  .mobile-padding {
+    @apply p-3 md:p-6;
+  }
+  
+  .mobile-card {
+    @apply rounded-lg shadow-sm;
+  }
+  
+  .mobile-scroll {
+    @apply overflow-x-auto scrollbar-none pb-4;
+  }
+  
+  .scrollbar-none {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  
+  .scrollbar-none::-webkit-scrollbar {
+    display: none;
+  }
+  
+  /* Touch-friendly button sizes for mobile */
+  .touch-target {
+    @apply min-h-[44px] min-w-[44px];
+  }
+  
+  /* Safe area padding for mobile devices */
+  .safe-area-padding {
+    padding-bottom: env(safe-area-inset-bottom, 0.5rem);
+    padding-top: env(safe-area-inset-top, 0.5rem);
+    padding-left: env(safe-area-inset-left, 0.5rem);
+    padding-right: env(safe-area-inset-right, 0.5rem);
   }
 }

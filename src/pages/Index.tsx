@@ -1,9 +1,11 @@
+
 import { useState, useEffect } from "react";
 import Header from "@/components/layout/Header";
 import LandingView from "@/components/home/LandingView";
 import StockView from "@/components/stocks/StockView";
 import { toast } from "sonner";
 import { useSearchParams, useNavigate } from "react-router-dom";
+import { useMediaQuery } from "@/hooks/use-mobile";
 
 const Index = () => {
   const [symbol, setSymbol] = useState<string>("");
@@ -12,6 +14,7 @@ const Index = () => {
   const [recentSearches, setRecentSearches] = useState<string[]>([]);
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
+  const isMobile = useMediaQuery("(max-width: 768px)");
   
   const [featuredSymbols] = useState<{symbol: string, name: string}[]>([
     { symbol: "AAPL", name: "Apple Inc." },
@@ -103,7 +106,7 @@ const Index = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background to-muted/30">
+    <div className="min-h-screen bg-gradient-to-br from-background to-muted/30 safe-area-padding">
       <Header 
         symbol={symbol}
         setSymbol={setSymbol}
@@ -112,7 +115,7 @@ const Index = () => {
         handleKeyDown={handleKeyDown}
       />
 
-      <main className="container mx-auto px-4 sm:px-6 md:px-0 max-w-[1400px]">
+      <main className="container mx-auto px-2 sm:px-4 md:px-6 max-w-[1400px]">
         {!searchedSymbol ? (
           <LandingView 
             recentSearches={recentSearches}
