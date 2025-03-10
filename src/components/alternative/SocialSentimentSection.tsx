@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { SocialSentimentResponse } from '@/types/alternative/companyNewsTypes';
 import { motion } from 'framer-motion';
@@ -27,7 +26,7 @@ const SocialSentimentSection: React.FC<SocialSentimentProps> = ({ data, isLoadin
     );
   }
 
-  if (!data || !data.data || (!data.data.reddit?.length && !data.data.twitter?.length)) {
+  if (!data || !data.data || data.data.length === 0) {
     return (
       <div className="text-center p-6">
         <p className="text-muted-foreground">No social sentiment data available for this stock</p>
@@ -35,13 +34,11 @@ const SocialSentimentSection: React.FC<SocialSentimentProps> = ({ data, isLoadin
     );
   }
 
-  // Combine reddit and twitter data
-  const allSentimentData = [...(data.data.reddit || []), ...(data.data.twitter || [])];
-  
-  // Sort by time (newest first) before processing
+  // Make a copy of data and sort by time (newest first)
+  const allSentimentData = [...data.data];
   allSentimentData.sort((a, b) => new Date(b.atTime).getTime() - new Date(a.atTime).getTime());
   
-  // Prepare chart data from combined array
+  // Prepare chart data from array
   const chartData = allSentimentData.map(item => ({
     time: format(new Date(item.atTime), 'MMM d, HH:mm'),
     positiveScore: parseFloat((item.positiveScore * 100).toFixed(2)),

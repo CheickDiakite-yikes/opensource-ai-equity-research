@@ -34,7 +34,13 @@ serve(async (req) => {
     // Log response for debugging
     console.log(`Social sentiment data for ${symbol}:`, JSON.stringify(data).slice(0, 200) + "...");
     
-    return createCorsResponse(data);
+    // Ensure data follows expected format
+    const formattedResponse = {
+      symbol: symbol,
+      data: data.data || []
+    };
+    
+    return createCorsResponse(formattedResponse);
   } catch (error) {
     console.error("Error in get-finnhub-social-sentiment:", error);
     return createCorsErrorResponse(error.message);

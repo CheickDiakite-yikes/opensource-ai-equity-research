@@ -1,4 +1,3 @@
-
 // If the file doesn't exist, create it with the updated type definition
 export interface CompanyNews {
   category: string;
@@ -24,10 +23,7 @@ export interface SocialSentiment {
 
 export interface SocialSentimentResponse {
   symbol: string;
-  data: {
-    reddit: SocialSentiment[];
-    twitter: SocialSentiment[];
-  }
+  data: SocialSentiment[];
 }
 
 export interface AlternativeDataState {
