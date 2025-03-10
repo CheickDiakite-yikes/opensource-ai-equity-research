@@ -101,8 +101,8 @@ const LandingView: React.FC<LandingViewProps> = ({
         </motion.div>
       </div>
       
-      {/* Featured Companies Section */}
-      <div className="max-w-screen-xl mx-auto px-4 py-6 bg-gradient-to-t from-muted/10 to-background">
+      {/* Featured Companies Section - add id for scrolling */}
+      <div id="featured-companies-section" className="max-w-screen-xl mx-auto px-4 py-6 bg-gradient-to-t from-muted/10 to-background">
         <motion.div 
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}

@@ -16,6 +16,14 @@ const HeroSection: React.FC<HeroSectionProps> = ({ featuredSymbols }) => {
     setIsVisible(true);
   }, []);
 
+  // Function to scroll to the featured companies section
+  const scrollToFeaturedCompanies = () => {
+    const featuredCompaniesSection = document.getElementById('featured-companies-section');
+    if (featuredCompaniesSection) {
+      featuredCompaniesSection.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
+
   // Animation variants for the floating elements
   const floatingIcons = {
     hidden: { opacity: 0 },
@@ -75,10 +83,19 @@ const HeroSection: React.FC<HeroSectionProps> = ({ featuredSymbols }) => {
               </div>
               
               <div className="flex flex-wrap gap-4 mb-8">
-                <Button size="lg" className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-md hover:shadow-lg transition-all duration-300 rounded-full px-8">
+                <Button 
+                  onClick={scrollToFeaturedCompanies}
+                  size="lg" 
+                  className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-md hover:shadow-lg transition-all duration-300 rounded-full px-8"
+                >
                   Get Started <ArrowRight className="ml-1" />
                 </Button>
-                <Button size="lg" variant="outline" className="border-blue-500/50 text-foreground hover:bg-blue-50 dark:hover:bg-blue-950/50 transition-all duration-300 rounded-full px-8">
+                <Button 
+                  size="lg" 
+                  variant="outline" 
+                  className="border-blue-500/50 text-foreground hover:bg-blue-50 dark:hover:bg-blue-950/50 transition-all duration-300 rounded-full px-8"
+                  onClick={() => window.open('https://www.dididata.io/about-us', '_blank')}
+                >
                   Learn More
                 </Button>
               </div>
