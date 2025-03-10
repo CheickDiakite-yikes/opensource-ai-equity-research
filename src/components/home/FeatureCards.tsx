@@ -62,13 +62,6 @@ const FeatureCards: React.FC = () => {
                   <span className="px-2 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 text-xs rounded-full">Financial Ratios</span>
                   <span className="px-2 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 text-xs rounded-full">Growth Analysis</span>
                 </div>
-                
-                <div className="mt-3">
-                  <Button variant="ghost" className="text-blue-600 dark:text-blue-400 p-0 hover:bg-transparent group">
-                    <span className="mr-1">Learn more</span> 
-                    <ChevronRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
-                  </Button>
-                </div>
               </div>
             </Card>
           </motion.div>
@@ -89,13 +82,6 @@ const FeatureCards: React.FC = () => {
                   <span className="px-2 py-1 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 text-xs rounded-full">Investment Analysis</span>
                   <span className="px-2 py-1 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 text-xs rounded-full">Risk Assessment</span>
                 </div>
-                
-                <div className="mt-3">
-                  <Button variant="ghost" className="text-purple-600 dark:text-purple-400 p-0 hover:bg-transparent group">
-                    <span className="mr-1">Learn more</span> 
-                    <ChevronRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
-                  </Button>
-                </div>
               </div>
             </Card>
           </motion.div>
@@ -115,13 +101,6 @@ const FeatureCards: React.FC = () => {
                 <div className="flex flex-wrap gap-2 mt-2">
                   <span className="px-2 py-1 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 text-xs rounded-full">Short-Term</span>
                   <span className="px-2 py-1 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 text-xs rounded-full">Long-Term</span>
-                </div>
-                
-                <div className="mt-3">
-                  <Button variant="ghost" className="text-green-600 dark:text-green-400 p-0 hover:bg-transparent group">
-                    <span className="mr-1">Learn more</span> 
-                    <ChevronRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
-                  </Button>
                 </div>
               </div>
             </Card>
