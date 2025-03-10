@@ -14,6 +14,10 @@ interface AppHeaderProps {
 const AppHeader: React.FC<AppHeaderProps> = ({ featuredSymbols }) => {
   const navigate = useNavigate();
   
+  const handleLogoClick = () => {
+    navigate('/');
+  };
+  
   return (
     <header className="border-b border-border/40 py-4 px-6 bg-gradient-to-r from-background to-secondary/10 backdrop-blur-sm sticky top-0 z-20 shadow-sm">
       <div className="container mx-auto flex flex-col sm:flex-row justify-between items-center gap-4">
@@ -23,7 +27,7 @@ const AppHeader: React.FC<AppHeaderProps> = ({ featuredSymbols }) => {
           transition={{ duration: 0.5 }}
           className="flex items-center"
         >
-          <Link to="/" className="flex items-center gap-2">
+          <div onClick={handleLogoClick} className="flex items-center gap-2 cursor-pointer">
             <img 
               src="/lovable-uploads/288626b2-84b1-4aca-9399-864c39d76976.png" 
               alt="DiDi Equity Research" 
@@ -32,7 +36,7 @@ const AppHeader: React.FC<AppHeaderProps> = ({ featuredSymbols }) => {
             <span className="bg-clip-text text-transparent bg-gradient-to-r from-primary to-blue-600 text-2xl font-bold">
               Equity Research
             </span>
-          </Link>
+          </div>
         </motion.div>
         
         <div className="flex items-center gap-4 w-full sm:w-auto">

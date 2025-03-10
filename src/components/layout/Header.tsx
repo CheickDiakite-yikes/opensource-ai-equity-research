@@ -1,6 +1,6 @@
 
 import React from "react";
-import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { Search, ChevronRight } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -22,6 +22,12 @@ const Header: React.FC<HeaderProps> = ({
   isLoading,
   handleKeyDown
 }) => {
+  const navigate = useNavigate();
+  
+  const handleLogoClick = () => {
+    navigate('/');
+  };
+  
   return (
     <header className="border-b border-border/40 py-4 px-6 bg-gradient-to-r from-background to-secondary/10 backdrop-blur-sm sticky top-0 z-10 shadow-sm">
       <div className="container mx-auto flex flex-col sm:flex-row justify-between items-center gap-4">
@@ -31,7 +37,7 @@ const Header: React.FC<HeaderProps> = ({
           transition={{ duration: 0.5 }}
           className="flex items-center"
         >
-          <Link to="/" className="flex items-center gap-2">
+          <div onClick={handleLogoClick} className="flex items-center gap-2 cursor-pointer">
             <img 
               src="/lovable-uploads/288626b2-84b1-4aca-9399-864c39d76976.png" 
               alt="DiDi Equity Research" 
@@ -40,7 +46,7 @@ const Header: React.FC<HeaderProps> = ({
             <span className="bg-clip-text text-transparent bg-gradient-to-r from-primary to-blue-600 text-2xl font-bold">
               Equity Research
             </span>
-          </Link>
+          </div>
         </motion.div>
         
         <div className="flex items-center gap-4">
