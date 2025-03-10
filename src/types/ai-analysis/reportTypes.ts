@@ -1,87 +1,99 @@
 
-/**
- * Research Report Section
- */
-export interface ReportSection {
-  title: string;
-  content: string;
-}
-
-/**
- * Rating Details
- */
-export interface RatingDetails {
-  overallRating: string;
-  financialStrength: string;
-  growthOutlook: string;
-  valuationAttractiveness: string;
-  competitivePosition: string;
-  // Add the properties used in the components
-  ratingScale?: string;
-  ratingJustification?: string;
-}
-
-/**
- * Scenario Analysis
- */
-export interface ScenarioAnalysis {
-  bullCase: {
-    price: string;
-    description: string;
-    probability?: string;
-    drivers?: string[];
-  };
-  baseCase: {
-    price: string;
-    description: string;
-    probability?: string;
-    drivers?: string[];
-  };
-  bearCase: {
-    price: string;
-    description: string;
-    probability?: string;
-    drivers?: string[];
-  };
-}
-
-/**
- * Catalyst Timeline
- */
-export interface CatalystTimeline {
-  shortTerm?: string[];
-  mediumTerm?: string[];
-  longTerm?: string[];
-}
-
-/**
- * Growth Catalysts
- */
-export interface GrowthCatalysts {
-  positive?: string[];
-  negative?: string[];
-  timeline?: CatalystTimeline;
-}
-
-/**
- * Research Report
- */
 export interface ResearchReport {
   symbol: string;
   companyName: string;
   date: string;
   recommendation: string;
   targetPrice: string;
-  summary: string;
+  summary?: string;
   sections: ReportSection[];
-  ratingDetails?: RatingDetails;
-  scenarioAnalysis?: ScenarioAnalysis;
-  catalysts?: GrowthCatalysts;
+  ratingDetails?: {
+    overallRating: string;
+    financialStrength: string;
+    growthOutlook: string;
+    valuationAttractiveness: string;
+    competitivePosition: string;
+    ratingScale?: string;
+    ratingJustification?: string;
+  };
+  scenarioAnalysis?: {
+    bullCase: Scenario;
+    baseCase: Scenario;
+    bearCase: Scenario;
+  };
+  catalysts?: {
+    positive: string[];
+    negative: string[];
+    timeline?: {
+      shortTerm: string[];
+      mediumTerm: string[];
+      longTerm: string[];
+    };
+  };
+  // Enhanced data from the new endpoints
+  analystConsensus?: {
+    buyCount: number;
+    holdCount: number;
+    sellCount: number;
+    strongBuyCount: number;
+    strongSellCount: number;
+    consensusRating: string;
+    targetPrice: string;
+    analystCount: number;
+  };
+  earningsData?: {
+    nextEarningsDate: string;
+    estimatedEPS: number;
+    estimatedRevenue: number;
+    previousEarnings: {
+      date: string;
+      epsActual: number;
+      epsEstimate: number;
+      epsSurprise: number;
+      revenueActual: number;
+      revenueEstimate: number;
+      revenueSurprise: number;
+    }[];
+  };
+  enterpriseValue?: {
+    value: number;
+    evToMarketCap: number;
+    evToEbitda: number;
+    evToRevenue: number;
+    totalDebt: number;
+    cashAndEquivalents: number;
+  };
+  analystEstimates?: {
+    revenueEstimates: {
+      year: string;
+      low: number;
+      high: number;
+      average: number;
+      growth: number;
+    }[];
+    epsEstimates: {
+      year: string;
+      low: number;
+      high: number;
+      average: number;
+      growth: number;
+    }[];
+    analystCount: number;
+  };
 }
 
-/**
- * Report Request
- */
+export interface ReportSection {
+  title: string;
+  content: string;
+}
+
+export interface Scenario {
+  price: string;
+  description: string;
+  probability: string;
+  drivers?: string[];
+}
+
 export interface ReportRequest {
   symbol: string;
   companyName: string;
@@ -94,6 +106,7 @@ export interface ReportRequest {
     balance?: any[];
     cashflow?: any[];
     ratios?: any[];
+    [key: string]: any;
   };
   news?: any[];
   peers?: string[];

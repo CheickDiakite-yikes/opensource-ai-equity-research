@@ -1,171 +1,100 @@
 
-import { corsHeaders } from '../_shared/cors.ts';
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.36.0';
-import { StockPrediction } from './types.ts';
-import { formatDataForPrediction } from './dataFormatter.ts';
-import { generatePredictionWithOpenAI } from './predictionService.ts';
-import { createFallbackPrediction } from './fallbackGenerator.ts';
-import { validatePrediction } from './validationService.ts';
-import { determineIndustry } from './industryAnalysis.ts';
+import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
+import { corsHeaders } from "../_shared/cors.ts";
+import { formatDataForPrediction } from "./dataFormatter.ts";
+import { generatePredictionWithOpenAI, enhancePredictionWithAnalystEstimates, enhancePredictionWithRecommendationTrends, enhancePredictionWithEnterpriseValue, enhancePredictionWithEarningsCalendar } from "./predictionService.ts";
+import { fetchRecommendationTrends, fetchFinnhubCompanyNews, fetchFinnhubPeers, fetchEarningsCalendar } from "../_shared/finnhub-services.ts";
+import { fetchEnterpriseValue, fetchAnalystEstimates } from "../_shared/fmp-services.ts";
 
-const supabaseUrl = Deno.env.get("SUPABASE_URL") || "";
-const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY") || "";
-const supabase = createClient(supabaseUrl, supabaseAnonKey);
-
-Deno.serve(async (req) => {
-  if (req.method === 'OPTIONS') {
+serve(async (req) => {
+  // Handle CORS preflight requests
+  if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
-  
+
   try {
+    // Parse request body
     const { symbol, stockData, financials, news, quickMode } = await req.json();
     
+    // Log the received request
+    console.log(`Received prediction request for ${symbol} (quick mode: ${quickMode || false})`);
+    
+    // Check for required parameters
     if (!symbol || !stockData) {
-      throw new Error('Missing required parameters: symbol and stockData are required');
+      return new Response(
+        JSON.stringify({ error: "Missing required parameters" }),
+        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
     }
     
-    console.log(`Generating AI price prediction for ${symbol}${quickMode ? ' (quick mode)' : ''}`);
-    console.log(`Stock data received: price=${stockData.price}, marketCap=${stockData.marketCap || 'N/A'}`);
-    console.log(`Financial data received: ${financials ? 'yes' : 'no'}, News count: ${news?.length || 0}`);
-    
-    // Enhanced input validation
-    if (!stockData.price || typeof stockData.price !== 'number' || stockData.price <= 0) {
-      throw new Error(`Invalid price data for ${symbol}: ${stockData.price}`);
-    }
-    
+    // Format the data for prediction
     const formattedData = formatDataForPrediction(symbol, stockData, financials, news);
-    formattedData.quickMode = quickMode === true; // Ensure quickMode is passed through
+    formattedData.quickMode = quickMode || false;
     
-    // Add industry classification for better prediction context
-    formattedData.industry = determineIndustry(symbol);
+    // Calculate date ranges for API calls
+    const today = new Date();
+    const oneMonthAgo = new Date();
+    oneMonthAgo.setMonth(today.getMonth() - 1);
+    const threeMonthsAhead = new Date();
+    threeMonthsAhead.setMonth(today.getMonth() + 3);
     
-    // Retrieve historical predictions for this symbol for consistency
-    const { data: historyData, error: historyError } = await supabase
-      .from('stock_prediction_history')
-      .select('*')
-      .eq('symbol', symbol)
-      .order('prediction_date', { ascending: false })
-      .limit(5);
+    const formatDate = (date: Date) => {
+      return date.toISOString().split('T')[0];
+    };
     
-    if (historyError) {
-      console.warn(`Error retrieving prediction history for ${symbol}:`, historyError);
-    }
+    // Fetch additional data in parallel
+    const [
+      recommendationTrends,
+      finnhubNews,
+      finnhubPeers,
+      earningsCalendar,
+      enterpriseValue,
+      analystEstimates
+    ] = await Promise.all([
+      fetchRecommendationTrends(symbol),
+      fetchFinnhubCompanyNews(symbol, formatDate(oneMonthAgo), formatDate(today)),
+      fetchFinnhubPeers(symbol),
+      fetchEarningsCalendar(formatDate(today), formatDate(threeMonthsAhead), symbol),
+      fetchEnterpriseValue(symbol),
+      fetchAnalystEstimates(symbol)
+    ]);
     
-    // Add historical predictions to formatted data
-    formattedData.predictionHistory = historyData || [];
+    // Add additional data to the formatted data
+    formattedData.recommendationTrends = recommendationTrends;
+    formattedData.finnhubNews = finnhubNews;
+    formattedData.finnhubPeers = finnhubPeers;
+    formattedData.earningsCalendar = earningsCalendar;
+    formattedData.enterpriseValue = enterpriseValue;
+    formattedData.analystEstimates = analystEstimates;
     
-    // Attempt to generate AI prediction with a max of 3 retries for better quality
-    let prediction: StockPrediction | null = null;
-    let attempts = 0;
-    const maxAttempts = 4;
+    // Log that we've fetched the additional data
+    console.log(`Fetched additional data for ${symbol} prediction:`);
+    console.log(`- Recommendation trends: ${recommendationTrends?.length || 0} items`);
+    console.log(`- Finnhub news: ${finnhubNews?.length || 0} items`);
+    console.log(`- Finnhub peers: ${finnhubPeers?.length || 0} items`);
+    console.log(`- Earnings calendar entries: ${earningsCalendar?.earningsCalendar?.length || 0} items`);
+    console.log(`- Enterprise value: ${enterpriseValue?.length || 0} items`);
+    console.log(`- Analyst estimates: ${analystEstimates?.length || 0} items`);
     
-    while (!prediction && attempts < maxAttempts) {
-      attempts++;
-      console.log(`Prediction attempt ${attempts}/${maxAttempts} for ${symbol}`);
-      
-      try {
-        // If we're on the last attempt, force fallback to ensure we return something
-        if (attempts === maxAttempts) {
-          console.log(`Using fallback prediction for ${symbol} on final attempt`);
-          prediction = createFallbackPrediction(formattedData);
-          break;
-        }
-        
-        prediction = await generatePredictionWithOpenAI(formattedData);
-        
-        // Critical validation: Ensure prediction is meaningfully different from current price
-        const currentPrice = stockData.price;
-        
-        // Enhanced validation with more criteria
-        if (!validatePrediction(prediction, currentPrice)) {
-          console.warn(`Invalid prediction generated for ${symbol}, retrying...`);
-          prediction = null;
-          continue;
-        }
-        
-        console.log(`Valid prediction generated for ${symbol}`);
-      } catch (predictionError) {
-        console.error(`Error in prediction attempt ${attempts}:`, predictionError);
-        prediction = null;
-        
-        // On last attempt, use fallback
-        if (attempts === maxAttempts - 1) {
-          console.log(`Falling back to enhanced prediction generator for ${symbol}`);
-          prediction = createFallbackPrediction(formattedData);
-        }
-      }
-    }
+    // Generate the base prediction
+    let prediction = await generatePredictionWithOpenAI(formattedData);
     
-    if (!prediction) {
-      throw new Error(`Failed to generate valid prediction for ${symbol} after ${maxAttempts} attempts`);
-    }
+    // Enhance prediction with additional data
+    prediction = enhancePredictionWithAnalystEstimates(prediction, analystEstimates);
+    prediction = enhancePredictionWithRecommendationTrends(prediction, recommendationTrends);
+    prediction = enhancePredictionWithEnterpriseValue(prediction, enterpriseValue);
+    prediction = enhancePredictionWithEarningsCalendar(prediction, earningsCalendar);
     
-    // Save prediction to history table for future reference and consistency
-    try {
-      const { error: insertError } = await supabase
-        .from('stock_prediction_history')
-        .insert({
-          symbol: prediction.symbol,
-          current_price: prediction.currentPrice,
-          one_month_price: prediction.predictedPrice.oneMonth,
-          three_month_price: prediction.predictedPrice.threeMonths,
-          six_month_price: prediction.predictedPrice.sixMonths,
-          one_year_price: prediction.predictedPrice.oneYear,
-          sentiment_analysis: prediction.sentimentAnalysis,
-          confidence_level: prediction.confidenceLevel,
-          key_drivers: prediction.keyDrivers,
-          risks: prediction.risks,
-          metadata: {
-            generation_method: attempts === maxAttempts ? 'fallback' : 'openai',
-            quick_mode: quickMode === true,
-            industry: formattedData.industry,
-            attempt_count: attempts
-          }
-        });
-        
-      if (insertError) {
-        console.error(`Error saving prediction history for ${symbol}:`, insertError);
-      } else {
-        console.log(`Successfully saved prediction history for ${symbol}`);
-      }
-    } catch (saveError) {
-      console.error(`Exception saving prediction history for ${symbol}:`, saveError);
-      // Non-critical error, continue with returning the prediction
-    }
-    
-    // Final logging of prediction values
-    logPredictionResults(symbol, stockData.price, prediction);
-    
-    return new Response(JSON.stringify(prediction), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      status: 200,
-    });
-    
+    // Return the prediction
+    return new Response(
+      JSON.stringify(prediction),
+      { headers: { "Content-Type": "application/json", ...corsHeaders } }
+    );
   } catch (error) {
-    console.error('Error generating price prediction:', error.message);
-    return new Response(JSON.stringify({ error: error.message }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      status: 500,
-    });
+    console.error("Error generating prediction:", error);
+    return new Response(
+      JSON.stringify({ error: error.message || "An error occurred during prediction" }),
+      { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }
+    );
   }
 });
-
-/**
- * Log detailed prediction results
- */
-function logPredictionResults(symbol: string, currentPrice: number, prediction: StockPrediction): void {
-  const oneMonthChange = ((prediction.predictedPrice.oneMonth / currentPrice) - 1) * 100;
-  const threeMonthChange = ((prediction.predictedPrice.threeMonths / currentPrice) - 1) * 100;
-  const sixMonthChange = ((prediction.predictedPrice.sixMonths / currentPrice) - 1) * 100;
-  const oneYearChange = ((prediction.predictedPrice.oneYear / currentPrice) - 1) * 100;
-  
-  console.log(`Final prediction for ${symbol}: 
-    Current: $${currentPrice.toFixed(2)}
-    1-month: $${prediction.predictedPrice.oneMonth.toFixed(2)} (${oneMonthChange.toFixed(2)}%)
-    3-month: $${prediction.predictedPrice.threeMonths.toFixed(2)} (${threeMonthChange.toFixed(2)}%)
-    6-month: $${prediction.predictedPrice.sixMonths.toFixed(2)} (${sixMonthChange.toFixed(2)}%)
-    1-year: $${prediction.predictedPrice.oneYear.toFixed(2)} (${oneYearChange.toFixed(2)}%)
-    Sentiment: ${prediction.sentimentAnalysis || 'N/A'}
-    Confidence: ${prediction.confidenceLevel}%
-  `);
-}
