@@ -6,6 +6,7 @@ import {
   CommandEmpty,
   CommandInput,
   CommandList,
+  CommandGroup
 } from "@/components/ui/command";
 import { Loader2, History, BarChart4, Sparkles, TrendingUp, Info } from "lucide-react";
 import { SearchResultItem } from "./SearchResultItem";
