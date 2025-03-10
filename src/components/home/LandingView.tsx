@@ -1,11 +1,10 @@
-
 import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import HeroSection from "./HeroSection";
 import FeaturedCompanies from "./FeaturedCompanies";
 import FeatureCards from "./FeatureCards";
 import RecentSearches from "./RecentSearches";
-import HowToUse from "./HowToUse";
+import FAQSection from "./FAQSection";
 import MarketPerformance from "./MarketPerformance";
 import MarketNews from "./MarketNews";
 import { fetchMarketIndices, fetchMarketNews } from "@/services/api/marketDataService";
@@ -131,33 +130,34 @@ const LandingView: React.FC<LandingViewProps> = ({
         </motion.div>
       </div>
       
-      {/* Recent Searches and How To Use */}
+      {/* FAQ Section (replacing How To Use) */}
       <div className="max-w-screen-xl mx-auto px-4 py-6">
-        <div className="grid grid-cols-1 gap-4">
-          {recentSearches.length > 0 && (
-            <motion.div 
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.7 }}
-            >
-              <RecentSearches 
-                recentSearches={recentSearches} 
-                onSelectSymbol={onSelectSymbol} 
-              />
-            </motion.div>
-          )}
-          
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.7 }}
+        >
+          <FAQSection />
+        </motion.div>
+      </div>
+      
+      {/* Recent Searches if available */}
+      {recentSearches.length > 0 && (
+        <div className="max-w-screen-xl mx-auto px-4 py-6">
           <motion.div 
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.7 }}
           >
-            <HowToUse />
+            <RecentSearches 
+              recentSearches={recentSearches} 
+              onSelectSymbol={onSelectSymbol} 
+            />
           </motion.div>
         </div>
-      </div>
+      )}
     </motion.div>
   );
 };
