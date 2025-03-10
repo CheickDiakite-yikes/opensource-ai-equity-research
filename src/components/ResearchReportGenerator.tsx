@@ -28,6 +28,7 @@ const ResearchReportGenerator = ({ symbol }: ResearchReportGeneratorProps) => {
     generationError,
     setReportType,
     handleGenerateReport,
+    handleRegenerateReport,
     handlePredictPrice
   } = useReportGeneration(symbol, data);
 
@@ -55,6 +56,7 @@ const ResearchReportGenerator = ({ symbol }: ResearchReportGeneratorProps) => {
     !report.ratingDetails || 
     !report.scenarioAnalysis || 
     !report.catalysts ||
+    report.sections.length < 4 ||
     report.sections.some(s => s.content.length < 300) ||
     (report.summary && report.summary.length < 150)
   );
@@ -77,6 +79,7 @@ const ResearchReportGenerator = ({ symbol }: ResearchReportGeneratorProps) => {
       reportType={reportType}
       setReportType={setReportType}
       onGenerateReport={handleGenerateReport}
+      onRegenerateReport={handleRegenerateReport}
       onPredictPrice={handlePredictPrice}
       report={report}
       prediction={prediction}

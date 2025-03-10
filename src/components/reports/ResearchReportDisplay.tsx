@@ -7,19 +7,21 @@ import { SensitivityAnalysis } from "./SensitivityAnalysis";
 import { GrowthCatalysts } from "./GrowthCatalysts";
 import { DisclaimerSection } from "./DisclaimerSection";
 import { Button } from "@/components/ui/button";
-import { Download, AlertTriangle, FileText } from "lucide-react";
+import { Download, AlertTriangle, FileText, RefreshCw } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 interface ResearchReportDisplayProps {
   report: ResearchReport;
   htmlContent?: string | null;
   onDownloadHtml?: () => void;
+  onRegenerate?: () => void;
 }
 
 const ResearchReportDisplay: React.FC<ResearchReportDisplayProps> = ({ 
   report, 
   htmlContent,
-  onDownloadHtml
+  onDownloadHtml,
+  onRegenerate
 }) => {
   const [expandedScenarios, setExpandedScenarios] = useState<string | null>(null);
   
@@ -32,12 +34,13 @@ const ResearchReportDisplay: React.FC<ResearchReportDisplayProps> = ({
     !report.ratingDetails || 
     !report.scenarioAnalysis || 
     !report.catalysts ||
+    report.sections.length < 3 ||
     report.sections.some(section => section.content.length < 200);
 
-  // Find financial analysis section
-  const financialSection = report.sections.find(section => 
-    section.title.toLowerCase().includes("financial") || 
-    section.title.toLowerCase().includes("financials")
+  // Count major sections to see if we're missing any
+  const expectedSections = ["investment thesis", "business overview", "financial analysis", "valuation", "risk factors"];
+  const missingMajorSections = expectedSections.filter(expected => 
+    !report.sections.some(section => section.title.toLowerCase().includes(expected))
   );
   
   return (
@@ -50,17 +53,31 @@ const ResearchReportDisplay: React.FC<ResearchReportDisplayProps> = ({
           </h2>
         </div>
         
-        {htmlContent && onDownloadHtml && (
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={onDownloadHtml}
-            className="flex items-center gap-1 shadow-sm hover:shadow-md transition-shadow"
-          >
-            <Download className="h-4 w-4" />
-            <span>Download HTML</span>
-          </Button>
-        )}
+        <div className="flex gap-2">
+          {onRegenerate && (
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={onRegenerate}
+              className="flex items-center gap-1 shadow-sm hover:shadow-md transition-shadow"
+            >
+              <RefreshCw className="h-4 w-4" />
+              <span>Regenerate</span>
+            </Button>
+          )}
+          
+          {htmlContent && onDownloadHtml && (
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={onDownloadHtml}
+              className="flex items-center gap-1 shadow-sm hover:shadow-md transition-shadow"
+            >
+              <Download className="h-4 w-4" />
+              <span>Download HTML</span>
+            </Button>
+          )}
+        </div>
       </div>
       
       {isLowQualityReport && (
@@ -68,7 +85,7 @@ const ResearchReportDisplay: React.FC<ResearchReportDisplayProps> = ({
           <AlertTriangle className="h-4 w-4" />
           <AlertTitle>Report Quality Notice</AlertTitle>
           <AlertDescription>
-            This report may not contain the level of detail typically found in professional equity research.
+            This report {missingMajorSections.length > 0 ? `is missing key sections (${missingMajorSections.join(', ')}) and` : ''} may not contain the level of detail typically found in professional equity research.
             Consider regenerating with the "comprehensive" option for more detailed analysis.
           </AlertDescription>
         </Alert>
