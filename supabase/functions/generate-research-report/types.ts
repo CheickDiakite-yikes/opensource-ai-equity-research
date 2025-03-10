@@ -101,3 +101,36 @@ export interface ResearchReport {
     analystCount: number;
   };
 }
+
+// Adding the missing ReportRequest interface
+export interface ReportRequest {
+  symbol: string;
+  companyName: string;
+  sector?: string;
+  industry?: string;
+  description?: string;
+  stockData: {
+    price: number;
+    change: number;
+    changesPercentage: number;
+    yearLow: number;
+    yearHigh: number;
+    marketCap: number;
+    pe?: number;
+  };
+  financials: {
+    income?: any[];
+    balance?: any[];
+    cashflow?: any[];
+    ratios?: any[];
+  };
+  news?: any[];
+  peers?: string[];
+  reportType?: string;
+  recommendationTrends?: any[];
+  finnhubNews?: any[];
+  finnhubPeers?: any[];
+  earningsCalendar?: any;
+  enterpriseValue?: any[];
+  analystEstimates?: any[];
+}
