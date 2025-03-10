@@ -8,6 +8,7 @@ import ResearchReportDisplay from "./ResearchReportDisplay";
 import PricePredictionDisplay from "./PricePredictionDisplay";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
+import { generateReportHTML } from "@/utils/reports/htmlGeneratorUtils";
 
 interface ReportTabsProps {
   report: ResearchReport | null;
@@ -47,6 +48,22 @@ const ReportTabs: React.FC<ReportTabsProps> = ({ report, prediction }) => {
       </div>
     );
   }
+
+  // Function to handle the HTML download
+  const handleDownloadHtml = () => {
+    if (report) {
+      const html = generateReportHTML(report);
+      const blob = new Blob([html], { type: 'text/html' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${report.symbol}_research_report.html`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+  };
   
   return (
     <Tabs defaultValue={report ? "report" : "prediction"} className="w-full">
@@ -92,7 +109,11 @@ const ReportTabs: React.FC<ReportTabsProps> = ({ report, prediction }) => {
             animate={{ opacity: 1 }}
             transition={{ duration: 0.5 }}
           >
-            <ResearchReportDisplay report={report} />
+            <ResearchReportDisplay 
+              report={report}
+              onDownloadHtml={handleDownloadHtml}
+              htmlContent="html-available"
+            />
           </motion.div>
         )}
       </TabsContent>

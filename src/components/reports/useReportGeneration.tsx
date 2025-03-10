@@ -47,7 +47,7 @@ export const useReportGeneration = (symbol: string, data: ReportData) => {
         },
         news: data.news,
         peers: data.peers,
-        reportType: reportType // Ensure this is passed correctly
+        reportType: reportType // Pass the report type to the API
       };
       
       toast({
