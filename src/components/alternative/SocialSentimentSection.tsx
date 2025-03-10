@@ -27,7 +27,7 @@ const SocialSentimentSection: React.FC<SocialSentimentProps> = ({ data, isLoadin
     );
   }
 
-  if (!data || !data.data || (!data.data.reddit.length && !data.data.twitter.length)) {
+  if (!data || !data.data || data.data.length === 0) {
     return (
       <div className="text-center p-6">
         <p className="text-muted-foreground">No social sentiment data available for this stock</p>
@@ -35,11 +35,8 @@ const SocialSentimentSection: React.FC<SocialSentimentProps> = ({ data, isLoadin
     );
   }
 
-  // Combine reddit and twitter data for chart
-  const allSentimentData = [...data.data.reddit, ...data.data.twitter];
-  
   // Prepare chart data
-  const chartData = allSentimentData.map(item => ({
+  const chartData = data.data.map(item => ({
     time: format(new Date(item.atTime), 'MMM d, HH:mm'),
     positiveScore: parseFloat((item.positiveScore * 100).toFixed(2)),
     negativeScore: parseFloat((Math.abs(item.negativeScore) * 100).toFixed(2)),
@@ -48,16 +45,6 @@ const SocialSentimentSection: React.FC<SocialSentimentProps> = ({ data, isLoadin
     totalMentions: item.mention,
     sentiment: parseFloat((item.score * 100).toFixed(2))
   })).slice(0, 10);  // Only show the 10 most recent data points
-  
-  // Calculate metrics from both reddit and twitter data
-  const totalMentions = allSentimentData.reduce((sum, item) => sum + item.mention, 0);
-  const positiveMentions = allSentimentData.reduce((sum, item) => sum + item.positiveMention, 0);
-  const negativeMentions = allSentimentData.reduce((sum, item) => sum + item.negativeMention, 0);
-  
-  // Get most recent sentiment score (from either source)
-  const mostRecentSentiment = allSentimentData.length > 0 
-    ? (allSentimentData[0]?.score * 100).toFixed(2) 
-    : "0.00";
   
   return (
     <div className="space-y-4">
@@ -73,18 +60,18 @@ const SocialSentimentSection: React.FC<SocialSentimentProps> = ({ data, isLoadin
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
         <SentimentCard 
           title="Most Recent Sentiment"
-          value={`${mostRecentSentiment}%`}
-          trend={parseFloat(mostRecentSentiment) > 0 ? 'positive' : 'negative'}
+          value={`${(data.data[0]?.score * 100).toFixed(2)}%`}
+          trend={data.data[0]?.score > 0 ? 'positive' : 'negative'}
         />
         <SentimentCard 
           title="Total Mentions"
-          value={totalMentions.toString()}
+          value={data.data.reduce((sum, item) => sum + item.mention, 0).toString()}
           trend="neutral"
         />
         <SentimentCard 
           title="Positive vs Negative"
-          value={`${positiveMentions} : ${negativeMentions}`}
-          trend={positiveMentions > negativeMentions ? 'positive' : 'negative'}
+          value={`${data.data.reduce((sum, item) => sum + item.positiveMention, 0)} : ${data.data.reduce((sum, item) => sum + item.negativeMention, 0)}`}
+          trend={data.data.reduce((sum, item) => sum + item.positiveMention, 0) > data.data.reduce((sum, item) => sum + item.negativeMention, 0) ? 'positive' : 'negative'}
         />
       </div>
       
