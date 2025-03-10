@@ -63,6 +63,8 @@ export const useAlternativeData = (symbol: string) => {
         { symbol }
       );
       
+      console.log('Social sentiment data:', sentimentData);
+      
       setState(prev => ({
         ...prev,
         socialSentiment: sentimentData,

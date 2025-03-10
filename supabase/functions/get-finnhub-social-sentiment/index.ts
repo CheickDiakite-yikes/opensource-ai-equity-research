@@ -31,6 +31,9 @@ serve(async (req) => {
     const url = `${FINNHUB_API_BASE}/stock/social-sentiment?${queryParams.toString()}`;
     const data = await fetchFromFinnhub(url);
     
+    // Log response for debugging
+    console.log(`Social sentiment data for ${symbol}:`, JSON.stringify(data).slice(0, 200) + "...");
+    
     return createCorsResponse(data);
   } catch (error) {
     console.error("Error in get-finnhub-social-sentiment:", error);

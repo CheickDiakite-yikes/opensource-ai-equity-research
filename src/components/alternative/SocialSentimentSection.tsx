@@ -38,6 +38,9 @@ const SocialSentimentSection: React.FC<SocialSentimentProps> = ({ data, isLoadin
   // Combine reddit and twitter data
   const allSentimentData = [...(data.data.reddit || []), ...(data.data.twitter || [])];
   
+  // Sort by time (newest first) before processing
+  allSentimentData.sort((a, b) => new Date(b.atTime).getTime() - new Date(a.atTime).getTime());
+  
   // Prepare chart data from combined array
   const chartData = allSentimentData.map(item => ({
     time: format(new Date(item.atTime), 'MMM d, HH:mm'),
