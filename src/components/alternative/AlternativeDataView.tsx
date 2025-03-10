@@ -8,6 +8,7 @@ import SocialSentimentSection from './SocialSentimentSection';
 import { Newspaper, BarChart, Layers } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import ErrorDisplay from '../reports/ErrorDisplay';
+import { useMediaQuery } from '@/hooks/use-media-query';
 
 interface AlternativeDataViewProps {
   symbol: string;
@@ -21,6 +22,8 @@ const AlternativeDataView: React.FC<AlternativeDataViewProps> = ({ symbol }) => 
     error,
     refreshData 
   } = useAlternativeData(symbol);
+  
+  const isMobile = useMediaQuery("(max-width: 640px)");
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -36,7 +39,7 @@ const AlternativeDataView: React.FC<AlternativeDataViewProps> = ({ symbol }) => 
 
       {/* Tabs for different alternative data types */}
       <Tabs defaultValue="news" className="w-full">
-        <TabsList className="mb-4">
+        <TabsList className={`mb-4 ${isMobile ? "w-full" : ""}`}>
           <TabsTrigger value="news" className="flex items-center gap-2">
             <Newspaper className="h-4 w-4" />
             <span>Company News</span>
@@ -55,7 +58,7 @@ const AlternativeDataView: React.FC<AlternativeDataViewProps> = ({ symbol }) => 
             transition={{ duration: 0.3 }}
           >
             <TabsContent value="news">
-              <Card className="p-6">
+              <Card className={`${isMobile ? "p-3" : "p-6"}`}>
                 <CompanyNewsSection 
                   news={companyNews} 
                   isLoading={loading.news} 
@@ -66,7 +69,7 @@ const AlternativeDataView: React.FC<AlternativeDataViewProps> = ({ symbol }) => 
             </TabsContent>
 
             <TabsContent value="sentiment">
-              <Card className="p-6">
+              <Card className={`${isMobile ? "p-3" : "p-6"}`}>
                 {error.sentiment ? (
                   <ErrorDisplay 
                     error={error.sentiment} 

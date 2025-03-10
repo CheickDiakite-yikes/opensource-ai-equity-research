@@ -184,4 +184,22 @@
   .card-highlight {
     @apply transition-all duration-300 hover:shadow-lg hover:-translate-y-1;
   }
+  
+  /* Mobile-specific utilities */
+  .scrollbar-none {
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none;  /* Firefox */
+  }
+  
+  .scrollbar-none::-webkit-scrollbar {
+    display: none; /* Chrome, Safari, Opera */
+  }
+  
+  .mobile-card {
+    @apply p-3 sm:p-6;
+  }
+  
+  .mobile-section {
+    @apply px-3 py-4 sm:px-6 sm:py-8;
+  }
 }

@@ -5,8 +5,10 @@ import { Newspaper } from "lucide-react";
 import SectionHeader from "./SectionHeader";
 import { MarketNewsArticle, fetchMarketNews } from "@/services/api/marketData/newsService";
 import NewsCard from "./marketNews/NewsCard";
+import NewsCarousel from "./marketNews/NewsCarousel";
 import { Card, CardContent } from "@/components/ui/card";
 import { useQuery } from "@tanstack/react-query";
+import { useMediaQuery } from "@/hooks/use-media-query";
 
 interface MarketNewsProps {
   newsData: MarketNewsArticle[];
@@ -17,6 +19,8 @@ const MarketNews: React.FC<MarketNewsProps> = ({
   newsData: initialNewsData,
   isLoading: initialLoading = false 
 }) => {
+  const isDesktop = useMediaQuery("(min-width: 1024px)");
+  
   // Use React Query to fetch general market news
   const { data: marketNewsData, isLoading: isNewsLoading } = useQuery({
     queryKey: ['marketNews'],
@@ -81,20 +85,24 @@ const MarketNews: React.FC<MarketNewsProps> = ({
             icon={<Newspaper className="w-6 h-6 text-primary" />}
           />
           
-          <div className="grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
-            {newsData && newsData.length > 0 ? (
-              newsData.slice(0, 6).map((article, index) => (
-                <NewsCard 
-                  key={`${article.id || index}-${article.headline}`} 
-                  article={article}
-                />
-              ))
-            ) : (
-              <div className="col-span-3 text-center py-10">
-                <p className="text-muted-foreground">No news available at this time.</p>
+          {newsData && newsData.length > 0 ? (
+            isDesktop ? (
+              <div className="grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+                {newsData.slice(0, 6).map((article, index) => (
+                  <NewsCard 
+                    key={`${article.id || index}-${article.headline}`} 
+                    article={article}
+                  />
+                ))}
               </div>
-            )}
-          </div>
+            ) : (
+              <NewsCarousel newsData={newsData.slice(0, 6)} />
+            )
+          ) : (
+            <div className="text-center py-10">
+              <p className="text-muted-foreground">No news available at this time.</p>
+            </div>
+          )}
         </motion.div>
       </div>
     </div>
