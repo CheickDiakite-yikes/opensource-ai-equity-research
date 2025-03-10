@@ -45,3 +45,17 @@ export interface StockPrediction {
   };
   upcomingCatalysts?: string[];
 }
+
+export interface GrowthInsight {
+  id: string;
+  symbol: string;
+  date: string;
+  title: string;
+  content: string;
+  category: string;
+  confidence: number;
+  sources: string[];
+  metrics?: {
+    [key: string]: number | string;
+  };
+}
