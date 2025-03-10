@@ -1,10 +1,6 @@
-
 import { useState } from "react";
 import { toast } from "@/components/ui/use-toast";
-import { 
-  generateResearchReport,
-  generateStockPrediction
-} from "@/services/api";
+import { generateResearchReport, generateStockPrediction } from "@/services/api";
 
 import { ReportRequest, ResearchReport } from "@/types/ai-analysis/reportTypes";
 import type { NewsArticle } from "@/types/news/newsTypes";
@@ -50,7 +46,7 @@ export const useReportGeneration = (symbol: string, data: ReportData) => {
         },
         news: data.news,
         peers: data.peers,
-        reportType: reportType // Pass the report type to guide AI generation
+        reportType: reportType
       };
       
       toast({
@@ -85,7 +81,6 @@ export const useReportGeneration = (symbol: string, data: ReportData) => {
         summaryLength: generatedReport.summary?.length || 0
       });
       
-      // Ensure the report has sections with proper content
       if (!generatedReport.sections || generatedReport.sections.length === 0) {
         console.warn("Report received without sections, creating default sections");
         generatedReport.sections = [
@@ -116,7 +111,6 @@ export const useReportGeneration = (symbol: string, data: ReportData) => {
         ];
       }
       
-      // Ensure all standard sections are present
       const requiredSections = [
         "Investment Thesis",
         "Business Overview",
@@ -126,7 +120,6 @@ export const useReportGeneration = (symbol: string, data: ReportData) => {
         "ESG Considerations"
       ];
       
-      // Add any missing sections
       requiredSections.forEach(sectionTitle => {
         if (!generatedReport.sections.some(s => s.title.includes(sectionTitle))) {
           console.warn(`Adding missing section: ${sectionTitle}`);

@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertTriangle, Info } from "lucide-react";
@@ -48,7 +47,6 @@ const ResearchReportContent = ({
   const { savePrediction, fetchPredictions } = useSavedPredictions();
   const [saveAttempted, setSaveAttempted] = useState(false);
   
-  // Handle saving a report
   const handleSaveReport = async () => {
     if (!user) {
       toast.error("You must be signed in to save reports");
@@ -67,7 +65,7 @@ const ResearchReportContent = ({
       if (reportId) {
         toast.success(`Report for ${report.symbol} saved successfully`);
         console.log("Report saved with ID:", reportId);
-        fetchReports(); // Refresh the reports list
+        fetchReports();
       } else {
         toast.error("Failed to save report. Please try again.");
         console.error("No report ID returned from saveReport");
@@ -78,7 +76,6 @@ const ResearchReportContent = ({
     }
   };
   
-  // Handle saving a prediction
   const handleSavePrediction = async () => {
     if (!user) {
       toast.error("You must be signed in to save predictions");
@@ -102,7 +99,7 @@ const ResearchReportContent = ({
       if (predictionId) {
         toast.success(`Prediction for ${prediction.symbol} saved successfully`);
         console.log("Prediction saved with ID:", predictionId);
-        fetchPredictions(); // Refresh the predictions list
+        fetchPredictions();
       } else {
         toast.error("Failed to save prediction. Please try again.");
         console.error("No prediction ID returned from savePrediction");
@@ -121,7 +118,6 @@ const ResearchReportContent = ({
     }
   }, [isReportTooBasic, report]);
 
-  // Auto-save report when it's generated (if user is logged in)
   useEffect(() => {
     if (user && report && !isGenerating && !saveAttempted) {
       console.log("Auto-saving newly generated report");
@@ -129,7 +125,6 @@ const ResearchReportContent = ({
     }
   }, [report, isGenerating, user]);
   
-  // Auto-save prediction when it's generated (if user is logged in)
   useEffect(() => {
     if (user && prediction && !isPredicting && !saveAttempted) {
       console.log("Auto-saving newly generated prediction");
@@ -137,7 +132,6 @@ const ResearchReportContent = ({
     }
   }, [prediction, isPredicting, user]);
 
-  // Reset save attempted flag when new report/prediction is being generated
   useEffect(() => {
     if (isGenerating || isPredicting) {
       setSaveAttempted(false);
@@ -151,7 +145,7 @@ const ResearchReportContent = ({
   return (
     <div className="space-y-8">
       {showDataWarning && (
-        <Alert className="bg-amber-50 text-amber-800 border-amber-200">
+        <Alert variant="default" className="bg-amber-50 text-amber-800 border-amber-200">
           <AlertTriangle className="h-4 w-4" />
           <AlertTitle>Limited data available</AlertTitle>
           <AlertDescription className="text-amber-700/80">
@@ -194,9 +188,7 @@ const ResearchReportContent = ({
         <Alert variant="destructive">
           <AlertTriangle className="h-4 w-4" />
           <AlertTitle>Error generating report</AlertTitle>
-          <AlertDescription>
-            {generationError}
-          </AlertDescription>
+          <AlertDescription>{generationError}</AlertDescription>
         </Alert>
       )}
 
