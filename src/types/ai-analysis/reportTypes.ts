@@ -1,4 +1,3 @@
-
 export interface ReportSection {
   title: string;
   content: string;
@@ -125,6 +124,7 @@ export interface ReportRequest {
   news?: any[];
   peers?: string[];
   reportType?: string;
+  reportDate?: string;
   recommendationTrends?: any[];
   finnhubNews?: any[];
   finnhubPeers?: any[];
