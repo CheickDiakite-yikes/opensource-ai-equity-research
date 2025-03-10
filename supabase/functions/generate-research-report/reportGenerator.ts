@@ -1,3 +1,4 @@
+
 import { ResearchReport } from "./types.ts";
 import { OPENAI_API_KEY } from "../_shared/constants.ts";
 import { extractJSONFromText } from "../_shared/report-utils/openAIGenerator.ts";
@@ -15,98 +16,10 @@ export async function generateResearchReport(reportRequest: any): Promise<Resear
     // Enhance the report with the additional data
     const enhancedReport = enhanceReportWithExtraData(report, reportRequest);
     
-    // Validate that the report has multiple sections
-    if (!enhancedReport.sections || enhancedReport.sections.length < 3) {
-      console.warn(`Report for ${reportRequest.symbol} has fewer than expected sections (${enhancedReport.sections?.length || 0}). Adding default sections.`);
-      enhancedReport.sections = ensureComprehensiveSections(enhancedReport.sections || [], reportRequest);
-    }
-    
     return enhancedReport;
   } catch (error) {
     console.error("Error generating research report:", error);
     throw error;
-  }
-}
-
-function ensureComprehensiveSections(existingSections: any[], reportRequest: any): any[] {
-  // Standard sections that should be in every comprehensive report
-  const standardSections = [
-    "Investment Thesis",
-    "Business Overview",
-    "Financial Analysis",
-    "Valuation",
-    "Risk Factors",
-    "ESG Considerations"
-  ];
-  
-  // Map existing sections by title (lowercase for case-insensitive comparison)
-  const existingSectionMap = {};
-  existingSections.forEach(section => {
-    existingSectionMap[section.title.toLowerCase()] = section;
-  });
-  
-  // Create a complete sections array
-  const completeSections = [];
-  
-  // Add existing sections first, if they match our standard titles
-  standardSections.forEach(sectionTitle => {
-    const lowerTitle = sectionTitle.toLowerCase();
-    
-    // Find if we have this section already (checking case-insensitive)
-    const found = existingSections.find(s => 
-      s.title.toLowerCase() === lowerTitle ||
-      s.title.toLowerCase().includes(lowerTitle)
-    );
-    
-    if (found) {
-      // Use the existing section
-      completeSections.push(found);
-    } else {
-      // Create a placeholder for the missing section
-      completeSections.push({
-        title: sectionTitle,
-        content: generateDefaultSectionContent(sectionTitle, reportRequest)
-      });
-    }
-  });
-  
-  // Add any additional existing sections that aren't part of our standard set
-  existingSections.forEach(section => {
-    const lowerTitle = section.title.toLowerCase();
-    const isStandard = standardSections.some(std => lowerTitle === std.toLowerCase() || lowerTitle.includes(std.toLowerCase()));
-    
-    if (!isStandard) {
-      completeSections.push(section);
-    }
-  });
-  
-  return completeSections;
-}
-
-function generateDefaultSectionContent(sectionTitle: string, reportRequest: any): string {
-  const { symbol, companyName, sector, industry } = reportRequest;
-  
-  switch (sectionTitle) {
-    case "Investment Thesis":
-      return `${companyName} (${symbol}) operates in the ${industry || sector || "technology"} sector. This section provides the key reasons for our investment recommendation, analyzing the company's competitive position, growth potential, and valuation attractiveness.`;
-    
-    case "Business Overview":
-      return `${companyName} (${symbol}) is a ${industry || sector || "technology"} company. This section provides an overview of the company's business model, products/services, market position, and competitive landscape.`;
-    
-    case "Financial Analysis":
-      return `This section analyzes ${companyName}'s financial performance, including revenue growth, profitability metrics, balance sheet strength, and cash flow generation. Key financial ratios are compared to industry benchmarks to assess the company's financial health.`;
-    
-    case "Valuation":
-      return `This section evaluates ${companyName}'s current valuation using multiple methodologies, including comparable company analysis, discounted cash flow (DCF) analysis, and historical valuation trends. The analysis provides a basis for our target price and recommendation.`;
-    
-    case "Risk Factors":
-      return `This section identifies and analyzes key risks for ${companyName}, including competitive threats, regulatory concerns, operational challenges, financial risks, and macroeconomic factors that could impact the company's performance.`;
-    
-    case "ESG Considerations":
-      return `This section assesses ${companyName}'s environmental, social, and governance (ESG) practices and their potential impact on the company's long-term sustainability and financial performance.`;
-    
-    default:
-      return `This section provides additional analysis on ${companyName} (${symbol}).`;
   }
 }
 
@@ -406,15 +319,28 @@ ${data.reportType === 'comprehensive' ? '- A balanced, in-depth analysis of all 
 ${data.reportType === 'financial' ? '- Deep financial analysis with extensive ratio analysis, cash flow sustainability assessment, balance sheet strength, and capital structure evaluation.' : ''}
 ${data.reportType === 'valuation' ? '- Detailed valuation using multiple methodologies (DCF, multiples) with sensitivity analysis, fair value derivation, and comprehensive target price justification.' : ''}
 
-Structure your report with AT LEAST these detailed sections:
+Structure your report with these detailed sections:
 1. Investment Thesis - Key reasons for the recommendation (at least 300 words)
 2. Business Overview - Comprehensive company overview including business model, segments, competitive landscape (at least 300 words)
 3. Financial Analysis - In-depth assessment of financial performance with multiple metrics and trends (at least 500 words)
+   - Include detailed analysis of:
+     - Revenue growth trends and drivers by segment/geography if available
+     - Margin analysis (gross, operating, EBITDA, net) with industry comparisons
+     - Return metrics (ROE, ROA, ROIC) and capital allocation efficiency
+     - Cash flow analysis and conversion rates
+     - Balance sheet strength (debt ratios, coverage ratios, liquidity)
+     - Profitability trends and forecast
+     - Key financial ratios compared to industry benchmarks
+     - Capital structure assessment and optimization potential
 4. Valuation - Thorough analysis using multiple methods with detailed justification (at least 300 words)
 5. Risk Factors - Comprehensive risk assessment categorized by type (at least 300 words)
 6. ESG Considerations - Detailed analysis of environmental, social, and governance factors (at least 200 words)
 
-MAKE SURE TO INCLUDE ALL SIX SECTIONS ABOVE. This is CRITICALLY important.
+MAKE SURE TO INCORPORATE:
+- Analyst consensus data including recommendation trends, EPS estimates, and revenue forecasts
+- Upcoming earnings information and historical earnings surprises
+- Enterprise value data and its implications for the company's valuation
+- Peer comparison using the provided peer companies
 
 Your report MUST include:
 - Clear, professional recommendation (Strong Buy, Buy, Hold, Sell, or Strong Sell)
@@ -539,11 +465,6 @@ Your report should match the quality and depth of professional equity research f
 
     try {
       const reportData = extractJSONFromText(content);
-      
-      // Validate section count
-      if (!reportData.sections || reportData.sections.length < 3) {
-        console.warn(`Received fewer than expected sections (${reportData.sections?.length || 0}) from OpenAI for ${data.symbol}. Will add default sections later.`);
-      }
       
       const report: ResearchReport = {
         symbol: data.symbol,

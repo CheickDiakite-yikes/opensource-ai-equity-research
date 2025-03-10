@@ -1,214 +1,226 @@
 
-import React, { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { LineChart, AlertCircle, FileText, PieChart } from "lucide-react";
+import { useState, useEffect } from "react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { AlertTriangle, Info } from "lucide-react";
 import LoadingSkeleton from "@/components/LoadingSkeleton";
-import ErrorDisplay from "@/components/reports/ErrorDisplay";
-import ResearchReportDisplay from "@/components/reports/ResearchReportDisplay";
-import { saveResearchReport } from "@/services/api/userContent/reportService";
-import { downloadHtmlContent } from "@/utils/fileUtils";
-
-import type { ResearchReport } from "@/types/ai-analysis/reportTypes";
-import type { StockPrediction } from "@/types/ai-analysis/predictionTypes";
-import type { ReportData } from "./useResearchReportData";
+import { ResearchReport } from "@/types/ai-analysis/reportTypes";
+import { StockPrediction } from "@/types/ai-analysis/predictionTypes";
+import ReportGeneratorForm from "./ReportGeneratorForm";
+import ReportTabs from "./ReportTabs";
+import { toast } from "sonner";
+import { useAuth } from "@/contexts/AuthContext";
+import { useSavedReports, useSavedPredictions } from "@/hooks/useSavedContent";
 
 interface ResearchReportContentProps {
-  data: ReportData;
+  data: any;
+  hasStockData: boolean;
   showDataWarning: boolean;
   isGenerating: boolean;
   isPredicting: boolean;
-  hasStockData: boolean;
+  report: ResearchReport | null;
+  prediction: StockPrediction | null;
   reportType: string;
   setReportType: (type: string) => void;
   onGenerateReport: () => void;
-  onRegenerateReport?: () => void;
   onPredictPrice: () => void;
-  report: ResearchReport | null;
-  prediction: StockPrediction | null;
-  isReportTooBasic?: boolean;
+  isReportTooBasic: boolean;
   generationError: string | null;
 }
 
-const ResearchReportContent: React.FC<ResearchReportContentProps> = ({
+const ResearchReportContent = ({
   data,
+  hasStockData,
   showDataWarning,
   isGenerating,
   isPredicting,
-  hasStockData,
+  report,
+  prediction,
   reportType,
   setReportType,
   onGenerateReport,
-  onRegenerateReport,
   onPredictPrice,
-  report,
-  prediction,
   isReportTooBasic,
   generationError
-}) => {
-  const [activeTab, setActiveTab] = useState<string>("report");
-  const [saveStatus, setSaveStatus] = useState<string | null>(null);
-  const [htmlContent, setHtmlContent] = useState<string | null>(null);
-
-  // Handle saving the report
+}: ResearchReportContentProps) => {
+  const { user } = useAuth();
+  const [showTip, setShowTip] = useState(true);
+  const { saveReport, fetchReports } = useSavedReports();
+  const { savePrediction, fetchPredictions } = useSavedPredictions();
+  const [saveAttempted, setSaveAttempted] = useState(false);
+  
+  // Handle saving a report
   const handleSaveReport = async () => {
-    if (!report) return;
+    if (!user) {
+      toast.error("You must be signed in to save reports");
+      return;
+    }
     
-    setSaveStatus("saving");
+    if (!report) {
+      toast.error("No report to save");
+      return;
+    }
+    
+    console.log("Saving report:", report.symbol, report.companyName);
     try {
-      const reportId = await saveResearchReport(report.symbol, report.companyName, report);
+      setSaveAttempted(true);
+      const reportId = await saveReport(report.symbol, report.companyName, report);
       if (reportId) {
-        setSaveStatus("saved");
-        // If HTML content was generated, save it
-        const response = await fetch(`/api/reports/html?symbol=${report.symbol}`);
-        if (response.ok) {
-          const html = await response.text();
-          setHtmlContent(html);
-        }
+        toast.success(`Report for ${report.symbol} saved successfully`);
+        console.log("Report saved with ID:", reportId);
+        fetchReports(); // Refresh the reports list
       } else {
-        setSaveStatus("error");
+        toast.error("Failed to save report. Please try again.");
+        console.error("No report ID returned from saveReport");
       }
     } catch (error) {
       console.error("Error saving report:", error);
-      setSaveStatus("error");
+      toast.error("An error occurred while saving the report");
     }
   };
-
-  // Handle HTML download
-  const handleDownloadHtml = () => {
-    if (!report || !htmlContent) return;
+  
+  // Handle saving a prediction
+  const handleSavePrediction = async () => {
+    if (!user) {
+      toast.error("You must be signed in to save predictions");
+      return;
+    }
     
-    const filename = `${report.symbol}_research_report_${new Date().toISOString().split('T')[0]}.html`;
-    downloadHtmlContent(htmlContent, filename);
+    if (!prediction) {
+      toast.error("No prediction to save");
+      return;
+    }
+    
+    console.log("Saving prediction:", prediction.symbol, data.profile?.companyName || prediction.symbol);
+    try {
+      setSaveAttempted(true);
+      const predictionId = await savePrediction(
+        prediction.symbol, 
+        data.profile?.companyName || prediction.symbol, 
+        prediction
+      );
+      
+      if (predictionId) {
+        toast.success(`Prediction for ${prediction.symbol} saved successfully`);
+        console.log("Prediction saved with ID:", predictionId);
+        fetchPredictions(); // Refresh the predictions list
+      } else {
+        toast.error("Failed to save prediction. Please try again.");
+        console.error("No prediction ID returned from savePrediction");
+      }
+    } catch (error) {
+      console.error("Error saving prediction:", error);
+      toast.error("An error occurred while saving the prediction");
+    }
   };
+  
+  useEffect(() => {
+    if (isReportTooBasic && report) {
+      toast.warning(
+        "This report appears to be basic. Try generating again or updating the report type.",
+        { duration: 6000 }
+      );
+    }
+  }, [isReportTooBasic, report]);
 
-  // Show warning for limited data
-  const dataWarning = showDataWarning && (
-    <Alert variant="default" className="mb-4 bg-amber-50 border-amber-200 text-amber-800">
-      <AlertCircle className="h-4 w-4" />
-      <AlertTitle>Limited Financial Data</AlertTitle>
-      <AlertDescription>
-        Some financial data may be limited or unavailable for this company, which could affect the quality of the generated report.
-      </AlertDescription>
-    </Alert>
-  );
+  // Auto-save report when it's generated (if user is logged in)
+  useEffect(() => {
+    if (user && report && !isGenerating && !saveAttempted) {
+      console.log("Auto-saving newly generated report");
+      handleSaveReport();
+    }
+  }, [report, isGenerating, user]);
+  
+  // Auto-save prediction when it's generated (if user is logged in)
+  useEffect(() => {
+    if (user && prediction && !isPredicting && !saveAttempted) {
+      console.log("Auto-saving newly generated prediction");
+      handleSavePrediction();
+    }
+  }, [prediction, isPredicting, user]);
 
-  // Controls for report generation
-  const reportControls = (
-    <div className="flex flex-col space-y-4 md:flex-row md:space-y-0 md:space-x-4 items-start md:items-end">
-      <div className="w-full md:w-64">
-        <label className="block text-sm font-medium mb-1">Report Type</label>
-        <Select value={reportType} onValueChange={setReportType}>
-          <SelectTrigger>
-            <SelectValue placeholder="Select report type" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="comprehensive">Comprehensive</SelectItem>
-            <SelectItem value="financial">Financial Focus</SelectItem>
-            <SelectItem value="valuation">Valuation Focus</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-      
-      <Button 
-        onClick={onGenerateReport} 
-        disabled={isGenerating || !hasStockData}
-        className="w-full md:w-auto"
-      >
-        <FileText className="mr-2 h-4 w-4" />
-        {isGenerating ? "Generating..." : "Generate Report"}
-      </Button>
-      
-      <Button 
-        onClick={onPredictPrice} 
-        variant="outline" 
-        disabled={isPredicting || !hasStockData}
-        className="w-full md:w-auto"
-      >
-        <LineChart className="mr-2 h-4 w-4" />
-        {isPredicting ? "Analyzing..." : "Predict Price"}
-      </Button>
-    </div>
-  );
+  // Reset save attempted flag when new report/prediction is being generated
+  useEffect(() => {
+    if (isGenerating || isPredicting) {
+      setSaveAttempted(false);
+    }
+  }, [isGenerating, isPredicting]);
 
-  // When a report is generated
-  const reportDisplay = report && (
-    <div className="mt-4 space-y-4">
-      <div className="flex flex-wrap gap-2 justify-between items-center">
-        <h3 className="text-lg font-semibold">{report.companyName} ({report.symbol}) Research Report</h3>
-        
-        <div className="flex gap-2">
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={handleSaveReport}
-            disabled={saveStatus === "saving" || saveStatus === "saved"}
-          >
-            {saveStatus === "saving" ? "Saving..." : saveStatus === "saved" ? "Saved" : "Save Report"}
-          </Button>
-        </div>
-      </div>
-      
-      <ResearchReportDisplay 
-        report={report} 
-        htmlContent={htmlContent} 
-        onDownloadHtml={htmlContent ? handleDownloadHtml : undefined} 
-        onRegenerate={onRegenerateReport}
-      />
-    </div>
-  );
-
-  // Handle generation error
-  const errorContent = generationError && (
-    <ErrorDisplay error={generationError} />
-  );
+  if (!data) {
+    return <LoadingSkeleton />;
+  }
 
   return (
-    <Tabs defaultValue="report" value={activeTab} onValueChange={setActiveTab} className="w-full">
-      <TabsList className="grid w-full grid-cols-2">
-        <TabsTrigger value="report">
-          <FileText className="mr-2 h-4 w-4" />
-          Research Report
-        </TabsTrigger>
-        <TabsTrigger value="prediction">
-          <LineChart className="mr-2 h-4 w-4" />
-          Price Prediction
-        </TabsTrigger>
-      </TabsList>
-      
-      <TabsContent value="report" className="pt-4">
-        {dataWarning}
-        {reportControls}
-        {isGenerating ? <LoadingSkeleton /> : errorContent || reportDisplay}
-      </TabsContent>
-      
-      <TabsContent value="prediction" className="pt-4">
-        {dataWarning}
-        <div className="flex justify-end">
-          <Button 
-            onClick={onPredictPrice} 
-            disabled={isPredicting || !hasStockData}
-          >
-            <PieChart className="mr-2 h-4 w-4" />
-            {isPredicting ? "Analyzing..." : "Generate Prediction"}
-          </Button>
-        </div>
-        
-        {isPredicting ? (
-          <LoadingSkeleton />
-        ) : prediction ? (
-          <div className="mt-4">
-            <h3 className="text-lg font-semibold mb-4">AI Price Prediction for {prediction.symbol}</h3>
-            {/* Prediction display content would go here */}
-            <div className="border rounded-lg p-4">
-              <p>Prediction content would be displayed here</p>
-            </div>
-          </div>
-        ) : null}
-      </TabsContent>
-    </Tabs>
+    <div className="space-y-8">
+      {showDataWarning && (
+        <Alert className="bg-amber-50 text-amber-800 border-amber-200">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertTitle>Limited data available</AlertTitle>
+          <AlertDescription className="text-amber-700/80">
+            We found limited financial data for this stock. The report may contain incomplete analysis.
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {showTip && (
+        <Alert className="bg-blue-50 border-blue-200">
+          <Info className="h-4 w-4 text-blue-600" />
+          <AlertTitle className="text-blue-800">Generate AI analysis</AlertTitle>
+          <AlertDescription className="text-blue-700/80 flex justify-between items-center">
+            <span>Create a detailed equity research report or price prediction by selecting an option below.</span>
+            <button 
+              onClick={() => setShowTip(false)} 
+              className="text-xs text-blue-600 hover:text-blue-800"
+            >
+              Dismiss
+            </button>
+          </AlertDescription>
+        </Alert>
+      )}
+
+      <ReportGeneratorForm
+        reportType={reportType}
+        setReportType={setReportType}
+        onGenerateReport={onGenerateReport}
+        onPredictPrice={onPredictPrice}
+        isGenerating={isGenerating}
+        isPredicting={isPredicting}
+        hasData={hasStockData}
+        onSaveReport={report ? handleSaveReport : undefined}
+        onSavePrediction={prediction ? handleSavePrediction : undefined}
+        canSaveReport={!!report}
+        canSavePrediction={!!prediction}
+      />
+
+      {generationError && (
+        <Alert variant="destructive">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertTitle>Error generating report</AlertTitle>
+          <AlertDescription>
+            {generationError}
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {user ? (
+        <Alert className="bg-green-50 border-green-200">
+          <Info className="h-4 w-4 text-green-600" />
+          <AlertTitle className="text-green-800">Auto-save enabled</AlertTitle>
+          <AlertDescription className="text-green-700/80">
+            Reports and predictions will be automatically saved to your account.
+          </AlertDescription>
+        </Alert>
+      ) : (
+        <Alert className="bg-blue-50 border-blue-200">
+          <Info className="h-4 w-4 text-blue-600" />
+          <AlertTitle className="text-blue-800">Sign in to save</AlertTitle>
+          <AlertDescription className="text-blue-700/80">
+            Sign in to automatically save your reports and predictions.
+          </AlertDescription>
+        </Alert>
+      )}
+
+      <ReportTabs report={report} prediction={prediction} />
+    </div>
   );
 };
 

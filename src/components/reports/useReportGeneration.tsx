@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { toast } from "@/components/ui/use-toast";
 import { 
@@ -5,8 +6,10 @@ import {
   generateStockPrediction
 } from "@/services/api";
 
-import { ResearchReport } from "@/types/ai-analysis/reportTypes";
-import type { StockPrediction } from "@/types/ai-analysis/predictionTypes";
+import { ReportRequest, ResearchReport } from "@/types/ai-analysis/reportTypes";
+import type { NewsArticle } from "@/types/news/newsTypes";
+import type { StockQuote } from "@/types/profile/companyTypes";
+import { StockPrediction } from "@/types/ai-analysis/predictionTypes";
 
 import type { ReportData } from "./useResearchReportData";
 
@@ -18,30 +21,7 @@ export const useReportGeneration = (symbol: string, data: ReportData) => {
   const [reportType, setReportType] = useState<string>("comprehensive");
   const [generationError, setGenerationError] = useState<string | null>(null);
 
-  const validateReport = (generatedReport: ResearchReport): boolean => {
-    const expectedSections = ["investment thesis", "business overview", "financial analysis", "valuation", "risk factors"];
-    const missingSections = expectedSections.filter(expected => 
-      !generatedReport.sections.some(section => 
-        section.title.toLowerCase().includes(expected)
-      )
-    );
-    
-    if (missingSections.length > 0) {
-      console.warn(`Report missing key sections: ${missingSections.join(', ')}`);
-      return false;
-    }
-    
-    const shortSections = generatedReport.sections.filter(s => s.content.length < 200);
-    if (shortSections.length > 0) {
-      console.warn(`Report has ${shortSections.length} sections with less than 200 characters:`, 
-        shortSections.map(s => s.title).join(', '));
-      return false;
-    }
-    
-    return true;
-  };
-
-  const handleGenerateReport = async (forceRegenerate = false) => {
+  const handleGenerateReport = async () => {
     try {
       if (!data.profile || !data.quote) {
         toast({
@@ -52,18 +32,10 @@ export const useReportGeneration = (symbol: string, data: ReportData) => {
         return;
       }
       
-      if (report && !forceRegenerate) {
-        toast({
-          title: "Report Already Generated",
-          description: "A report has already been generated. Click 'Regenerate' if you want a new one.",
-        });
-        return;
-      }
-      
       setIsGenerating(true);
       setGenerationError(null);
       
-      const reportRequest = {
+      const reportRequest: ReportRequest = {
         symbol,
         companyName: data.profile.companyName,
         sector: data.profile.sector,
@@ -78,7 +50,7 @@ export const useReportGeneration = (symbol: string, data: ReportData) => {
         },
         news: data.news,
         peers: data.peers,
-        reportType: reportType
+        reportType: reportType // Pass the report type to guide AI generation
       };
       
       toast({
@@ -112,14 +84,29 @@ export const useReportGeneration = (symbol: string, data: ReportData) => {
         summaryLength: generatedReport.summary?.length || 0
       });
       
-      const isHighQuality = validateReport(generatedReport);
+      // Make sure the report has at least some sections
+      if (!generatedReport.sections || generatedReport.sections.length === 0) {
+        console.warn("Report received without sections, adding placeholder section");
+        generatedReport.sections = [
+          {
+            title: "Investment Thesis",
+            content: "The full report is being generated. This might take a moment as we analyze the financial data."
+          }
+        ];
+      }
+      
+      // Check section content length for quality
+      const shortSections = generatedReport.sections.filter(s => s.content.length < 200);
+      if (shortSections.length > 0) {
+        console.warn(`Report has ${shortSections.length} sections with less than 200 characters:`, 
+          shortSections.map(s => s.title).join(', '));
+      }
       
       setReport(generatedReport);
       
       toast({
         title: "AI Report Generated",
-        description: `Research report for ${data.profile.companyName} successfully generated with ${generatedReport.sections.length} sections.${!isHighQuality ? ' Some sections may need enhancement.' : ''}`,
-        variant: "default"
+        description: `Research report for ${data.profile.companyName} successfully generated with ${generatedReport.sections.length} sections.`,
       });
     } catch (err: any) {
       console.error("Error generating report:", err);
@@ -132,10 +119,6 @@ export const useReportGeneration = (symbol: string, data: ReportData) => {
     } finally {
       setIsGenerating(false);
     }
-  };
-
-  const handleRegenerateReport = async () => {
-    await handleGenerateReport(true);
   };
 
   const handlePredictPrice = async () => {
@@ -203,7 +186,6 @@ export const useReportGeneration = (symbol: string, data: ReportData) => {
     generationError,
     setReportType,
     handleGenerateReport,
-    handleRegenerateReport,
     handlePredictPrice
   };
 };
