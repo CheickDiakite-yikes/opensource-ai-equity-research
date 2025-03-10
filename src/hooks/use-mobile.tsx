@@ -28,3 +28,8 @@ export function useMediaQuery(query: string) {
 
   return matches;
 }
+
+// Add useIsMobile as a convenience wrapper around useMediaQuery
+export function useIsMobile() {
+  return useMediaQuery("(max-width: 640px)");
+}

@@ -3,7 +3,7 @@
 import { useDirectFinancialData } from './useDirectFinancialData';
 import { useCompanyCardData } from './useCompanyCardData';
 import { useStockPrediction } from './useStockPrediction';
-import { useIsMobile } from './use-mobile';
+import { useMediaQuery, useIsMobile } from './use-mobile';
 import { useToast, toast } from './use-toast';
 
 // Re-export hooks
@@ -12,6 +12,7 @@ export {
   useCompanyCardData, 
   useStockPrediction, 
   useIsMobile, 
+  useMediaQuery,
   useToast,
   toast
 };
