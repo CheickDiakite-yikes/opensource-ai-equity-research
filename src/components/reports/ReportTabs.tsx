@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { FileText, TrendingUp, Info, Download, ArrowUp, ArrowDown } from "lucide-react";
@@ -7,7 +8,6 @@ import ResearchReportDisplay from "./ResearchReportDisplay";
 import PricePredictionDisplay from "./PricePredictionDisplay";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
-import { generateReportHTML } from "@/services/api/userContent/htmlGenerator";
 
 interface ReportTabsProps {
   report: ResearchReport | null;
@@ -47,22 +47,6 @@ const ReportTabs: React.FC<ReportTabsProps> = ({ report, prediction }) => {
       </div>
     );
   }
-
-  // Function to handle the HTML download
-  const handleDownloadHtml = () => {
-    if (report) {
-      const html = generateReportHTML(report);
-      const blob = new Blob([html], { type: 'text/html' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `${report.symbol}_research_report.html`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-    }
-  };
   
   return (
     <Tabs defaultValue={report ? "report" : "prediction"} className="w-full">
@@ -108,11 +92,7 @@ const ReportTabs: React.FC<ReportTabsProps> = ({ report, prediction }) => {
             animate={{ opacity: 1 }}
             transition={{ duration: 0.5 }}
           >
-            <ResearchReportDisplay 
-              report={report}
-              onDownloadHtml={handleDownloadHtml}
-              htmlContent="html-available"
-            />
+            <ResearchReportDisplay report={report} />
           </motion.div>
         )}
       </TabsContent>

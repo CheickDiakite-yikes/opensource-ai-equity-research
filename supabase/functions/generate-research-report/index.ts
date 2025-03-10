@@ -1,121 +1,214 @@
 
-import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
-import { corsHeaders } from "../_shared/cors.ts";
-import { generateResearchReport } from "./reportGenerator.ts";
-import { fetchRecommendationTrends, fetchFinnhubCompanyNews, fetchFinnhubPeers, fetchEarningsCalendar } from "../_shared/finnhub-services.ts";
-import { fetchEnterpriseValue, fetchAnalystEstimates } from "../_shared/fmp-services.ts";
+import { corsHeaders } from '../_shared/cors.ts';
+import { OPENAI_API_KEY } from '../_shared/constants.ts';
+import { formatDataForAnalysis } from '../_shared/report-utils/dataFormatter.ts';
+import { generateReportWithOpenAI } from '../_shared/report-utils/openAIGenerator.ts';
+import { 
+  createDefaultSections, 
+  enhanceSectionContent, 
+  ensureCompleteReportStructure 
+} from '../_shared/report-utils/fallbackReportGenerator.ts';
 
-serve(async (req) => {
+// Add proper error handling and logging
+Deno.serve(async (req) => {
   // Handle CORS preflight requests
-  if (req.method === "OPTIONS") {
+  if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
-
+  
   try {
-    // Parse request body
+    console.log("Research report generation function called");
+    
     const { reportRequest } = await req.json();
     
-    // Log the received request
-    console.log(`Received research report request for ${reportRequest.symbol} (type: ${reportRequest.reportType || 'standard'})`);
-    
-    // Check for required parameters
     if (!reportRequest || !reportRequest.symbol) {
-      return new Response(
-        JSON.stringify({ error: "Missing required parameters" }),
-        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
-      );
+      console.error("Missing required parameters in request");
+      throw new Error('Missing required parameters: symbol is required');
     }
     
-    // Ensure reportType is normalized to a known value
-    if (reportRequest.reportType) {
-      // Convert to lowercase and normalize
-      const reportType = reportRequest.reportType.toLowerCase();
-      if (reportType.includes('financial')) {
-        reportRequest.reportType = 'financial';
-      } else if (reportType.includes('valuation')) {
-        reportRequest.reportType = 'valuation';
-      } else {
-        reportRequest.reportType = 'comprehensive';
+    console.log(`Generating AI research report for ${reportRequest.symbol} (type: ${reportRequest.reportType || 'standard'})`);
+    
+    // Get data ready for OpenAI
+    const formattedData = formatDataForAnalysis(reportRequest);
+    
+    // Generate report using OpenAI
+    console.log("Sending data to OpenAI for processing");
+    const report = await generateReportWithOpenAI(formattedData, reportRequest, OPENAI_API_KEY);
+    
+    // Enhanced section generation and quality checks
+    if (!report.sections || report.sections.length === 0) {
+      console.warn("No sections returned from OpenAI, adding comprehensive default sections");
+      report.sections = createDefaultSections(formattedData);
+    }
+    
+    // Validate all sections have substantial content
+    report.sections = report.sections.map(section => {
+      // Different minimum content length requirements for different section types
+      let minLength = 350; // Increased minimum section length for better quality
+      
+      if (section.title.toLowerCase().includes('financial')) {
+        minLength = 1000; // Financial sections need more detail
+      } else if (
+        section.title.toLowerCase().includes('risk') || 
+        section.title.toLowerCase().includes('valuation') ||
+        section.title.toLowerCase().includes('thesis') ||
+        section.title.toLowerCase().includes('esg')
+      ) {
+        minLength = 700; // Other important analysis sections need substantial detail
       }
       
-      console.log(`Normalized report type: ${reportRequest.reportType}`);
-    } else {
-      // Set default if missing
-      reportRequest.reportType = 'comprehensive';
-      console.log('Report type not specified, defaulting to comprehensive');
+      if (!section.content || section.content.length < minLength) {
+        console.warn(`Section ${section.title} has insufficient content (${section.content?.length || 0} chars), enhancing it to meet ${minLength} char minimum`);
+        section.content = enhanceSectionContent(section.title, formattedData, 
+          section.title.toLowerCase().includes('financial')); // Pass true for extra detail on financial sections
+      }
+      
+      return section;
+    });
+    
+    // Check for required sections and add them if missing
+    const requiredSections = [
+      'Financial Analysis', 
+      'Valuation', 
+      'Risk Factors', 
+      'ESG Considerations',
+      'Investment Thesis',
+      'Business Overview',
+      'Industry Analysis',
+      'Competitive Positioning'
+    ];
+    
+    for (const sectionTitle of requiredSections) {
+      const hasSection = report.sections.some(section => 
+        section.title.toLowerCase().includes(sectionTitle.toLowerCase())
+      );
+      
+      if (!hasSection) {
+        console.log(`Adding missing required section: ${sectionTitle}`);
+        // Add the section in an appropriate position
+        const insertPosition = determineInsertPosition(report.sections, sectionTitle);
+        report.sections.splice(insertPosition, 0, {
+          title: sectionTitle,
+          content: enhanceSectionContent(sectionTitle, formattedData, 
+            sectionTitle.toLowerCase().includes('financial'))
+        });
+      }
     }
     
-    // Set current date for the report if not provided
-    if (!reportRequest.reportDate) {
-      reportRequest.reportDate = new Date().toISOString().split('T')[0];
-      console.log(`Setting report date to current date: ${reportRequest.reportDate}`);
-    }
+    // Ensure the sections are in a logical order
+    report.sections = orderSectionsLogically(report.sections);
     
-    // Calculate date ranges for API calls
-    const today = new Date();
-    const oneMonthAgo = new Date();
-    oneMonthAgo.setMonth(today.getMonth() - 1);
-    const threeMonthsAhead = new Date();
-    threeMonthsAhead.setMonth(today.getMonth() + 3);
+    // Ensure we have all required report details
+    ensureCompleteReportStructure(report, formattedData);
     
-    const formatDate = (date: Date) => {
-      return date.toISOString().split('T')[0];
-    };
+    // Log the sections we're returning
+    console.log(`Returning report with ${report.sections.length} sections: ${report.sections.map(s => s.title).join(', ')}`);
     
-    // Fetch additional data in parallel
-    const [
-      recommendationTrends,
-      finnhubNews,
-      finnhubPeers,
-      earningsCalendar,
-      enterpriseValue,
-      analystEstimates
-    ] = await Promise.all([
-      fetchRecommendationTrends(reportRequest.symbol),
-      fetchFinnhubCompanyNews(reportRequest.symbol, formatDate(oneMonthAgo), formatDate(today)),
-      fetchFinnhubPeers(reportRequest.symbol),
-      fetchEarningsCalendar(formatDate(today), formatDate(threeMonthsAhead), reportRequest.symbol),
-      fetchEnterpriseValue(reportRequest.symbol),
-      fetchAnalystEstimates(reportRequest.symbol)
-    ]);
+    return new Response(JSON.stringify(report), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      status: 200,
+    });
     
-    // Add additional data to the report request
-    reportRequest.recommendationTrends = recommendationTrends;
-    reportRequest.finnhubNews = finnhubNews;
-    reportRequest.finnhubPeers = finnhubPeers;
-    reportRequest.earningsCalendar = earningsCalendar;
-    reportRequest.enterpriseValue = enterpriseValue;
-    reportRequest.analystEstimates = analystEstimates;
-    
-    // Log that we've fetched the additional data
-    console.log(`Fetched additional data for ${reportRequest.symbol} research report:`);
-    console.log(`- Recommendation trends: ${recommendationTrends?.length || 0} items`);
-    console.log(`- Finnhub news: ${finnhubNews?.length || 0} items`);
-    console.log(`- Finnhub peers: ${finnhubPeers?.length || 0} items`);
-    console.log(`- Earnings calendar entries: ${earningsCalendar?.earningsCalendar?.length || 0} items`);
-    console.log(`- Enterprise value: ${enterpriseValue?.length || 0} items`);
-    console.log(`- Analyst estimates: ${analystEstimates?.length || 0} items`);
-    console.log(`- Report type: ${reportRequest.reportType}`);
-    console.log(`- Report date: ${reportRequest.reportDate}`);
-    
-    // Generate the research report
-    const report = await generateResearchReport(reportRequest);
-    
-    // Ensure the report has the current date
-    if (!report.date) {
-      report.date = reportRequest.reportDate;
-    }
-    
-    // Return the report
-    return new Response(
-      JSON.stringify(report),
-      { headers: { "Content-Type": "application/json", ...corsHeaders } }
-    );
   } catch (error) {
-    console.error("Error generating research report:", error);
-    return new Response(
-      JSON.stringify({ error: error.message || "An error occurred during report generation" }),
-      { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }
-    );
+    console.error('Error generating research report:', error.message);
+    return new Response(JSON.stringify({ error: error.message }), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      status: 500,
+    });
   }
 });
+
+// Helper function to determine the best insert position for a new section
+function determineInsertPosition(sections: Array<{title: string, content: string}>, newSectionTitle: string): number {
+  // Ideal sequence of sections
+  const idealSequence = [
+    'Executive Summary',
+    'Investment Thesis',
+    'Business Overview',
+    'Industry Analysis',
+    'Competitive Positioning',
+    'Financial Analysis',
+    'Valuation',
+    'Growth Outlook',
+    'Risk Factors',
+    'ESG Considerations',
+    'Rating and Recommendation'
+  ];
+  
+  const targetIndex = idealSequence.findIndex(title => 
+    title.toLowerCase() === newSectionTitle.toLowerCase());
+  
+  if (targetIndex === -1) {
+    // If not in ideal sequence, add near the end but before rating/recommendation
+    const ratingIndex = sections.findIndex(s => 
+      s.title.toLowerCase().includes('rating') || 
+      s.title.toLowerCase().includes('recommendation'));
+    
+    return ratingIndex !== -1 ? ratingIndex : sections.length;
+  }
+  
+  // Find the first section that should come after the new section
+  for (let i = targetIndex + 1; i < idealSequence.length; i++) {
+    const afterSectionIndex = sections.findIndex(s => 
+      s.title.toLowerCase().includes(idealSequence[i].toLowerCase()));
+    
+    if (afterSectionIndex !== -1) {
+      return afterSectionIndex;
+    }
+  }
+  
+  // Find the last section that should come before the new section
+  for (let i = targetIndex - 1; i >= 0; i--) {
+    const beforeSectionIndex = sections.findIndex(s => 
+      s.title.toLowerCase().includes(idealSequence[i].toLowerCase()));
+    
+    if (beforeSectionIndex !== -1) {
+      return beforeSectionIndex + 1;
+    }
+  }
+  
+  // Default to adding at the end before any rating section
+  const ratingIndex = sections.findIndex(s => 
+    s.title.toLowerCase().includes('rating') || 
+    s.title.toLowerCase().includes('recommendation'));
+  
+  return ratingIndex !== -1 ? ratingIndex : sections.length;
+}
+
+// Helper function to order sections in a logical flow
+function orderSectionsLogically(sections: Array<{title: string, content: string}>): Array<{title: string, content: string}> {
+  const idealOrder = [
+    'Executive Summary',
+    'Investment Thesis',
+    'Business Overview',
+    'Industry Analysis',
+    'Competitive Positioning',
+    'Financial Analysis',
+    'Valuation',
+    'Growth Outlook',
+    'Risk Factors',
+    'ESG Considerations',
+    'Rating and Recommendation'
+  ];
+  
+  // Create a scoring function for sorting based on ideal order
+  const getSectionScore = (title: string): number => {
+    const lowerTitle = title.toLowerCase();
+    
+    for (let i = 0; i < idealOrder.length; i++) {
+      if (lowerTitle.includes(idealOrder[i].toLowerCase())) {
+        return i;
+      }
+    }
+    
+    // If not found in ideal order, place near the end
+    return idealOrder.length;
+  };
+  
+  // Sort sections based on ideal order
+  return [...sections].sort((a, b) => {
+    const scoreA = getSectionScore(a.title);
+    const scoreB = getSectionScore(b.title);
+    return scoreA - scoreB;
+  });
+}

@@ -1,7 +1,10 @@
 
 import { useState } from "react";
 import { toast } from "@/components/ui/use-toast";
-import { generateResearchReport, generateStockPrediction } from "@/services/api";
+import { 
+  generateResearchReport,
+  generateStockPrediction
+} from "@/services/api";
 
 import { ReportRequest, ResearchReport } from "@/types/ai-analysis/reportTypes";
 import type { NewsArticle } from "@/types/news/newsTypes";
@@ -32,9 +35,6 @@ export const useReportGeneration = (symbol: string, data: ReportData) => {
       setIsGenerating(true);
       setGenerationError(null);
       
-      // Get current date for the report
-      const currentDate = new Date().toISOString().split('T')[0];
-      
       const reportRequest: ReportRequest = {
         symbol,
         companyName: data.profile.companyName,
@@ -50,24 +50,21 @@ export const useReportGeneration = (symbol: string, data: ReportData) => {
         },
         news: data.news,
         peers: data.peers,
-        reportType: reportType, // Pass the report type to the API
-        reportDate: currentDate // Add the current date for the report
+        reportType: reportType // Pass the report type to guide AI generation
       };
       
       toast({
         title: "Generating AI Report",
         description: `Creating a detailed ${reportType} research report based on financial data...`,
-        variant: "default",
       });
       
       console.log("Sending report request:", {
         symbol,
         companyName: data.profile.companyName,
-        reportType, // Log the report type
+        reportType,
         hasFinancials: !!data.income?.length,
         newsCount: data.news?.length,
-        peersCount: data.peers?.length,
-        reportDate: currentDate // Log the report date
+        peersCount: data.peers?.length
       });
       
       const generatedReport = await generateResearchReport(reportRequest);
@@ -76,80 +73,40 @@ export const useReportGeneration = (symbol: string, data: ReportData) => {
         throw new Error("Failed to generate report - no data returned");
       }
       
-      // Ensure the report has today's date
-      if (!generatedReport.date || new Date(generatedReport.date).getFullYear() < 2025) {
-        generatedReport.date = currentDate;
-      }
-      
       console.log("Report received from API:", {
         symbol: generatedReport.symbol,
         recommendation: generatedReport.recommendation,
-        date: generatedReport.date, // Log the date from the response
         sectionsReceived: generatedReport.sections?.length || 0, 
         sectionsData: generatedReport.sections?.map(s => s.title) || [],
         hasRatingDetails: !!generatedReport.ratingDetails,
         hasScenarioAnalysis: !!generatedReport.scenarioAnalysis,
         hasCatalysts: !!generatedReport.catalysts,
-        summaryLength: generatedReport.summary?.length || 0,
-        reportFocus: reportType // Log the report focus for debugging
+        summaryLength: generatedReport.summary?.length || 0
       });
       
-      // Additional validation to ensure we have all sections
+      // Make sure the report has at least some sections
       if (!generatedReport.sections || generatedReport.sections.length === 0) {
-        console.warn("Report received without sections, creating default sections");
+        console.warn("Report received without sections, adding placeholder section");
         generatedReport.sections = [
           {
             title: "Investment Thesis",
-            content: "The investment thesis outlines the fundamental reasons for the recommendation given to this stock."
-          },
-          {
-            title: "Business Overview",
-            content: "This section provides an overview of the company's business model, products, services, and market position."
-          },
-          {
-            title: "Financial Analysis",
-            content: "This section analyzes the company's financial performance, including revenue, earnings, margins, and key ratios."
-          },
-          {
-            title: "Valuation",
-            content: "This section evaluates the company's current valuation relative to its peers and historical metrics."
-          },
-          {
-            title: "Risk Factors",
-            content: "This section identifies and analyzes key risks that could impact the investment thesis."
-          },
-          {
-            title: "ESG Considerations", 
-            content: "This section examines the company's environmental, social, and governance practices."
+            content: "The full report is being generated. This might take a moment as we analyze the financial data."
           }
         ];
       }
       
-      const requiredSections = [
-        "Investment Thesis",
-        "Business Overview",
-        "Financial Analysis",
-        "Valuation",
-        "Risk Factors",
-        "ESG Considerations"
-      ];
-      
-      requiredSections.forEach(sectionTitle => {
-        if (!generatedReport.sections.some(s => s.title.includes(sectionTitle))) {
-          console.warn(`Adding missing section: ${sectionTitle}`);
-          generatedReport.sections.push({
-            title: sectionTitle,
-            content: `This ${sectionTitle.toLowerCase()} section was generated as a placeholder. Consider regenerating the report for more detailed analysis.`
-          });
-        }
-      });
+      // Check section content length for quality
+      const shortSections = generatedReport.sections.filter(s => s.content.length < 200);
+      if (shortSections.length > 0) {
+        console.warn(`Report has ${shortSections.length} sections with less than 200 characters:`, 
+          shortSections.map(s => s.title).join(', '));
+      }
       
       setReport(generatedReport);
       
       toast({
         title: "AI Report Generated",
-        description: `${reportType.charAt(0).toUpperCase() + reportType.slice(1)} report for ${data.profile.companyName} successfully generated with ${generatedReport.sections.length} sections.`,
-        variant: "default",
+        description: `Research report for ${data.profile.companyName} successfully generated with ${generatedReport.sections.length} sections.`,
       });
     } catch (err: any) {
       console.error("Error generating report:", err);
@@ -189,7 +146,6 @@ export const useReportGeneration = (symbol: string, data: ReportData) => {
       toast({
         title: "Generating AI Prediction",
         description: "Analyzing real financial data and market trends using AI to predict future prices...",
-        variant: "default",
       });
       
       const prediction = await generateStockPrediction(
@@ -208,7 +164,6 @@ export const useReportGeneration = (symbol: string, data: ReportData) => {
       toast({
         title: "AI Prediction Generated",
         description: "Price prediction has been successfully generated based on AI analysis of real market data.",
-        variant: "default",
       });
     } catch (err: any) {
       console.error("Error generating prediction:", err);
