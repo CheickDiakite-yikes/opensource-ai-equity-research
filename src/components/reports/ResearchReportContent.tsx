@@ -86,7 +86,7 @@ const ResearchReportContent: React.FC<ResearchReportContentProps> = ({
 
   // Show warning for limited data
   const dataWarning = showDataWarning && (
-    <Alert variant="warning" className="mb-4">
+    <Alert variant="default" className="mb-4 bg-amber-50 border-amber-200 text-amber-800">
       <AlertCircle className="h-4 w-4" />
       <AlertTitle>Limited Financial Data</AlertTitle>
       <AlertDescription>

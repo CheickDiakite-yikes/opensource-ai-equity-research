@@ -19,7 +19,6 @@ export const useReportGeneration = (symbol: string, data: ReportData) => {
   const [generationError, setGenerationError] = useState<string | null>(null);
 
   const validateReport = (generatedReport: ResearchReport): boolean => {
-    // Check if the report has all required sections
     const expectedSections = ["investment thesis", "business overview", "financial analysis", "valuation", "risk factors"];
     const missingSections = expectedSections.filter(expected => 
       !generatedReport.sections.some(section => 
@@ -32,7 +31,6 @@ export const useReportGeneration = (symbol: string, data: ReportData) => {
       return false;
     }
     
-    // Check for very short sections
     const shortSections = generatedReport.sections.filter(s => s.content.length < 200);
     if (shortSections.length > 0) {
       console.warn(`Report has ${shortSections.length} sections with less than 200 characters:`, 
@@ -54,7 +52,6 @@ export const useReportGeneration = (symbol: string, data: ReportData) => {
         return;
       }
       
-      // If we already have a report and not forcing regeneration, don't regenerate
       if (report && !forceRegenerate) {
         toast({
           title: "Report Already Generated",
@@ -81,7 +78,7 @@ export const useReportGeneration = (symbol: string, data: ReportData) => {
         },
         news: data.news,
         peers: data.peers,
-        reportType: reportType // Pass the report type to guide AI generation
+        reportType: reportType
       };
       
       toast({
@@ -115,7 +112,6 @@ export const useReportGeneration = (symbol: string, data: ReportData) => {
         summaryLength: generatedReport.summary?.length || 0
       });
       
-      // Check if report quality is acceptable
       const isHighQuality = validateReport(generatedReport);
       
       setReport(generatedReport);
@@ -123,7 +119,7 @@ export const useReportGeneration = (symbol: string, data: ReportData) => {
       toast({
         title: "AI Report Generated",
         description: `Research report for ${data.profile.companyName} successfully generated with ${generatedReport.sections.length} sections.${!isHighQuality ? ' Some sections may need enhancement.' : ''}`,
-        variant: isHighQuality ? "default" : "secondary"
+        variant: "default"
       });
     } catch (err: any) {
       console.error("Error generating report:", err);
