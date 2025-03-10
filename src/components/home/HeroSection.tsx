@@ -1,7 +1,7 @@
 
 import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { ArrowRight, Brain, ChartLine, Lightbulb, LineChart, Search, TrendingUp, BarChart4, PieChart, Landmark } from "lucide-react";
+import { ArrowRight, Brain, ChartLine, Lightbulb, LineChart, Search, TrendingUp, BarChart4, PieChart, Landmark, FileText, Award, Target } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SearchBar } from "@/components/search";
 
@@ -57,21 +57,21 @@ const HeroSection: React.FC<HeroSectionProps> = ({ featuredSymbols }) => {
               transition={{ duration: 0.8, delay: 0.3 }}
             >
               <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-4 leading-tight tracking-tight">
-                <span className="block text-foreground">Your AI Analyst for</span>
+                <span className="block text-foreground">Equity Research with</span>
                 <span className="block bg-clip-text text-transparent bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 dark:from-blue-400 dark:via-indigo-400 dark:to-purple-400">
-                  Investment Professionals
+                  Institutional-Grade AI
                 </span>
               </h1>
               
               <p className="text-lg md:text-xl text-muted-foreground mb-6 max-w-xl leading-relaxed">
-                DiDi Data delivers institutional-quality financial analysis for PE, VC, investment banking, 
-                hedge funds, equity research, and consulting firms.
+                DiDi's standalone equity research platform delivers AI-powered analysis for PE, VC, investment banking, 
+                hedge funds, equity research, and consulting professionals.
               </p>
               
               <div className="flex flex-wrap items-center gap-2 mb-6">
-                <span className="px-3 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 rounded-full text-sm font-medium">TechStars-backed</span>
-                <span className="px-3 py-1 bg-indigo-100 dark:bg-indigo-900/30 text-indigo-800 dark:text-indigo-300 rounded-full text-sm font-medium">AI-Powered</span>
-                <span className="px-3 py-1 bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-300 rounded-full text-sm font-medium">Financial Analysis</span>
+                <span className="px-3 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 rounded-full text-sm font-medium">Professional-Grade Research</span>
+                <span className="px-3 py-1 bg-indigo-100 dark:bg-indigo-900/30 text-indigo-800 dark:text-indigo-300 rounded-full text-sm font-medium">AI-Powered Analysis</span>
+                <span className="px-3 py-1 bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-300 rounded-full text-sm font-medium">Investment Insights</span>
               </div>
               
               <div className="flex flex-wrap gap-4 mb-8">
@@ -86,7 +86,7 @@ const HeroSection: React.FC<HeroSectionProps> = ({ featuredSymbols }) => {
               <div className="relative">
                 <div className="absolute -inset-1 bg-gradient-to-r from-blue-500/20 to-indigo-600/20 rounded-xl blur-md"></div>
                 <div className="relative bg-card/95 backdrop-blur-sm shadow-xl rounded-xl p-4">
-                  <h3 className="text-lg font-medium mb-3">Search for a Company or Symbol</h3>
+                  <h3 className="text-lg font-medium mb-3">Research Any Public Company</h3>
                   <SearchBar 
                     featuredSymbols={featuredSymbols}
                     className="shadow-sm"

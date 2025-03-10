@@ -26,11 +26,11 @@ const AppHeader: React.FC<AppHeaderProps> = ({ featuredSymbols }) => {
           <Link to="/" className="flex items-center gap-2">
             <img 
               src="/lovable-uploads/288626b2-84b1-4aca-9399-864c39d76976.png" 
-              alt="DiDi Data - AI Analysis for Investment Professionals" 
+              alt="DiDi Equity Research - AI Analysis Platform" 
               className="h-10"
             />
             <span className="bg-clip-text text-transparent bg-gradient-to-r from-primary to-blue-600 text-2xl font-bold">
-              DiDi Data
+              DiDi Equity Research
             </span>
           </Link>
           <span className="hidden md:inline-block ml-2 text-sm text-muted-foreground">
