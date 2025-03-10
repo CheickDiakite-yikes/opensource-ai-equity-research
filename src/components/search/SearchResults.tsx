@@ -1,4 +1,3 @@
-
 import { forwardRef } from "react";
 import { StockQuote } from "@/types";
 import { 
@@ -6,7 +5,6 @@ import {
   CommandEmpty,
   CommandGroup,
   CommandInput,
-  CommandItem,
   CommandList,
   CommandSeparator
 } from "@/components/ui/command";
@@ -94,14 +92,6 @@ export const SearchResults = forwardRef<HTMLDivElement, SearchResultsProps>(({
     }
   };
 
-  // Determine if we should show the featured symbols section
-  const shouldShowFeatured = (
-    !query || // Always show if no query
-    filteredFeaturedSymbols.length > 0 // Show if there are filtered results
-  ) && (
-    apiResults.length < 5 // Only show if API results are limited
-  );
-  
   return (
     <Command 
       ref={ref}
@@ -113,16 +103,30 @@ export const SearchResults = forwardRef<HTMLDivElement, SearchResultsProps>(({
         {/* Loading State with Skeleton */}
         {isLoading && (
           <CommandGroup>
-            <div className="py-2">
-              <div className="flex items-center justify-between mb-2 px-4">
-                <Skeleton className="h-4 w-24" />
-                <Skeleton className="h-3 w-16" />
-              </div>
-              <SearchResultSkeleton />
-            </div>
+            <SearchResultSkeleton />
           </CommandGroup>
         )}
         
+        {/* Recent Searches Section - Show at the top when there's no query */}
+        {!isLoading && !query && filteredRecentSearches.length > 0 && (
+          <CommandGroup heading={
+            <div className="flex items-center gap-1 text-xs font-medium text-muted-foreground">
+              <History size={14} />
+              <span>RECENT SEARCHES</span>
+            </div>
+          }>
+            {filteredRecentSearches.map((symbol) => (
+              <RecentSearchItem 
+                key={`recent-${symbol}`}
+                symbol={symbol}
+                onSelect={() => onSelectStock(symbol)}
+                highlightMatch={highlightMatch}
+                query={query}
+              />
+            ))}
+          </CommandGroup>
+        )}
+
         {/* Empty State - only show when there are no results and no recent searches */}
         {!isLoading && results.length === 0 && filteredFeaturedSymbols.length === 0 && filteredRecentSearches.length === 0 && (
           <CommandEmpty>
@@ -173,26 +177,6 @@ export const SearchResults = forwardRef<HTMLDivElement, SearchResultsProps>(({
           </CommandGroup>
         )}
         
-        {/* Recent Searches Section */}
-        {!isLoading && filteredRecentSearches.length > 0 && (
-          <CommandGroup heading={
-            <div className="flex items-center gap-1 text-xs font-medium text-muted-foreground">
-              <History size={14} />
-              <span>RECENT SEARCHES</span>
-            </div>
-          }>
-            {filteredRecentSearches.map((symbol) => (
-              <RecentSearchItem 
-                key={`recent-${symbol}`}
-                symbol={symbol}
-                onSelect={() => onSelectStock(symbol)}
-                highlightMatch={highlightMatch}
-                query={query}
-              />
-            ))}
-          </CommandGroup>
-        )}
-        
         {/* API Results Section */}
         {!isLoading && apiResults.length > 0 && (
           <CommandGroup heading={
@@ -213,31 +197,8 @@ export const SearchResults = forwardRef<HTMLDivElement, SearchResultsProps>(({
           </CommandGroup>
         )}
         
-        {/* Common Results Section (Popular) */}
-        {!isLoading && commonResults.length > 0 && (
-          <>
-            <CommandSeparator />
-            <CommandGroup heading={
-              <div className="flex items-center gap-1 text-xs font-medium text-muted-foreground">
-                <Sparkles size={14} />
-                <span>POPULAR STOCKS</span>
-              </div>
-            }>
-              {commonResults.map((stock) => (
-                <SearchResultItem
-                  key={stock.symbol}
-                  stock={stock}
-                  onSelect={() => onSelectStock(stock.symbol)}
-                  highlightMatch={highlightMatch}
-                  query={query}
-                />
-              ))}
-            </CommandGroup>
-          </>
-        )}
-        
         {/* Featured Symbols Section */}
-        {!isLoading && shouldShowFeatured && filteredFeaturedSymbols.length > 0 && (
+        {!isLoading && !query && filteredFeaturedSymbols.length > 0 && (
           <>
             <CommandSeparator />
             <CommandGroup heading={

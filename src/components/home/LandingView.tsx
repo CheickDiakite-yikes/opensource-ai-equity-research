@@ -4,7 +4,6 @@ import { motion } from "framer-motion";
 import HeroSection from "./HeroSection";
 import FeaturedCompanies from "./FeaturedCompanies";
 import FeatureCards from "./FeatureCards";
-import RecentSearches from "./RecentSearches";
 import FAQSection from "./FAQSection";
 import MarketPerformance from "./MarketPerformance";
 import MarketNews from "./MarketNews";
@@ -29,7 +28,6 @@ const container = {
 };
 
 const LandingView: React.FC<LandingViewProps> = ({ 
-  recentSearches, 
   featuredSymbols, 
   onSelectSymbol 
 }) => {
@@ -56,7 +54,7 @@ const LandingView: React.FC<LandingViewProps> = ({
     const getMarketNews = async () => {
       try {
         setIsLoadingNews(true);
-        const news = await fetchMarketNews(6); // Fetch 6 news articles
+        const news = await fetchMarketNews(6);
         setMarketNews(news);
         console.log("Market news loaded:", news);
       } catch (error) {
@@ -78,10 +76,10 @@ const LandingView: React.FC<LandingViewProps> = ({
       animate="show"
       className="overflow-hidden"
     >
-      {/* Hero Section with search bar integrated - side by side layout */}
+      {/* Hero Section with search bar integrated */}
       <HeroSection featuredSymbols={featuredSymbols} />
       
-      {/* Feature Cards Section - full width */}
+      {/* Feature Cards Section */}
       <div className="py-6">
         <FeatureCards />
       </div>
@@ -101,7 +99,7 @@ const LandingView: React.FC<LandingViewProps> = ({
         </motion.div>
       </div>
       
-      {/* Featured Companies Section - add id for scrolling */}
+      {/* Featured Companies Section */}
       <div id="featured-companies-section" className="max-w-screen-xl mx-auto px-4 py-6 bg-gradient-to-t from-muted/10 to-background">
         <motion.div 
           initial={{ opacity: 0, y: 20 }}
@@ -131,7 +129,7 @@ const LandingView: React.FC<LandingViewProps> = ({
         </motion.div>
       </div>
       
-      {/* FAQ Section - full width with centered content */}
+      {/* FAQ Section */}
       <div className="w-full py-6">
         <motion.div 
           initial={{ opacity: 0, y: 20 }}
@@ -142,23 +140,6 @@ const LandingView: React.FC<LandingViewProps> = ({
           <FAQSection />
         </motion.div>
       </div>
-      
-      {/* Recent Searches if available */}
-      {recentSearches.length > 0 && (
-        <div className="max-w-screen-xl mx-auto px-4 py-6">
-          <motion.div 
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.7 }}
-          >
-            <RecentSearches 
-              recentSearches={recentSearches} 
-              onSelectSymbol={onSelectSymbol} 
-            />
-          </motion.div>
-        </div>
-      )}
     </motion.div>
   );
 };
