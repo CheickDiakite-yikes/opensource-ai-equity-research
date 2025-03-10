@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import SearchBar from "@/components/search/SearchBar";
 import UserMenu from "./UserMenu";
 import { motion } from "framer-motion";
+import { ThemeToggle } from "@/components/ui/theme-toggle";
 
 // Define props interface
 interface AppHeaderProps {
@@ -24,7 +25,7 @@ const AppHeader: React.FC<AppHeaderProps> = ({ featuredSymbols }) => {
   };
   
   return (
-    <header className="border-b border-border/40 py-4 px-6 bg-gradient-to-r from-background to-secondary/10 backdrop-blur-sm sticky top-0 z-20 shadow-sm">
+    <header className="border-b border-border/40 py-4 px-6 bg-gradient-to-r from-background to-secondary/10 backdrop-blur-sm sticky top-0 z-20 shadow-sm dark:bg-gradient-to-r dark:from-gray-900 dark:to-gray-800/90">
       <div className="container mx-auto flex flex-col sm:flex-row justify-between items-center gap-4">
         <motion.div
           initial={{ opacity: 0, x: -20 }}
@@ -41,7 +42,7 @@ const AppHeader: React.FC<AppHeaderProps> = ({ featuredSymbols }) => {
               alt="DiDi Equity Research" 
               className="h-10"
             />
-            <span className="bg-clip-text text-transparent bg-gradient-to-r from-primary to-blue-600 text-2xl font-bold">
+            <span className="bg-clip-text text-transparent bg-gradient-to-r from-primary to-blue-600 text-2xl font-bold dark:from-indigo-400 dark:to-purple-400">
               Equity Research
             </span>
           </div>
@@ -61,6 +62,7 @@ const AppHeader: React.FC<AppHeaderProps> = ({ featuredSymbols }) => {
             />
           </motion.div>
           
+          <ThemeToggle />
           <UserMenu />
         </div>
       </div>

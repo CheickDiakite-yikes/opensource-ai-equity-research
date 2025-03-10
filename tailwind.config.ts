@@ -69,7 +69,16 @@ export default {
                     lightBlue: '#3B82F6',
                     background: '#F8FAFC',
                     border: '#E2E8F0',
-                    muted: '#94A3B8'
+                    muted: '#94A3B8',
+                    // Space theme colors
+                    space: {
+                        dark: '#0F1729',
+                        darker: '#070C18',
+                        accent: '#8D5CFF',
+                        highlight: '#4E72ED',
+                        text: '#C8C8C9',
+                        subtle: '#9F9EA1'
+                    }
                 }
 			},
 			borderRadius: {
@@ -105,6 +114,10 @@ export default {
                 'slide-in-right': {
                     '0%': { transform: 'translateX(10px)', opacity: '0' },
                     '100%': { transform: 'translateX(0)', opacity: '1' }
+                },
+                'twinkle': {
+                    '0%, 100%': { opacity: '0.3' },
+                    '50%': { opacity: '1' }
                 }
 			},
 			animation: {
@@ -112,11 +125,16 @@ export default {
 				'accordion-up': 'accordion-up 0.2s ease-out',
                 'fade-in': 'fade-in 0.5s ease-out',
                 'slide-up': 'slide-up 0.5s ease-out',
-                'slide-in-right': 'slide-in-right 0.3s ease-out'
+                'slide-in-right': 'slide-in-right 0.3s ease-out',
+                'twinkle': 'twinkle 3s ease-in-out infinite'
 			},
             fontFamily: {
                 sans: ['Inter', 'ui-sans-serif', 'system-ui', 'sans-serif'],
                 mono: ['JetBrains Mono', 'monospace']
+            },
+            backgroundImage: {
+                'space-gradient': 'linear-gradient(to bottom, #0F1729, #070C18)',
+                'space-gradient-lighter': 'linear-gradient(to bottom, #1A1F2C, #0F1729)'
             }
 		}
 	},

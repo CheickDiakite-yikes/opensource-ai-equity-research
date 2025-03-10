@@ -6,6 +6,7 @@ import StockView from "@/components/stocks/StockView";
 import { toast } from "sonner";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { useMediaQuery } from "@/hooks/use-mobile";
+import { Starfield } from "@/components/ui/starfield";
 
 const Index = () => {
   const [symbol, setSymbol] = useState<string>("");
@@ -119,7 +120,8 @@ const Index = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background to-muted/30 safe-area-padding">
+    <div className="min-h-screen bg-gradient-to-br from-background to-muted/30 dark:bg-gradient-to-br dark:from-gray-900 dark:to-slate-900 safe-area-padding transition-colors duration-300">
+      <Starfield starsCount={150} />
       <Header 
         symbol={symbol}
         setSymbol={setSymbol}

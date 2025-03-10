@@ -1,8 +1,7 @@
 
 import React from "react";
-import { BarChart4, FileText, TrendingUp, ChartBar, PieChart, BarChart, ChevronRight } from "lucide-react";
+import { BarChart4, FileText, TrendingUp, ChartBar, PieChart, BarChart } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
 
 const cardVariants = {
@@ -12,7 +11,7 @@ const cardVariants = {
 
 const FeatureCards: React.FC = () => {
   return (
-    <div className="py-6 bg-gradient-to-b from-background to-muted/20">
+    <div className="py-6 bg-gradient-to-b from-background to-muted/20 dark:from-gray-900 dark:to-gray-950/90">
       <div className="max-w-screen-xl mx-auto px-4">
         <motion.div 
           initial={{ opacity: 0 }}
@@ -48,7 +47,7 @@ const FeatureCards: React.FC = () => {
         >
           {/* Comprehensive Analysis */}
           <motion.div variants={cardVariants} transition={{ duration: 0.5 }}>
-            <Card className="relative h-full overflow-hidden border-0 bg-gradient-to-b from-white to-blue-50/50 dark:from-slate-900 dark:to-blue-950/30 shadow-md hover:shadow-xl transition-all duration-300 hover:translate-y-[-8px] group">
+            <Card className="relative h-full overflow-hidden border-0 bg-gradient-to-b from-white to-blue-50/50 dark:from-slate-900/90 dark:to-blue-950/30 dark:border dark:border-blue-900/30 shadow-md hover:shadow-xl transition-all duration-300 hover:translate-y-[-8px] group">
               <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-400 to-blue-600" />
               <div className="px-4 pt-5 pb-4">
                 <div className="bg-blue-100 dark:bg-blue-900/30 w-12 h-12 flex items-center justify-center rounded-xl mb-3 text-blue-600 dark:text-blue-400 shadow-sm group-hover:shadow-blue-200/50 dark:group-hover:shadow-blue-800/30 transition-all">
@@ -68,7 +67,7 @@ const FeatureCards: React.FC = () => {
           
           {/* AI Research Reports */}
           <motion.div variants={cardVariants} transition={{ duration: 0.5 }}>
-            <Card className="relative h-full overflow-hidden border-0 bg-gradient-to-b from-white to-purple-50/50 dark:from-slate-900 dark:to-purple-950/30 shadow-md hover:shadow-xl transition-all duration-300 hover:translate-y-[-8px] group">
+            <Card className="relative h-full overflow-hidden border-0 bg-gradient-to-b from-white to-purple-50/50 dark:from-slate-900/90 dark:to-purple-950/30 dark:border dark:border-purple-900/30 shadow-md hover:shadow-xl transition-all duration-300 hover:translate-y-[-8px] group">
               <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-purple-400 to-purple-600" />
               <div className="px-4 pt-5 pb-4">
                 <div className="bg-purple-100 dark:bg-purple-900/30 w-12 h-12 flex items-center justify-center rounded-xl mb-3 text-purple-600 dark:text-purple-400 shadow-sm group-hover:shadow-purple-200/50 dark:group-hover:shadow-purple-800/30 transition-all">
@@ -88,7 +87,7 @@ const FeatureCards: React.FC = () => {
           
           {/* Price Predictions */}
           <motion.div variants={cardVariants} transition={{ duration: 0.5 }}>
-            <Card className="relative h-full overflow-hidden border-0 bg-gradient-to-b from-white to-green-50/50 dark:from-slate-900 dark:to-green-950/30 shadow-md hover:shadow-xl transition-all duration-300 hover:translate-y-[-8px] group">
+            <Card className="relative h-full overflow-hidden border-0 bg-gradient-to-b from-white to-green-50/50 dark:from-slate-900/90 dark:to-green-950/30 dark:border dark:border-green-900/30 shadow-md hover:shadow-xl transition-all duration-300 hover:translate-y-[-8px] group">
               <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-green-400 to-green-600" />
               <div className="px-4 pt-5 pb-4">
                 <div className="bg-green-100 dark:bg-green-900/30 w-12 h-12 flex items-center justify-center rounded-xl mb-3 text-green-600 dark:text-green-400 shadow-sm group-hover:shadow-green-200/50 dark:group-hover:shadow-green-800/30 transition-all">

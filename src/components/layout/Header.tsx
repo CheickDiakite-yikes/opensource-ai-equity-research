@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
 import UserMenu from "./UserMenu";
+import { ThemeToggle } from "@/components/ui/theme-toggle";
 
 interface HeaderProps {
   symbol: string;
@@ -36,7 +37,7 @@ const Header: React.FC<HeaderProps> = ({
   };
   
   return (
-    <header className="border-b border-border/40 py-4 px-6 bg-gradient-to-r from-background to-secondary/10 backdrop-blur-sm sticky top-0 z-10 shadow-sm">
+    <header className="border-b border-border/40 py-4 px-6 bg-gradient-to-r from-background to-secondary/10 backdrop-blur-sm sticky top-0 z-10 shadow-sm dark:bg-gradient-to-r dark:from-gray-900 dark:to-gray-800/90">
       <div className="container mx-auto flex flex-col sm:flex-row justify-between items-center gap-4">
         <motion.div
           initial={{ opacity: 0, x: -20 }}
@@ -53,7 +54,7 @@ const Header: React.FC<HeaderProps> = ({
               alt="DiDi Equity Research" 
               className="h-10"
             />
-            <span className="bg-clip-text text-transparent bg-gradient-to-r from-primary to-blue-600 text-2xl font-bold">
+            <span className="bg-clip-text text-transparent bg-gradient-to-r from-primary to-blue-600 text-2xl font-bold dark:from-indigo-400 dark:to-purple-400">
               Equity Research
             </span>
           </div>
@@ -73,7 +74,7 @@ const Header: React.FC<HeaderProps> = ({
                 value={symbol}
                 onChange={(e) => setSymbol(e.target.value)}
                 onKeyDown={handleKeyDown}
-                className="pl-10 bg-background/80 backdrop-blur-sm pr-4 border-border/50 focus:border-primary/50 transition-colors h-10"
+                className="pl-10 bg-background/80 backdrop-blur-sm pr-4 border-border/50 focus:border-primary/50 transition-colors h-10 dark:bg-gray-800/60 dark:border-gray-700/50"
               />
               <Search className="absolute left-3 top-2.5 h-5 w-5 text-muted-foreground" />
             </div>
@@ -96,6 +97,7 @@ const Header: React.FC<HeaderProps> = ({
             </Button>
           </motion.div>
           
+          <ThemeToggle />
           <UserMenu />
         </div>
       </div>
