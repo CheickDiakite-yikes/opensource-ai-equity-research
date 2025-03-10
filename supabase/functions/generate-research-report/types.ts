@@ -1,4 +1,3 @@
-
 export interface ReportSection {
   title: string;
   content: string;
@@ -50,7 +49,6 @@ export interface ResearchReport {
   ratingDetails?: RatingDetails;
   scenarioAnalysis?: ScenarioAnalysis;
   catalysts?: GrowthCatalysts;
-  // Enhanced data from the new endpoints
   analystConsensus?: {
     buyCount: number;
     holdCount: number;
@@ -102,7 +100,6 @@ export interface ResearchReport {
   };
 }
 
-// Adding the missing ReportRequest interface
 export interface ReportRequest {
   symbol: string;
   companyName: string;

@@ -20,18 +20,24 @@ export * from './market/performanceTypes';
 // News types
 export * from './news/newsTypes';
 
+// AI analysis types
+export * from './aiAnalysisTypes';
+export type { 
+  ResearchReport,
+  ReportRequest,
+  RatingDetails,
+  ScenarioAnalysis,
+  GrowthCatalysts 
+} from './ai-analysis/reportTypes';
+
 // Other domain types 
 export * from './historicalDataTypes';
 export * from './documentTypes';
-export * from './aiAnalysisTypes';
 
 // Export financialDataTypes directly to avoid naming conflicts
 export type { FinancialData, RatioData } from './financialDataTypes';
 
-// Re-export AI analysis types for backward compatibility
-export type { RatingDetails } from './ai-analysis/reportTypes';
-export type { ResearchReport } from './ai-analysis/reportTypes';
-
+// Make sure StockQuote type is still exported
 export interface StockQuote {
   symbol: string;
   name: string;

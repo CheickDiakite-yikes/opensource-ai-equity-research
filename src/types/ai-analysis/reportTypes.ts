@@ -1,4 +1,44 @@
 
+export interface ReportSection {
+  title: string;
+  content: string;
+}
+
+export interface RatingDetails {
+  overallRating: string;
+  financialStrength: string;
+  growthOutlook: string;
+  valuationAttractiveness: string;
+  competitivePosition: string;
+  ratingScale?: string;
+  ratingJustification?: string;
+}
+
+export interface Scenario {
+  price: string;
+  description: string;
+  probability?: string;
+  drivers?: string[];
+}
+
+export interface ScenarioAnalysis {
+  bullCase: Scenario;
+  baseCase: Scenario;
+  bearCase: Scenario;
+}
+
+export interface CatalystTimeline {
+  shortTerm?: string[];
+  mediumTerm?: string[];
+  longTerm?: string[];
+}
+
+export interface GrowthCatalysts {
+  positive?: string[];
+  negative?: string[];
+  timeline?: CatalystTimeline;
+}
+
 export interface ResearchReport {
   symbol: string;
   companyName: string;
@@ -10,7 +50,6 @@ export interface ResearchReport {
   ratingDetails?: RatingDetails;
   scenarioAnalysis?: ScenarioAnalysis;
   catalysts?: GrowthCatalysts;
-  // Enhanced data from the new endpoints
   analystConsensus?: {
     buyCount: number;
     holdCount: number;
@@ -62,47 +101,6 @@ export interface ResearchReport {
   };
 }
 
-export interface ReportSection {
-  title: string;
-  content: string;
-}
-
-export interface RatingDetails {
-  overallRating: string;
-  financialStrength: string;
-  growthOutlook: string;
-  valuationAttractiveness: string;
-  competitivePosition: string;
-  ratingScale?: string;
-  ratingJustification?: string;
-}
-
-export interface Scenario {
-  price: string;
-  description: string;
-  probability?: string;
-  drivers?: string[];
-}
-
-export interface ScenarioAnalysis {
-  bullCase: Scenario;
-  baseCase: Scenario;
-  bearCase: Scenario;
-}
-
-export interface CatalystTimeline {
-  shortTerm?: string[];
-  mediumTerm?: string[];
-  longTerm?: string[];
-}
-
-export interface GrowthCatalysts {
-  positive?: string[];
-  negative?: string[];
-  timeline?: CatalystTimeline;
-}
-
-// Adding the missing ReportRequest interface
 export interface ReportRequest {
   symbol: string;
   companyName: string;
