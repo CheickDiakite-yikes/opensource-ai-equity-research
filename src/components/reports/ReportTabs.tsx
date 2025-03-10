@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { FileText, TrendingUp, Info, Download, ArrowUp, ArrowDown } from "lucide-react";
@@ -8,7 +7,7 @@ import ResearchReportDisplay from "./ResearchReportDisplay";
 import PricePredictionDisplay from "./PricePredictionDisplay";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
-import { generateReportHTML } from "@/utils/reports/htmlGeneratorUtils";
+import { generateReportHTML } from "@/services/api/userContent/htmlGenerator";
 
 interface ReportTabsProps {
   report: ResearchReport | null;
