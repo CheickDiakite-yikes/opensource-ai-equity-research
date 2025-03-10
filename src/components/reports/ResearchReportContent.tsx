@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertTriangle, Info } from "lucide-react";
@@ -116,8 +115,7 @@ const ResearchReportContent = ({
   useEffect(() => {
     if (isReportTooBasic && report) {
       toast.warning(
-        "This report appears to be basic. Try generating again or updating the report type.",
-        { duration: 6000 }
+        "This report appears to be basic. Try generating again or updating the report type."
       );
     }
   }, [isReportTooBasic, report]);
@@ -197,6 +195,17 @@ const ResearchReportContent = ({
           <AlertTitle>Error generating report</AlertTitle>
           <AlertDescription>
             {generationError}
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {isReportTooBasic && report && (
+        <Alert>
+          <AlertTriangle className="h-4 w-4" />
+          <AlertTitle>Report Quality Notice</AlertTitle>
+          <AlertDescription>
+            This report may not contain the level of detail typically found in professional equity research.
+            Consider regenerating with the "comprehensive" option for more detailed analysis.
           </AlertDescription>
         </Alert>
       )}
