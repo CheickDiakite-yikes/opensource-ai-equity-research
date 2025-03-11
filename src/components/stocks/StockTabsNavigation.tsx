@@ -43,12 +43,12 @@ const StockTabsNavigation: React.FC<StockTabsNavigationProps> = ({
     },
     { 
       id: "report", 
-      label: "Research Report", 
+      label: "Research", // Shortened for mobile
       icon: <FileText className="h-4 w-4" /> 
     },
     { 
       id: "alternative", 
-      label: "Alternative Data", 
+      label: "Alt Data", // Shortened for mobile
       icon: <Signal className="h-4 w-4" /> 
     }
   ];
@@ -56,19 +56,19 @@ const StockTabsNavigation: React.FC<StockTabsNavigationProps> = ({
   return (
     <div className="w-full border-b border-border mb-6">
       {isMobile ? (
-        <ScrollArea className="pb-2">
-          <div className="flex space-x-1 min-w-full p-1">
+        <ScrollArea className="pb-2 w-full">
+          <div className="flex space-x-1 min-w-max p-1">
             {tabs.map((tab) => (
               <button
                 key={tab.id}
                 onClick={() => handleTabClick(tab.id)}
                 className={cn(
-                  "flex items-center gap-1 min-w-max px-3 py-2 text-xs font-medium relative whitespace-nowrap",
+                  "flex items-center justify-center gap-1 min-w-[70px] px-2 py-2 text-xs font-medium relative whitespace-nowrap",
                   activeTab === tab.id ? "text-primary" : "text-muted-foreground hover:text-foreground"
                 )}
               >
                 {tab.icon}
-                <span>{isMobile && tab.label === "Research Report" ? "Report" : tab.label}</span>
+                <span>{tab.label}</span>
                 
                 {activeTab === tab.id && (
                   <motion.div 

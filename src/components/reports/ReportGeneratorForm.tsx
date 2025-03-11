@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -7,6 +6,7 @@ import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { 
   canGenerateReport,
   canGeneratePrediction,
@@ -42,6 +42,7 @@ const ReportGeneratorForm: React.FC<ReportGeneratorFormProps> = ({
 }) => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
   const remainingPredictions = getRemainingPredictions();
   const isAuthenticated = !!user;
   
@@ -65,17 +66,20 @@ const ReportGeneratorForm: React.FC<ReportGeneratorFormProps> = ({
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
-      className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8"
+      className={cn(
+        "grid gap-6 mb-8",
+        isMobile ? "grid-cols-1" : "grid-cols-1 md:grid-cols-2"
+      )}
     >
-      <div className="space-y-4 p-5 rounded-lg border border-border/50 bg-card/40 backdrop-blur-sm">
+      <div className="space-y-4 p-3 sm:p-5 rounded-lg border border-border/50 bg-card/40 backdrop-blur-sm">
         <div className="flex items-center justify-between">
           <h3 className="text-base font-medium flex items-center gap-2">
             <FileText className="h-4 w-4 text-primary" />
-            Research Report
+            {isMobile ? "Research" : "Research Report"}
             {!isAuthenticated && (
               <div className="ml-2 bg-amber-100 text-amber-800 dark:bg-amber-900/50 dark:text-amber-300 text-xs px-2 py-0.5 rounded-full flex items-center">
                 <Lock className="h-3 w-3 mr-1" />
-                Premium
+                <span>Premium</span>
               </div>
             )}
           </h3>
@@ -104,7 +108,7 @@ const ReportGeneratorForm: React.FC<ReportGeneratorFormProps> = ({
         <div>
           <label className="text-sm font-medium mb-1.5 block text-muted-foreground">Report Focus</label>
           <Select defaultValue={reportType} onValueChange={setReportType}>
-            <SelectTrigger className="bg-background/80 focus:ring-primary">
+            <SelectTrigger className="bg-background/80 focus:ring-primary text-sm h-9">
               <SelectValue placeholder="Select Report Type" />
             </SelectTrigger>
             <SelectContent>
@@ -130,22 +134,24 @@ const ReportGeneratorForm: React.FC<ReportGeneratorFormProps> = ({
           </Select>
         </div>
         
-        <div className="bg-muted/30 rounded-md p-3 text-sm flex items-start gap-2">
-          <div className="mt-0.5">
-            <FileText className="h-4 w-4 text-primary" />
+        {!isMobile && (
+          <div className="bg-muted/30 rounded-md p-3 text-sm flex items-start gap-2">
+            <div className="mt-0.5">
+              <FileText className="h-4 w-4 text-primary" />
+            </div>
+            <div>
+              <span className="font-medium">AI-Generated Research Report</span>
+              <p className="text-muted-foreground text-xs mt-1">
+                Creates a detailed equity research report with company analysis, financial review, valuation, and investment recommendation.
+              </p>
+            </div>
           </div>
-          <div>
-            <span className="font-medium">AI-Generated Research Report</span>
-            <p className="text-muted-foreground text-xs mt-1">
-              Creates a detailed equity research report with company analysis, financial review, valuation, and investment recommendation.
-            </p>
-          </div>
-        </div>
+        )}
         
         <div className="pt-2">
           <Button 
             className={cn(
-              "w-full flex items-center gap-2 transition-all",
+              "w-full flex items-center gap-2 transition-all text-sm h-10",
               !isAuthenticated ? "bg-gray-500 hover:bg-gray-600" : isGenerating ? "bg-primary/80" : "bg-primary hover:bg-primary/90"
             )}
             onClick={handleGenerateReport}
@@ -154,31 +160,31 @@ const ReportGeneratorForm: React.FC<ReportGeneratorFormProps> = ({
             {isGenerating ? (
               <>
                 <Loader2 className="h-4 w-4 animate-spin" />
-                <span>Generating Report...</span>
+                <span>{isMobile ? "Generating..." : "Generating Report..."}</span>
               </>
             ) : !isAuthenticated ? (
               <>
                 <Lock className="h-4 w-4" />
-                <span>Sign In to Generate Report</span>
+                <span>{isMobile ? "Sign In" : "Sign In to Generate Report"}</span>
               </>
             ) : (
               <>
                 <FileText className="h-4 w-4" />
-                <span>Generate Research Report</span>
+                <span>{isMobile ? "Generate Report" : "Generate Research Report"}</span>
               </>
             )}
           </Button>
         </div>
       </div>
       
-      <div className="space-y-4 p-5 rounded-lg border border-border/50 bg-card/40 backdrop-blur-sm">
+      <div className="space-y-4 p-3 sm:p-5 rounded-lg border border-border/50 bg-card/40 backdrop-blur-sm">
         <div className="flex items-center justify-between">
           <h3 className="text-base font-medium flex items-center gap-2">
             <TrendingUp className="h-4 w-4 text-primary" />
             Price Prediction
             {!isAuthenticated && remainingPredictions > 0 && (
               <div className="ml-2 bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300 text-xs px-2 py-0.5 rounded-full">
-                {remainingPredictions} free left
+                {remainingPredictions} free
               </div>
             )}
           </h3>
@@ -204,17 +210,19 @@ const ReportGeneratorForm: React.FC<ReportGeneratorFormProps> = ({
           </div>
         </div>
         
-        <div className="flex items-start gap-2 text-sm text-muted-foreground rounded-md p-3 bg-muted/30">
-          <div className="mt-0.5">
-            <TrendingUp className="h-4 w-4 text-primary" />
+        {!isMobile && (
+          <div className="flex items-start gap-2 text-sm text-muted-foreground rounded-md p-3 bg-muted/30">
+            <div className="mt-0.5">
+              <TrendingUp className="h-4 w-4 text-primary" />
+            </div>
+            <div>
+              <span className="font-medium text-foreground">AI-Powered Price Forecasting</span>
+              <p className="text-muted-foreground text-xs mt-1">
+                Creates a price prediction based on financial data, market trends, and advanced analysis algorithms.
+              </p>
+            </div>
           </div>
-          <div>
-            <span className="font-medium text-foreground">AI-Powered Price Forecasting</span>
-            <p className="text-muted-foreground text-xs mt-1">
-              Creates a price prediction based on financial data, market trends, and advanced analysis algorithms.
-            </p>
-          </div>
-        </div>
+        )}
         
         <div className="rounded-lg border p-3 bg-muted/20">
           <h4 className="text-sm font-medium mb-2 flex items-center gap-1.5">
@@ -245,7 +253,7 @@ const ReportGeneratorForm: React.FC<ReportGeneratorFormProps> = ({
           <Button 
             variant="outline" 
             className={cn(
-              "w-full border-primary/30 hover:bg-primary/10 flex items-center gap-2",
+              "w-full border-primary/30 hover:bg-primary/10 flex items-center gap-2 text-sm h-10",
               isPredicting && "opacity-80"
             )}
             onClick={handlePredictPrice}
@@ -254,12 +262,12 @@ const ReportGeneratorForm: React.FC<ReportGeneratorFormProps> = ({
             {isPredicting ? (
               <>
                 <Loader2 className="h-4 w-4 animate-spin" />
-                <span>Generating Prediction...</span>
+                <span>{isMobile ? "Predicting..." : "Generating Prediction..."}</span>
               </>
             ) : (
               <>
                 <TrendingUp className="h-4 w-4" />
-                <span>Generate Price Prediction</span>
+                <span>{isMobile ? "Predict Price" : "Generate Price Prediction"}</span>
               </>
             )}
           </Button>

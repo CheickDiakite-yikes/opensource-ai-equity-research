@@ -1,5 +1,4 @@
-
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import FinancialsTabContent from '../sections/FinancialsTabContent';
 import BalanceSheetTabContent from '../sections/BalanceSheetTabContent';
@@ -10,7 +9,9 @@ import LoadingSkeleton from '../LoadingSkeleton';
 import ErrorState from './ErrorState';
 import { FinancialData, RatioData } from '@/types';
 import { EarningsCall, SECFiling } from '@/types/documentTypes';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { toast } from "sonner";
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 interface AnalysisTabsProps {
   symbol: string;
@@ -36,8 +37,8 @@ const AnalysisTabs: React.FC<AnalysisTabsProps> = ({
   const [activeTab, setActiveTab] = useState("financials");
   const [isInitialized, setIsInitialized] = useState(false);
   const [isTabMounted, setIsTabMounted] = useState(false);
+  const isMobile = useIsMobile();
   
-  // Set component as initialized after first render
   useEffect(() => {
     if (!isInitialized) {
       console.log(`AnalysisTabs initialized for ${symbol} with ${financials.length} financial records from ${dataSource}`);
@@ -56,7 +57,6 @@ const AnalysisTabs: React.FC<AnalysisTabsProps> = ({
       }
     }
     
-    // Mark tab as mounted with a small delay to ensure state is updated
     const timer = setTimeout(() => {
       setIsTabMounted(true);
     }, 100);
@@ -67,7 +67,6 @@ const AnalysisTabs: React.FC<AnalysisTabsProps> = ({
     };
   }, [isInitialized, symbol, financials.length, dataSource]);
   
-  // Error handling if financials data is missing
   if (!isInitialized) {
     return <LoadingSkeleton />;
   }
@@ -84,13 +83,11 @@ const AnalysisTabs: React.FC<AnalysisTabsProps> = ({
     );
   }
 
-  // Handle tab change
   const handleTabChange = (value: string) => {
     console.log(`Changed analysis tab to: ${value}`);
     setActiveTab(value);
   };
 
-  // Check if we have data for the current tab
   const hasRatiosData = ratioData && ratioData.length > 0;
   const hasFinancialsData = financials && financials.length > 0;
 
@@ -101,13 +98,25 @@ const AnalysisTabs: React.FC<AnalysisTabsProps> = ({
       onValueChange={handleTabChange} 
       className="w-full"
     >
-      <TabsList className="grid grid-cols-5 mb-4">
-        <TabsTrigger value="financials">Income</TabsTrigger>
-        <TabsTrigger value="balance-sheet">Balance Sheet</TabsTrigger>
-        <TabsTrigger value="cash-flow">Cash Flow</TabsTrigger>
-        <TabsTrigger value="ratios">Ratios</TabsTrigger>
-        <TabsTrigger value="growth">Growth</TabsTrigger>
-      </TabsList>
+      {isMobile ? (
+        <ScrollArea className="w-full pb-2">
+          <TabsList className="inline-flex min-w-max mb-4 h-9">
+            <TabsTrigger value="financials" className="text-xs px-3">Income</TabsTrigger>
+            <TabsTrigger value="balance-sheet" className="text-xs px-3">Balance</TabsTrigger>
+            <TabsTrigger value="cash-flow" className="text-xs px-3">Cash Flow</TabsTrigger>
+            <TabsTrigger value="ratios" className="text-xs px-3">Ratios</TabsTrigger>
+            <TabsTrigger value="growth" className="text-xs px-3">Growth</TabsTrigger>
+          </TabsList>
+        </ScrollArea>
+      ) : (
+        <TabsList className="grid grid-cols-5 mb-4">
+          <TabsTrigger value="financials">Income</TabsTrigger>
+          <TabsTrigger value="balance-sheet">Balance Sheet</TabsTrigger>
+          <TabsTrigger value="cash-flow">Cash Flow</TabsTrigger>
+          <TabsTrigger value="ratios">Ratios</TabsTrigger>
+          <TabsTrigger value="growth">Growth</TabsTrigger>
+        </TabsList>
+      )}
       
       {isTabMounted && (
         <>

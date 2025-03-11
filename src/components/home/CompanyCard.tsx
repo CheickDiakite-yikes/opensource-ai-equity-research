@@ -6,7 +6,7 @@ import { useCompanyCardData } from "@/hooks/useCompanyCardData";
 import { Button } from "@/components/ui/button";
 import { FileText } from "lucide-react";
 
-// Import our new components
+// Import our components
 import CompanyCardHeader from "./card-components/CompanyCardHeader";
 import PriceDisplay from "./card-components/PriceDisplay";
 import TrendIndicator from "./card-components/TrendIndicator";
@@ -60,7 +60,11 @@ const CompanyCard = ({ company, onSelect }: CompanyCardProps) => {
         <div className="h-1 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-t-xl" />
         <CardContent className={`${isMobile ? 'p-3' : 'p-6'} relative`}>
           <div className="flex flex-col h-full justify-between space-y-2">
-            <CompanyCardHeader symbol={company.symbol} name={company.name} />
+            <CompanyCardHeader 
+              symbol={company.symbol} 
+              name={company.name} 
+              compact={isMobile} 
+            />
 
             <div className="flex justify-between items-center gap-2">
               <PriceDisplay 
@@ -70,12 +74,14 @@ const CompanyCard = ({ company, onSelect }: CompanyCardProps) => {
                 error={isQuoteError}
                 iconColor="text-blue-500"
                 className="flex-grow"
+                compact={isMobile}
               />
               
               {quote && quote.changesPercentage !== undefined && (
                 <TrendIndicator 
                   percentage={quote.changesPercentage} 
                   timeframe="24h" 
+                  compact={isMobile}
                 />
               )}
             </div>

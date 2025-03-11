@@ -1,3 +1,4 @@
+
 import React from "react";
 import { motion } from "framer-motion";
 import CompanyCard from "./CompanyCard";
@@ -59,13 +60,13 @@ const FeaturedCompanies: React.FC<FeaturedCompaniesProps> = ({
   }
 
   return (
-    <div className="relative py-8">
-      <div className="container mx-auto px-4 sm:px-6 md:px-0 max-w-[1400px]">
+    <div className="relative py-6 sm:py-8">
+      <div className="container mx-auto px-3 sm:px-6 md:px-0 max-w-[1400px]">
         <motion.div 
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.7 }}
-          className="mb-8 relative z-10"
+          className="mb-6 sm:mb-8 relative z-10"
         >
           <SectionHeader 
             title="Featured Companies"
@@ -82,7 +83,7 @@ const FeaturedCompanies: React.FC<FeaturedCompaniesProps> = ({
               }}
             >
               <CarouselContent className="-ml-2">
-                {/* Group companies into pairs for vertical display */}
+                {/* Group companies into pairs for vertical display (2 rows, 1 column) */}
                 {Array.from({ length: Math.ceil(featuredSymbols.length / 2) }, (_, index) => (
                   <CarouselItem key={index} className="basis-full pl-2">
                     <div className="flex flex-col gap-2">
@@ -98,9 +99,9 @@ const FeaturedCompanies: React.FC<FeaturedCompaniesProps> = ({
                   </CarouselItem>
                 ))}
               </CarouselContent>
-              <div className="flex justify-center items-center mt-6 gap-4">
-                <CarouselPrevious className="static translate-y-0 h-10 w-10 rounded-full bg-blue-500/10 hover:bg-blue-500/20 border-blue-300/30 dark:border-blue-500/30" />
-                <CarouselNext className="static translate-y-0 h-10 w-10 rounded-full bg-blue-500/10 hover:bg-blue-500/20 border-blue-300/30 dark:border-blue-500/30" />
+              <div className="flex justify-center items-center mt-4 gap-4">
+                <CarouselPrevious className="static translate-y-0 h-9 w-9 rounded-full bg-blue-500/10 hover:bg-blue-500/20 border-blue-300/30 dark:border-blue-500/30" />
+                <CarouselNext className="static translate-y-0 h-9 w-9 rounded-full bg-blue-500/10 hover:bg-blue-500/20 border-blue-300/30 dark:border-blue-500/30" />
               </div>
             </Carousel>
           ) : (
