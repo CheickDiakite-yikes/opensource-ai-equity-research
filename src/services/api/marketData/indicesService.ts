@@ -15,7 +15,7 @@ export interface MarketRegion {
 }
 
 /**
- * Fetch market indices data from FMP API
+ * Fetch market indices data from Finnhub API
  */
 export const fetchMarketIndices = async (): Promise<MarketRegion[]> => {
   try {
