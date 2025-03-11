@@ -13,7 +13,7 @@ import SavedContent from "./pages/SavedContent";
 import NotFound from "./pages/NotFound";
 
 // Protected routes
-import { ProtectedRoute } from "./components/auth/ProtectedRoute";
+import ProtectedRoute from "./components/auth/ProtectedRoute";
 
 function App() {
   return (

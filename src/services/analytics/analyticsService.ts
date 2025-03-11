@@ -1,4 +1,3 @@
-
 import { nanoid } from 'nanoid';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -170,30 +169,30 @@ export const trackStockView = (symbol: string, tab?: string): void => {
 // Track report generation
 export const trackReportGeneration = (
   symbol: string,
-  duration?: number,
-  isSuccess: boolean = true
+  reportType?: string,
+  isAuthenticated?: boolean
 ): void => {
   trackEvent(
     AnalyticsCategory.FEATURE,
-    isSuccess ? 'generate_report' : 'report_generation_failed',
+    'generate_report',
     symbol,
-    duration,
-    { duration, isSuccess }
+    undefined,
+    { reportType, isAuthenticated }
   );
 };
 
 // Track prediction generation
 export const trackPredictionGeneration = (
   symbol: string,
-  duration?: number,
-  isSuccess: boolean = true
+  isAuthenticated?: boolean,
+  remainingPredictions?: number
 ): void => {
   trackEvent(
     AnalyticsCategory.FEATURE,
-    isSuccess ? 'generate_prediction' : 'prediction_generation_failed',
+    'generate_prediction',
     symbol,
-    duration,
-    { duration, isSuccess }
+    undefined,
+    { isAuthenticated, remainingPredictions }
   );
 };
 

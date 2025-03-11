@@ -10,7 +10,7 @@ import {
 import { toast } from "sonner";
 
 export const useSavedContentPage = () => {
-  const { user, isLoading: authLoading } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const { reports, isLoading: reportsLoading, deleteReport, fetchReports } = useSavedReports();
   const { predictions, isLoading: predictionsLoading, deletePrediction, fetchPredictions } = useSavedPredictions();
   const [selectedReport, setSelectedReport] = useState<SavedReport | null>(null);

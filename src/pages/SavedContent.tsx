@@ -10,7 +10,7 @@ import { useSavedContentPage } from "@/hooks/saved-content/useSavedContentPage";
 import { featuredSymbols } from "@/constants/featuredSymbols";
 
 const SavedContent = () => {
-  const { user, isLoading: authLoading } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const {
     isLoading,
     isRefreshing,
