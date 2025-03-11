@@ -1,7 +1,7 @@
 
 import React from "react";
 import { motion } from "framer-motion";
-import { TrendingUp, TrendingDown, Refresh } from "lucide-react";
+import { TrendingUp, TrendingDown, RefreshCw } from "lucide-react";
 import { 
   Carousel,
   CarouselContent,
@@ -67,7 +67,7 @@ const PopularStocksCarousel: React.FC<PopularStocksCarouselProps> = ({
               className="gap-1"
               onClick={onRefresh}
             >
-              <Refresh className="h-4 w-4" />
+              <RefreshCw className="h-4 w-4" />
               Refresh
             </Button>
           )}
