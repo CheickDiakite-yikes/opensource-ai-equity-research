@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertTriangle, Info, Lock } from "lucide-react";
@@ -15,7 +14,8 @@ import { getRemainingPredictions, hasReachedFreeLimit } from "@/services/api/use
 import { 
   trackReportGeneration, 
   trackPredictionGeneration, 
-  trackContentSave 
+  trackContentSave, 
+  trackEvent 
 } from "@/services/analytics/analyticsService";
 
 interface ResearchReportContentProps {
@@ -59,33 +59,24 @@ const ResearchReportContent = ({
   const remainingPredictions = getRemainingPredictions();
   const reachedFreeLimit = hasReachedFreeLimit();
   
-  // Handle generating a report with analytics
   const handleGenerateReport = () => {
-    // Track report generation
     trackReportGeneration(
       data?.profile?.symbol || "unknown",
       reportType,
       isAuthenticated
     );
-    
-    // Call the original handler
     onGenerateReport();
   };
   
-  // Handle generating a prediction with analytics
   const handlePredictPrice = () => {
-    // Track prediction generation
     trackPredictionGeneration(
       data?.profile?.symbol || "unknown",
       isAuthenticated,
       !isAuthenticated ? remainingPredictions : undefined
     );
-    
-    // Call the original handler
     onPredictPrice();
   };
   
-  // Handle saving a report
   const handleSaveReport = async () => {
     if (!user) {
       toast.error("You must be signed in to save reports");
@@ -105,9 +96,7 @@ const ResearchReportContent = ({
       if (reportId) {
         toast.success(`Report for ${report.symbol} saved successfully`);
         console.log("Report saved with ID:", reportId);
-        fetchReports(); // Refresh the reports list
-        
-        // Track report save
+        fetchReports();
         trackContentSave('report', report.symbol);
       } else {
         toast.error("Failed to save report. Please try again.");
@@ -119,7 +108,6 @@ const ResearchReportContent = ({
     }
   };
   
-  // Handle saving a prediction
   const handleSavePrediction = async () => {
     if (!user) {
       toast.error("You must be signed in to save predictions");
@@ -144,9 +132,7 @@ const ResearchReportContent = ({
       if (predictionId) {
         toast.success(`Prediction for ${prediction.symbol} saved successfully`);
         console.log("Prediction saved with ID:", predictionId);
-        fetchPredictions(); // Refresh the predictions list
-        
-        // Track prediction save
+        fetchPredictions();
         trackContentSave('prediction', prediction.symbol);
       } else {
         toast.error("Failed to save prediction. Please try again.");
@@ -167,7 +153,6 @@ const ResearchReportContent = ({
     }
   }, [isReportTooBasic, report]);
 
-  // Auto-save report when it's generated (if user is logged in)
   useEffect(() => {
     if (user && report && !isGenerating && !saveAttempted) {
       console.log("Auto-saving newly generated report");
@@ -175,7 +160,6 @@ const ResearchReportContent = ({
     }
   }, [report, isGenerating, user]);
   
-  // Auto-save prediction when it's generated (if user is logged in)
   useEffect(() => {
     if (user && prediction && !isPredicting && !saveAttempted) {
       console.log("Auto-saving newly generated prediction");
@@ -183,7 +167,6 @@ const ResearchReportContent = ({
     }
   }, [prediction, isPredicting, user]);
 
-  // Reset save attempted flag when new report/prediction is being generated
   useEffect(() => {
     if (isGenerating || isPredicting) {
       setSaveAttempted(false);

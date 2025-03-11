@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Navigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
@@ -11,6 +10,7 @@ import { featuredSymbols } from "@/constants/featuredSymbols";
 
 const SavedContent = () => {
   const { user, loading: authLoading } = useAuth();
+
   const {
     isLoading,
     isRefreshing,
