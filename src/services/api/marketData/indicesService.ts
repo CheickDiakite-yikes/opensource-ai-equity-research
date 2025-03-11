@@ -15,19 +15,19 @@ export interface MarketRegion {
 }
 
 /**
- * Fetch market indices data from FMP API
+ * Fetch market indices data from Polygon API via Supabase Edge Function
  */
 export const fetchMarketIndices = async (): Promise<MarketRegion[]> => {
   try {
-    const result = await invokeSupabaseFunction<any>('get-stock-data', { 
+    const result = await invokeSupabaseFunction<MarketRegion[]>('get-stock-data', { 
       endpoint: 'market-indices' 
     });
     
     if (result && Array.isArray(result)) {
-      return result as MarketRegion[];
+      return result;
     }
     
-    console.warn("Falling back to mock market indices data");
+    console.warn("Failed to fetch market indices, falling back to mock data");
     return getFallbackMarketIndices();
   } catch (error) {
     console.error("Error fetching market indices:", error);
