@@ -1,49 +1,20 @@
 
-import React, { useState, useEffect } from "react";
+import React from "react";
 import { motion } from "framer-motion";
-import { TrendingUp, TrendingDown, LineChart, RefreshCcw } from "lucide-react";
+import { TrendingUp, TrendingDown, LineChart } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import SectionHeader from "./SectionHeader";
 import { MarketIndex, MarketRegion } from "@/services/api/marketData/indicesService";
-import { toast } from "sonner";
 
 interface MarketPerformanceProps {
   marketData: MarketRegion[];
   isLoading?: boolean;
-  onRefresh?: () => void;
 }
 
 const MarketPerformance: React.FC<MarketPerformanceProps> = ({ 
   marketData,
-  isLoading = false,
-  onRefresh
+  isLoading = false 
 }) => {
-  // Add data freshness check
-  const [dataAge, setDataAge] = useState<number>(0);
-  const [refreshing, setRefreshing] = useState<boolean>(false);
-  
-  useEffect(() => {
-    const interval = setInterval(() => {
-      // Increment data age every second
-      setDataAge(prev => prev + 1);
-    }, 1000);
-    
-    // Reset data age when new data comes in
-    setDataAge(0);
-    
-    return () => clearInterval(interval);
-  }, [marketData]);
-
-  const handleRefresh = () => {
-    if (onRefresh) {
-      setRefreshing(true);
-      toast.info("Refreshing market data...");
-      onRefresh();
-      setTimeout(() => setRefreshing(false), 2000); // Ensure the spinner stops after a while
-    }
-  };
-
   if (isLoading) {
     return (
       <div className="relative py-12">
@@ -85,28 +56,11 @@ const MarketPerformance: React.FC<MarketPerformanceProps> = ({
           transition={{ duration: 0.7 }}
           className="mb-10 relative z-10"
         >
-          <div className="flex justify-between items-start mb-4">
-            <SectionHeader 
-              title="Market Performance"
-              description={`Track global market indices performance in real-time. ${
-                dataAge < 60 
-                  ? `Last updated ${dataAge} seconds ago`
-                  : `Updated ${Math.floor(dataAge / 60)} minutes ago`
-              }`}
-              icon={<LineChart className="w-6 h-6 text-primary" />}
-            />
-            
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={handleRefresh}
-              disabled={refreshing || !onRefresh}
-              className="mt-2"
-            >
-              <RefreshCcw className={`w-4 h-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
-              Refresh
-            </Button>
-          </div>
+          <SectionHeader 
+            title="Market Performance"
+            description="Track global market indices performance in real-time."
+            icon={<LineChart className="w-6 h-6 text-primary" />}
+          />
           
           <div className="grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
             {marketData.map((region) => (
