@@ -32,9 +32,25 @@ const SectorPerformance: React.FC<SectorPerformanceProps> = ({
     setLoading(true);
     try {
       const data = await fetchSectorPerformance();
-      setSectors(data);
-      setLastUpdated(new Date());
-      console.log("Sector performance data loaded:", data);
+      
+      // Ensure we have valid data
+      if (data && Array.isArray(data) && data.length > 0) {
+        // Format data correctly
+        const formattedData = data.map(item => ({
+          date: item.date || new Date().toISOString().split('T')[0],
+          sector: item.sector,
+          averageChange: typeof item.averageChange === 'number' 
+            ? item.averageChange 
+            : parseFloat(item.changesPercentage?.replace('%', '')) / 100 || 0
+        }));
+        
+        setSectors(formattedData);
+        setLastUpdated(new Date());
+        console.log("Sector performance data loaded:", formattedData);
+      } else {
+        console.warn("Empty or invalid sector performance data received");
+        toast.error("Unable to load sector data. Please try again later.");
+      }
     } catch (error) {
       console.error("Failed to fetch sector performance:", error);
       toast.error("Unable to load sector performance data. Please try again later.");
@@ -48,10 +64,10 @@ const SectorPerformance: React.FC<SectorPerformanceProps> = ({
       fetchData();
     }
     
-    // Refresh every 15 minutes
+    // Refresh every 5 minutes
     const intervalId = setInterval(() => {
       fetchData();
-    }, 15 * 60 * 1000);
+    }, 5 * 60 * 1000);
     
     return () => clearInterval(intervalId);
   }, [fetchData, initialData.length]);
@@ -122,30 +138,30 @@ const SectorPerformance: React.FC<SectorPerformanceProps> = ({
           <Card className="bg-card/70 backdrop-blur-sm border border-muted/50 overflow-hidden shadow-md">
             <CardContent className="p-6">
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {sortedSectors.map((sector) => (
-                  <div 
-                    key={sector.sector}
-                    className="flex items-center justify-between p-3 border border-border/30 rounded-md hover:bg-muted/20 transition-colors"
-                  >
-                    <span className="font-medium text-sm">{sector.sector}</span>
+                {sortedSectors.length > 0 ? (
+                  sortedSectors.map((sector) => (
                     <div 
-                      className={`flex items-center text-xs font-semibold px-2 py-1 rounded-md ${
-                        sector.averageChange >= 0 
-                          ? 'text-emerald-700 bg-emerald-50 dark:text-emerald-400 dark:bg-emerald-950/40' 
-                          : 'text-red-700 bg-red-50 dark:text-red-400 dark:bg-red-950/40'
-                      }`}
+                      key={sector.sector}
+                      className="flex items-center justify-between p-3 border border-border/30 rounded-md hover:bg-muted/20 transition-colors"
                     >
-                      {sector.averageChange >= 0 ? (
-                        <TrendingUp className="w-3 h-3 mr-1" />
-                      ) : (
-                        <TrendingDown className="w-3 h-3 mr-1" />
-                      )}
-                      {sector.averageChange >= 0 ? '+' : ''}{(sector.averageChange * 100).toFixed(2)}%
+                      <span className="font-medium text-sm">{sector.sector}</span>
+                      <div 
+                        className={`flex items-center text-xs font-semibold px-2 py-1 rounded-md ${
+                          sector.averageChange >= 0 
+                            ? 'text-emerald-700 bg-emerald-50 dark:text-emerald-400 dark:bg-emerald-950/40' 
+                            : 'text-red-700 bg-red-50 dark:text-red-400 dark:bg-red-950/40'
+                        }`}
+                      >
+                        {sector.averageChange >= 0 ? (
+                          <TrendingUp className="w-3 h-3 mr-1" />
+                        ) : (
+                          <TrendingDown className="w-3 h-3 mr-1" />
+                        )}
+                        {sector.averageChange >= 0 ? '+' : ''}{(sector.averageChange * 100).toFixed(2)}%
+                      </div>
                     </div>
-                  </div>
-                ))}
-                
-                {sortedSectors.length === 0 && (
+                  ))
+                ) : (
                   <div className="col-span-3 text-center py-10 text-muted-foreground">
                     No sector data available at this time
                   </div>

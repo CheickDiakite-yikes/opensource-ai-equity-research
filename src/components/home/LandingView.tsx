@@ -44,8 +44,13 @@ const LandingView: React.FC<LandingViewProps> = ({
       try {
         setIsLoadingMarkets(true);
         const data = await fetchMarketIndices();
-        setMarketData(data);
-        console.log("Market data loaded:", data);
+        if (data && Array.isArray(data) && data.length > 0) {
+          setMarketData(data);
+          console.log("Market data loaded:", data);
+        } else {
+          console.warn("Invalid market data format received");
+          toast.error("Unable to load market data. Please try again later.");
+        }
       } catch (error) {
         console.error("Failed to fetch market data:", error);
         toast.error("Unable to load market data. Please try again later.");
@@ -58,8 +63,13 @@ const LandingView: React.FC<LandingViewProps> = ({
       try {
         setIsLoadingSectors(true);
         const data = await fetchSectorPerformance();
-        setSectorData(data);
-        console.log("Sector data loaded:", data);
+        if (data && Array.isArray(data) && data.length > 0) {
+          setSectorData(data);
+          console.log("Sector data loaded:", data);
+        } else {
+          console.warn("Invalid sector data format received");
+          toast.error("Unable to load sector performance data. Please try again later.");
+        }
       } catch (error) {
         console.error("Failed to fetch sector data:", error);
         toast.error("Unable to load sector performance data. Please try again later.");
@@ -72,8 +82,13 @@ const LandingView: React.FC<LandingViewProps> = ({
       try {
         setIsLoadingNews(true);
         const news = await fetchMarketNews(6);
-        setMarketNews(news);
-        console.log("Market news loaded:", news);
+        if (news && Array.isArray(news)) {
+          setMarketNews(news);
+          console.log("Market news loaded:", news);
+        } else {
+          console.warn("Invalid market news format received");
+          toast.error("Unable to load market news. Please try again later.");
+        }
       } catch (error) {
         console.error("Failed to fetch market news:", error);
         toast.error("Unable to load market news. Please try again later.");
@@ -82,9 +97,19 @@ const LandingView: React.FC<LandingViewProps> = ({
       }
     };
 
+    // Initial load
     getMarketData();
     getSectorData();
     getMarketNews();
+    
+    // Set up auto-refresh every 5 minutes
+    const refreshInterval = setInterval(() => {
+      getMarketData();
+      getSectorData();
+      getMarketNews();
+    }, 5 * 60 * 1000);
+    
+    return () => clearInterval(refreshInterval);
   }, []);
 
   return (
