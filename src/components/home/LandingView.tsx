@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import HeroSection from './HeroSection';
@@ -35,7 +36,7 @@ const LandingView: React.FC<LandingViewProps> = ({
       transition={{ duration: 0.6 }}
       className="space-y-12 pb-20"
     >
-      <HeroSection />
+      <HeroSection featuredSymbols={featuredSymbols} />
       
       <MarketPerformance 
         marketData={marketData} 
@@ -55,7 +56,7 @@ const LandingView: React.FC<LandingViewProps> = ({
         />
       )}
       
-      <MarketNews />
+      <MarketNews newsData={[]} />
       
       <FeatureCards />
       
