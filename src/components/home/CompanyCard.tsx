@@ -10,6 +10,7 @@ import { FileText } from "lucide-react";
 import CompanyCardHeader from "./card-components/CompanyCardHeader";
 import PriceDisplay from "./card-components/PriceDisplay";
 import TrendIndicator from "./card-components/TrendIndicator";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 export interface CompanyCardProps {
   company: { symbol: string, name: string };
@@ -36,6 +37,9 @@ export const itemAnimation = {
 };
 
 const CompanyCard = ({ company, onSelect }: CompanyCardProps) => {
+  // Check if we're on mobile
+  const isMobile = useIsMobile();
+  
   // Use our custom hook to fetch data
   const {
     quote,
@@ -48,18 +52,18 @@ const CompanyCard = ({ company, onSelect }: CompanyCardProps) => {
       variants={itemAnimation}
       initial="hidden"
       animate="show"
-      whileHover="hover"
+      whileHover={isMobile ? undefined : "hover"}
       className="h-full"
     >
       <Card 
         className="cursor-pointer h-full transition-all duration-300 rounded-xl bg-white dark:bg-slate-800/90 border border-slate-200 dark:border-slate-700 shadow-md hover:shadow-xl hover:border-blue-300 dark:hover:border-blue-500/50 backdrop-blur-sm overflow-hidden"
       >
         <div className="h-1 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-t-xl" />
-        <CardContent className="p-6 relative">
-          <div className="flex flex-col h-full justify-between space-y-4">
+        <CardContent className={`${isMobile ? 'p-4' : 'p-6'} relative`}>
+          <div className="flex flex-col h-full justify-between space-y-3">
             <CompanyCardHeader symbol={company.symbol} name={company.name} />
 
-            <div className="flex justify-between items-center">
+            <div className="flex justify-between items-center gap-2">
               <PriceDisplay 
                 price={quote?.price || null}
                 label="Current Price"
@@ -79,15 +83,14 @@ const CompanyCard = ({ company, onSelect }: CompanyCardProps) => {
 
             <Button 
               variant="outline" 
-              className="w-full mt-2 bg-gradient-to-r from-blue-50 to-indigo-50 hover:from-blue-100 hover:to-indigo-100 dark:from-slate-800 dark:to-slate-700 dark:hover:from-slate-700 dark:hover:to-slate-600 border border-blue-200 dark:border-slate-600"
+              className="w-full mt-1 bg-gradient-to-r from-blue-50 to-indigo-50 hover:from-blue-100 hover:to-indigo-100 dark:from-slate-800 dark:to-slate-700 dark:hover:from-slate-700 dark:hover:to-slate-600 border border-blue-200 dark:border-slate-600"
               onClick={(e) => {
                 e.stopPropagation();
-                // Explicitly pass "report" as the tab parameter
                 onSelect(company.symbol);
               }}
             >
               <FileText className="mr-2 h-4 w-4 text-blue-600 dark:text-blue-400" />
-              <span>View Research Report</span>
+              <span>{isMobile ? "View Report" : "View Research Report"}</span>
             </Button>
           </div>
         </CardContent>
