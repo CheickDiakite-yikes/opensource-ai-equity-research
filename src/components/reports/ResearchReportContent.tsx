@@ -1,84 +1,209 @@
+
 import React from "react";
-import { Link } from "react-router-dom";
-import { useAuth } from "@/contexts/AuthContext";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { User, Settings, LogOut, ChevronDown, Bookmark } from "lucide-react";
+import { Loader2 } from "lucide-react";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import ReportHeader from "./ReportHeader";
+import ReportSectionsList from "./ReportSectionsList";
+import PricePredictionDisplay from "./PricePredictionDisplay";
+import GrowthCatalysts from "./GrowthCatalysts";
+import SensitivityAnalysis from "./SensitivityAnalysis";
+import DisclaimerSection from "./DisclaimerSection";
+import ReportGeneratorForm from "./ReportGeneratorForm";
+import { ResearchReport } from "@/types/ai-analysis/reportTypes";
+import { StockPrediction } from "@/types/ai-analysis/predictionTypes";
+import type { ReportData } from "./useResearchReportData";
 
-export default function UserMenu() {
-  const { user, profile, signOut } = useAuth();
-  
-  if (!user) {
-    return (
-      <Button asChild variant="outline" size="sm">
-        <Link to="/auth">Sign In</Link>
-      </Button>
-    );
-  }
-  
-  const initials = profile?.first_name && profile?.last_name 
-    ? `${profile.first_name[0]}${profile.last_name[0]}`
-    : user.email?.substring(0, 2).toUpperCase() || "U";
-  
-  const displayName = profile?.first_name && profile?.last_name
-    ? `${profile.first_name} ${profile.last_name}`
-    : user.email?.split('@')[0] || "User";
-
-  return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button variant="ghost" className="relative h-10 w-10 rounded-full" size="icon">
-          <Avatar>
-            <AvatarImage src={profile?.avatar_url || undefined} />
-            <AvatarFallback className="bg-primary text-primary-foreground">
-              {initials}
-            </AvatarFallback>
-          </Avatar>
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-56">
-        <DropdownMenuLabel>
-          <div className="flex flex-col space-y-1">
-            <p className="text-sm font-medium leading-none">{displayName}</p>
-            <p className="text-xs leading-none text-muted-foreground">{user.email}</p>
-          </div>
-        </DropdownMenuLabel>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem asChild>
-          <Link to="/profile" className="cursor-pointer flex w-full items-center">
-            <User className="mr-2 h-4 w-4" />
-            <span>Profile</span>
-          </Link>
-        </DropdownMenuItem>
-        <DropdownMenuItem asChild>
-          <Link to="/saved-content" className="cursor-pointer flex w-full items-center">
-            <Bookmark className="mr-2 h-4 w-4" />
-            <span>Saved Content</span>
-          </Link>
-        </DropdownMenuItem>
-        <DropdownMenuItem asChild>
-          <Link to="/settings" className="cursor-pointer flex w-full items-center">
-            <Settings className="mr-2 h-4 w-4" />
-            <span>Settings</span>
-          </Link>
-        </DropdownMenuItem>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem 
-          onClick={() => signOut()}
-          className="cursor-pointer text-destructive focus:text-destructive"
-        >
-          <LogOut className="mr-2 h-4 w-4" />
-          <span>Log out</span>
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
-  );
+interface ResearchReportContentProps {
+  data: ReportData;
+  showDataWarning: boolean;
+  isGenerating: boolean;
+  isPredicting: boolean;
+  hasStockData: boolean;
+  reportType: string;
+  setReportType: React.Dispatch<React.SetStateAction<string>>;
+  onGenerateReport: () => void;
+  onPredictPrice: () => void;
+  report: ResearchReport | null;
+  prediction: StockPrediction | null;
+  isReportTooBasic: boolean;
+  generationError: string | null;
 }
+
+const ResearchReportContent: React.FC<ResearchReportContentProps> = ({
+  data,
+  showDataWarning,
+  isGenerating,
+  isPredicting,
+  hasStockData,
+  reportType,
+  setReportType,
+  onGenerateReport,
+  onPredictPrice,
+  report,
+  prediction,
+  isReportTooBasic,
+  generationError
+}) => {
+  return (
+    <div className="w-full space-y-6">
+      {showDataWarning && (
+        <Alert className="mb-6 bg-amber-50 border-amber-300">
+          <AlertDescription>
+            Limited financial data available for this company. The report may not include 
+            detailed financial analysis.
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {!report && !prediction ? (
+        <>
+          <Card className="border shadow-sm">
+            <CardHeader>
+              <CardTitle>Research Report Generator</CardTitle>
+              <CardDescription>
+                Generate a comprehensive AI-powered investment research report for {data.profile?.companyName || data.profile?.ticker}
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ReportGeneratorForm
+                reportType={reportType}
+                setReportType={setReportType}
+                onGenerateReport={onGenerateReport}
+                onPredictPrice={onPredictPrice}
+                isGenerating={isGenerating}
+                isPredicting={isPredicting}
+                hasStockData={hasStockData}
+              />
+
+              {generationError && (
+                <Alert variant="destructive" className="mt-4">
+                  <AlertDescription>
+                    Error generating report: {generationError}
+                  </AlertDescription>
+                </Alert>
+              )}
+            </CardContent>
+          </Card>
+        </>
+      ) : (
+        <Tabs defaultValue={report ? "report" : "prediction"} className="w-full">
+          <TabsList className="mb-4">
+            {report && <TabsTrigger value="report">Research Report</TabsTrigger>}
+            {prediction && <TabsTrigger value="prediction">Price Prediction</TabsTrigger>}
+          </TabsList>
+
+          {report && (
+            <TabsContent value="report" className="space-y-6">
+              <ReportHeader report={report} />
+              
+              {isReportTooBasic && (
+                <Alert className="mb-6 bg-amber-50 border-amber-300">
+                  <AlertDescription>
+                    Note: This is a basic report. Some details may be limited due to data availability or complexity.
+                  </AlertDescription>
+                </Alert>
+              )}
+              
+              <div className="grid md:grid-cols-3 gap-6">
+                <div className="md:col-span-2 space-y-6">
+                  <ReportSectionsList report={report} />
+                </div>
+                
+                <div className="space-y-6">
+                  {report.ratingDetails && (
+                    <Card className="border shadow-sm">
+                      <CardHeader className="pb-2">
+                        <CardTitle className="text-xl">Rating Details</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <dl className="space-y-2">
+                          <div className="flex justify-between">
+                            <dt className="font-medium text-muted-foreground">Overall Rating:</dt>
+                            <dd>{report.ratingDetails.overallRating}</dd>
+                          </div>
+                          <div className="flex justify-between">
+                            <dt className="font-medium text-muted-foreground">Financial Strength:</dt>
+                            <dd>{report.ratingDetails.financialStrength}</dd>
+                          </div>
+                          <div className="flex justify-between">
+                            <dt className="font-medium text-muted-foreground">Growth Outlook:</dt>
+                            <dd>{report.ratingDetails.growthOutlook}</dd>
+                          </div>
+                          <div className="flex justify-between">
+                            <dt className="font-medium text-muted-foreground">Valuation:</dt>
+                            <dd>{report.ratingDetails.valuationAttractiveness}</dd>
+                          </div>
+                          <div className="flex justify-between">
+                            <dt className="font-medium text-muted-foreground">Competitive Position:</dt>
+                            <dd>{report.ratingDetails.competitivePosition}</dd>
+                          </div>
+                        </dl>
+                      </CardContent>
+                    </Card>
+                  )}
+                  
+                  {report.scenarioAnalysis && (
+                    <SensitivityAnalysis scenarioAnalysis={report.scenarioAnalysis} />
+                  )}
+                  
+                  {report.catalysts && (
+                    <GrowthCatalysts catalysts={report.catalysts} />
+                  )}
+                </div>
+              </div>
+              
+              <DisclaimerSection />
+              
+              <div className="flex justify-center pt-4">
+                <Button
+                  variant="outline"
+                  onClick={onPredictPrice}
+                  disabled={isPredicting}
+                >
+                  {isPredicting ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Generating Price Prediction...
+                    </>
+                  ) : (
+                    "Generate AI Price Prediction"
+                  )}
+                </Button>
+              </div>
+            </TabsContent>
+          )}
+          
+          {prediction && (
+            <TabsContent value="prediction">
+              <PricePredictionDisplay prediction={prediction} />
+              
+              {!report && (
+                <div className="flex justify-center mt-8">
+                  <Button
+                    variant="outline"
+                    onClick={onGenerateReport}
+                    disabled={isGenerating}
+                  >
+                    {isGenerating ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Generating Full Report...
+                      </>
+                    ) : (
+                      "Generate Full Research Report"
+                    )}
+                  </Button>
+                </div>
+              )}
+            </TabsContent>
+          )}
+        </Tabs>
+      )}
+    </div>
+  );
+};
+
+export default ResearchReportContent;
