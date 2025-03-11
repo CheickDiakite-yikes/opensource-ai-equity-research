@@ -1,6 +1,5 @@
 
 import { BaseController } from "./base-controller.ts";
-import { fetchMarketIndices, fetchHistoricalPrice, fetchNews, fetchPeers, fetchSectorPerformance } from "../market-data.ts";
 
 export class StockDataController extends BaseController {
   /**
@@ -8,7 +7,9 @@ export class StockDataController extends BaseController {
    */
   async fetchHistoricalPrice(symbol: string): Promise<any> {
     try {
-      return await fetchHistoricalPrice(symbol);
+      const url = this.buildUrl(`historical-price-full/${symbol}`);
+      const data = await this.makeApiRequest<any>(url);
+      return data;
     } catch (error) {
       console.error(`Error fetching historical price for ${symbol}:`, error);
       return { symbol, historical: [] };
@@ -20,7 +21,9 @@ export class StockDataController extends BaseController {
    */
   async fetchNews(symbol: string): Promise<any[]> {
     try {
-      return await fetchNews(symbol);
+      const url = this.buildUrl(`stock_news`, { tickers: symbol, limit: "10" });
+      const data = await this.makeApiRequest<any[]>(url);
+      return data;
     } catch (error) {
       console.error(`Error fetching news for ${symbol}:`, error);
       return [];
@@ -32,34 +35,12 @@ export class StockDataController extends BaseController {
    */
   async fetchPeers(symbol: string): Promise<any[]> {
     try {
-      return await fetchPeers(symbol);
+      const url = this.buildUrl(`stock-peers`, { symbol });
+      const data = await this.makeApiRequest<any[]>(url);
+      return data.length > 0 ? data : [{ peersList: [] }];
     } catch (error) {
       console.error(`Error fetching peers for ${symbol}:`, error);
       return [{ peersList: [] }];
-    }
-  }
-  
-  /**
-   * Fetch market indices data
-   */
-  async fetchMarketIndices(): Promise<any[]> {
-    try {
-      return await fetchMarketIndices();
-    } catch (error) {
-      console.error(`Error fetching market indices:`, error);
-      return [];
-    }
-  }
-  
-  /**
-   * Fetch sector performance data
-   */
-  async fetchSectorPerformance(): Promise<any[]> {
-    try {
-      return await fetchSectorPerformance();
-    } catch (error) {
-      console.error(`Error fetching sector performance:`, error);
-      return [];
     }
   }
 }

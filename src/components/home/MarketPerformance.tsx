@@ -1,13 +1,10 @@
 
-import React, { useState, useEffect, useCallback } from "react";
+import React from "react";
 import { motion } from "framer-motion";
-import { LineChart, TrendingUp, TrendingDown, RefreshCw } from "lucide-react";
+import { TrendingUp, TrendingDown, LineChart } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import SectionHeader from "./SectionHeader";
 import { MarketIndex, MarketRegion } from "@/services/api/marketData/indicesService";
-import { fetchMarketIndices } from "@/services/api/marketDataService";
-import { toast } from "sonner";
 
 interface MarketPerformanceProps {
   marketData: MarketRegion[];
@@ -18,47 +15,7 @@ const MarketPerformance: React.FC<MarketPerformanceProps> = ({
   marketData,
   isLoading = false 
 }) => {
-  const [data, setData] = useState<MarketRegion[]>(marketData);
-  const [loading, setLoading] = useState<boolean>(isLoading);
-  const [lastUpdated, setLastUpdated] = useState<Date | null>(new Date());
-  
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    try {
-      const freshData = await fetchMarketIndices();
-      
-      // Validate the data
-      if (freshData && Array.isArray(freshData) && freshData.length > 0 && 
-          freshData.every(region => region.indices && Array.isArray(region.indices))) {
-        setData(freshData);
-        setLastUpdated(new Date());
-        console.log("Market data refreshed:", freshData);
-      } else {
-        console.warn("Invalid market data received:", freshData);
-        toast.error("Unable to refresh market data. Please try again later.");
-      }
-    } catch (error) {
-      console.error("Failed to refresh market data:", error);
-      toast.error("Unable to refresh market data. Please try again later.");
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-  
-  // Refresh data every 5 minutes
-  useEffect(() => {
-    if (marketData.length === 0) {
-      fetchData();
-    }
-    
-    const intervalId = setInterval(() => {
-      fetchData();
-    }, 5 * 60 * 1000); // 5 minutes
-    
-    return () => clearInterval(intervalId);
-  }, [fetchData, marketData.length]);
-  
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="relative py-12">
         <div className="container mx-auto px-4 max-w-[1400px]">
@@ -99,86 +56,55 @@ const MarketPerformance: React.FC<MarketPerformanceProps> = ({
           transition={{ duration: 0.7 }}
           className="mb-10 relative z-10"
         >
-          <div className="flex justify-between items-center mb-6">
-            <SectionHeader 
-              title="Market Performance"
-              description="Track global market indices performance in real-time."
-              icon={<LineChart className="w-6 h-6 text-primary" />}
-            />
-            <div className="flex items-center gap-2">
-              {lastUpdated && (
-                <span className="text-xs text-muted-foreground">
-                  Last updated: {lastUpdated.toLocaleTimeString()}
-                </span>
-              )}
-              <Button 
-                variant="outline" 
-                size="sm" 
-                className="flex items-center gap-1" 
-                onClick={fetchData}
-                disabled={loading}
-              >
-                <RefreshCw className="w-3.5 h-3.5" />
-                <span className="hidden sm:inline">Refresh</span>
-              </Button>
-            </div>
-          </div>
+          <SectionHeader 
+            title="Market Performance"
+            description="Track global market indices performance in real-time."
+            icon={<LineChart className="w-6 h-6 text-primary" />}
+          />
           
           <div className="grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
-            {data.length > 0 ? (
-              data.map((region) => (
-                <Card 
-                  key={region.name} 
-                  className="bg-card/70 backdrop-blur-sm border border-muted/50 overflow-hidden shadow-md hover-card-highlight"
-                >
-                  <CardContent className="p-6">
-                    <h3 className="text-xl font-semibold mb-4 text-foreground flex items-center gap-2">
-                      <div className="w-1.5 h-5 bg-primary rounded-full"></div>
-                      {region.name}
-                    </h3>
-                    <div className="space-y-1">
-                      {region.indices && region.indices.length > 0 ? (
-                        region.indices.map((index) => (
-                          <div 
-                            key={index.symbol} 
-                            className="flex justify-between items-center py-3 border-b border-border/30 last:border-0 group hover:bg-muted/20 rounded px-1 transition-colors"
-                          >
-                            <div className="text-sm font-medium text-foreground/90 w-[40%] truncate" title={index.name}>
-                              {index.name}
-                            </div>
-                            <div className="text-sm font-medium text-foreground/90 w-[30%] text-right">
-                              {Number(index.price).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                            </div>
-                            <div 
-                              className={`flex items-center text-xs font-semibold px-2 py-1 rounded-md w-[25%] justify-end ${
-                                index.changePercent >= 0 
-                                  ? 'text-emerald-700 bg-emerald-50 dark:text-emerald-400 dark:bg-emerald-950/40' 
-                                  : 'text-red-700 bg-red-50 dark:text-red-400 dark:bg-red-950/40'
-                              }`}
-                            >
-                              {index.changePercent >= 0 ? (
-                                <TrendingUp className="w-3 h-3 mr-1" />
-                              ) : (
-                                <TrendingDown className="w-3 h-3 mr-1" />
-                              )}
-                              {index.changePercent >= 0 ? '+' : ''}{parseFloat(index.changePercent.toString()).toFixed(2)}%
-                            </div>
-                          </div>
-                        ))
-                      ) : (
-                        <div className="text-center py-6 text-sm text-muted-foreground">
-                          No index data available
+            {marketData.map((region) => (
+              <Card 
+                key={region.name} 
+                className="bg-card/70 backdrop-blur-sm border border-muted/50 overflow-hidden shadow-md hover-card-highlight"
+              >
+                <CardContent className="p-6">
+                  <h3 className="text-xl font-semibold mb-4 text-foreground flex items-center gap-2">
+                    <div className="w-1.5 h-5 bg-primary rounded-full"></div>
+                    {region.name}
+                  </h3>
+                  <div className="space-y-1">
+                    {region.indices.map((index) => (
+                      <div 
+                        key={index.symbol} 
+                        className="flex justify-between items-center py-3 border-b border-border/30 last:border-0 group hover:bg-muted/20 rounded px-1 transition-colors"
+                      >
+                        <div className="text-sm font-medium text-foreground/90 w-[40%] truncate" title={index.name}>
+                          {index.name}
                         </div>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
-              ))
-            ) : (
-              <div className="col-span-3 text-center py-10 text-muted-foreground">
-                No market data available at this time
-              </div>
-            )}
+                        <div className="text-sm font-medium text-foreground/90 w-[30%] text-right">
+                          {Number(index.price).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        </div>
+                        <div 
+                          className={`flex items-center text-xs font-semibold px-2 py-1 rounded-md w-[25%] justify-end ${
+                            index.changePercent >= 0 
+                              ? 'text-emerald-700 bg-emerald-50 dark:text-emerald-400 dark:bg-emerald-950/40' 
+                              : 'text-red-700 bg-red-50 dark:text-red-400 dark:bg-red-950/40'
+                          }`}
+                        >
+                          {index.changePercent >= 0 ? (
+                            <TrendingUp className="w-3 h-3 mr-1" />
+                          ) : (
+                            <TrendingDown className="w-3 h-3 mr-1" />
+                          )}
+                          {index.changePercent >= 0 ? '+' : ''}{index.changePercent.toFixed(2)}%
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
           </div>
         </motion.div>
       </div>
