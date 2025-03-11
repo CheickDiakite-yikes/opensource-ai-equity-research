@@ -1,4 +1,3 @@
-
 // Types related to stock market indices
 
 /**
@@ -9,6 +8,20 @@ export interface MarketIndex {
   name: string;
   exchange: string;
   currency: string;
+}
+
+/**
+ * Market region with indices
+ */
+export interface MarketRegion {
+  name: string;
+  indices: {
+    symbol: string;
+    name: string;
+    price: number;
+    change: number;
+    changePercent: number;
+  }[];
 }
 
 /**

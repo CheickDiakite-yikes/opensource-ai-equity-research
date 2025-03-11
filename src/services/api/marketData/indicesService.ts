@@ -1,8 +1,8 @@
 
 import { invokeSupabaseFunction } from "../base";
-import { MarketIndex, MarketRegion } from "../../../../supabase/functions/get-stock-data/types";
+import { MarketIndex, MarketRegion } from "@/types/market/indexTypes";
 
-// Export the types that MarketPerformance.tsx is trying to import
+// Export the types for backward compatibility
 export type { MarketIndex, MarketRegion };
 
 /**
