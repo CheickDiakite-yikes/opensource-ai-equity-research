@@ -6,8 +6,9 @@ import FeaturedCompanies from "./FeaturedCompanies";
 import FeatureCards from "./FeatureCards";
 import FAQSection from "./FAQSection";
 import MarketPerformance from "./MarketPerformance";
+import SectorPerformance from "./SectorPerformance";
 import MarketNews from "./MarketNews";
-import { fetchMarketIndices, fetchMarketNews } from "@/services/api/marketDataService";
+import { fetchMarketIndices, fetchMarketNews, fetchSectorPerformance } from "@/services/api/marketDataService";
 import { toast } from "sonner";
 
 interface LandingViewProps {
@@ -32,8 +33,10 @@ const LandingView: React.FC<LandingViewProps> = ({
   onSelectSymbol 
 }) => {
   const [marketData, setMarketData] = useState([]);
+  const [sectorData, setSectorData] = useState([]);
   const [marketNews, setMarketNews] = useState([]);
   const [isLoadingMarkets, setIsLoadingMarkets] = useState(true);
+  const [isLoadingSectors, setIsLoadingSectors] = useState(true);
   const [isLoadingNews, setIsLoadingNews] = useState(true);
 
   useEffect(() => {
@@ -48,6 +51,20 @@ const LandingView: React.FC<LandingViewProps> = ({
         toast.error("Unable to load market data. Please try again later.");
       } finally {
         setIsLoadingMarkets(false);
+      }
+    };
+
+    const getSectorData = async () => {
+      try {
+        setIsLoadingSectors(true);
+        const data = await fetchSectorPerformance();
+        setSectorData(data);
+        console.log("Sector data loaded:", data);
+      } catch (error) {
+        console.error("Failed to fetch sector data:", error);
+        toast.error("Unable to load sector performance data. Please try again later.");
+      } finally {
+        setIsLoadingSectors(false);
       }
     };
 
@@ -66,6 +83,7 @@ const LandingView: React.FC<LandingViewProps> = ({
     };
 
     getMarketData();
+    getSectorData();
     getMarketNews();
   }, []);
 
@@ -95,6 +113,21 @@ const LandingView: React.FC<LandingViewProps> = ({
           <MarketPerformance 
             marketData={marketData} 
             isLoading={isLoadingMarkets} 
+          />
+        </motion.div>
+      </div>
+      
+      {/* Sector Performance Section */}
+      <div className="max-w-screen-xl mx-auto px-4 py-6">
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.7 }}
+        >
+          <SectorPerformance 
+            initialData={sectorData} 
+            isLoading={isLoadingSectors} 
           />
         </motion.div>
       </div>

@@ -1,10 +1,13 @@
 
-import React from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { motion } from "framer-motion";
-import { TrendingUp, TrendingDown, LineChart } from "lucide-react";
+import { LineChart, TrendingUp, TrendingDown, RefreshCw } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import SectionHeader from "./SectionHeader";
 import { MarketIndex, MarketRegion } from "@/services/api/marketData/indicesService";
+import { fetchMarketIndices } from "@/services/api/marketDataService";
+import { toast } from "sonner";
 
 interface MarketPerformanceProps {
   marketData: MarketRegion[];
@@ -15,7 +18,35 @@ const MarketPerformance: React.FC<MarketPerformanceProps> = ({
   marketData,
   isLoading = false 
 }) => {
-  if (isLoading) {
+  const [data, setData] = useState<MarketRegion[]>(marketData);
+  const [loading, setLoading] = useState<boolean>(isLoading);
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(new Date());
+  
+  const fetchData = useCallback(async () => {
+    setLoading(true);
+    try {
+      const freshData = await fetchMarketIndices();
+      setData(freshData);
+      setLastUpdated(new Date());
+      console.log("Market data refreshed:", freshData);
+    } catch (error) {
+      console.error("Failed to refresh market data:", error);
+      toast.error("Unable to refresh market data. Please try again later.");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+  
+  // Refresh data every 5 minutes
+  useEffect(() => {
+    const intervalId = setInterval(() => {
+      fetchData();
+    }, 5 * 60 * 1000); // 5 minutes
+    
+    return () => clearInterval(intervalId);
+  }, [fetchData]);
+  
+  if (loading) {
     return (
       <div className="relative py-12">
         <div className="container mx-auto px-4 max-w-[1400px]">
@@ -56,14 +87,33 @@ const MarketPerformance: React.FC<MarketPerformanceProps> = ({
           transition={{ duration: 0.7 }}
           className="mb-10 relative z-10"
         >
-          <SectionHeader 
-            title="Market Performance"
-            description="Track global market indices performance in real-time."
-            icon={<LineChart className="w-6 h-6 text-primary" />}
-          />
+          <div className="flex justify-between items-center mb-6">
+            <SectionHeader 
+              title="Market Performance"
+              description="Track global market indices performance in real-time."
+              icon={<LineChart className="w-6 h-6 text-primary" />}
+            />
+            <div className="flex items-center gap-2">
+              {lastUpdated && (
+                <span className="text-xs text-muted-foreground">
+                  Last updated: {lastUpdated.toLocaleTimeString()}
+                </span>
+              )}
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="flex items-center gap-1" 
+                onClick={fetchData}
+                disabled={loading}
+              >
+                <RefreshCw className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Refresh</span>
+              </Button>
+            </div>
+          </div>
           
           <div className="grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
-            {marketData.map((region) => (
+            {data.map((region) => (
               <Card 
                 key={region.name} 
                 className="bg-card/70 backdrop-blur-sm border border-muted/50 overflow-hidden shadow-md hover-card-highlight"

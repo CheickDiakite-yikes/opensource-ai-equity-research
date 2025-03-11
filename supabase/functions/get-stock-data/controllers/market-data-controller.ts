@@ -24,7 +24,7 @@ export class MarketDataController {
     const { from, to, date, sector, industry, exchange, short } = params;
     
     // Stock data endpoints
-    if (["historical-price", "news", "peers"].includes(endpoint)) {
+    if (["historical-price", "news", "peers", "market-indices", "sector-performance"].includes(endpoint)) {
       return this.handleStockDataRequest(endpoint, symbol);
     }
     
@@ -62,6 +62,10 @@ export class MarketDataController {
         return await this.stockDataController.fetchNews(symbol);
       case "peers":
         return await this.stockDataController.fetchPeers(symbol);
+      case "market-indices":
+        return await this.stockDataController.fetchMarketIndices();
+      case "sector-performance":
+        return await this.stockDataController.fetchSectorPerformance();
       default:
         throw new Error(`Unsupported stock data endpoint: ${endpoint}`);
     }
