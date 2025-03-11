@@ -1,5 +1,4 @@
-
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { TrendingUp, TrendingDown, LineChart } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
@@ -15,6 +14,21 @@ const MarketPerformance: React.FC<MarketPerformanceProps> = ({
   marketData,
   isLoading = false 
 }) => {
+  // Add data freshness check
+  const [dataAge, setDataAge] = useState<number>(0);
+  
+  useEffect(() => {
+    const interval = setInterval(() => {
+      // Increment data age every second
+      setDataAge(prev => prev + 1);
+    }, 1000);
+    
+    // Reset data age when new data comes in
+    setDataAge(0);
+    
+    return () => clearInterval(interval);
+  }, [marketData]);
+
   if (isLoading) {
     return (
       <div className="relative py-12">
@@ -58,7 +72,11 @@ const MarketPerformance: React.FC<MarketPerformanceProps> = ({
         >
           <SectionHeader 
             title="Market Performance"
-            description="Track global market indices performance in real-time."
+            description={`Track global market indices performance in real-time. ${
+              dataAge < 60 
+                ? `Last updated ${dataAge} seconds ago`
+                : `Updated ${Math.floor(dataAge / 60)} minutes ago`
+            }`}
             icon={<LineChart className="w-6 h-6 text-primary" />}
           />
           

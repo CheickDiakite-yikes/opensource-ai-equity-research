@@ -44,7 +44,7 @@ export class IndexController extends BaseController {
         const tickers = this.INDICES[region].join(',');
         const url = `https://api.polygon.io/v3/snapshot/indices?ticker.any_of=${tickers}&apiKey=${POLYGON_API_KEY}`;
         
-        console.log(`Fetching ${region} indices...`);
+        console.log(`[${new Date().toISOString()}] Fetching ${region} indices from Polygon...`);
         const response = await fetch(url);
         
         if (!response.ok) {
@@ -53,13 +53,19 @@ export class IndexController extends BaseController {
 
         const data = await response.json() as PolygonIndexResponse;
         
+        // Log the timestamp of each data point
+        data.results.forEach(result => {
+          console.log(`[${new Date(result.last_updated).toISOString()}] ${result.ticker}: Last updated`);
+        });
+        
         // Transform data to match our expected format
         const indices = data.results.map(result => ({
           symbol: result.ticker,
           name: result.name.replace('Index', '').trim(),
           price: result.value,
           change: result.session.change,
-          changePercent: result.session.change_percent
+          changePercent: result.session.change_percent,
+          lastUpdated: new Date(result.last_updated).toISOString() // Add lastUpdated field
         }));
 
         results.push({
@@ -70,7 +76,8 @@ export class IndexController extends BaseController {
 
       return results;
     } catch (error) {
-      console.error("Error fetching market indices from Polygon:", error);
+      console.error("[${new Date().toISOString()}] Error fetching market indices from Polygon:", error);
+      console.log("Falling back to mock data...");
       return this.getFallbackMarketIndices();
     }
   }

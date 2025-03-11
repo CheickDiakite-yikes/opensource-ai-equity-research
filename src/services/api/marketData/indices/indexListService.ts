@@ -3,15 +3,26 @@ import { invokeSupabaseFunction } from "../../base";
 import { MarketIndex, IndexQuote, IndexShortQuote } from "@/types/market/indexTypes";
 
 /**
- * Fetch list of market indices
+ * Fetch list of market indices with real-time data
  */
 export const fetchIndexList = async (): Promise<MarketIndex[]> => {
   try {
+    console.log("Fetching real-time market indices data...");
     const data = await invokeSupabaseFunction<MarketIndex[]>('get-stock-data', { 
       endpoint: 'index-list' 
     });
     
-    if (!data || !Array.isArray(data)) return [];
+    if (!data || !Array.isArray(data)) {
+      console.warn("No market indices data received");
+      return [];
+    }
+
+    // Log the data we received
+    console.log(`Received data for ${data.length} indices`);
+    data.forEach(index => {
+      console.log(`${index.symbol}: $${index.price} (${index.changePercent}%)`);
+    });
+
     return data;
   } catch (error) {
     console.error("Error fetching index list:", error);
