@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { StockPrediction } from "@/types/ai-analysis/predictionTypes";
 import { generateStockPrediction } from "@/services/api/analysis/researchService";
@@ -109,7 +108,7 @@ export const usePredictionGenerator = ({ symbol, quickMode }: PredictionGenerato
         url: item.url || ''
       }));
       
-      // Generate the prediction
+      // Generate the prediction using o3-mini with appropriate reasoning effort
       const result = await generateStockPrediction(symbol, quote, financials, news, quickMode);
       
       if (!result) {

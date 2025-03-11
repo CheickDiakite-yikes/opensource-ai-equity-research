@@ -1,4 +1,3 @@
-
 import { extractJSONFromText, ensureNumberInRange, ensureArrayWithItems } from "./utils.ts";
 import { FormattedData, StockPrediction, PredictionHistoryEntry } from "./types.ts";
 import { createFallbackPrediction } from "./fallbackGenerator.ts";
