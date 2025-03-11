@@ -73,7 +73,7 @@ const FeaturedCompanies: React.FC<FeaturedCompaniesProps> = ({
           />
           
           {isMobile ? (
-            // Mobile view: Enhanced Carousel with 2 cards horizontally
+            // Mobile view: Enhanced Carousel with 2 rows and 1 column
             <Carousel 
               className="w-full"
               opts={{
@@ -82,12 +82,12 @@ const FeaturedCompanies: React.FC<FeaturedCompaniesProps> = ({
               }}
             >
               <CarouselContent className="-ml-2">
-                {/* Group companies into pairs for horizontal display */}
+                {/* Group companies into pairs for vertical display */}
                 {Array.from({ length: Math.ceil(featuredSymbols.length / 2) }, (_, index) => (
                   <CarouselItem key={index} className="basis-full pl-2">
-                    <div className="flex flex-row gap-2">
+                    <div className="flex flex-col gap-2">
                       {featuredSymbols.slice(index * 2, index * 2 + 2).map((company) => (
-                        <div key={company.symbol} className="w-1/2 p-1">
+                        <div key={company.symbol} className="p-1">
                           <CompanyCard 
                             company={company}
                             onSelect={handleSelectCompany}
