@@ -12,6 +12,11 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useSavedReports, useSavedPredictions } from "@/hooks/useSavedContent";
 import { useNavigate } from "react-router-dom";
 import { getRemainingPredictions, hasReachedFreeLimit } from "@/services/api/userContent/freePredictionsService";
+import { 
+  trackReportGeneration, 
+  trackPredictionGeneration, 
+  trackContentSave 
+} from "@/services/analytics/analyticsService";
 
 interface ResearchReportContentProps {
   data: any;
@@ -54,6 +59,32 @@ const ResearchReportContent = ({
   const remainingPredictions = getRemainingPredictions();
   const reachedFreeLimit = hasReachedFreeLimit();
   
+  // Handle generating a report with analytics
+  const handleGenerateReport = () => {
+    // Track report generation
+    trackReportGeneration(
+      data?.profile?.symbol || "unknown",
+      reportType,
+      isAuthenticated
+    );
+    
+    // Call the original handler
+    onGenerateReport();
+  };
+  
+  // Handle generating a prediction with analytics
+  const handlePredictPrice = () => {
+    // Track prediction generation
+    trackPredictionGeneration(
+      data?.profile?.symbol || "unknown",
+      isAuthenticated,
+      !isAuthenticated ? remainingPredictions : undefined
+    );
+    
+    // Call the original handler
+    onPredictPrice();
+  };
+  
   // Handle saving a report
   const handleSaveReport = async () => {
     if (!user) {
@@ -75,6 +106,9 @@ const ResearchReportContent = ({
         toast.success(`Report for ${report.symbol} saved successfully`);
         console.log("Report saved with ID:", reportId);
         fetchReports(); // Refresh the reports list
+        
+        // Track report save
+        trackContentSave('report', report.symbol);
       } else {
         toast.error("Failed to save report. Please try again.");
         console.error("No report ID returned from saveReport");
@@ -111,6 +145,9 @@ const ResearchReportContent = ({
         toast.success(`Prediction for ${prediction.symbol} saved successfully`);
         console.log("Prediction saved with ID:", predictionId);
         fetchPredictions(); // Refresh the predictions list
+        
+        // Track prediction save
+        trackContentSave('prediction', prediction.symbol);
       } else {
         toast.error("Failed to save prediction. Please try again.");
         console.error("No prediction ID returned from savePrediction");
@@ -209,8 +246,8 @@ const ResearchReportContent = ({
       <ReportGeneratorForm
         reportType={reportType}
         setReportType={setReportType}
-        onGenerateReport={onGenerateReport}
-        onPredictPrice={onPredictPrice}
+        onGenerateReport={handleGenerateReport}
+        onPredictPrice={handlePredictPrice}
         isGenerating={isGenerating}
         isPredicting={isPredicting}
         hasData={hasStockData}

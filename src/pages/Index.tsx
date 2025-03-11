@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import Header from "@/components/layout/Header";
 import LandingView from "@/components/home/LandingView";
@@ -7,6 +6,7 @@ import { toast } from "sonner";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { useMediaQuery } from "@/hooks/use-mobile";
 import { Starfield } from "@/components/ui/starfield";
+import { trackStockView, trackSearch } from "@/services/analytics/analyticsService";
 
 const Index = () => {
   const [symbol, setSymbol] = useState<string>("");
@@ -42,9 +42,10 @@ const Index = () => {
     if (symbolParam) {
       setSymbol(symbolParam);
       setSearchedSymbol(symbolParam);
+      
+      trackStockView(symbolParam);
     }
     
-    // Listen for the custom clear event
     const handleClearSearch = () => {
       setSearchedSymbol("");
       setSymbol("");
@@ -52,7 +53,6 @@ const Index = () => {
     
     window.addEventListener('clearSearchedSymbol', handleClearSearch);
     
-    // Clean up event listener
     return () => {
       window.removeEventListener('clearSearchedSymbol', handleClearSearch);
     };
@@ -73,8 +73,10 @@ const Index = () => {
     setRecentSearches(updatedSearches);
     localStorage.setItem('recentSearches', JSON.stringify(updatedSearches));
     
-    // Default to report tab when searching
     setSearchParams({ symbol: symbolUpperCase, tab: "report" });
+    
+    trackSearch(symbolUpperCase, 1);
+    trackStockView(symbolUpperCase);
     
     setTimeout(() => {
       setIsLoading(false);
@@ -111,8 +113,10 @@ const Index = () => {
     setRecentSearches(updatedSearches);
     localStorage.setItem('recentSearches', JSON.stringify(updatedSearches));
     
-    // Always set tab to "report" when selecting from featured companies
     setSearchParams({ symbol: sym, tab: "report" });
+    
+    trackSearch(sym, 1);
+    trackStockView(sym);
     
     toast.success(`Loading research data for ${sym}`, {
       duration: 3000,

@@ -4,6 +4,7 @@ import { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { resetUsedPredictions } from "@/services/api/userContent/freePredictionsService";
+import { trackAuthEvent, AnalyticsCategory, trackEvent } from "@/services/analytics/analyticsService";
 
 interface UserProfile {
   id: string;
@@ -46,14 +47,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         fetchProfile(session.user.id);
         // Reset free predictions count when user logs in
         resetUsedPredictions();
+        // Track user signed in on initial load
+        trackEvent(AnalyticsCategory.USER, 'session_start', undefined, undefined, {
+          isAuthenticated: true,
+          userId: session.user.id
+        });
       } else {
         setIsLoading(false);
+        // Track anonymous session start
+        trackEvent(AnalyticsCategory.USER, 'session_start', undefined, undefined, {
+          isAuthenticated: false
+        });
       }
     });
 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (_event, session) => {
+      async (event, session) => {
         setSession(session);
         setUser(session?.user ?? null);
         
@@ -61,9 +71,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           fetchProfile(session.user.id);
           // Reset free predictions count when user logs in
           resetUsedPredictions();
+          
+          // Track auth state change events
+          if (event === 'SIGNED_IN') {
+            trackAuthEvent('sign_in');
+          } else if (event === 'SIGNED_UP') {
+            trackAuthEvent('sign_up');
+          }
         } else {
           setProfile(null);
           setIsLoading(false);
+          
+          // Track sign out event
+          if (event === 'SIGNED_OUT') {
+            trackAuthEvent('sign_out');
+          }
         }
       }
     );
@@ -98,10 +120,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       
       if (error) {
         toast.error(error.message);
+        // Track failed sign in
+        trackEvent(AnalyticsCategory.ERROR, 'sign_in_error', error.message);
         throw error;
       }
       
       toast.success("Signed in successfully");
+      // Track successful sign in (also tracked in onAuthStateChange)
+      trackAuthEvent('sign_in', 'password');
       
       // Reset free predictions count when user logs in
       resetUsedPredictions();
@@ -131,10 +157,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       
       if (error) {
         toast.error(error.message);
+        // Track failed sign up
+        trackEvent(AnalyticsCategory.ERROR, 'sign_up_error', error.message);
         throw error;
       }
       
       toast.success("Account created! Please check your email for verification.");
+      // Track successful sign up (also tracked in onAuthStateChange)
+      trackAuthEvent('sign_up', 'password');
     } catch (error) {
       console.error("Sign up error:", error);
       throw error;
@@ -150,10 +180,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       
       if (error) {
         toast.error(error.message);
+        trackEvent(AnalyticsCategory.ERROR, 'sign_out_error', error.message);
         throw error;
       }
       
       toast.success("Signed out successfully");
+      // Track successful sign out (also tracked in onAuthStateChange)
+      trackAuthEvent('sign_out');
     } catch (error) {
       console.error("Sign out error:", error);
       throw error;
@@ -173,6 +206,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       
       if (error) {
         toast.error(error.message);
+        trackEvent(AnalyticsCategory.ERROR, 'profile_update_error', error.message);
         throw error;
       }
       
@@ -180,6 +214,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       await fetchProfile(user.id);
       
       toast.success("Profile updated successfully");
+      
+      // Track successful profile update
+      trackEvent(AnalyticsCategory.USER, 'profile_updated', undefined, undefined, {
+        updatedFields: Object.keys(updates)
+      });
     } catch (error) {
       console.error("Update profile error:", error);
       throw error;

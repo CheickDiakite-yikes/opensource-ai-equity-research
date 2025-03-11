@@ -19,9 +19,10 @@ EquiSight is an AI-powered equity research platform designed to help investment 
 - **Growth Insights**: Analyze growth trends and performance metrics to identify investment opportunities
 
 ### 💼 User-Centric Features
-- **Dark/Light Theme**: Choose between dark and light modes for comfortable viewing
+- **Dark/Light Theme**: Choose between dark mode (default) and light mode for comfortable viewing
 - **Saved Content**: Save and access your reports and predictions for later reference
 - **Responsive Design**: Seamless experience across desktop and mobile devices
+- **Usage Analytics**: Track user engagement and behavior to continuously improve the platform
 
 ## Technical Implementation
 
@@ -38,6 +39,7 @@ EquiSight is an AI-powered equity research platform designed to help investment 
 - **Supabase**: Authentication, database, and serverless functions
 - **Edge Functions**: Real-time data processing and AI model integration
 - **OpenAI Integration**: AI-powered report generation and price predictions
+- **Analytics System**: Comprehensive usage tracking for platform improvement
 
 ### Data Sources
 - Multiple financial data providers for comprehensive stock information
@@ -56,6 +58,18 @@ EquiSight is an AI-powered equity research platform designed to help investment 
 3. Generate custom research reports and price predictions
 4. Save interesting reports and predictions for future reference
 
+## Analytics and User Insights
+EquiSight includes a comprehensive analytics system that helps us understand how users interact with the platform:
+
+- **Usage Patterns**: Track which features are most popular and how they're being used
+- **Search Behavior**: Analyze search patterns to improve search functionality
+- **Report Generation**: Monitor which report types are most valuable to users
+- **User Journeys**: Understand typical user flows through the application
+- **Error Tracking**: Identify and resolve issues in the user experience
+- **Session Analysis**: Measure engagement and time spent on different features
+
+This analytics data helps drive continuous improvement of the platform while respecting user privacy.
+
 ## Future Enhancements
 - Portfolio tracking and optimization
 - Customizable watchlists and alerts
@@ -72,4 +86,3 @@ EquiSight is an AI-powered equity research platform designed to help investment 
 - Financial data providers
 - Open-source community
 - All contributors and users
-

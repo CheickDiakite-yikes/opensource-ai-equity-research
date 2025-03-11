@@ -6,6 +6,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate, useNavigate, useLocation } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { ThemeProvider } from "@/contexts/ThemeContext";
+import { AnalyticsProvider } from "@/components/analytics/AnalyticsProvider";
 import { hasReachedFreeLimit } from "@/services/api/userContent/freePredictionsService";
 import { useEffect } from "react";
 import Index from "./pages/Index";
@@ -55,21 +56,23 @@ const App = () => (
     <ThemeProvider>
       <TooltipProvider>
         <AuthProvider>
-          <Toaster />
-          <Sonner />
-          <BrowserRouter>
-            <NavigationTracker />
-            <Routes>
-              <Route path="/" element={<Index />} />
-              <Route path="/auth" element={<Auth />} />
-              <Route path="/profile" element={<Profile />} />
-              <Route path="/saved-content" element={<SavedContent />} />
-              {/* Redirect /stock/:symbol to /?symbol=:symbol */}
-              <Route path="/stock/:symbol" element={<Navigate to="/" replace />} />
-              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </BrowserRouter>
+          <AnalyticsProvider>
+            <Toaster />
+            <Sonner />
+            <BrowserRouter>
+              <NavigationTracker />
+              <Routes>
+                <Route path="/" element={<Index />} />
+                <Route path="/auth" element={<Auth />} />
+                <Route path="/profile" element={<Profile />} />
+                <Route path="/saved-content" element={<SavedContent />} />
+                {/* Redirect /stock/:symbol to /?symbol=:symbol */}
+                <Route path="/stock/:symbol" element={<Navigate to="/" replace />} />
+                {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </BrowserRouter>
+          </AnalyticsProvider>
         </AuthProvider>
       </TooltipProvider>
     </ThemeProvider>
