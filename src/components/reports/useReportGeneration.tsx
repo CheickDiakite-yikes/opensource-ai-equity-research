@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { toast } from "@/components/ui/use-toast";
 import { 
   generateResearchReport,
@@ -12,6 +12,8 @@ import type { StockQuote } from "@/types/profile/companyTypes";
 import { StockPrediction } from "@/types/ai-analysis/predictionTypes";
 
 import type { ReportData } from "./useResearchReportData";
+import { useAuth } from "@/contexts/AuthContext";
+import { incrementUsedPredictions } from "@/services/api/userContent/freePredictionsService";
 
 export const useReportGeneration = (symbol: string, data: ReportData) => {
   const [isGenerating, setIsGenerating] = useState(false);
@@ -20,6 +22,7 @@ export const useReportGeneration = (symbol: string, data: ReportData) => {
   const [prediction, setPrediction] = useState<StockPrediction | null>(null);
   const [reportType, setReportType] = useState<string>("comprehensive");
   const [generationError, setGenerationError] = useState<string | null>(null);
+  const { user } = useAuth();
 
   const handleGenerateReport = async () => {
     try {
@@ -27,6 +30,16 @@ export const useReportGeneration = (symbol: string, data: ReportData) => {
         toast({
           title: "Error",
           description: "Cannot generate report: missing stock data",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      // Only authenticated users can generate reports
+      if (!user) {
+        toast({
+          title: "Authentication Required",
+          description: "You must be signed in to generate research reports",
           variant: "destructive",
         });
         return;
@@ -160,6 +173,12 @@ export const useReportGeneration = (symbol: string, data: ReportData) => {
       }
       
       setPrediction(prediction);
+      
+      // If user is not authenticated, increment the used predictions count
+      if (!user) {
+        const usedCount = incrementUsedPredictions();
+        console.log(`Anonymous user has used ${usedCount} predictions`);
+      }
       
       toast({
         title: "AI Prediction Generated",

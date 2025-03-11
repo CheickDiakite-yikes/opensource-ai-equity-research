@@ -2,10 +2,16 @@
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Info, Check, FileText, TrendingUp, Loader2, AlertTriangle, Save } from "lucide-react";
+import { Info, Check, FileText, TrendingUp, Loader2, AlertTriangle, Save, Lock } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
 import { useAuth } from "@/contexts/AuthContext";
+import { useNavigate } from "react-router-dom";
+import { 
+  canGenerateReport,
+  canGeneratePrediction,
+  getRemainingPredictions
+} from "@/services/api/userContent/freePredictionsService";
 
 interface ReportGeneratorFormProps {
   reportType: string;
@@ -35,6 +41,24 @@ const ReportGeneratorForm: React.FC<ReportGeneratorFormProps> = ({
   canSavePrediction = false
 }) => {
   const { user } = useAuth();
+  const navigate = useNavigate();
+  const remainingPredictions = getRemainingPredictions();
+  const isAuthenticated = !!user;
+  
+  const handleGenerateReport = () => {
+    if (canGenerateReport(isAuthenticated)) {
+      onGenerateReport();
+    } else {
+      // Redirect to auth page
+      navigate('/auth');
+    }
+  };
+  
+  const handlePredictPrice = () => {
+    if (canGeneratePrediction(isAuthenticated)) {
+      onPredictPrice();
+    }
+  };
   
   return (
     <motion.div 
@@ -48,6 +72,12 @@ const ReportGeneratorForm: React.FC<ReportGeneratorFormProps> = ({
           <h3 className="text-base font-medium flex items-center gap-2">
             <FileText className="h-4 w-4 text-primary" />
             Research Report
+            {!isAuthenticated && (
+              <div className="ml-2 bg-amber-100 text-amber-800 dark:bg-amber-900/50 dark:text-amber-300 text-xs px-2 py-0.5 rounded-full flex items-center">
+                <Lock className="h-3 w-3 mr-1" />
+                Premium
+              </div>
+            )}
           </h3>
           <div className="flex items-center gap-2">
             {isGenerating && (
@@ -116,15 +146,20 @@ const ReportGeneratorForm: React.FC<ReportGeneratorFormProps> = ({
           <Button 
             className={cn(
               "w-full flex items-center gap-2 transition-all",
-              isGenerating ? "bg-primary/80" : "bg-primary hover:bg-primary/90"
+              !isAuthenticated ? "bg-gray-500 hover:bg-gray-600" : isGenerating ? "bg-primary/80" : "bg-primary hover:bg-primary/90"
             )}
-            onClick={onGenerateReport}
+            onClick={handleGenerateReport}
             disabled={isGenerating || !hasData}
           >
             {isGenerating ? (
               <>
                 <Loader2 className="h-4 w-4 animate-spin" />
                 <span>Generating Report...</span>
+              </>
+            ) : !isAuthenticated ? (
+              <>
+                <Lock className="h-4 w-4" />
+                <span>Sign In to Generate Report</span>
               </>
             ) : (
               <>
@@ -141,6 +176,11 @@ const ReportGeneratorForm: React.FC<ReportGeneratorFormProps> = ({
           <h3 className="text-base font-medium flex items-center gap-2">
             <TrendingUp className="h-4 w-4 text-primary" />
             Price Prediction
+            {!isAuthenticated && remainingPredictions > 0 && (
+              <div className="ml-2 bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300 text-xs px-2 py-0.5 rounded-full">
+                {remainingPredictions} free left
+              </div>
+            )}
           </h3>
           <div className="flex items-center gap-2">
             {isPredicting && (
@@ -208,7 +248,7 @@ const ReportGeneratorForm: React.FC<ReportGeneratorFormProps> = ({
               "w-full border-primary/30 hover:bg-primary/10 flex items-center gap-2",
               isPredicting && "opacity-80"
             )}
-            onClick={onPredictPrice}
+            onClick={handlePredictPrice}
             disabled={isPredicting || !hasData}
           >
             {isPredicting ? (
@@ -223,16 +263,24 @@ const ReportGeneratorForm: React.FC<ReportGeneratorFormProps> = ({
               </>
             )}
           </Button>
+          
+          {!isAuthenticated && (
+            <p className="text-xs text-center text-muted-foreground mt-2">
+              {remainingPredictions > 0 
+                ? `${remainingPredictions} free predictions remaining` 
+                : "You've used all free predictions"}
+            </p>
+          )}
         </div>
       </div>
 
       {!hasData && (
         <div className="col-span-1 md:col-span-2">
-          <div className="flex items-start gap-2 p-3 border-l-4 border-amber-500 bg-amber-50 text-amber-800 rounded-r-md">
+          <div className="flex items-start gap-2 p-3 border-l-4 border-amber-500 bg-amber-50 text-amber-800 rounded-r-md dark:bg-amber-950/30 dark:border-amber-700 dark:text-amber-300">
             <AlertTriangle className="h-4 w-4 mt-0.5 flex-shrink-0" />
             <div className="text-sm">
               <p className="font-medium">Cannot generate report</p>
-              <p className="text-amber-700/80 text-xs mt-0.5">Financial data is not available. Please try another ticker symbol.</p>
+              <p className="text-amber-700/80 text-xs mt-0.5 dark:text-amber-400/80">Financial data is not available. Please try another ticker symbol.</p>
             </div>
           </div>
         </div>
@@ -240,11 +288,13 @@ const ReportGeneratorForm: React.FC<ReportGeneratorFormProps> = ({
       
       {!user && (hasData) && (
         <div className="col-span-1 md:col-span-2">
-          <div className="flex items-start gap-2 p-3 border-l-4 border-blue-500 bg-blue-50 text-blue-800 rounded-r-md">
+          <div className="flex items-start gap-2 p-3 border-l-4 border-blue-500 bg-blue-50 text-blue-800 rounded-r-md dark:bg-blue-950/30 dark:border-blue-700 dark:text-blue-300">
             <Info className="h-4 w-4 mt-0.5 flex-shrink-0" />
             <div className="text-sm">
-              <p className="font-medium">Sign in to save reports</p>
-              <p className="text-blue-700/80 text-xs mt-0.5">Create an account or sign in to save generated reports and predictions for 7 days.</p>
+              <p className="font-medium">Sign in to get full access</p>
+              <p className="text-blue-700/80 text-xs mt-0.5 dark:text-blue-400/80">
+                Create an account or sign in to generate research reports and get unlimited price predictions.
+              </p>
             </div>
           </div>
         </div>

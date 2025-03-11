@@ -3,6 +3,7 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 import { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { resetUsedPredictions } from "@/services/api/userContent/freePredictionsService";
 
 interface UserProfile {
   id: string;
@@ -43,6 +44,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(session?.user ?? null);
       if (session?.user) {
         fetchProfile(session.user.id);
+        // Reset free predictions count when user logs in
+        resetUsedPredictions();
       } else {
         setIsLoading(false);
       }
@@ -56,6 +59,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         
         if (session?.user) {
           fetchProfile(session.user.id);
+          // Reset free predictions count when user logs in
+          resetUsedPredictions();
         } else {
           setProfile(null);
           setIsLoading(false);
@@ -97,6 +102,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
       
       toast.success("Signed in successfully");
+      
+      // Reset free predictions count when user logs in
+      resetUsedPredictions();
     } catch (error) {
       console.error("Sign in error:", error);
       throw error;
