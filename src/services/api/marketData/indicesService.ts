@@ -2,6 +2,9 @@
 import { invokeSupabaseFunction } from "../base";
 import { MarketIndex, MarketRegion } from "../../../../supabase/functions/get-stock-data/types";
 
+// Export the types that MarketPerformance.tsx is trying to import
+export type { MarketIndex, MarketRegion };
+
 /**
  * Fetch market indices data from Finnhub API
  */
