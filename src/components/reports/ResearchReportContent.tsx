@@ -5,12 +5,12 @@ import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import ReportHeader from "./ReportHeader";
-import ReportSectionsList from "./ReportSectionsList";
+import { ReportHeader } from "./ReportHeader";
+import { ReportSectionsList } from "./ReportSectionsList";
 import PricePredictionDisplay from "./PricePredictionDisplay";
-import GrowthCatalysts from "./GrowthCatalysts";
-import SensitivityAnalysis from "./SensitivityAnalysis";
-import DisclaimerSection from "./DisclaimerSection";
+import { GrowthCatalysts } from "./GrowthCatalysts";
+import { SensitivityAnalysis } from "./SensitivityAnalysis";
+import { DisclaimerSection } from "./DisclaimerSection";
 import ReportGeneratorForm from "./ReportGeneratorForm";
 import { ResearchReport } from "@/types/ai-analysis/reportTypes";
 import { StockPrediction } from "@/types/ai-analysis/predictionTypes";
@@ -64,7 +64,7 @@ const ResearchReportContent: React.FC<ResearchReportContentProps> = ({
             <CardHeader>
               <CardTitle>Research Report Generator</CardTitle>
               <CardDescription>
-                Generate a comprehensive AI-powered investment research report for {data.profile?.companyName || data.profile?.ticker}
+                Generate a comprehensive AI-powered investment research report for {data.profile?.companyName || data.profile?.symbol}
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -75,7 +75,7 @@ const ResearchReportContent: React.FC<ResearchReportContentProps> = ({
                 onPredictPrice={onPredictPrice}
                 isGenerating={isGenerating}
                 isPredicting={isPredicting}
-                hasStockData={hasStockData}
+                hasData={hasStockData}
               />
 
               {generationError && (
@@ -97,7 +97,14 @@ const ResearchReportContent: React.FC<ResearchReportContentProps> = ({
 
           {report && (
             <TabsContent value="report" className="space-y-6">
-              <ReportHeader report={report} />
+              <ReportHeader 
+                companyName={report.companyName}
+                symbol={report.symbol}
+                date={report.date}
+                recommendation={report.recommendation}
+                targetPrice={report.targetPrice}
+                ratingDetails={report.ratingDetails}
+              />
               
               {isReportTooBasic && (
                 <Alert className="mb-6 bg-amber-50 border-amber-300">
@@ -109,7 +116,7 @@ const ResearchReportContent: React.FC<ResearchReportContentProps> = ({
               
               <div className="grid md:grid-cols-3 gap-6">
                 <div className="md:col-span-2 space-y-6">
-                  <ReportSectionsList report={report} />
+                  <ReportSectionsList report={report} expandedScenarios={null} toggleScenario={() => {}} />
                 </div>
                 
                 <div className="space-y-6">
@@ -146,7 +153,11 @@ const ResearchReportContent: React.FC<ResearchReportContentProps> = ({
                   )}
                   
                   {report.scenarioAnalysis && (
-                    <SensitivityAnalysis scenarioAnalysis={report.scenarioAnalysis} />
+                    <SensitivityAnalysis 
+                      scenarioAnalysis={report.scenarioAnalysis} 
+                      expandedScenarios={null} 
+                      toggleScenario={() => {}} 
+                    />
                   )}
                   
                   {report.catalysts && (
