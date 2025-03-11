@@ -1,11 +1,7 @@
-
 import { OPENAI_MODELS, OPENAI_CONFIG } from "../constants.ts";
 import { extractJSONFromText } from "../../predict-stock-price/utils.ts";
 import { ResearchReport } from "./reportTypes.ts";
 
-/**
- * Generate a research report using OpenAI
- */
 export async function generateReportWithOpenAI(
   formattedData: any, 
   reportRequest: any, 
@@ -148,7 +144,7 @@ Your report should provide ${isComprehensive ? 'comprehensive' : 'concise'} anal
           { role: "user", content: userPrompt }
         ],
         temperature: temperature,
-        max_tokens: maxTokens,
+        max_completion_tokens: maxTokens,
         reasoning_effort: reasoningEffort,
         response_format: { type: "json_object" }
       })
