@@ -63,18 +63,20 @@ export const useReportGeneration = (symbol: string, data: ReportData) => {
         },
         news: data.news,
         peers: data.peers,
-        reportType: reportType // Pass the report type to guide AI generation
+        reportType: reportType, // Pass the report type to guide AI generation
+        reasoningEffort: reportType === "comprehensive" ? "high" : "medium" // Use higher reasoning for comprehensive reports
       };
       
       toast({
         title: "Generating AI Report",
-        description: `Creating a detailed ${reportType} research report based on financial data...`,
+        description: `Creating a detailed ${reportType} research report with o3-mini reasoning technology...`,
       });
       
       console.log("Sending report request:", {
         symbol,
         companyName: data.profile.companyName,
         reportType,
+        reasoningEffort: reportRequest.reasoningEffort,
         hasFinancials: !!data.income?.length,
         newsCount: data.news?.length,
         peersCount: data.peers?.length
@@ -119,7 +121,7 @@ export const useReportGeneration = (symbol: string, data: ReportData) => {
       
       toast({
         title: "AI Report Generated",
-        description: `Research report for ${data.profile.companyName} successfully generated with ${generatedReport.sections.length} sections.`,
+        description: `Research report for ${data.profile.companyName} successfully generated with ${generatedReport.sections.length} sections using o3-mini reasoning technology.`,
       });
     } catch (err: any) {
       console.error("Error generating report:", err);
@@ -158,7 +160,7 @@ export const useReportGeneration = (symbol: string, data: ReportData) => {
       
       toast({
         title: "Generating AI Prediction",
-        description: "Analyzing real financial data and market trends using AI to predict future prices...",
+        description: "Analyzing financial data with o3-mini reasoning technology to predict future prices...",
       });
       
       const prediction = await generateStockPrediction(
@@ -182,7 +184,7 @@ export const useReportGeneration = (symbol: string, data: ReportData) => {
       
       toast({
         title: "AI Prediction Generated",
-        description: "Price prediction has been successfully generated based on AI analysis of real market data.",
+        description: "Price prediction has been successfully generated with o3-mini reasoning technology.",
       });
     } catch (err: any) {
       console.error("Error generating prediction:", err);
