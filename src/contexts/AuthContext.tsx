@@ -23,7 +23,6 @@ interface AuthContextType {
   session: Session | null;
   loading: boolean;
   profile: UserProfile | null;
-  isLoading: boolean;
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (email: string, password: string, profileData?: Partial<UserProfile>) => Promise<void>;
   signOut: () => Promise<void>;
@@ -92,8 +91,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // Fetch user profile from the database
   const fetchUserProfile = async (userId: string) => {
     try {
+      // Use type assertion to handle the profiles table
       const { data, error } = await supabase
-        .from('profiles')
+        .from('profiles' as any)
         .select('*')
         .eq('id', userId)
         .single();
@@ -103,7 +103,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return;
       }
       
-      setProfile(data);
+      // Cast the data to UserProfile type
+      setProfile(data as unknown as UserProfile);
     } catch (error) {
       console.error("Error in fetchUserProfile:", error);
     }
@@ -143,7 +144,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         throw error;
       }
       
-      trackAuthEvent('signup', 'email');
+      trackAuthEvent('signup');
       toast.success(
         "Signup successful! Please check your email for verification."
       );
@@ -184,7 +185,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
     
     // Track password reset request
-    trackAuthEvent('password_reset', 'email');
+    trackAuthEvent('password_reset');
   };
   
   const updateProfile = async (profileData: Partial<UserProfile>) => {
@@ -194,13 +195,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return;
       }
       
+      // Use type assertion to handle the profiles table
       const { error } = await supabase
-        .from('profiles')
+        .from('profiles' as any)
         .upsert({
           id: user.id,
           ...profileData,
-          updated_at: new Date()
-        });
+          updated_at: new Date().toISOString() // Convert Date to ISO string
+        } as any);
         
       if (error) {
         toast.error(error.message);
@@ -222,7 +224,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         user,
         session,
         loading,
-        isLoading: loading, // Alias for loading to match usage in components
         profile,
         signIn,
         signUp,
