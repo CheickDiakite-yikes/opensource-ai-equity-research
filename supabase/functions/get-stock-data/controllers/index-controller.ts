@@ -1,204 +1,200 @@
+
 import { BaseController } from "./base-controller.ts";
-import { MarketIndex, MarketRegion } from "../types.ts";
 
 export class IndexController extends BaseController {
   /**
    * Fetch list of indices
    */
-  async fetchIndexList(): Promise<any> {
+  async fetchIndexList() {
     try {
-      const url = this.buildUrl(`symbol/available-indexes`);
-      const data = await this.makeApiRequest<any[]>(url);
+      const url = this.buildUrl("index/constituents/^GSPC"); // S&P 500 as default
+      const data = await this.makeApiRequest<any>(url);
       return data;
     } catch (error) {
       console.error("Error fetching index list:", error);
       return [];
     }
   }
-
+  
   /**
-   * Fetch stock index quote
+   * Fetch index quote
    */
-  async fetchIndexQuote(symbol: string): Promise<any[]> {
+  async fetchIndexQuote(symbol: string) {
     try {
-      const url = this.buildStableUrl(`quote`, { symbol });
-      const data = await this.makeApiRequest<any[]>(url);
+      const url = this.buildUrl(`quote/${symbol.replace("^", "")}`);
+      const data = await this.makeApiRequest<any>(url);
       return data;
     } catch (error) {
       console.error(`Error fetching index quote for ${symbol}:`, error);
-      return [];
+      return {};
     }
   }
-
+  
   /**
-   * Fetch stock index short quote
+   * Fetch index quote (short form)
    */
-  async fetchIndexQuoteShort(symbol: string): Promise<any[]> {
+  async fetchIndexQuoteShort(symbol: string) {
     try {
-      const url = this.buildStableUrl(`quote-short`, { symbol });
-      const data = await this.makeApiRequest<any[]>(url);
-      return data;
+      return await this.fetchIndexQuote(symbol);
     } catch (error) {
-      console.error(`Error fetching index short quote for ${symbol}:`, error);
-      return [];
+      console.error(`Error fetching short index quote for ${symbol}:`, error);
+      return {};
     }
   }
-
+  
   /**
    * Fetch batch index quotes
    */
-  async fetchBatchIndexQuotes(short: boolean = false): Promise<any[]> {
+  async fetchBatchIndexQuotes(shortForm: boolean = false) {
     try {
-      const params: Record<string, string | undefined> = {};
-      if (short) {
-        params.short = "true";
-      }
+      // Common indices
+      const indices = [
+        "^GSPC", "^DJI", "^IXIC", "^RUT",
+        "^FTSE", "^GDAXI", "^FCHI",
+        "^N225", "^HSI", "^BSESN"
+      ];
       
-      const url = this.buildStableUrl(`batch-index-quotes`, params);
-      const data = await this.makeApiRequest<any[]>(url);
-      return data;
+      const promises = indices.map(symbol => 
+        shortForm ? this.fetchIndexQuoteShort(symbol) : this.fetchIndexQuote(symbol)
+      );
+      
+      return await Promise.all(promises);
     } catch (error) {
-      console.error(`Error fetching batch index quotes:`, error);
+      console.error("Error fetching batch index quotes:", error);
       return [];
     }
   }
-
+  
   /**
-   * Fetch light historical EOD data for index
+   * Fetch historical EOD data (lightweight)
    */
-  async fetchIndexHistoricalEODLight(symbol: string, from?: string, to?: string): Promise<any[]> {
+  async fetchIndexHistoricalEODLight(symbol: string, from?: string, to?: string) {
     try {
-      const params: Record<string, string | undefined> = { symbol };
-      if (from) params.from = from;
-      if (to) params.to = to;
+      // Default to 1 year if dates not specified
+      const toDate = to || new Date().toISOString().split('T')[0];
+      const fromDate = from || new Date(Date.now() - 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
       
-      const url = this.buildStableUrl(`historical-price-eod/light`, params);
-      const data = await this.makeApiRequest<any[]>(url);
+      const url = this.buildUrl(`stock/candle?symbol=${symbol.replace("^", "")}&resolution=D&from=${Math.floor(new Date(fromDate).getTime() / 1000)}&to=${Math.floor(new Date(toDate).getTime() / 1000)}`);
+      const data = await this.makeApiRequest<any>(url);
       return data;
     } catch (error) {
-      console.error(`Error fetching light EOD data for ${symbol}:`, error);
-      return [];
+      console.error(`Error fetching historical EOD light for ${symbol}:`, error);
+      return { s: "no_data" };
     }
   }
-
+  
   /**
-   * Fetch full historical EOD data for index
+   * Fetch historical EOD data (full)
    */
-  async fetchIndexHistoricalEODFull(symbol: string, from?: string, to?: string): Promise<any[]> {
+  async fetchIndexHistoricalEODFull(symbol: string, from?: string, to?: string) {
     try {
-      const params: Record<string, string | undefined> = { symbol };
-      if (from) params.from = from;
-      if (to) params.to = to;
-      
-      const url = this.buildStableUrl(`historical-price-eod/full`, params);
-      const data = await this.makeApiRequest<any[]>(url);
-      return data;
+      return await this.fetchIndexHistoricalEODLight(symbol, from, to);
     } catch (error) {
-      console.error(`Error fetching full EOD data for ${symbol}:`, error);
-      return [];
+      console.error(`Error fetching historical EOD full for ${symbol}:`, error);
+      return { s: "no_data" };
     }
   }
-
+  
   /**
-   * Fetch 1-minute intraday data for index
+   * Fetch intraday data (1 minute)
    */
-  async fetchIndexIntraday1Min(symbol: string, from?: string, to?: string): Promise<any[]> {
+  async fetchIndexIntraday1Min(symbol: string, from?: string, to?: string) {
     try {
-      const params: Record<string, string | undefined> = { symbol };
-      if (from) params.from = from;
-      if (to) params.to = to;
+      // Default to last 24 hours if dates not specified
+      const toDate = to || new Date().toISOString().split('T')[0];
+      const fromDate = from || new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString().split('T')[0];
       
-      const url = this.buildStableUrl(`historical-chart/1min`, params);
-      const data = await this.makeApiRequest<any[]>(url);
+      const url = this.buildUrl(`stock/candle?symbol=${symbol.replace("^", "")}&resolution=1&from=${Math.floor(new Date(fromDate).getTime() / 1000)}&to=${Math.floor(new Date(toDate).getTime() / 1000)}`);
+      const data = await this.makeApiRequest<any>(url);
       return data;
     } catch (error) {
-      console.error(`Error fetching 1-min intraday data for ${symbol}:`, error);
-      return [];
+      console.error(`Error fetching intraday 1min for ${symbol}:`, error);
+      return { s: "no_data" };
     }
   }
-
+  
   /**
-   * Fetch 5-minute intraday data for index
+   * Fetch intraday data (5 minutes)
    */
-  async fetchIndexIntraday5Min(symbol: string, from?: string, to?: string): Promise<any[]> {
+  async fetchIndexIntraday5Min(symbol: string, from?: string, to?: string) {
     try {
-      const params: Record<string, string | undefined> = { symbol };
-      if (from) params.from = from;
-      if (to) params.to = to;
+      // Default to last 5 days if dates not specified
+      const toDate = to || new Date().toISOString().split('T')[0];
+      const fromDate = from || new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
       
-      const url = this.buildStableUrl(`historical-chart/5min`, params);
-      const data = await this.makeApiRequest<any[]>(url);
+      const url = this.buildUrl(`stock/candle?symbol=${symbol.replace("^", "")}&resolution=5&from=${Math.floor(new Date(fromDate).getTime() / 1000)}&to=${Math.floor(new Date(toDate).getTime() / 1000)}`);
+      const data = await this.makeApiRequest<any>(url);
       return data;
     } catch (error) {
-      console.error(`Error fetching 5-min intraday data for ${symbol}:`, error);
-      return [];
+      console.error(`Error fetching intraday 5min for ${symbol}:`, error);
+      return { s: "no_data" };
     }
   }
-
+  
   /**
-   * Fetch 1-hour intraday data for index
+   * Fetch intraday data (1 hour)
    */
-  async fetchIndexIntraday1Hour(symbol: string, from?: string, to?: string): Promise<any[]> {
+  async fetchIndexIntraday1Hour(symbol: string, from?: string, to?: string) {
     try {
-      const params: Record<string, string | undefined> = { symbol };
-      if (from) params.from = from;
-      if (to) params.to = to;
+      // Default to last 30 days if dates not specified
+      const toDate = to || new Date().toISOString().split('T')[0];
+      const fromDate = from || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
       
-      const url = this.buildStableUrl(`historical-chart/1hour`, params);
-      const data = await this.makeApiRequest<any[]>(url);
+      const url = this.buildUrl(`stock/candle?symbol=${symbol.replace("^", "")}&resolution=60&from=${Math.floor(new Date(fromDate).getTime() / 1000)}&to=${Math.floor(new Date(toDate).getTime() / 1000)}`);
+      const data = await this.makeApiRequest<any>(url);
       return data;
     } catch (error) {
-      console.error(`Error fetching 1-hour intraday data for ${symbol}:`, error);
-      return [];
+      console.error(`Error fetching intraday 1hour for ${symbol}:`, error);
+      return { s: "no_data" };
     }
   }
-
+  
   /**
    * Fetch S&P 500 constituents
    */
-  async fetchSP500Constituents(): Promise<any[]> {
+  async fetchSP500Constituents() {
     try {
-      const url = this.buildStableUrl(`sp500-constituent`);
-      const data = await this.makeApiRequest<any[]>(url);
+      const url = this.buildUrl("index/constituents?symbol=^GSPC");
+      const data = await this.makeApiRequest<any>(url);
       return data;
     } catch (error) {
-      console.error(`Error fetching S&P 500 constituents:`, error);
-      return [];
+      console.error("Error fetching S&P 500 constituents:", error);
+      return { constituents: [] };
     }
   }
-
+  
   /**
    * Fetch Nasdaq constituents
    */
-  async fetchNasdaqConstituents(): Promise<any[]> {
+  async fetchNasdaqConstituents() {
     try {
-      const url = this.buildStableUrl(`nasdaq-constituent`);
-      const data = await this.makeApiRequest<any[]>(url);
+      const url = this.buildUrl("index/constituents?symbol=^IXIC");
+      const data = await this.makeApiRequest<any>(url);
       return data;
     } catch (error) {
-      console.error(`Error fetching Nasdaq constituents:`, error);
-      return [];
+      console.error("Error fetching Nasdaq constituents:", error);
+      return { constituents: [] };
     }
   }
-
+  
   /**
    * Fetch Dow Jones constituents
    */
-  async fetchDowJonesConstituents(): Promise<any[]> {
+  async fetchDowJonesConstituents() {
     try {
-      const url = this.buildStableUrl(`dowjones-constituent`);
-      const data = await this.makeApiRequest<any[]>(url);
+      const url = this.buildUrl("index/constituents?symbol=^DJI");
+      const data = await this.makeApiRequest<any>(url);
       return data;
     } catch (error) {
-      console.error(`Error fetching Dow Jones constituents:`, error);
-      return [];
+      console.error("Error fetching Dow Jones constituents:", error);
+      return { constituents: [] };
     }
   }
 
   /**
-   * Get fallback market indices data when API fails
+   * Provide fallback market indices data
    */
-  getFallbackMarketIndices(): MarketRegion[] {
+  getFallbackMarketIndices() {
     return [
       {
         name: "Americas",

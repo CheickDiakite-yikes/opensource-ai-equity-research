@@ -12,3 +12,4 @@ export interface MarketRegion {
   name: string;
   indices: MarketIndex[];
 }
+

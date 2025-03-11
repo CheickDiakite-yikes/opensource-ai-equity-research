@@ -1,8 +1,10 @@
+
 import { StockDataController } from "./stock-data-controller.ts";
 import { IndexController } from "./index-controller.ts";
 import { SectorIndustryController } from "./sector-industry-controller.ts";
 import { MarketMoversController } from "./market-movers-controller.ts";
 import { FINNHUB_API_KEY, fetchFromFinnhub } from "../../_shared/finnhub-utils.ts";
+import { MarketIndex, MarketRegion } from "../types.ts";
 
 export class MarketDataController {
   private stockDataController: StockDataController;
@@ -170,7 +172,7 @@ export class MarketDataController {
   /**
    * Fetch real-time market indices using Finnhub
    */
-  private async fetchMarketIndices(): Promise<any> {
+  private async fetchMarketIndices(): Promise<MarketRegion[]> {
     try {
       // Common indices symbols
       const americasIndices = [
