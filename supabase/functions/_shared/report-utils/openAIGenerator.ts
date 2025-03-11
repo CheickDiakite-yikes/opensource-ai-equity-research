@@ -1,4 +1,3 @@
-
 import { ResearchReport } from "./reportTypes.ts";
 import { formatLargeNumber } from "./dataFormatter.ts";
 import { createFallbackReport, ensureCompleteReportStructure, createDefaultSections, enhanceSectionContent } from "./fallbackReportGenerator.ts";
@@ -136,8 +135,7 @@ Your report should match the quality and depth of professional equity research f
           { role: "user", content: userPrompt }
         ],
         temperature: 0.3,
-        max_tokens: 4500,
-        reasoning_effort: "high"
+        max_tokens: 4500
       })
     });
 

@@ -13,7 +13,7 @@ export const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY") || "";
 
 // OpenAI Models
 export const OPENAI_MODELS = {
-  DEFAULT: "o3-mini",
-  ADVANCED: "o3-mini", // Using o3-mini for advanced as well for now 
+  DEFAULT: "gpt-4o-mini",
+  ADVANCED: "gpt-4o",
   LEGACY: "gpt-3.5-turbo"
 };

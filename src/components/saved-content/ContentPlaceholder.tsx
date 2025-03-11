@@ -19,8 +19,8 @@ const ContentPlaceholder: React.FC<ContentPlaceholderProps> = ({
     : "Select a Report";
   
   const defaultDescription = type === "prediction"
-    ? "Click on a saved prediction from the list to view its detailed AI analysis with o3-mini reasoning technology."
-    : "Click on a saved report from the list to view its comprehensive financial analysis powered by o3-mini AI.";
+    ? "Click on a saved prediction from the list to view its details here."
+    : "Click on a saved report from the list to view its details here.";
 
   const displayTitle = title || defaultTitle;
   const displayDescription = description || defaultDescription;
