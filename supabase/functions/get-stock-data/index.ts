@@ -6,6 +6,7 @@ import { ProfileController } from "./controllers/profile/profile-controller.ts";
 import { FinancialController } from "./controllers/financial-controller.ts";
 import { MarketDataController } from "./controllers/market-data-controller.ts";
 import { DocumentsController } from "./controllers/documents-controller.ts";
+import { IndexController } from "./controllers/index-controller.ts";
 
 serve(async (req) => {
   // Handle CORS preflight requests
@@ -36,7 +37,7 @@ serve(async (req) => {
       "sector-performance", "industry-performance", 
       "historical-sector-performance", "historical-industry-performance",
       "sector-pe", "industry-pe", "historical-sector-pe", "historical-industry-pe",
-      "biggest-gainers", "biggest-losers", "most-actives",
+      "biggest-gainers", "biggest-losers", "most-actives", "market-indices",
       "index-list", "batch-index-quotes", "sp500-constituents", "nasdaq-constituents", "dowjones-constituents"
     ];
     
@@ -68,6 +69,7 @@ serve(async (req) => {
     const financialController = new FinancialController();
     const marketDataController = new MarketDataController();
     const documentsController = new DocumentsController();
+    const indexController = new IndexController();
     
     // Process request based on endpoint category
     let data;
@@ -104,6 +106,10 @@ serve(async (req) => {
                  "sp500-constituents", "nasdaq-constituents", "dowjones-constituents"].includes(endpoint)) {
           const params = { from, to, date, sector, industry, exchange, short };
           data = await marketDataController.handleRequest(endpoint, symbol, params);
+        }
+        // Market indices endpoint (new)
+        else if (endpoint === "market-indices") {
+          data = await indexController.fetchMarketIndices();
         }
         // Documents endpoints
         else if (["earning-transcripts", "transcript-content", "sec-filings"].includes(endpoint)) {
