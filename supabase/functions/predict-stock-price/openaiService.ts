@@ -1,9 +1,10 @@
+
 import { extractJSONFromText, ensureNumberInRange, ensureArrayWithItems } from "./utils.ts";
 import { FormattedData, StockPrediction, PredictionHistoryEntry } from "./types.ts";
 import { createFallbackPrediction } from "./fallbackGenerator.ts";
 import { validatePrediction } from "./validationService.ts";
 import { getIndustryGrowthContext, getIndustryConstraints, formatMarketCap } from "./industryAnalysis.ts";
-import { OPENAI_MODELS } from "../_shared/constants.ts";
+import { OPENAI_MODELS, OPENAI_CONFIG } from "../_shared/constants.ts";
 
 // Import default sentiment generator early (moved from the middle of the file)
 import { generateDefaultSentiment, generateDefaultDrivers, generateDefaultRisks } from "./fallbackGenerator.ts";
@@ -42,7 +43,9 @@ YOUR PREDICTIONS SHOULD REFLECT:
 - Market conditions and industry trends vary significantly by sector
 - Growth rates typically increase with time horizon (1-year > 6-month > 3-month > 1-month)
 - Consider volatility - high-beta stocks can have larger price swings
-- The larger the company by market cap, the less extreme the growth predictions should be`;
+- The larger the company by market cap, the less extreme the growth predictions should be
+
+OUTPUT FORMAT: Your response MUST be a properly formatted JSON object with no markdown formatting.`;
 
   const userPrompt = `Please analyze these data points for ${data.symbol} and provide detailed price predictions:
 
@@ -72,6 +75,20 @@ Based on this analysis, provide:
 4. 3-5 key growth drivers specific to this company
 5. 3-5 potential risks specific to this company
 
+FORMAT YOUR RESPONSE AS A VALID JSON OBJECT with the following structure:
+{
+  "predictedPrice": {
+    "oneMonth": (number),
+    "threeMonths": (number),
+    "sixMonths": (number),
+    "oneYear": (number)
+  },
+  "sentimentAnalysis": "string with sentiment + brief explanation",
+  "confidenceLevel": (number between 65-90),
+  "keyDrivers": ["string1", "string2", "string3"],
+  "risks": ["string1", "string2", "string3"]
+}
+
 MOST IMPORTANT: Your predictions MUST be different from the current price - showing either growth or decline
 based on your analysis of the data. Different companies should have different growth trajectories based on 
 their unique data profile and industry characteristics.
@@ -87,12 +104,16 @@ The current price is $${data.currentPrice.toFixed(2)} - each of your predictions
     const modelToUse = OPENAI_MODELS.DEFAULT;
     
     // Reduce tokens for featured companies for speed
-    const maxTokens = quickMode ? 1000 : 1500; 
+    const maxTokens = quickMode ? 1200 : 1800; 
     
+    // Adjust temperature based on need
     // Lower temperature for more consistent predictions
-    const temperature = 0.7;
+    const temperature = quickMode ? OPENAI_CONFIG.TEMPERATURE.PRECISE : OPENAI_CONFIG.TEMPERATURE.BALANCED;
     
-    console.log(`Generating prediction for ${data.symbol} using ${modelToUse} model (quickMode: ${quickMode})`);
+    // Select reasoning effort based on mode
+    const reasoningEffort = quickMode ? OPENAI_CONFIG.REASONING_EFFORT.LOW : OPENAI_CONFIG.REASONING_EFFORT.MEDIUM;
+    
+    console.log(`Generating prediction for ${data.symbol} using ${modelToUse} model (quickMode: ${quickMode}, reasoningEffort: ${reasoningEffort})`);
     
     // Skip API call and use enhanced fallback prediction in the following scenarios:
     // 1. If quick mode is enabled and we have limited financial data
@@ -119,7 +140,8 @@ The current price is $${data.currentPrice.toFixed(2)} - each of your predictions
         ],
         temperature: temperature,
         max_tokens: maxTokens,
-        reasoning_effort: quickMode ? "low" : "medium"
+        reasoning_effort: reasoningEffort,
+        response_format: { type: "json_object" } // Ensure JSON response format
       })
     });
 
@@ -139,7 +161,8 @@ The current price is $${data.currentPrice.toFixed(2)} - each of your predictions
     }
 
     try {
-      const predictionData = extractJSONFromText(content);
+      // Now we expect properly formatted JSON directly
+      const predictionData = JSON.parse(content);
       
       // Check if prediction is valid and sufficiently different from current price
       if (!validatePrediction(predictionData, data.currentPrice)) {
@@ -153,6 +176,16 @@ The current price is $${data.currentPrice.toFixed(2)} - each of your predictions
     } catch (parseError) {
       console.error("Error parsing OpenAI response:", parseError);
       console.log("Raw response:", content);
+      
+      // Try to extract JSON from text as a fallback (in case it's not valid JSON)
+      try {
+        const extractedJSON = extractJSONFromText(content);
+        if (validatePrediction(extractedJSON, data.currentPrice)) {
+          return processPredictionResponse(extractedJSON, data);
+        }
+      } catch (extractError) {
+        console.error("Error extracting JSON from text:", extractError);
+      }
       
       return getConsistentPrediction(data);
     }
