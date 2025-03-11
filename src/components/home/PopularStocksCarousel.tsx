@@ -32,6 +32,10 @@ const PopularStocksCarousel: React.FC<PopularStocksCarouselProps> = ({
   isLoading = false,
   onRefresh
 }) => {
+  // Add some console logs to debug
+  console.log("PopularStocksCarousel - isLoading:", isLoading);
+  console.log("PopularStocksCarousel - stockData:", stockData);
+
   if (isLoading) {
     return (
       <div className="py-12">
@@ -41,10 +45,54 @@ const PopularStocksCarousel: React.FC<PopularStocksCarouselProps> = ({
             description="Track performance of widely-traded stocks in real-time."
             icon={<TrendingUp className="w-6 h-6 text-primary" />}
           />
-          <div className="flex overflow-hidden space-x-4 py-4">
+          <div className="flex overflow-x-auto space-x-4 py-4">
             {Array(8).fill(0).map((_, index) => (
               <div key={index} className="min-w-[220px] h-[140px] animate-pulse bg-card/50 backdrop-blur-sm border border-muted rounded-lg"></div>
             ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
+  
+  // Show a fallback if there's no data
+  if (!stockData || stockData.length === 0) {
+    return (
+      <div className="py-8 bg-gradient-to-b from-background to-muted/20">
+        <div className="container mx-auto px-4 max-w-[1400px]">
+          <div className="flex justify-between items-center mb-4">
+            <SectionHeader 
+              title="Popular Stocks"
+              description="Track performance of widely-traded stocks in real-time."
+              icon={<TrendingUp className="w-6 h-6 text-primary" />}
+            />
+            {onRefresh && (
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="gap-1"
+                onClick={onRefresh}
+              >
+                <RefreshCw className="h-4 w-4" />
+                Refresh
+              </Button>
+            )}
+          </div>
+          <div className="flex justify-center items-center h-40 bg-card/50 backdrop-blur-sm border border-muted rounded-lg">
+            <div className="text-center">
+              <p className="text-muted-foreground">No stock data available</p>
+              {onRefresh && (
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="mt-2 gap-1"
+                  onClick={onRefresh}
+                >
+                  <RefreshCw className="h-4 w-4" />
+                  Refresh
+                </Button>
+              )}
+            </div>
           </div>
         </div>
       </div>

@@ -24,6 +24,7 @@ const BASE_URL = "https://financialmodelingprep.com/api/v3";
  */
 async function fetchFromFMP<T>(endpoint: string): Promise<T> {
   const url = `${BASE_URL}${endpoint}${endpoint.includes('?') ? '&' : '?'}apikey=${API_KEY}`;
+  console.log(`Fetching from FMP: ${endpoint}`);
   
   try {
     const response = await fetch(url);
@@ -58,8 +59,23 @@ export async function getCompanyProfile(symbol: string): Promise<StockProfile> {
  * Get real-time stock quote
  */
 export async function getStockQuote(symbol: string): Promise<StockQuote> {
-  const data = await fetchFromFMP<StockQuote[]>(`/quote/${symbol}`);
-  return data[0];
+  try {
+    console.log(`Getting stock quote for: ${symbol}`);
+    const data = await fetchFromFMP<StockQuote[]>(`/quote/${symbol}`);
+    console.log(`Received quote for ${symbol}:`, data[0]);
+    return data[0];
+  } catch (error) {
+    console.error(`Error getting quote for ${symbol}:`, error);
+    // Return a fallback quote object that won't break the UI
+    return {
+      symbol: symbol,
+      name: `${symbol} (Error)`,
+      price: 0,
+      change: 0,
+      changesPercentage: 0,
+      // Add any other required fields with fallback values
+    } as StockQuote;
+  }
 }
 
 /**

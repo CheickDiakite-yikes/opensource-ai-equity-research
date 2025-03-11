@@ -1,6 +1,7 @@
 
 import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
+import { toast } from "sonner";
 import HeroSection from "./HeroSection";
 import FeaturedCompanies from "./FeaturedCompanies";
 import FeatureCards from "./FeatureCards";
@@ -8,7 +9,6 @@ import FAQSection from "./FAQSection";
 import PopularStocksCarousel from "./PopularStocksCarousel";
 import MarketNews from "./MarketNews";
 import { fetchMarketNews } from "@/services/api/marketDataService";
-import { toast } from "sonner";
 import { getStockQuote } from "@/lib/api/fmpApi";
 
 interface LandingViewProps {
@@ -44,17 +44,7 @@ const POPULAR_STOCKS = [
   { symbol: "NFLX", name: "Netflix, Inc." },
   { symbol: "DIS", name: "The Walt Disney Company" },
   { symbol: "INTC", name: "Intel Corporation" },
-  { symbol: "AMD", name: "Advanced Micro Devices, Inc." },
-  { symbol: "CSCO", name: "Cisco Systems, Inc." },
-  { symbol: "CRM", name: "Salesforce, Inc." },
-  { symbol: "ADBE", name: "Adobe Inc." },
-  { symbol: "QCOM", name: "Qualcomm Incorporated" },
-  { symbol: "PEP", name: "PepsiCo, Inc." },
-  { symbol: "KO", name: "The Coca-Cola Company" },
-  { symbol: "WMT", name: "Walmart Inc." },
-  { symbol: "HD", name: "The Home Depot, Inc." },
-  { symbol: "MCD", name: "McDonald's Corporation" },
-  { symbol: "NKE", name: "NIKE, Inc." }
+  { symbol: "AMD", name: "Advanced Micro Devices, Inc." }
 ];
 
 const LandingView: React.FC<LandingViewProps> = ({ 
@@ -67,25 +57,43 @@ const LandingView: React.FC<LandingViewProps> = ({
   const [isLoadingNews, setIsLoadingNews] = useState(true);
 
   useEffect(() => {
+    // Function to fetch stock data
     const getStockData = async () => {
       try {
         setIsLoadingStocks(true);
         
         // Create an array of promises to fetch quotes for all popular stocks
-        const promises = POPULAR_STOCKS.map(stock => getStockQuote(stock.symbol));
+        const stocksToFetch = POPULAR_STOCKS.slice(0, 8); // Limit to 8 for initial load
+        console.log("Fetching stock data for:", stocksToFetch.map(s => s.symbol).join(", "));
+        
+        const promises = stocksToFetch.map(stock => getStockQuote(stock.symbol));
         const results = await Promise.allSettled(promises);
         
-        // Filter successful results and map them to our simplified format
+        // Filter successful results
         const validResults = results
           .filter((result): result is PromiseFulfilledResult<any> => result.status === 'fulfilled')
-          .map(result => result.value)
-          .filter(quote => quote); // Filter out any null values
+          .map(result => {
+            const quote = result.value;
+            // Map to the expected format
+            if (quote) {
+              return {
+                symbol: quote.symbol,
+                name: quote.name || "Unknown",
+                price: quote.price || 0,
+                change: quote.change || 0,
+                changePercent: quote.changesPercentage || 0
+              };
+            }
+            return null;
+          })
+          .filter(Boolean); // Filter out any null values
         
-        setStockData(validResults);
         console.log("Stock data loaded:", validResults);
+        setStockData(validResults);
       } catch (error) {
         console.error("Failed to fetch stock data:", error);
         toast.error("Unable to load stock data. Please try again later.");
+        setStockData([]);
       } finally {
         setIsLoadingStocks(false);
       }
@@ -100,6 +108,7 @@ const LandingView: React.FC<LandingViewProps> = ({
       } catch (error) {
         console.error("Failed to fetch market news:", error);
         toast.error("Unable to load market news. Please try again later.");
+        setMarketNews([]);
       } finally {
         setIsLoadingNews(false);
       }
@@ -118,12 +127,26 @@ const LandingView: React.FC<LandingViewProps> = ({
       const promises = POPULAR_STOCKS.map(stock => getStockQuote(stock.symbol));
       const results = await Promise.allSettled(promises);
       
-      // Filter successful results and map them to our simplified format
+      // Filter successful results
       const validResults = results
         .filter((result): result is PromiseFulfilledResult<any> => result.status === 'fulfilled')
-        .map(result => result.value)
-        .filter(quote => quote); // Filter out any null values
+        .map(result => {
+          const quote = result.value;
+          // Map to the expected format
+          if (quote) {
+            return {
+              symbol: quote.symbol,
+              name: quote.name || "Unknown",
+              price: quote.price || 0,
+              change: quote.change || 0,
+              changePercent: quote.changesPercentage || 0
+            };
+          }
+          return null;
+        })
+        .filter(Boolean); // Filter out any null values
       
+      console.log("Refreshed stock data:", validResults);
       setStockData(validResults);
       toast.success("Stock data refreshed successfully");
     } catch (error) {
@@ -150,7 +173,7 @@ const LandingView: React.FC<LandingViewProps> = ({
       </div>
       
       {/* Popular Stocks Carousel */}
-      <div className="max-w-screen-xl mx-auto px-4 py-6">
+      <div className="py-6">
         <motion.div 
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -166,7 +189,7 @@ const LandingView: React.FC<LandingViewProps> = ({
       </div>
       
       {/* Featured Companies Section */}
-      <div id="featured-companies-section" className="max-w-screen-xl mx-auto px-4 py-6 bg-gradient-to-t from-muted/10 to-background">
+      <div id="featured-companies-section" className="py-6 bg-gradient-to-t from-muted/10 to-background">
         <motion.div 
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -181,7 +204,7 @@ const LandingView: React.FC<LandingViewProps> = ({
       </div>
       
       {/* News Section */}
-      <div className="max-w-screen-xl mx-auto px-4 py-6 bg-gradient-to-b from-muted/10 to-background">
+      <div className="py-6 bg-gradient-to-b from-muted/10 to-background">
         <motion.div 
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
