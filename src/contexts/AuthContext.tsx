@@ -1,246 +1,211 @@
 
-import React, { createContext, useContext, useEffect, useState } from "react";
+import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
-import { AuthError, User, Session } from "@supabase/supabase-js";
 import { toast } from "sonner";
-import { trackAuthEvent } from "@/services/analytics/analyticsService";
+import { resetUsedPredictions } from "@/services/api/userContent/freePredictionsService";
 
-// Define a profile type
 interface UserProfile {
-  id?: string;
-  first_name?: string;
-  last_name?: string;
-  firm_name?: string;
-  job_role?: string;
-  industry?: string;
-  location?: string;
-  years_experience?: number | null;
-  avatar_url?: string | null;
+  id: string;
+  email: string;
+  first_name: string | null;
+  last_name: string | null;
+  firm_name: string | null;
+  job_role: string | null;
+  location: string | null;
+  industry: string | null;
+  years_experience: number | null;
+  avatar_url: string | null;
 }
 
-interface AuthContextType {
-  user: User | null;
+interface AuthContextProps {
   session: Session | null;
-  loading: boolean;
+  user: User | null;
   profile: UserProfile | null;
+  isLoading: boolean;
   signIn: (email: string, password: string) => Promise<void>;
-  signUp: (email: string, password: string, profileData?: Partial<UserProfile>) => Promise<void>;
+  signUp: (email: string, password: string, userData: Partial<UserProfile>) => Promise<void>;
   signOut: () => Promise<void>;
-  resetPassword: (email: string) => Promise<void>;
-  updateProfile: (profileData: Partial<UserProfile>) => Promise<void>;
+  updateProfile: (updates: Partial<UserProfile>) => Promise<void>;
 }
 
-const AuthContext = createContext<AuthContextType | null>(null);
+const AuthContext = createContext<AuthContextProps | undefined>(undefined);
 
-export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(null);
+export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
-  
+  const [isLoading, setIsLoading] = useState(true);
+
   useEffect(() => {
-    const getSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession()
-      setSession(session)
-      setUser(session?.user ?? null)
-      setLoading(false)
-      
-      // Fetch user profile if user is logged in
+    // Get initial session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      setUser(session?.user ?? null);
       if (session?.user) {
-        fetchUserProfile(session.user.id);
+        fetchProfile(session.user.id);
+        // Reset free predictions count when user logs in
+        resetUsedPredictions();
+      } else {
+        setIsLoading(false);
       }
-    }
+    });
 
-    getSession()
-
-    // Set up auth state change listener
-    const { data: authListener } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (_event, session) => {
         setSession(session);
         setUser(session?.user ?? null);
-        setLoading(false);
         
-        // Fetch user profile if user is logged in
         if (session?.user) {
-          fetchUserProfile(session.user.id);
+          fetchProfile(session.user.id);
+          // Reset free predictions count when user logs in
+          resetUsedPredictions();
         } else {
           setProfile(null);
-        }
-        
-        // Track authentication events
-        if (event === 'SIGNED_IN') {
-          trackAuthEvent('login');
-          toast.success("Signed in successfully");
-        } else if (event === 'SIGNED_OUT') {
-          trackAuthEvent('logout');
-          toast.info("Signed out successfully");
-        } else if (event === 'PASSWORD_RECOVERY') {
-          trackAuthEvent('password_reset');
-        } else if (event === 'USER_UPDATED') {
-          toast.success("Profile updated successfully");
+          setIsLoading(false);
         }
       }
     );
 
-    // Cleanup function
     return () => {
-      authListener.subscription.unsubscribe();
+      subscription.unsubscribe();
     };
   }, []);
-  
-  // Fetch user profile from the database
-  const fetchUserProfile = async (userId: string) => {
+
+  const fetchProfile = async (userId: string) => {
     try {
-      // Use type assertion to handle the profiles table
-      const { data, error } = await supabase
-        .from('profiles' as any)
-        .select('*')
-        .eq('id', userId)
-        .single();
-        
+      // Use type assertion to work around the type issue
+      const { data, error } = await supabase.from("profiles" as any).select("*").eq("id", userId).single();
+
       if (error) {
-        console.error("Error fetching user profile:", error);
-        return;
+        console.error("Error fetching profile:", error);
+      } else {
+        // Fix type assertion here - cast to UserProfile
+        setProfile(data as unknown as UserProfile);
       }
-      
-      // Cast the data to UserProfile type
-      setProfile(data as unknown as UserProfile);
     } catch (error) {
-      console.error("Error in fetchUserProfile:", error);
+      console.error("Error fetching profile:", error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const signIn = async (email: string, password: string) => {
     try {
-      const { error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
-
+      setIsLoading(true);
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      
       if (error) {
         toast.error(error.message);
         throw error;
       }
       
-      // Auth state change listener will handle tracking
+      toast.success("Signed in successfully");
+      
+      // Reset free predictions count when user logs in
+      resetUsedPredictions();
     } catch (error) {
-      console.error("Error signing in:", error);
+      console.error("Sign in error:", error);
       throw error;
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const signUp = async (email: string, password: string, profileData?: Partial<UserProfile>) => {
+  const signUp = async (email: string, password: string, userData: Partial<UserProfile>) => {
     try {
-      const { error, data } = await supabase.auth.signUp({
+      setIsLoading(true);
+      
+      // Sign up the user
+      const { error } = await supabase.auth.signUp({
         email,
         password,
         options: {
-          data: profileData
+          data: {
+            first_name: userData.first_name,
+            last_name: userData.last_name
+          }
         }
       });
-
+      
       if (error) {
         toast.error(error.message);
         throw error;
       }
       
-      trackAuthEvent('signup');
-      toast.success(
-        "Signup successful! Please check your email for verification."
-      );
+      toast.success("Account created! Please check your email for verification.");
     } catch (error) {
-      console.error("Error signing up:", error);
+      console.error("Sign up error:", error);
       throw error;
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const signOut = async () => {
     try {
+      setIsLoading(true);
       const { error } = await supabase.auth.signOut();
+      
       if (error) {
         toast.error(error.message);
         throw error;
       }
       
-      // Auth state change listener will handle tracking
+      toast.success("Signed out successfully");
     } catch (error) {
-      console.error("Error signing out:", error);
+      console.error("Sign out error:", error);
       throw error;
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const resetPassword = async (email: string) => {
+  const updateProfile = async (updates: Partial<UserProfile>) => {
     try {
-      const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/auth`,
-      });
-      if (error) {
-        toast.error(error.message);
-        throw error;
-      }
-      toast.success("Password reset email sent!");
-    } catch (error) {
-      console.error("Error resetting password:", error);
-      throw error;
-    }
-    
-    // Track password reset request
-    trackAuthEvent('password_reset');
-  };
-  
-  const updateProfile = async (profileData: Partial<UserProfile>) => {
-    try {
-      if (!user) {
-        toast.error("You must be logged in to update your profile");
-        return;
-      }
+      if (!user) throw new Error("No user logged in");
       
-      // Use type assertion to handle the profiles table
-      const { error } = await supabase
-        .from('profiles' as any)
-        .upsert({
-          id: user.id,
-          ...profileData,
-          updated_at: new Date().toISOString() // Convert Date to ISO string
-        } as any);
-        
+      setIsLoading(true);
+      
+      // Update the profile in the database
+      const { error } = await supabase.from("profiles" as any).update(updates).eq("id", user.id);
+      
       if (error) {
         toast.error(error.message);
         throw error;
       }
       
-      // Refresh the profile data
-      fetchUserProfile(user.id);
+      // Refetch the profile to get the updated data
+      await fetchProfile(user.id);
+      
       toast.success("Profile updated successfully");
     } catch (error) {
-      console.error("Error updating profile:", error);
+      console.error("Update profile error:", error);
       throw error;
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  return (
-    <AuthContext.Provider
-      value={{
-        user,
-        session,
-        loading,
-        profile,
-        signIn,
-        signUp,
-        signOut,
-        resetPassword,
-        updateProfile
-      }}
-    >
-      {children}
-    </AuthContext.Provider>
-  );
-};
+  const value = {
+    session,
+    user,
+    profile,
+    isLoading,
+    signIn,
+    signUp,
+    signOut,
+    updateProfile
+  };
 
-export const useAuth = (): AuthContextType => {
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+}
+
+export function useAuth() {
   const context = useContext(AuthContext);
-  if (!context) {
+  if (context === undefined) {
     throw new Error("useAuth must be used within an AuthProvider");
   }
   return context;
-};
+}

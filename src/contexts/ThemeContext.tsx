@@ -1,6 +1,5 @@
 
 import React, { createContext, useContext, useEffect, useState } from "react";
-import { trackPreferenceChange, AnalyticsCategory } from "@/services/analytics/analyticsService";
 
 type Theme = "light" | "dark";
 
@@ -32,9 +31,6 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       root.classList.remove("dark");
       localStorage.setItem("theme", "light");
     }
-    
-    // Track theme preference change for analytics
-    trackPreferenceChange("theme", theme);
   }, [theme]);
 
   const toggleTheme = () => {

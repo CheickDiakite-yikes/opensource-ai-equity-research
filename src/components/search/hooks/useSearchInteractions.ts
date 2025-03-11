@@ -3,7 +3,6 @@ import { useState, useEffect, useRef } from "react";
 import { toast } from "sonner";
 import { useSearchParams } from "react-router-dom";
 import { useSearchHistory } from "../useSearchHistory";
-import { trackSearch, trackFeatureUsage } from "@/services/analytics/analyticsService";
 
 export const useSearchInteractions = (onSelectCallback?: (symbol: string) => void) => {
   const [, setSearchParams] = useSearchParams();
@@ -29,18 +28,11 @@ export const useSearchInteractions = (onSelectCallback?: (symbol: string) => voi
   // Show dropdown immediately when input is focused
   const handleFocus = () => {
     setIsOpen(true);
-    
-    // Track search focus event
-    trackFeatureUsage('search', 'focus');
   };
 
   const handleSelectStock = (symbol: string) => {
     setIsOpen(false);
     addToHistory(symbol);
-    
-    // Track search selection
-    trackSearch(symbol, 1);
-    trackFeatureUsage('search', 'select_result', { symbol });
     
     if (onSelectCallback) {
       onSelectCallback(symbol);

@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { 
@@ -9,13 +10,14 @@ import {
 import { toast } from "sonner";
 
 export const useSavedContentPage = () => {
-  const { user, loading: authLoading } = useAuth();
+  const { user, isLoading: authLoading } = useAuth();
   const { reports, isLoading: reportsLoading, deleteReport, fetchReports } = useSavedReports();
   const { predictions, isLoading: predictionsLoading, deletePrediction, fetchPredictions } = useSavedPredictions();
   const [selectedReport, setSelectedReport] = useState<SavedReport | null>(null);
   const [selectedPrediction, setSelectedPrediction] = useState<SavedPrediction | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
+  // Refresh reports when page loads
   useEffect(() => {
     if (user) {
       console.log("SavedContent component mounted, fetching reports...");
@@ -24,6 +26,7 @@ export const useSavedContentPage = () => {
     }
   }, [user]);
 
+  // Log reports when they change
   useEffect(() => {
     console.log("Reports updated:", reports.length);
     reports.forEach(report => {
@@ -31,6 +34,7 @@ export const useSavedContentPage = () => {
     });
   }, [reports]);
 
+  // Log predictions when they change
   useEffect(() => {
     console.log("Predictions updated:", predictions.length);
     predictions.forEach(prediction => {
@@ -45,6 +49,7 @@ export const useSavedContentPage = () => {
     setSelectedReport(report);
     setSelectedPrediction(null);
     
+    // Debug HTML content
     if (report.html_content) {
       console.log(`Report ${report.id} has HTML content of length: ${report.html_content.length}`);
     } else {
@@ -82,6 +87,7 @@ export const useSavedContentPage = () => {
       return;
     }
 
+    // Create a Blob and download
     const blob = new Blob([report.html_content], { type: 'text/html' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');

@@ -1,5 +1,4 @@
-
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { Navigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -51,7 +50,7 @@ const jobRoleOptions = [
 ];
 
 const Profile = () => {
-  const { user, profile, loading, signOut, updateProfile } = useAuth();
+  const { user, profile, isLoading, signOut, updateProfile } = useAuth();
   const [isSaving, setIsSaving] = useState(false);
   
   // Form state
@@ -66,7 +65,7 @@ const Profile = () => {
   );
 
   // If user is not logged in, redirect to login page
-  if (!user && !loading) {
+  if (!user && !isLoading) {
     return <Navigate to="/auth" />;
   }
 
@@ -92,7 +91,7 @@ const Profile = () => {
     }
   };
 
-  if (loading) {
+  if (isLoading) {
     return (
       <>
         <AppHeader featuredSymbols={featuredSymbols} />

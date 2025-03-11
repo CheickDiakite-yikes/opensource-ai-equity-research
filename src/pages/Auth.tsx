@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Navigate, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
@@ -11,7 +12,7 @@ import { toast } from "sonner";
 
 const industryOptions = [
   "Investment Banking",
-  "Asset Management", 
+  "Asset Management",
   "Hedge Fund",
   "Private Equity",
   "Venture Capital",
@@ -40,7 +41,7 @@ const jobRoleOptions = [
 ];
 
 const Auth = () => {
-  const { user, signIn, signUp, loading } = useAuth();
+  const { user, signIn, signUp, isLoading } = useAuth();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("signin");
   
@@ -156,8 +157,8 @@ const Auth = () => {
                 </div>
               </CardContent>
               <CardFooter>
-                <Button type="submit" className="w-full" disabled={loading}>
-                  {loading ? "Signing in..." : "Sign In"}
+                <Button type="submit" className="w-full" disabled={isLoading}>
+                  {isLoading ? "Signing in..." : "Sign In"}
                 </Button>
               </CardFooter>
             </form>
@@ -292,8 +293,8 @@ const Auth = () => {
                 </div>
               </CardContent>
               <CardFooter>
-                <Button type="submit" className="w-full" disabled={loading}>
-                  {loading ? "Creating Account..." : "Create Account"}
+                <Button type="submit" className="w-full" disabled={isLoading}>
+                  {isLoading ? "Creating Account..." : "Create Account"}
                 </Button>
               </CardFooter>
             </form>
