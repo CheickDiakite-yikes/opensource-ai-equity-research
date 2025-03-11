@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertTriangle, Info, Lock } from "lucide-react";
@@ -12,6 +11,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useSavedReports, useSavedPredictions } from "@/hooks/useSavedContent";
 import { useNavigate } from "react-router-dom";
 import { getRemainingPredictions, hasReachedFreeLimit } from "@/services/api/userContent/freePredictionsService";
+import { FileText, TrendingUp, ArrowUp } from "lucide-react";
+import { motion } from "framer-motion";
 
 interface ResearchReportContentProps {
   data: any;
@@ -29,7 +30,7 @@ interface ResearchReportContentProps {
   generationError: string | null;
 }
 
-const ResearchReportContent = ({
+const ResearchReportContent: React.FC<ResearchReportContentProps> = ({
   data,
   hasStockData,
   showDataWarning,
@@ -43,7 +44,7 @@ const ResearchReportContent = ({
   onPredictPrice,
   isReportTooBasic,
   generationError
-}: ResearchReportContentProps) => {
+}) => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [showTip, setShowTip] = useState(true);
@@ -247,6 +248,42 @@ const ResearchReportContent = ({
           </AlertDescription>
         </Alert>
       ) : null}
+
+      {!report && !prediction && (
+        <div className="flex flex-col items-center justify-center p-10 text-center rounded-lg border border-dashed border-muted-foreground/30 bg-muted/10 h-80">
+          <motion.div 
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            className="w-full max-w-md"
+          >
+            <div className="flex items-center justify-center mb-5">
+              <div className="h-14 w-14 rounded-full bg-primary/5 border border-primary/20 flex items-center justify-center">
+                <Info className="h-7 w-7 text-muted-foreground" />
+              </div>
+            </div>
+            <h3 className="text-xl font-medium mb-3">No Reports Generated</h3>
+            <p className="text-muted-foreground max-w-md mx-auto mb-6">
+              Generate a research report or price prediction to see detailed analysis here.
+              These AI-powered reports provide comprehensive insights into the stock's fundamentals and future prospects.
+            </p>
+            
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mt-4">
+              <div className="flex items-center gap-2 p-3 rounded-lg bg-primary/5 border border-primary/10 text-sm">
+                <FileText className="h-4 w-4 text-primary" />
+                <span>Research Reports</span>
+                <ArrowUp className="h-3 w-3 text-primary" />
+              </div>
+              
+              <div className="flex items-center gap-2 p-3 rounded-lg bg-primary/5 border border-primary/10 text-sm">
+                <TrendingUp className="h-4 w-4 text-primary" />
+                <span>Price Predictions</span>
+                <ArrowUp className="h-3 w-3 text-primary" />
+              </div>
+            </div>
+          </motion.div>
+        </div>
+      )}
 
       <ReportTabs report={report} prediction={prediction} />
     </div>
