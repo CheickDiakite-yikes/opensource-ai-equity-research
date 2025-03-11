@@ -1,108 +1,143 @@
 
-/**
- * Analytics Service
- * 
- * Tracks user interactions and usage patterns throughout the application
- * to help improve the product and understand user behavior.
- */
+import { nanoid } from 'nanoid';
+import { supabase } from '@/integrations/supabase/client';
 
-import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
-
-// Event categories for analytics
+// Define categories for analytics events
 export enum AnalyticsCategory {
-  SEARCH = 'search',
-  REPORT = 'report',
-  PREDICTION = 'prediction',
-  NAVIGATION = 'navigation',
   USER = 'user',
+  SEARCH = 'search',
   CONTENT = 'content',
   FEATURE = 'feature',
-  ERROR = 'error'
+  ERROR = 'error',
+  AUTH = 'auth',
+  PREFERENCE = 'preference'
 }
 
-// Analytics event type
-interface AnalyticsEvent {
-  category: AnalyticsCategory;
+// Interface for analytics events
+export interface AnalyticsEvent {
+  category: string;
   action: string;
   label?: string;
   value?: number;
   metadata?: Record<string, any>;
-  timestamp: string;
-  userId?: string;
-  sessionId: string;
+  user_id?: string | null;
+  session_id: string;
 }
 
-// Session management
-let sessionId = '';
-const SESSION_ID_KEY = 'equi_session_id';
-
-/**
- * Initialize analytics and create a new session if needed
- */
-export const initializeAnalytics = (): string => {
-  // Check for existing session
-  let existingSessionId = localStorage.getItem(SESSION_ID_KEY);
-  
-  if (!existingSessionId) {
-    // Create new session ID (UUID v4)
-    existingSessionId = crypto.randomUUID();
-    localStorage.setItem(SESSION_ID_KEY, existingSessionId);
+// Generate or retrieve session ID
+const getSessionId = (): string => {
+  let sessionId = localStorage.getItem('analytics_session_id');
+  if (!sessionId) {
+    sessionId = nanoid();
+    localStorage.setItem('analytics_session_id', sessionId);
   }
-  
-  sessionId = existingSessionId;
   return sessionId;
 };
 
-/**
- * Track an analytics event
- */
-export const trackEvent = async (
-  category: AnalyticsCategory,
+// Initialize analytics
+export const initializeAnalytics = (): void => {
+  // Generate a new session ID if one doesn't exist
+  const sessionId = getSessionId();
+  
+  // Record application start
+  trackEvent(
+    AnalyticsCategory.USER,
+    'session_start',
+    window.location.href,
+    undefined,
+    {
+      userAgent: navigator.userAgent,
+      screenSize: `${window.innerWidth}x${window.innerHeight}`,
+      referrer: document.referrer || undefined,
+      language: navigator.language
+    }
+  );
+  
+  // Track session details
+  console.log('Analytics initialized with session ID:', sessionId);
+};
+
+// Buffer for batching analytics events
+let eventBuffer: AnalyticsEvent[] = [];
+let bufferTimeout: NodeJS.Timeout | null = null;
+
+// Flush the event buffer
+const flushEventBuffer = async (): Promise<void> => {
+  if (eventBuffer.length === 0) return;
+  
+  const events = [...eventBuffer];
+  eventBuffer = [];
+  
+  try {
+    // Convert events to the format expected by the database
+    const formattedEvents = events.map(event => ({
+      category: event.category,
+      action: event.action,
+      label: event.label,
+      value: event.value,
+      metadata: event.metadata ? JSON.stringify(event.metadata) : null,
+      user_id: event.user_id,
+      session_id: event.session_id
+    }));
+    
+    // Insert events into the database
+    const { error } = await supabase
+      .from('user_analytics')
+      .insert(formattedEvents);
+    
+    if (error) {
+      console.error('Error logging analytics events:', error);
+    }
+  } catch (error) {
+    console.error('Failed to send analytics batch:', error);
+  }
+};
+
+// Schedule a buffer flush
+const scheduleBufferFlush = (): void => {
+  if (bufferTimeout) clearTimeout(bufferTimeout);
+  
+  bufferTimeout = setTimeout(() => {
+    flushEventBuffer();
+    bufferTimeout = null;
+  }, 5000); // Flush every 5 seconds
+};
+
+// Base track event function
+export const trackEvent = (
+  category: string,
   action: string,
   label?: string,
   value?: number,
   metadata?: Record<string, any>
-): Promise<void> => {
-  if (!sessionId) {
-    initializeAnalytics();
-  }
-
-  try {
-    // Get current user ID if logged in
-    const { data: { user } } = await supabase.auth.getUser();
-    const userId = user?.id;
-
-    const event: AnalyticsEvent = {
-      category,
-      action,
-      label,
-      value,
-      metadata,
-      timestamp: new Date().toISOString(),
-      userId,
-      sessionId
-    };
-
-    // Log event to the database
-    const { error } = await supabase
-      .from('user_analytics')
-      .insert([event]);
-
-    if (error) {
-      console.error('Error logging analytics event:', error);
-    }
-  } catch (error) {
-    console.error('Failed to track event:', error);
-  }
+): void => {
+  // Get current user ID
+  const user = supabase.auth.getUser();
+  const userId = user ? (user as any).data?.user?.id : null;
+  
+  // Create event
+  const event: AnalyticsEvent = {
+    category,
+    action,
+    label,
+    value,
+    metadata,
+    user_id: userId,
+    session_id: getSessionId()
+  };
+  
+  // Add to buffer
+  eventBuffer.push(event);
+  scheduleBufferFlush();
+  
+  // Log for debugging
+  console.log(`Analytics: ${category} > ${action}${label ? ` > ${label}` : ''}${value !== undefined ? ` (${value})` : ''}`);
 };
 
-/**
- * Track page view
- */
+// Track page views
 export const trackPageView = (pageName: string, path: string): void => {
   trackEvent(
-    AnalyticsCategory.NAVIGATION,
+    AnalyticsCategory.CONTENT,
     'page_view',
     pageName,
     undefined,
@@ -110,164 +145,141 @@ export const trackPageView = (pageName: string, path: string): void => {
   );
 };
 
-/**
- * Track search queries
- */
-export const trackSearch = (query: string, resultsCount: number): void => {
+// Track search queries
+export const trackSearch = (query: string, resultCount?: number): void => {
   trackEvent(
     AnalyticsCategory.SEARCH,
     'search_query',
     query,
-    resultsCount
+    resultCount,
+    { resultCount }
   );
 };
 
-/**
- * Track stock view
- */
-export const trackStockView = (symbol: string, companyName?: string): void => {
+// Track stock views
+export const trackStockView = (symbol: string, tab?: string): void => {
   trackEvent(
     AnalyticsCategory.CONTENT,
     'view_stock',
     symbol,
     undefined,
-    { companyName }
+    { tab }
   );
 };
 
-/**
- * Track report generation
- */
+// Track report generation
 export const trackReportGeneration = (
-  symbol: string, 
-  reportType: string,
-  isAuthenticated: boolean
+  symbol: string,
+  duration?: number,
+  isSuccess: boolean = true
 ): void => {
   trackEvent(
-    AnalyticsCategory.REPORT,
-    'generate_report',
+    AnalyticsCategory.FEATURE,
+    isSuccess ? 'generate_report' : 'report_generation_failed',
     symbol,
-    undefined,
-    { 
-      reportType,
-      isAuthenticated
-    }
+    duration,
+    { duration, isSuccess }
   );
 };
 
-/**
- * Track prediction generation
- */
+// Track prediction generation
 export const trackPredictionGeneration = (
   symbol: string,
-  isAuthenticated: boolean,
-  remainingPredictions?: number
+  duration?: number,
+  isSuccess: boolean = true
 ): void => {
   trackEvent(
-    AnalyticsCategory.PREDICTION,
-    'generate_prediction',
+    AnalyticsCategory.FEATURE,
+    isSuccess ? 'generate_prediction' : 'prediction_generation_failed',
     symbol,
-    undefined,
-    { 
-      isAuthenticated,
-      remainingPredictions
-    }
+    duration,
+    { duration, isSuccess }
   );
 };
 
-/**
- * Track save content (report/prediction)
- */
+// Track saving content
 export const trackContentSave = (
   contentType: 'report' | 'prediction',
   symbol: string
 ): void => {
   trackEvent(
-    AnalyticsCategory.CONTENT,
+    AnalyticsCategory.FEATURE,
     `save_${contentType}`,
     symbol
   );
 };
 
-/**
- * Track feature usage (like toggles, filters, etc.)
- */
+// Track feature usage
 export const trackFeatureUsage = (
-  featureName: string,
+  feature: string,
   action: string,
   metadata?: Record<string, any>
 ): void => {
   trackEvent(
     AnalyticsCategory.FEATURE,
     action,
-    featureName,
+    feature,
     undefined,
     metadata
   );
 };
 
-/**
- * Track errors encountered by users
- */
+// Track errors
 export const trackError = (
-  errorType: string,
-  errorMessage: string,
+  source: string,
+  message: string,
   metadata?: Record<string, any>
 ): void => {
   trackEvent(
     AnalyticsCategory.ERROR,
-    errorType,
-    errorMessage,
+    source,
+    message,
     undefined,
     metadata
   );
 };
 
-/**
- * Track authentication events
- */
+// Track authentication events
 export const trackAuthEvent = (
-  action: 'sign_in' | 'sign_up' | 'sign_out' | 'password_reset',
+  action: 'login' | 'logout' | 'signup' | 'password_reset',
   method?: string
 ): void => {
   trackEvent(
-    AnalyticsCategory.USER,
+    AnalyticsCategory.AUTH,
     action,
-    method
+    method,
+    undefined,
+    { method }
   );
 };
 
-/**
- * Track user preference changes
- */
+// Track preference changes
 export const trackPreferenceChange = (
   preference: string,
-  value: string
+  value: any
 ): void => {
   trackEvent(
-    AnalyticsCategory.USER,
-    'preference_change',
+    AnalyticsCategory.PREFERENCE,
+    'update_preference',
     preference,
     undefined,
-    { value }
+    { [preference]: value }
   );
 };
 
-/**
- * Get analytics insights for admin users
- * This would be expanded in a real implementation
- */
-export const getAnalyticsInsights = async (timeframe: string = '7d') => {
+// Get analytics insights
+export const getAnalyticsInsights = async (timeframe: string = '7d'): Promise<any> => {
   try {
-    // This would be a proper backend function in production
-    const { data, error } = await supabase
-      .rpc('get_analytics_insights', { timeframe });
-      
-    if (error) throw error;
+    const { data, error } = await supabase.rpc('get_analytics_insights', { timeframe });
+    
+    if (error) {
+      console.error('Error fetching analytics insights:', error);
+      return null;
+    }
+    
     return data;
   } catch (error) {
-    console.error('Error fetching analytics insights:', error);
-    toast.error('Failed to load analytics insights');
+    console.error('Failed to get analytics insights:', error);
     return null;
   }
 };
