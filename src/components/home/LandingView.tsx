@@ -5,9 +5,8 @@ import HeroSection from "./HeroSection";
 import FeaturedCompanies from "./FeaturedCompanies";
 import FeatureCards from "./FeatureCards";
 import FAQSection from "./FAQSection";
-import MarketPerformance from "./MarketPerformance";
 import MarketNews from "./MarketNews";
-import { fetchMarketIndices, fetchMarketNews } from "@/services/api/marketDataService";
+import { fetchMarketNews } from "@/services/api/marketDataService";
 import { toast } from "sonner";
 
 interface LandingViewProps {
@@ -31,26 +30,10 @@ const LandingView: React.FC<LandingViewProps> = ({
   featuredSymbols, 
   onSelectSymbol 
 }) => {
-  const [marketData, setMarketData] = useState([]);
   const [marketNews, setMarketNews] = useState([]);
-  const [isLoadingMarkets, setIsLoadingMarkets] = useState(true);
   const [isLoadingNews, setIsLoadingNews] = useState(true);
 
   useEffect(() => {
-    const getMarketData = async () => {
-      try {
-        setIsLoadingMarkets(true);
-        const data = await fetchMarketIndices();
-        setMarketData(data);
-        console.log("Market data loaded:", data);
-      } catch (error) {
-        console.error("Failed to fetch market data:", error);
-        toast.error("Unable to load market data. Please try again later.");
-      } finally {
-        setIsLoadingMarkets(false);
-      }
-    };
-
     const getMarketNews = async () => {
       try {
         setIsLoadingNews(true);
@@ -65,7 +48,6 @@ const LandingView: React.FC<LandingViewProps> = ({
       }
     };
 
-    getMarketData();
     getMarketNews();
   }, []);
 
@@ -82,21 +64,6 @@ const LandingView: React.FC<LandingViewProps> = ({
       {/* Feature Cards Section */}
       <div className="py-6">
         <FeatureCards />
-      </div>
-      
-      {/* Market Performance Section */}
-      <div className="max-w-screen-xl mx-auto px-4 py-6">
-        <motion.div 
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.7 }}
-        >
-          <MarketPerformance 
-            marketData={marketData} 
-            isLoading={isLoadingMarkets} 
-          />
-        </motion.div>
       </div>
       
       {/* Featured Companies Section */}
