@@ -74,22 +74,27 @@ const FeaturedCompanies: React.FC<FeaturedCompaniesProps> = ({
           />
           
           {isMobile ? (
-            // Mobile view: Enhanced Carousel
+            // Mobile view: Enhanced Carousel with 2 cards per slide
             <Carousel 
               className="w-full"
               opts={{
-                align: "center", // Changed from "start" to "center"
+                align: "center",
                 loop: true,
               }}
             >
-              <CarouselContent className="-ml-1 md:-ml-2">
-                {featuredSymbols.map((company) => (
-                  <CarouselItem key={company.symbol} className="pl-1 md:pl-2 basis-[95%] sm:basis-[85%]">
-                    <div className="p-1">
-                      <CompanyCard 
-                        company={company}
-                        onSelect={handleSelectCompany}
-                      />
+              <CarouselContent className="-ml-2">
+                {/* Group companies into pairs */}
+                {Array.from({ length: Math.ceil(featuredSymbols.length / 2) }, (_, index) => (
+                  <CarouselItem key={index} className="basis-full pl-2">
+                    <div className="grid grid-cols-2 gap-2">
+                      {featuredSymbols.slice(index * 2, index * 2 + 2).map((company) => (
+                        <div key={company.symbol} className="p-1">
+                          <CompanyCard 
+                            company={company}
+                            onSelect={handleSelectCompany}
+                          />
+                        </div>
+                      ))}
                     </div>
                   </CarouselItem>
                 ))}
