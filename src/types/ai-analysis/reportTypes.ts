@@ -98,4 +98,5 @@ export interface ReportRequest {
   news?: any[];
   peers?: string[];
   reportType?: string;
+  reasoningEffort?: string; // Add this property to fix the type error
 }
