@@ -4,6 +4,7 @@ import { FormattedData, StockPrediction, PredictionHistoryEntry } from "./types.
 import { createFallbackPrediction } from "./fallbackGenerator.ts";
 import { validatePrediction } from "./validationService.ts";
 import { getIndustryGrowthContext, getIndustryConstraints, formatMarketCap } from "./industryAnalysis.ts";
+import { OPENAI_MODELS } from "../_shared/constants.ts";
 
 // Import default sentiment generator early (moved from the middle of the file)
 import { generateDefaultSentiment, generateDefaultDrivers, generateDefaultRisks } from "./fallbackGenerator.ts";
@@ -82,15 +83,15 @@ The current price is $${data.currentPrice.toFixed(2)} - each of your predictions
     const openAIApiKey = Deno.env.get("OPENAI_API_KEY") || "";
     const quickMode = data.quickMode === true;
     
-    // For featured companies dashboard use gpt-4o-mini for faster performance
-    // For detailed reports use the more powerful model
-    const modelToUse = quickMode ? "gpt-4o-mini" : "gpt-4o-mini";
+    // For featured companies dashboard use o3-mini for consistent performance
+    // For detailed reports use the same model for now
+    const modelToUse = OPENAI_MODELS.DEFAULT;
     
     // Reduce tokens for featured companies for speed
     const maxTokens = quickMode ? 1000 : 1500; 
     
     // Lower temperature for more consistent predictions
-    const temperature = 0.7; // Decreased from 0.95 to get more consistent results
+    const temperature = 0.7;
     
     console.log(`Generating prediction for ${data.symbol} using ${modelToUse} model (quickMode: ${quickMode})`);
     
@@ -118,7 +119,8 @@ The current price is $${data.currentPrice.toFixed(2)} - each of your predictions
           { role: "user", content: userPrompt }
         ],
         temperature: temperature,
-        max_tokens: maxTokens
+        max_tokens: maxTokens,
+        reasoning_effort: quickMode ? "low" : "medium"
       })
     });
 
