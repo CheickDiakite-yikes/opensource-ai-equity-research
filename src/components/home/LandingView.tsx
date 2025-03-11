@@ -5,10 +5,11 @@ import HeroSection from "./HeroSection";
 import FeaturedCompanies from "./FeaturedCompanies";
 import FeatureCards from "./FeatureCards";
 import FAQSection from "./FAQSection";
-import MarketPerformance from "./MarketPerformance";
+import PopularStocksCarousel from "./PopularStocksCarousel";
 import MarketNews from "./MarketNews";
-import { fetchMarketIndices, fetchMarketNews } from "@/services/api/marketDataService";
+import { fetchMarketNews } from "@/services/api/marketDataService";
 import { toast } from "sonner";
+import { getStockQuote } from "@/lib/api/fmpApi";
 
 interface LandingViewProps {
   recentSearches: string[];
@@ -27,27 +28,66 @@ const container = {
   }
 };
 
+// Popular stocks to display in the carousel
+const POPULAR_STOCKS = [
+  { symbol: "AAPL", name: "Apple Inc." },
+  { symbol: "MSFT", name: "Microsoft Corporation" },
+  { symbol: "AMZN", name: "Amazon.com Inc." },
+  { symbol: "GOOG", name: "Alphabet Inc." },
+  { symbol: "META", name: "Meta Platforms Inc." },
+  { symbol: "TSLA", name: "Tesla Inc." },
+  { symbol: "NVDA", name: "NVIDIA Corporation" },
+  { symbol: "JPM", name: "JPMorgan Chase & Co." },
+  { symbol: "V", name: "Visa Inc." },
+  { symbol: "MA", name: "Mastercard Inc." },
+  { symbol: "PYPL", name: "PayPal Holdings, Inc." },
+  { symbol: "NFLX", name: "Netflix, Inc." },
+  { symbol: "DIS", name: "The Walt Disney Company" },
+  { symbol: "INTC", name: "Intel Corporation" },
+  { symbol: "AMD", name: "Advanced Micro Devices, Inc." },
+  { symbol: "CSCO", name: "Cisco Systems, Inc." },
+  { symbol: "CRM", name: "Salesforce, Inc." },
+  { symbol: "ADBE", name: "Adobe Inc." },
+  { symbol: "QCOM", name: "Qualcomm Incorporated" },
+  { symbol: "PEP", name: "PepsiCo, Inc." },
+  { symbol: "KO", name: "The Coca-Cola Company" },
+  { symbol: "WMT", name: "Walmart Inc." },
+  { symbol: "HD", name: "The Home Depot, Inc." },
+  { symbol: "MCD", name: "McDonald's Corporation" },
+  { symbol: "NKE", name: "NIKE, Inc." }
+];
+
 const LandingView: React.FC<LandingViewProps> = ({ 
   featuredSymbols, 
   onSelectSymbol 
 }) => {
-  const [marketData, setMarketData] = useState([]);
+  const [stockData, setStockData] = useState([]);
   const [marketNews, setMarketNews] = useState([]);
-  const [isLoadingMarkets, setIsLoadingMarkets] = useState(true);
+  const [isLoadingStocks, setIsLoadingStocks] = useState(true);
   const [isLoadingNews, setIsLoadingNews] = useState(true);
 
   useEffect(() => {
-    const getMarketData = async () => {
+    const getStockData = async () => {
       try {
-        setIsLoadingMarkets(true);
-        const data = await fetchMarketIndices();
-        setMarketData(data);
-        console.log("Market data loaded:", data);
+        setIsLoadingStocks(true);
+        
+        // Create an array of promises to fetch quotes for all popular stocks
+        const promises = POPULAR_STOCKS.map(stock => getStockQuote(stock.symbol));
+        const results = await Promise.allSettled(promises);
+        
+        // Filter successful results and map them to our simplified format
+        const validResults = results
+          .filter((result): result is PromiseFulfilledResult<any> => result.status === 'fulfilled')
+          .map(result => result.value)
+          .filter(quote => quote); // Filter out any null values
+        
+        setStockData(validResults);
+        console.log("Stock data loaded:", validResults);
       } catch (error) {
-        console.error("Failed to fetch market data:", error);
-        toast.error("Unable to load market data. Please try again later.");
+        console.error("Failed to fetch stock data:", error);
+        toast.error("Unable to load stock data. Please try again later.");
       } finally {
-        setIsLoadingMarkets(false);
+        setIsLoadingStocks(false);
       }
     };
 
@@ -65,9 +105,34 @@ const LandingView: React.FC<LandingViewProps> = ({
       }
     };
 
-    getMarketData();
+    getStockData();
     getMarketNews();
   }, []);
+
+  const handleRefreshStocks = async () => {
+    try {
+      setIsLoadingStocks(true);
+      toast.info("Refreshing stock data...");
+      
+      // Create an array of promises to fetch quotes for all popular stocks
+      const promises = POPULAR_STOCKS.map(stock => getStockQuote(stock.symbol));
+      const results = await Promise.allSettled(promises);
+      
+      // Filter successful results and map them to our simplified format
+      const validResults = results
+        .filter((result): result is PromiseFulfilledResult<any> => result.status === 'fulfilled')
+        .map(result => result.value)
+        .filter(quote => quote); // Filter out any null values
+      
+      setStockData(validResults);
+      toast.success("Stock data refreshed successfully");
+    } catch (error) {
+      console.error("Failed to refresh stock data:", error);
+      toast.error("Unable to refresh stock data. Please try again later.");
+    } finally {
+      setIsLoadingStocks(false);
+    }
+  };
 
   return (
     <motion.div 
@@ -84,7 +149,7 @@ const LandingView: React.FC<LandingViewProps> = ({
         <FeatureCards />
       </div>
       
-      {/* Market Performance Section */}
+      {/* Popular Stocks Carousel */}
       <div className="max-w-screen-xl mx-auto px-4 py-6">
         <motion.div 
           initial={{ opacity: 0, y: 20 }}
@@ -92,9 +157,10 @@ const LandingView: React.FC<LandingViewProps> = ({
           viewport={{ once: true }}
           transition={{ duration: 0.7 }}
         >
-          <MarketPerformance 
-            marketData={marketData} 
-            isLoading={isLoadingMarkets} 
+          <PopularStocksCarousel 
+            stockData={stockData} 
+            isLoading={isLoadingStocks}
+            onRefresh={handleRefreshStocks}
           />
         </motion.div>
       </div>
