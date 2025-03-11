@@ -3,8 +3,6 @@ import { StockDataController } from "./stock-data-controller.ts";
 import { IndexController } from "./index-controller.ts";
 import { SectorIndustryController } from "./sector-industry-controller.ts";
 import { MarketMoversController } from "./market-movers-controller.ts";
-import { FINNHUB_API_KEY, fetchFromFinnhub } from "../../_shared/finnhub-utils.ts";
-import { MarketIndex, MarketRegion } from "../types.ts";
 
 export class MarketDataController {
   private stockDataController: StockDataController;
@@ -48,11 +46,6 @@ export class MarketDataController {
     // Market movers endpoints
     if (["biggest-gainers", "biggest-losers", "most-actives"].includes(endpoint)) {
       return this.handleMarketMoversRequest(endpoint);
-    }
-    
-    // New endpoint for market indices
-    if (endpoint === "market-indices") {
-      return this.fetchMarketIndices();
     }
     
     throw new Error(`Unsupported market data endpoint: ${endpoint}`);
@@ -166,88 +159,6 @@ export class MarketDataController {
         return await this.marketMoversController.fetchMostActives();
       default:
         throw new Error(`Unsupported market movers endpoint: ${endpoint}`);
-    }
-  }
-
-  /**
-   * Fetch real-time market indices using Finnhub
-   */
-  private async fetchMarketIndices(): Promise<MarketRegion[]> {
-    try {
-      // Common indices symbols
-      const americasIndices = [
-        { symbol: "^GSPC", name: "S&P 500" },
-        { symbol: "^DJI", name: "Dow 30" },
-        { symbol: "^IXIC", name: "Nasdaq" },
-        { symbol: "^RUT", name: "Russell 2000" },
-        { symbol: "^VIX", name: "VIX" }
-      ];
-      
-      const europeIndices = [
-        { symbol: "^FTSE", name: "FTSE 100" },
-        { symbol: "^FCHI", name: "CAC 40" },
-        { symbol: "^GDAXI", name: "DAX" },
-        { symbol: "^STOXX50E", name: "Euro Stoxx 50" },
-        { symbol: "^STOXX", name: "STOXX 600" }
-      ];
-      
-      const asiaIndices = [
-        { symbol: "^N225", name: "Nikkei 225" },
-        { symbol: "^HSI", name: "Hang Seng" },
-        { symbol: "^AXJO", name: "S&P/ASX 200" },
-        { symbol: "^KS11", name: "KOSPI" },
-        { symbol: "^BSESN", name: "BSE SENSEX" }
-      ];
-      
-      // Fetch data for all indices concurrently
-      const fetchIndicesData = async (indices: Array<{ symbol: string, name: string }>) => {
-        return Promise.all(
-          indices.map(async (index) => {
-            try {
-              // Finnhub requires stock symbols without ^ prefix
-              const finnhubSymbol = index.symbol.replace('^', '');
-              const url = `https://finnhub.io/api/v1/quote?symbol=${finnhubSymbol}&token=${FINNHUB_API_KEY}`;
-              const data = await fetchFromFinnhub(url);
-              
-              return {
-                symbol: index.symbol,
-                name: index.name,
-                price: data.c,
-                change: data.d,
-                changePercent: data.dp
-              };
-            } catch (error) {
-              console.error(`Error fetching data for ${index.symbol}:`, error);
-              // Return fallback data on error
-              return {
-                symbol: index.symbol,
-                name: index.name,
-                price: 0,
-                change: 0,
-                changePercent: 0
-              };
-            }
-          })
-        );
-      };
-      
-      // Fetch data for all regions
-      const [americasData, europeData, asiaData] = await Promise.all([
-        fetchIndicesData(americasIndices),
-        fetchIndicesData(europeIndices),
-        fetchIndicesData(asiaIndices)
-      ]);
-      
-      // Structure the data by region
-      return [
-        { name: "Americas", indices: americasData },
-        { name: "Europe", indices: europeData },
-        { name: "Asia", indices: asiaData }
-      ];
-    } catch (error) {
-      console.error("Error fetching market indices:", error);
-      // Return mock data as fallback
-      return this.indexController.getFallbackMarketIndices();
     }
   }
 }

@@ -1,78 +1,162 @@
 
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import { corsHeaders } from "../_shared/cors.ts";
-import { fetchHistoricalPrice, fetchNews, fetchPeers } from "./market-data.ts";
-import { ProfileController } from "./controllers/profile-controller.ts";
-import { FinancialController } from "./controllers/financial/financial-controller.ts";
+import { createResponse, createErrorResponse } from "../_shared/api-utils.ts";
+import { ProfileController } from "./controllers/profile/profile-controller.ts";
+import { FinancialController } from "./controllers/financial-controller.ts";
 import { MarketDataController } from "./controllers/market-data-controller.ts";
+import { DocumentsController } from "./controllers/documents-controller.ts";
 
 serve(async (req) => {
-  // Handle CORS preflight request
-  if (req.method === 'OPTIONS') {
-    return new Response(null, {
-      headers: corsHeaders
-    });
+  // Handle CORS preflight requests
+  if (req.method === "OPTIONS") {
+    return new Response(null, { headers: corsHeaders });
   }
-
+  
   try {
-    const { symbol, endpoint, period, type, limit, date, from, to, sector, industry, exchange, short } = await req.json();
-    let result;
+    const { 
+      symbol, 
+      endpoint, 
+      quarter, 
+      year, 
+      limit, 
+      period, 
+      from, 
+      to, 
+      page, 
+      date,
+      sector,
+      industry,
+      exchange,
+      short
+    } = await req.json();
     
-    // Profile endpoints
+    // For market data endpoints that don't require a symbol
+    const marketDataOnlyEndpoints = [
+      "sector-performance", "industry-performance", 
+      "historical-sector-performance", "historical-industry-performance",
+      "sector-pe", "industry-pe", "historical-sector-pe", "historical-industry-pe",
+      "biggest-gainers", "biggest-losers", "most-actives",
+      "index-list", "batch-index-quotes", "sp500-constituents", "nasdaq-constituents", "dowjones-constituents"
+    ];
+    
+    // For index endpoints that require a symbol
+    const indexEndpoints = [
+      "index-quote", "index-quote-short", "index-historical-eod-light", 
+      "index-historical-eod-full", "index-intraday-1min", "index-intraday-5min", 
+      "index-intraday-1hour"
+    ];
+    
+    if (!symbol && !marketDataOnlyEndpoints.includes(endpoint)) {
+      if (indexEndpoints.includes(endpoint)) {
+        return createResponse(
+          { error: "Symbol is required for index endpoint" },
+          400
+        );
+      } else {
+        return createResponse(
+          { error: "Symbol is required" },
+          400
+        );
+      }
+    }
+    
+    console.log(`Processing ${endpoint} request${symbol ? ` for ${symbol}` : ''}`);
+    
+    // Group endpoints by controller
     const profileController = new ProfileController();
-    if (["profile", "quote", "rating", "market-cap", "shares-float", "executives", 
-         "executive-compensation", "company-notes", "employee-count", 
-         "historical-market-cap", "historical-employee-count"].includes(endpoint)) {
-      result = await profileController.handleRequest(endpoint, symbol, { limit, date });
-    }
+    const financialController = new FinancialController();
+    const marketDataController = new MarketDataController();
+    const documentsController = new DocumentsController();
     
-    // Financial statement endpoints
-    else if (["income-statement", "balance-sheet", "cash-flow", "key-metrics", 
-             "financial-ratios", "financial-growth", "financial-score",
-             "income-statement-ttm", "balance-sheet-ttm", "cash-flow-ttm",
-             "key-metrics-ttm", "ratios-ttm"].includes(endpoint)) {
-      const financialController = new FinancialController();
-      result = await financialController.handleRequest(endpoint, symbol, { period, limit });
-    }
+    // Process request based on endpoint category
+    let data;
+    let attempts = 0;
+    const maxAttempts = 3;
     
-    // Market data endpoints
-    else if (["historical-price", "news", "peers", "sector-performance", "industry-performance",
-              "market-indices", "biggest-gainers", "biggest-losers", "most-actives"].includes(endpoint)) {
-      const marketDataController = new MarketDataController();
-      result = await marketDataController.handleRequest(endpoint, symbol, { from, to, date, sector, industry, exchange, short });
-    }
-    
-    // Legacy endpoints (direct functions)
-    else if (endpoint === "historical-price") {
-      result = await fetchHistoricalPrice(symbol);
-    }
-    else if (endpoint === "news") {
-      result = await fetchNews(symbol);
-    }
-    else if (endpoint === "peers") {
-      result = await fetchPeers(symbol);
-    }
-    else {
-      throw new Error(`Unsupported endpoint: ${endpoint}`);
-    }
-    
-    return new Response(JSON.stringify(result), {
-      headers: {
-        "Content-Type": "application/json",
-        ...corsHeaders
+    while (attempts < maxAttempts) {
+      try {
+        attempts++;
+        console.log(`Attempt ${attempts}/${maxAttempts} for ${endpoint}${symbol ? ` - ${symbol}` : ''}`);
+        
+        // Profile and company data endpoints
+        if (["profile", "quote", "rating", "peers", "market-cap", "historical-market-cap", 
+             "shares-float", "executives", "executive-compensation", "company-notes", 
+             "employee-count", "historical-employee-count"].includes(endpoint)) {
+          data = await profileController.handleRequest(endpoint, symbol);
+        }
+        // Financial statements endpoints
+        else if (["income-statement", "income-statement-ttm", "balance-sheet", "balance-sheet-ttm",
+                  "cash-flow", "cash-flow-ttm", "ratios", "ratios-ttm", "key-metrics", 
+                  "key-metrics-ttm", "financial-scores"].includes(endpoint)) {
+          data = await financialController.handleRequest(endpoint, symbol, period, limit);
+        }
+        // Market data endpoints
+        else if (["historical-price", "news", "peers",
+                 "sector-performance", "industry-performance", 
+                 "historical-sector-performance", "historical-industry-performance",
+                 "sector-pe", "industry-pe", "historical-sector-pe", "historical-industry-pe",
+                 "biggest-gainers", "biggest-losers", "most-actives",
+                 // Index endpoints
+                 "index-list", "index-quote", "index-quote-short", "batch-index-quotes",
+                 "index-historical-eod-light", "index-historical-eod-full",
+                 "index-intraday-1min", "index-intraday-5min", "index-intraday-1hour",
+                 "sp500-constituents", "nasdaq-constituents", "dowjones-constituents"].includes(endpoint)) {
+          const params = { from, to, date, sector, industry, exchange, short };
+          data = await marketDataController.handleRequest(endpoint, symbol, params);
+        }
+        // Documents endpoints
+        else if (["earning-transcripts", "transcript-content", "sec-filings"].includes(endpoint)) {
+          if (endpoint === "transcript-content" && (!quarter || !year)) {
+            return createResponse(
+              { error: "Quarter and year are required for transcript content" },
+              400
+            );
+          }
+          data = await documentsController.handleRequest(endpoint, symbol, quarter, year);
+        }
+        else {
+          return createResponse(
+            { error: `Invalid endpoint: ${endpoint}` },
+            400
+          );
+        }
+        
+        // If we got data successfully, break out of the retry loop
+        if (data && (!Array.isArray(data) || data.length > 0)) {
+          console.log(`Successfully retrieved ${endpoint} data${symbol ? ` for ${symbol}` : ''} on attempt ${attempts}`);
+          break;
+        } else {
+          console.warn(`Empty ${endpoint} data${symbol ? ` for ${symbol}` : ''} on attempt ${attempts}, retrying...`);
+          // Short delay before next attempt
+          if (attempts < maxAttempts) {
+            await new Promise(r => setTimeout(r, 1000 * attempts)); // Increasing delay with each attempt
+          }
+        }
+      } catch (error) {
+        console.error(`Error on attempt ${attempts} for ${endpoint}:`, error);
+        // Short delay before next attempt
+        if (attempts < maxAttempts) {
+          await new Promise(r => setTimeout(r, 1000 * attempts)); // Increasing delay with each attempt
+        } else {
+          // On the last attempt, return empty data rather than throwing
+          console.error(`All ${maxAttempts} attempts failed for ${endpoint}${symbol ? ` - ${symbol}` : ''}`);
+          
+          // Default empty responses based on endpoint type
+          if (endpoint === "profile") {
+            data = profileController.createPlaceholderProfile(symbol);
+          } else if (endpoint === "quote") {
+            data = profileController.createPlaceholderQuote(symbol);
+          } else {
+            data = [];
+          }
+        }
       }
-    });
+    }
+    
+    return createResponse(data);
   } catch (error) {
-    console.error("Error in get-stock-data function:", error);
-    
-    return new Response(JSON.stringify({ 
-      error: error.message || "An unknown error occurred" 
-    }), {
-      status: 500,
-      headers: {
-        "Content-Type": "application/json",
-        ...corsHeaders
-      }
-    });
+    console.error("Error processing request:", error);
+    return createErrorResponse(error);
   }
 });

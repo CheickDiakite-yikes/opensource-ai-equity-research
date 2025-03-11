@@ -261,45 +261,6 @@ export type Database = {
         }
         Relationships: []
       }
-      user_analytics: {
-        Row: {
-          action: string
-          category: string
-          created_at: string
-          id: string
-          label: string | null
-          metadata: Json | null
-          session_id: string
-          timestamp: string
-          user_id: string | null
-          value: number | null
-        }
-        Insert: {
-          action: string
-          category: string
-          created_at?: string
-          id?: string
-          label?: string | null
-          metadata?: Json | null
-          session_id: string
-          timestamp?: string
-          user_id?: string | null
-          value?: number | null
-        }
-        Update: {
-          action?: string
-          category?: string
-          created_at?: string
-          id?: string
-          label?: string | null
-          metadata?: Json | null
-          session_id?: string
-          timestamp?: string
-          user_id?: string | null
-          value?: number | null
-        }
-        Relationships: []
-      }
       user_preferences: {
         Row: {
           created_at: string | null
@@ -409,12 +370,6 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
-      cleanup_old_analytics_data: {
-        Args: {
-          days_to_keep?: number
-        }
-        Returns: number
-      }
       execute_sql: {
         Args: {
           sql_statement: string
@@ -425,12 +380,6 @@ export type Database = {
         Args: {
           p_doc_id: number
           p_doc_type: string
-        }
-        Returns: Json
-      }
-      get_analytics_insights: {
-        Args: {
-          timeframe?: string
         }
         Returns: Json
       }

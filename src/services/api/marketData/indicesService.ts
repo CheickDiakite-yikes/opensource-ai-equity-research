@@ -1,22 +1,30 @@
 
 import { invokeSupabaseFunction } from "../base";
-import { MarketIndex, MarketRegion } from "@/types/market/indexTypes";
 
-// Export the types for backward compatibility
-export type { MarketIndex, MarketRegion };
+export interface MarketIndex {
+  symbol: string;
+  name: string;
+  price: number;
+  change: number;
+  changePercent: number;
+}
+
+export interface MarketRegion {
+  name: string;
+  indices: MarketIndex[];
+}
 
 /**
- * Fetch market indices data from Finnhub API
+ * Fetch market indices data from FMP API
  */
 export const fetchMarketIndices = async (): Promise<MarketRegion[]> => {
   try {
-    const result = await invokeSupabaseFunction<MarketRegion[]>('get-stock-data', { 
+    const result = await invokeSupabaseFunction<any>('get-stock-data', { 
       endpoint: 'market-indices' 
     });
     
-    if (result && Array.isArray(result) && result.length > 0) {
-      console.log("Successfully fetched market indices from Finnhub");
-      return result;
+    if (result && Array.isArray(result)) {
+      return result as MarketRegion[];
     }
     
     console.warn("Falling back to mock market indices data");
