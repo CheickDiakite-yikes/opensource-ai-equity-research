@@ -1,5 +1,6 @@
-
 import { BaseController } from "./base-controller.ts";
+import { API_BASE_URLS } from "../../_shared/constants.ts";
+import { fetchWithRetry } from "../../_shared/fetch-utils.ts";
 
 const POLYGON_API_KEY = Deno.env.get("POLYGON_API_KEY") || "";
 
@@ -25,15 +26,30 @@ interface PolygonIndexResponse {
   status: string;
 }
 
+interface YahooQuoteResponse {
+  quoteResponse: {
+    result: {
+      shortName: string;
+      symbol: string;
+      regularMarketPrice: number;
+      regularMarketChange: number;
+      regularMarketChangePercent: number;
+      regularMarketTime: number;
+      marketState: string;
+    }[];
+    error: any;
+  };
+}
+
 export class IndexController extends BaseController {
   private readonly INDICES = {
-    americas: ["I:DJI", "I:SPX", "I:COMP", "I:RUT", "I:VIX"],
-    europe: ["I:FTSE", "I:FCHI", "I:GDAXI", "I:STOXX50E", "I:STOXX"],
-    asia: ["I:N225", "I:HSI", "I:AXJO", "I:KS11", "I:BSESN"]
+    americas: ["^GSPC", "^DJI", "^IXIC", "^RUT", "^VIX"],
+    europe: ["^FTSE", "^FCHI", "^GDAXI", "^STOXX50E", "^STOXX"],
+    asia: ["^N225", "^HSI", "^AXJO", "^KS11", "^BSESN"]
   };
 
   /**
-   * Fetch market indices data from Polygon API
+   * Fetch market indices data from Yahoo Finance API
    */
   async fetchMarketIndices(): Promise<any[]> {
     try {
@@ -41,31 +57,40 @@ export class IndexController extends BaseController {
       const results = [];
 
       for (const region of regions) {
-        const tickers = this.INDICES[region].join(',');
-        const url = `https://api.polygon.io/v3/snapshot/indices?ticker.any_of=${tickers}&apiKey=${POLYGON_API_KEY}`;
+        const symbols = this.INDICES[region];
+        const yahooSymbols = symbols.join(",");
         
-        console.log(`[${new Date().toISOString()}] Fetching ${region} indices from Polygon...`);
-        const response = await fetch(url);
+        // Yahoo Finance API URL
+        const url = `${API_BASE_URLS.YAHOO}/v7/finance/quote?symbols=${yahooSymbols}`;
+        
+        console.log(`[${new Date().toISOString()}] Fetching ${region} indices from Yahoo Finance...`);
+        const response = await fetchWithRetry(url, {}, 3, 1000);
         
         if (!response.ok) {
-          throw new Error(`Polygon API error: ${response.status}`);
+          throw new Error(`Yahoo Finance API error: ${response.status}`);
         }
 
-        const data = await response.json() as PolygonIndexResponse;
+        const data = await response.json() as YahooQuoteResponse;
+        
+        if (!data.quoteResponse || !data.quoteResponse.result || data.quoteResponse.error) {
+          console.error(`Yahoo Finance API error for ${region}:`, data.quoteResponse?.error || "Unknown error");
+          throw new Error(`Failed to get valid data from Yahoo Finance for ${region}`);
+        }
         
         // Log the timestamp of each data point
-        data.results.forEach(result => {
-          console.log(`[${new Date(result.last_updated).toISOString()}] ${result.ticker}: Last updated`);
+        data.quoteResponse.result.forEach(quote => {
+          const lastUpdated = new Date(quote.regularMarketTime * 1000).toISOString();
+          console.log(`[${new Date().toISOString()}] ${quote.symbol}: Last updated at ${lastUpdated}`);
         });
         
         // Transform data to match our expected format
-        const indices = data.results.map(result => ({
-          symbol: result.ticker,
-          name: result.name.replace('Index', '').trim(),
-          price: result.value,
-          change: result.session.change,
-          changePercent: result.session.change_percent,
-          lastUpdated: new Date(result.last_updated).toISOString() // Add lastUpdated field
+        const indices = data.quoteResponse.result.map(quote => ({
+          symbol: quote.symbol,
+          name: quote.shortName.replace(' Index', '').replace('S&P 500', 'S&P 500').trim(),
+          price: quote.regularMarketPrice,
+          change: quote.regularMarketChange,
+          changePercent: quote.regularMarketChangePercent,
+          lastUpdated: new Date(quote.regularMarketTime * 1000).toISOString() // Add lastUpdated field
         }));
 
         results.push({
@@ -76,12 +101,12 @@ export class IndexController extends BaseController {
 
       return results;
     } catch (error) {
-      console.error("[${new Date().toISOString()}] Error fetching market indices from Polygon:", error);
+      console.error(`[${new Date().toISOString()}] Error fetching market indices from Yahoo Finance:`, error);
       console.log("Falling back to mock data...");
       return this.getFallbackMarketIndices();
     }
   }
-
+  
   /**
    * Fallback mock data for market indices
    */

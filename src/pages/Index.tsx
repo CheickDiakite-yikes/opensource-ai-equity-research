@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Header from "@/components/layout/Header";
 import LandingView from "@/components/home/LandingView";
 import StockView from "@/components/stocks/StockView";
@@ -7,11 +7,15 @@ import { toast } from "sonner";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { useMediaQuery } from "@/hooks/use-mobile";
 import { Starfield } from "@/components/ui/starfield";
+import { fetchMarketIndices } from "@/services/api/marketData/indicesService";
+import { MarketRegion } from "@/types/market/indexTypes";
 
 const Index = () => {
   const [symbol, setSymbol] = useState<string>("");
   const [searchedSymbol, setSearchedSymbol] = useState<string>("");
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [marketData, setMarketData] = useState<MarketRegion[]>([]);
+  const [isLoadingMarketData, setIsLoadingMarketData] = useState<boolean>(true);
   const [recentSearches, setRecentSearches] = useState<string[]>([]);
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -31,6 +35,33 @@ const Index = () => {
     { symbol: "PYPL", name: "PayPal Holdings, Inc." },
     { symbol: "NFLX", name: "Netflix, Inc." }
   ]);
+
+  const loadMarketData = useCallback(async () => {
+    setIsLoadingMarketData(true);
+    try {
+      console.log("Fetching market indices data...");
+      const data = await fetchMarketIndices();
+      console.log("Market data loaded:", data);
+      setMarketData(data);
+    } catch (error) {
+      console.error("Error loading market data:", error);
+      toast.error("Failed to load market data");
+    } finally {
+      setIsLoadingMarketData(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadMarketData();
+    
+    // Set up auto-refresh every 10 minutes
+    const refreshInterval = setInterval(() => {
+      console.log("Auto-refreshing market data...");
+      loadMarketData();
+    }, 10 * 60 * 1000); // 10 minutes
+    
+    return () => clearInterval(refreshInterval);
+  }, [loadMarketData]);
 
   useEffect(() => {
     const savedSearches = localStorage.getItem('recentSearches');
@@ -136,6 +167,9 @@ const Index = () => {
             recentSearches={recentSearches}
             featuredSymbols={featuredSymbols}
             onSelectSymbol={searchSymbol}
+            marketData={marketData}
+            isLoadingMarketData={isLoadingMarketData}
+            onRefreshMarketData={loadMarketData}
           />
         ) : (
           <StockView 
