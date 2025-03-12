@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { StockPrediction } from "@/types/ai-analysis/predictionTypes";
@@ -170,11 +171,11 @@ export const deletePricePrediction = async (predictionId: string): Promise<boole
   try {
     console.log(`Deleting prediction with ID: ${predictionId}`);
     
-    // Clear ON CONFLICT or transaction handling and use a direct delete with match
-    const { data, error } = await supabase
+    // Simple delete without any ON CONFLICT clause
+    const { error } = await supabase
       .from("user_price_predictions")
       .delete()
-      .match({ id: predictionId });
+      .eq("id", predictionId);
 
     if (error) {
       console.error("Error deleting prediction:", error);

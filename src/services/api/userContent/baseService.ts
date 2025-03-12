@@ -77,7 +77,7 @@ export const manageItemLimit = async (
     const idsToDelete = oldestItems.map(item => item.id);
     console.log(`Deleting oldest ${tableName}:`, idsToDelete);
     
-    // Delete items one by one to avoid ON CONFLICT issues
+    // Delete items one by one to avoid issues
     for (const id of idsToDelete) {
       const { error: deleteError } = await supabase
         .from(tableName)
