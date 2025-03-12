@@ -24,59 +24,106 @@ export const savePricePrediction = async (
     
     console.log("User ID:", userId);
 
-    // First, count existing predictions
-    const { count, error: countError } = await supabase
+    // First, check if this user already has a prediction for this symbol
+    const { data: existingPredictions, error: checkError } = await supabase
       .from("user_price_predictions")
-      .select("*", { count: "exact", head: true })
-      .eq("user_id", userId);
-
-    if (countError) {
-      console.error("Error counting predictions:", countError);
-      toast.error("Failed to save prediction");
+      .select("id")
+      .eq("user_id", userId)
+      .eq("symbol", symbol)
+      .limit(1);
+      
+    if (checkError) {
+      console.error("Error checking existing predictions:", checkError);
+      toast.error("Failed to check existing predictions");
       return null;
     }
-
-    console.log("Current prediction count:", count);
-
-    // Manage item limit
-    const limitManaged = await manageItemLimit("user_price_predictions", userId, count);
-    if (!limitManaged) {
-      console.error("Failed to manage item limit");
-      return null;
-    }
-
-    // Now, insert the new prediction - use type cast to Json
-    console.log("Inserting prediction into database");
-    console.log("Prediction data sample:", JSON.stringify(predictionData).substring(0, 200) + "...");
     
-    const { data, error } = await supabase
-      .from("user_price_predictions")
-      .insert({
-        user_id: userId,
-        symbol,
-        company_name: companyName,
-        prediction_data: predictionData as unknown as Json,
-      })
-      .select("id");
+    const existingPredictionId = existingPredictions && existingPredictions.length > 0 ? existingPredictions[0].id : null;
+    
+    // If we're not updating an existing prediction, check the total count and manage limit
+    if (!existingPredictionId) {
+      // Get current count of user's predictions
+      const { count, error: countError } = await supabase
+        .from("user_price_predictions")
+        .select("*", { count: "exact", head: true })
+        .eq("user_id", userId);
 
-    if (error) {
-      console.error("Error saving prediction:", error);
-      toast.error("Failed to save prediction: " + error.message);
-      return null;
+      if (countError) {
+        console.error("Error counting predictions:", countError);
+        toast.error("Failed to save prediction");
+        return null;
+      }
+
+      console.log("Current prediction count:", count);
+
+      // Manage item limit - delete oldest if over limit
+      const limitManaged = await manageItemLimit("user_price_predictions", userId, count);
+      if (!limitManaged) {
+        console.error("Failed to manage item limit");
+        return null;
+      }
     }
 
-    if (!data || data.length === 0) {
+    let result;
+    
+    // Insert or update based on whether prediction exists
+    if (existingPredictionId) {
+      console.log("Updating existing prediction with ID:", existingPredictionId);
+      
+      const { data, error } = await supabase
+        .from("user_price_predictions")
+        .update({
+          company_name: companyName,
+          prediction_data: predictionData as unknown as Json,
+          created_at: new Date().toISOString(),
+          expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
+        })
+        .eq("id", existingPredictionId)
+        .select("id");
+        
+      if (error) {
+        console.error("Error updating prediction:", error);
+        toast.error("Failed to update prediction: " + error.message);
+        return null;
+      }
+      
+      result = { data, id: existingPredictionId };
+    } else {
+      console.log("Inserting new prediction");
+      console.log("Prediction data sample:", JSON.stringify(predictionData).substring(0, 200) + "...");
+      
+      const { data, error } = await supabase
+        .from("user_price_predictions")
+        .insert({
+          user_id: userId,
+          symbol,
+          company_name: companyName,
+          prediction_data: predictionData as unknown as Json
+        })
+        .select("id");
+        
+      if (error) {
+        console.error("Error saving prediction:", error);
+        toast.error("Failed to save prediction: " + error.message);
+        return null;
+      }
+      
+      result = { data };
+    }
+
+    if (!result.data || result.data.length === 0) {
       console.error("No data returned after saving prediction");
       toast.error("Failed to save prediction - no data returned");
       return null;
     }
 
-    console.log("Prediction saved successfully. ID:", data[0].id);
-    toast.success("Price prediction saved successfully");
-    return data[0].id;
+    const predictionId = existingPredictionId || (result.data[0] ? result.data[0].id : null);
+    console.log("Prediction saved successfully. ID:", predictionId);
+    toast.success(existingPredictionId ? "Price prediction updated successfully" : "Price prediction saved successfully");
+    return predictionId;
   } catch (error) {
     console.error("Error in savePricePrediction:", error);
-    toast.error("An unexpected error occurred");
+    toast.error("An unexpected error occurred while saving prediction");
     return null;
   }
 };
@@ -125,6 +172,7 @@ export const getUserPricePredictions = async () => {
  */
 export const deletePricePrediction = async (predictionId: string): Promise<boolean> => {
   try {
+    console.log("Deleting prediction with ID:", predictionId);
     const { error } = await supabase
       .from("user_price_predictions")
       .delete()
@@ -132,10 +180,11 @@ export const deletePricePrediction = async (predictionId: string): Promise<boole
 
     if (error) {
       console.error("Error deleting prediction:", error);
-      toast.error("Failed to delete prediction");
+      toast.error("Failed to delete prediction: " + error.message);
       return false;
     }
 
+    console.log("Prediction deleted successfully");
     toast.success("Prediction deleted successfully");
     return true;
   } catch (error) {
