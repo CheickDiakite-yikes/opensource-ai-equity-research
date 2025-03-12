@@ -23,8 +23,10 @@ export const useSavedPredictions = () => {
   const { user, isLoading, setIsLoading, error, setError, checkUserLoggedIn } = useSavedContentBase();
 
   const fetchPredictions = useCallback(async () => {
-    if (!checkUserLoggedIn()) {
+    if (!user) {
+      console.log("useSavedPredictions: No user, clearing predictions");
       setPredictions([]);
+      setIsLoading(false);
       return;
     }
 
@@ -72,7 +74,7 @@ export const useSavedPredictions = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [user, setIsLoading, setError, checkUserLoggedIn]);
+  }, [user, setIsLoading, setError]);
 
   const deletePrediction = async (predictionId: string) => {
     console.log("Deleting prediction:", predictionId);
@@ -105,12 +107,14 @@ export const useSavedPredictions = () => {
 
   // Fetch predictions when the component mounts or user changes
   useEffect(() => {
+    // Only fetch if we have a user
     if (user) {
       console.log("useSavedPredictions useEffect - fetching predictions for user:", user.id);
       fetchPredictions();
     } else {
       console.log("useSavedPredictions useEffect - no user, clearing predictions");
       setPredictions([]);
+      setIsLoading(false);
     }
   }, [user, fetchPredictions]);
 

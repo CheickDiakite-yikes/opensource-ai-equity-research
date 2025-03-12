@@ -11,20 +11,38 @@ import { toast } from "sonner";
 
 export const useSavedContentPage = () => {
   const { user, isLoading: authLoading } = useAuth();
-  const { reports, isLoading: reportsLoading, deleteReport, fetchReports } = useSavedReports();
-  const { predictions, isLoading: predictionsLoading, deletePrediction, fetchPredictions } = useSavedPredictions();
+  const { reports, isLoading: reportsLoading, error: reportsError, deleteReport, fetchReports } = useSavedReports();
+  const { predictions, isLoading: predictionsLoading, error: predictionsError, deletePrediction, fetchPredictions } = useSavedPredictions();
   const [selectedReport, setSelectedReport] = useState<SavedReport | null>(null);
   const [selectedPrediction, setSelectedPrediction] = useState<SavedPrediction | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
-  // Refresh reports when page loads or user changes
+  // Show toast for errors
   useEffect(() => {
-    if (user) {
-      console.log("SavedContent component mounted with user:", user.id);
-      fetchReports();
-      fetchPredictions();
-    } else {
-      console.log("SavedContent component mounted without user");
+    if (reportsError) {
+      toast.error(`Error loading reports: ${reportsError}`);
+    }
+    if (predictionsError) {
+      toast.error(`Error loading predictions: ${predictionsError}`);
+    }
+  }, [reportsError, predictionsError]);
+
+  const isLoading = authLoading || reportsLoading || predictionsLoading;
+
+  // Refresh all data manually
+  const handleRefresh = useCallback(async () => {
+    if (!user) return;
+    
+    setIsRefreshing(true);
+    console.log("Manually refreshing content...");
+    try {
+      await Promise.all([fetchReports(), fetchPredictions()]);
+      toast.success("Content refreshed");
+    } catch (error) {
+      console.error("Error refreshing content:", error);
+      toast.error("Failed to refresh content");
+    } finally {
+      setIsRefreshing(false);
     }
   }, [user, fetchReports, fetchPredictions]);
 
@@ -53,8 +71,6 @@ export const useSavedContentPage = () => {
       setSelectedPrediction(null);
     }
   }, [predictions, selectedPrediction]);
-
-  const isLoading = authLoading || reportsLoading || predictionsLoading;
 
   const handleSelectReport = (report: SavedReport) => {
     console.log("Selecting report:", report.id);
@@ -111,20 +127,6 @@ export const useSavedContentPage = () => {
     URL.revokeObjectURL(url);
     
     toast.success("Report downloaded as HTML");
-  };
-
-  const handleRefresh = async () => {
-    setIsRefreshing(true);
-    console.log("Manually refreshing content...");
-    try {
-      await Promise.all([fetchReports(), fetchPredictions()]);
-      toast.success("Content refreshed");
-    } catch (error) {
-      console.error("Error refreshing content:", error);
-      toast.error("Failed to refresh content");
-    } finally {
-      setIsRefreshing(false);
-    }
   };
 
   return {

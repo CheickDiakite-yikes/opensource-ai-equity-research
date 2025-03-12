@@ -24,8 +24,10 @@ export const useSavedReports = () => {
   const { user, isLoading, setIsLoading, error, setError, checkUserLoggedIn } = useSavedContentBase();
 
   const fetchReports = useCallback(async () => {
-    if (!checkUserLoggedIn()) {
+    if (!user) {
+      console.log("useSavedReports: No user, clearing reports");
       setReports([]);
+      setIsLoading(false);
       return;
     }
 
@@ -36,7 +38,6 @@ export const useSavedReports = () => {
     try {
       const data = await getUserResearchReports();
       
-      // Enhanced debug logging
       console.log("Raw data from getUserResearchReports:", data);
       
       if (!data || data.length === 0) {
@@ -69,12 +70,7 @@ export const useSavedReports = () => {
         };
       }) as SavedReport[];
       
-      // Debug
       console.log(`Fetched ${convertedReports.length} reports`);
-      convertedReports.forEach(report => {
-        console.log(`Report ${report.id}: Symbol=${report.symbol}, HTML content: ${report.html_content ? `YES (${report.html_content.length} chars)` : 'NO'}`);
-      });
-      
       setReports(convertedReports);
     } catch (err) {
       console.error("Error fetching saved reports:", err);
@@ -82,7 +78,7 @@ export const useSavedReports = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [user, setIsLoading, setError, checkUserLoggedIn]);
+  }, [user, setIsLoading, setError]);
 
   const deleteReport = async (reportId: string) => {
     console.log("Deleting report:", reportId);
@@ -113,12 +109,14 @@ export const useSavedReports = () => {
 
   // Fetch reports when the component mounts or user changes
   useEffect(() => {
+    // Only fetch if we have a user
     if (user) {
       console.log("useSavedReports useEffect - fetching reports for user:", user.id);
       fetchReports();
     } else {
       console.log("useSavedReports useEffect - no user, clearing reports");
       setReports([]);
+      setIsLoading(false);
     }
   }, [user, fetchReports]);
 

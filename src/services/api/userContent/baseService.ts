@@ -41,7 +41,7 @@ export const manageItemLimit = async (
     const deleteCount = count - MAX_SAVED_ITEMS + 1;
     console.log(`Need to delete ${deleteCount} oldest items from ${tableName}`);
 
-    // Get the oldest items
+    // Get the oldest items to delete
     const { data: oldestItems, error: fetchError } = await supabase
       .from(tableName)
       .select("id")
@@ -74,6 +74,7 @@ export const manageItemLimit = async (
 
     if (deleteError) {
       console.error(`Error deleting items from ${tableName}:`, deleteError);
+      toast.error(`Failed to delete old items from ${tableName}: ${deleteError.message}`);
       return false;
     }
     
@@ -81,6 +82,7 @@ export const manageItemLimit = async (
     return true;
   } catch (error) {
     console.error(`Error in manageItemLimit for ${tableName}:`, error);
+    toast.error(`An unexpected error occurred managing item limits`);
     return false;
   }
 };
