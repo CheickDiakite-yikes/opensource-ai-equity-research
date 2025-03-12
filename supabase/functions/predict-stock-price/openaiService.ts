@@ -83,7 +83,7 @@ The current price is $${data.currentPrice.toFixed(2)} - each of your predictions
     const openAIApiKey = Deno.env.get("OPENAI_API_KEY") || "";
     const quickMode = data.quickMode === true;
     
-    // For featured companies dashboard use o3-mini for consistent performance
+    // For featured companies dashboard use GPT-4o for consistent performance
     // For detailed reports use the same model for now
     const modelToUse = OPENAI_MODELS.DEFAULT;
     
