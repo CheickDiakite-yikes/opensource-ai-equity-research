@@ -67,6 +67,7 @@ export const saveResearchReport = async (
     // Set expiration date (7 days from now)
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + 7);
+    const expiresAtString = expiresAt.toISOString();
 
     if (existingReport) {
       // Update existing report
@@ -77,7 +78,7 @@ export const saveResearchReport = async (
           company_name: companyName,
           report_data: reportData as unknown as Json,
           html_content: htmlContent,
-          expires_at: expiresAt.toISOString() // Convert Date to ISO string
+          expires_at: expiresAtString
         })
         .eq("id", existingReport.id)
         .select("id, html_content");
@@ -125,7 +126,7 @@ export const saveResearchReport = async (
           company_name: companyName,
           report_data: reportData as unknown as Json,
           html_content: htmlContent,
-          expires_at: expiresAt.toISOString() // Convert Date to ISO string
+          expires_at: expiresAtString
         })
         .select("id, html_content");
 

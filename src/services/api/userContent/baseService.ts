@@ -25,6 +25,11 @@ export const getUserId = async (): Promise<string | null> => {
 };
 
 /**
+ * Type-safe table name for Supabase queries
+ */
+type UserContentTable = 'user_price_predictions' | 'user_research_reports';
+
+/**
  * Manage item limit for user content tables
  * Delete oldest items if the user has reached the limit
  * @param tableName - The name of the table to manage
@@ -33,7 +38,7 @@ export const getUserId = async (): Promise<string | null> => {
  * @returns true if managed successfully, false otherwise
  */
 export const manageItemLimit = async (
-  tableName: string,
+  tableName: UserContentTable,
   userId: string,
   currentCount: number
 ): Promise<boolean> => {

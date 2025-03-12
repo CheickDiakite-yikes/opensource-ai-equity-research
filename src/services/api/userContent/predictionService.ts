@@ -41,6 +41,7 @@ export const savePricePrediction = async (
     // Set expiration date (7 days from now)
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + 7);
+    const expiresAtString = expiresAt.toISOString();
 
     if (existingPrediction) {
       // Update existing prediction
@@ -50,7 +51,7 @@ export const savePricePrediction = async (
         .update({
           company_name: companyName,
           prediction_data: predictionData as unknown as Json,
-          expires_at: expiresAt.toISOString() // Convert Date to ISO string
+          expires_at: expiresAtString
         })
         .eq("id", existingPrediction.id)
         .select("id");
@@ -97,7 +98,7 @@ export const savePricePrediction = async (
           symbol,
           company_name: companyName,
           prediction_data: predictionData as unknown as Json,
-          expires_at: expiresAt.toISOString() // Convert Date to ISO string
+          expires_at: expiresAtString
         })
         .select("id");
 
