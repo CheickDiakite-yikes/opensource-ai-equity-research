@@ -87,7 +87,7 @@ export const savePricePrediction = async (
         return null;
       }
 
-      // Insert new prediction
+      // Insert new prediction - DO NOT USE ON CONFLICT
       console.log("Inserting new prediction into database");
       console.log("Prediction data sample:", JSON.stringify(predictionData).substring(0, 200) + "...");
       
@@ -171,7 +171,7 @@ export const deletePricePrediction = async (predictionId: string): Promise<boole
   try {
     console.log(`Deleting prediction with ID: ${predictionId}`);
     
-    // Simple delete without any ON CONFLICT clause
+    // Use .eq for deletion without any ON CONFLICT clause
     const { error } = await supabase
       .from("user_price_predictions")
       .delete()

@@ -27,7 +27,7 @@ export const getUserId = async (): Promise<string | null> => {
 /**
  * Type-safe table name for Supabase queries
  */
-type UserContentTable = 'user_price_predictions' | 'user_research_reports';
+export type UserContentTable = 'user_price_predictions' | 'user_research_reports';
 
 /**
  * Manage item limit for user content tables

@@ -114,7 +114,7 @@ export const saveResearchReport = async (
         return null;
       }
 
-      // Insert new report
+      // Insert new report - NO ON CONFLICT
       console.log("Inserting report into database with HTML:", htmlContent ? "YES" : "NO");
       console.log("Report data sample:", JSON.stringify(reportData).substring(0, 200) + "...");
       
@@ -199,7 +199,7 @@ export const deleteResearchReport = async (reportId: string): Promise<boolean> =
   try {
     console.log(`Deleting report with ID: ${reportId}`);
     
-    // Simple delete without any ON CONFLICT clause
+    // Use .eq for deletion without any ON CONFLICT clause
     const { error } = await supabase
       .from("user_research_reports")
       .delete()
