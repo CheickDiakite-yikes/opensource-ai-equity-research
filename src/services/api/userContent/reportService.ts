@@ -114,20 +114,20 @@ export const saveResearchReport = async (
         return null;
       }
 
-      // Insert new report - NO ON CONFLICT
+      // Insert new report - Using a simple insert without ON CONFLICT
       console.log("Inserting report into database with HTML:", htmlContent ? "YES" : "NO");
       console.log("Report data sample:", JSON.stringify(reportData).substring(0, 200) + "...");
       
       const { data, error } = await supabase
         .from("user_research_reports")
-        .insert({
+        .insert([{
           user_id: userId,
           symbol,
           company_name: companyName,
           report_data: reportData as unknown as Json,
           html_content: htmlContent,
           expires_at: expiresAtString
-        })
+        }])
         .select("id, html_content");
 
       if (error) {
@@ -199,7 +199,7 @@ export const deleteResearchReport = async (reportId: string): Promise<boolean> =
   try {
     console.log(`Deleting report with ID: ${reportId}`);
     
-    // Use .eq for deletion without any ON CONFLICT clause
+    // Using the correct delete approach with .eq
     const { error } = await supabase
       .from("user_research_reports")
       .delete()
