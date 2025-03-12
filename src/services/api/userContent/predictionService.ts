@@ -64,22 +64,26 @@ export const savePricePrediction = async (
       }
     }
 
-    let result;
+    // Prepare prediction data
+    const predictionInfo = {
+      user_id: userId,
+      symbol,
+      company_name: companyName,
+      prediction_data: predictionData as unknown as Json,
+      created_at: new Date().toISOString(),
+      expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
+    };
+    
+    let newPredictionId = null;
     
     // Insert or update based on whether prediction exists
     if (existingPredictionId) {
       console.log("Updating existing prediction with ID:", existingPredictionId);
       
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from("user_price_predictions")
-        .update({
-          company_name: companyName,
-          prediction_data: predictionData as unknown as Json,
-          created_at: new Date().toISOString(),
-          expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
-        })
-        .eq("id", existingPredictionId)
-        .select("id");
+        .update(predictionInfo)
+        .eq("id", existingPredictionId);
         
       if (error) {
         console.error("Error updating prediction:", error);
@@ -87,20 +91,15 @@ export const savePricePrediction = async (
         return null;
       }
       
-      result = { data, id: existingPredictionId };
+      newPredictionId = existingPredictionId;
     } else {
       console.log("Inserting new prediction");
       console.log("Prediction data sample:", JSON.stringify(predictionData).substring(0, 200) + "...");
       
       const { data, error } = await supabase
         .from("user_price_predictions")
-        .insert({
-          user_id: userId,
-          symbol,
-          company_name: companyName,
-          prediction_data: predictionData as unknown as Json
-        })
-        .select("id");
+        .insert(predictionInfo)
+        .select();
         
       if (error) {
         console.error("Error saving prediction:", error);
@@ -108,19 +107,20 @@ export const savePricePrediction = async (
         return null;
       }
       
-      result = { data };
+      if (data && data.length > 0) {
+        newPredictionId = data[0].id;
+      }
     }
 
-    if (!result.data || result.data.length === 0) {
-      console.error("No data returned after saving prediction");
-      toast.error("Failed to save prediction - no data returned");
+    if (!newPredictionId) {
+      console.error("No prediction ID returned after save operation");
+      toast.error("Failed to save prediction - no ID returned");
       return null;
     }
 
-    const predictionId = existingPredictionId || (result.data[0] ? result.data[0].id : null);
-    console.log("Prediction saved successfully. ID:", predictionId);
+    console.log("Prediction saved successfully. ID:", newPredictionId);
     toast.success(existingPredictionId ? "Price prediction updated successfully" : "Price prediction saved successfully");
-    return predictionId;
+    return newPredictionId;
   } catch (error) {
     console.error("Error in savePricePrediction:", error);
     toast.error("An unexpected error occurred while saving prediction");

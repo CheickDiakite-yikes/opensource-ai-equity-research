@@ -26,9 +26,9 @@ export const saveResearchReport = async (
     console.log("User ID:", userId);
 
     // First, check if this user already has a report for this symbol
-    const { data: existingReports, error: checkError, count } = await supabase
+    const { data: existingReports, error: checkError } = await supabase
       .from("user_research_reports")
-      .select("id", { count: "exact" })
+      .select("id")
       .eq("user_id", userId)
       .eq("symbol", symbol)
       .limit(1);
@@ -90,23 +90,27 @@ export const saveResearchReport = async (
       console.error("Error generating HTML content:", htmlError);
     }
 
-    let result;
+    // Prepare report data
+    const reportInfo = {
+      user_id: userId,
+      symbol,
+      company_name: companyName,
+      report_data: reportData as unknown as Json,
+      html_content: htmlContent,
+      created_at: new Date().toISOString(),
+      expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
+    };
+    
+    let newReportId = null;
     
     // Insert or update based on whether report exists
     if (existingReportId) {
       console.log("Updating existing report with ID:", existingReportId);
       
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from("user_research_reports")
-        .update({
-          company_name: companyName,
-          report_data: reportData as unknown as Json,
-          html_content: htmlContent,
-          created_at: new Date().toISOString(),
-          expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
-        })
-        .eq("id", existingReportId)
-        .select("id");
+        .update(reportInfo)
+        .eq("id", existingReportId);
         
       if (error) {
         console.error("Error updating report:", error);
@@ -114,20 +118,14 @@ export const saveResearchReport = async (
         return null;
       }
       
-      result = { data, id: existingReportId };
+      newReportId = existingReportId;
     } else {
       console.log("Inserting new report");
       
       const { data, error } = await supabase
         .from("user_research_reports")
-        .insert({
-          user_id: userId,
-          symbol,
-          company_name: companyName,
-          report_data: reportData as unknown as Json,
-          html_content: htmlContent
-        })
-        .select("id");
+        .insert(reportInfo)
+        .select();
         
       if (error) {
         console.error("Error saving report:", error);
@@ -135,19 +133,20 @@ export const saveResearchReport = async (
         return null;
       }
       
-      result = { data };
+      if (data && data.length > 0) {
+        newReportId = data[0].id;
+      }
     }
 
-    if (!result.data || result.data.length === 0) {
-      console.error("No data returned after saving report");
-      toast.error("Failed to save report - no data returned");
+    if (!newReportId) {
+      console.error("No report ID returned after save operation");
+      toast.error("Failed to save report - no ID returned");
       return null;
     }
 
-    const reportId = existingReportId || (result.data[0] ? result.data[0].id : null);
-    console.log("Report saved successfully. ID:", reportId);
+    console.log("Report saved successfully. ID:", newReportId);
     toast.success(existingReportId ? "Research report updated successfully" : "Research report saved successfully");
-    return reportId;
+    return newReportId;
   } catch (error) {
     console.error("Error in saveResearchReport:", error);
     toast.error("An unexpected error occurred");
