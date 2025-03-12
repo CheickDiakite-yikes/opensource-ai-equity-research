@@ -100,6 +100,7 @@ export const savePricePrediction = async (
     } else {
       console.log("Inserting new prediction");
       
+      // Don't use upsert with on conflict, use simple insert for new predictions
       const { data, error } = await supabase
         .from("user_price_predictions")
         .insert(predictionInfo)

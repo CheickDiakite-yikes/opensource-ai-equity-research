@@ -62,23 +62,22 @@ export const manageItemLimit = async (
     
     console.log(`Found ${oldestItems.length} items to delete from ${tableName}`);
     
-    // Get array of IDs to delete
-    const idsToDelete = oldestItems.map(item => item.id);
-    console.log(`Deleting items with IDs: ${idsToDelete.join(', ')}`);
-    
-    // Delete items in a single operation
-    const { error: deleteError } = await supabase
-      .from(tableName)
-      .delete()
-      .in('id', idsToDelete);
-
-    if (deleteError) {
-      console.error(`Error deleting items from ${tableName}:`, deleteError);
-      toast.error(`Failed to delete old items from ${tableName}: ${deleteError.message}`);
-      return false;
+    // Delete items one by one to avoid on_conflict issues
+    for (const item of oldestItems) {
+      console.log(`Deleting item with ID: ${item.id}`);
+      const { error: deleteError } = await supabase
+        .from(tableName)
+        .delete()
+        .eq('id', item.id);
+        
+      if (deleteError) {
+        console.error(`Error deleting item ${item.id} from ${tableName}:`, deleteError);
+        toast.error(`Failed to delete old item: ${deleteError.message}`);
+        // Continue with next item even if this one failed
+      }
     }
     
-    console.log(`Successfully deleted ${idsToDelete.length} items from ${tableName}`);
+    console.log(`Successfully processed deletion of ${oldestItems.length} items from ${tableName}`);
     return true;
   } catch (error) {
     console.error(`Error in manageItemLimit for ${tableName}:`, error);

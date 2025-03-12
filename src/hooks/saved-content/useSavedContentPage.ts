@@ -11,8 +11,22 @@ import { toast } from "sonner";
 
 export const useSavedContentPage = () => {
   const { user, isLoading: authLoading } = useAuth();
-  const { reports, isLoading: reportsLoading, error: reportsError, deleteReport, fetchReports } = useSavedReports();
-  const { predictions, isLoading: predictionsLoading, error: predictionsError, deletePrediction, fetchPredictions } = useSavedPredictions();
+  const { 
+    reports, 
+    isLoading: reportsLoading, 
+    error: reportsError, 
+    deleteReport, 
+    fetchReports 
+  } = useSavedReports();
+  
+  const { 
+    predictions, 
+    isLoading: predictionsLoading, 
+    error: predictionsError, 
+    deletePrediction, 
+    fetchPredictions 
+  } = useSavedPredictions();
+  
   const [selectedReport, setSelectedReport] = useState<SavedReport | null>(null);
   const [selectedPrediction, setSelectedPrediction] = useState<SavedPrediction | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -31,7 +45,10 @@ export const useSavedContentPage = () => {
 
   // Refresh all data manually
   const handleRefresh = useCallback(async () => {
-    if (!user) return;
+    if (!user) {
+      toast.error("You must be signed in to view saved content");
+      return;
+    }
     
     setIsRefreshing(true);
     console.log("Manually refreshing content...");

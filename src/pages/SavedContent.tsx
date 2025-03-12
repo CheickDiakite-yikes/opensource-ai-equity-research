@@ -38,7 +38,7 @@ const SavedContent = () => {
     return (
       <>
         <AppHeader featuredSymbols={featuredSymbols} />
-        <div className="flex items-center justify-center min-h-[calc(100vh-80px)]">
+        <div className="flex flex-col items-center justify-center min-h-[calc(100vh-80px)]">
           <motion.div
             animate={{ 
               rotate: 360,
@@ -48,7 +48,7 @@ const SavedContent = () => {
           >
             <div className="h-8 w-8 rounded-full border-2 border-primary border-t-transparent"></div>
           </motion.div>
-          <span className="ml-3 text-muted-foreground">Authenticating...</span>
+          <span className="mt-4 text-muted-foreground">Authenticating your account...</span>
         </div>
       </>
     );

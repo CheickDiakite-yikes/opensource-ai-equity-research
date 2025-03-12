@@ -21,12 +21,26 @@ export interface SavedReport {
 
 export const useSavedReports = () => {
   const [reports, setReports] = useState<SavedReport[]>([]);
-  const { user, isLoading, setIsLoading, error, setError, checkUserLoggedIn } = useSavedContentBase();
+  const { 
+    user, 
+    authLoading,
+    isLoading, 
+    setIsLoading, 
+    error, 
+    setError, 
+    checkUserLoggedIn 
+  } = useSavedContentBase();
 
   const fetchReports = useCallback(async () => {
+    if (authLoading) {
+      console.log("Auth is still loading, waiting...");
+      return;
+    }
+    
     if (!user) {
       console.log("useSavedReports: No user, clearing reports");
       setReports([]);
+      setError(null);
       setIsLoading(false);
       return;
     }
@@ -75,10 +89,11 @@ export const useSavedReports = () => {
     } catch (err) {
       console.error("Error fetching saved reports:", err);
       setError("Failed to load saved reports");
+      toast.error("Failed to load saved reports");
     } finally {
       setIsLoading(false);
     }
-  }, [user, setIsLoading, setError]);
+  }, [user, authLoading, setIsLoading, setError]);
 
   const deleteReport = async (reportId: string) => {
     console.log("Deleting report:", reportId);
@@ -86,6 +101,7 @@ export const useSavedReports = () => {
     if (success) {
       console.log("Report deleted successfully, updating state");
       setReports(prevReports => prevReports.filter(report => report.id !== reportId));
+      toast.success("Report deleted successfully");
     } else {
       console.error("Failed to delete report");
     }
@@ -101,24 +117,35 @@ export const useSavedReports = () => {
       // Refresh reports list after saving
       console.log("Report saved successfully, refreshing reports list");
       await fetchReports();
+      toast.success("Report saved successfully");
     } else {
       console.error("Failed to save report - no ID returned");
+      toast.error("Failed to save report");
     }
     return reportId;
   };
 
   // Fetch reports when the component mounts or user changes
   useEffect(() => {
-    // Only fetch if we have a user
-    if (user) {
-      console.log("useSavedReports useEffect - fetching reports for user:", user.id);
-      fetchReports();
-    } else {
-      console.log("useSavedReports useEffect - no user, clearing reports");
-      setReports([]);
-      setIsLoading(false);
+    // Only fetch if auth loading is complete
+    if (!authLoading) {
+      if (user) {
+        console.log("useSavedReports useEffect - fetching reports for user:", user.id);
+        fetchReports();
+      } else {
+        console.log("useSavedReports useEffect - no user, clearing reports");
+        setReports([]);
+        setIsLoading(false);
+      }
     }
-  }, [user, fetchReports]);
+  }, [user, authLoading, fetchReports]);
 
-  return { reports, isLoading, error, fetchReports, deleteReport, saveReport };
+  return { 
+    reports, 
+    isLoading: isLoading || authLoading, 
+    error, 
+    fetchReports, 
+    deleteReport, 
+    saveReport 
+  };
 };

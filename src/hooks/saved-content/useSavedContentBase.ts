@@ -4,8 +4,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 
 export const useSavedContentBase = () => {
-  const { user } = useAuth();
-  const [isLoading, setIsLoading] = useState(true);
+  const { user, isLoading: authLoading } = useAuth();
+  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   // Helper function to check if user is logged in
@@ -18,19 +18,17 @@ export const useSavedContentBase = () => {
     return true;
   }, [user]);
 
-  // Reset loading state when component mounts or user changes
+  // Reset error state when component mounts
   useEffect(() => {
-    console.log("useSavedContentBase hook initialized or user changed:", user?.id);
-    // Don't automatically set loading to true on every user change
-    // This was causing infinite loading because user might be null initially
-    // and then become available later
-    if (user === null) {
-      setIsLoading(false);
-    }
+    console.log("useSavedContentBase hook initialized with user:", user?.id);
+    setError(null);
+    
+    // Don't set loading to true on mount, let the fetch functions control this
   }, [user]);
 
   return {
     user,
+    authLoading,
     isLoading,
     setIsLoading,
     error,
