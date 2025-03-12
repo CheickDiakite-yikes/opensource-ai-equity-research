@@ -71,11 +71,12 @@ export const saveResearchReport = async (
       console.error("Error generating HTML content:", htmlError);
     }
 
-    // Now, insert the new report
-    console.log("Inserting report into database with HTML:", htmlContent ? "YES" : "NO");
-    
+    // Prepare expiration date
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + 7); // 7 days from now
+    
+    // Now, insert the new report
+    console.log("Inserting report into database with HTML:", htmlContent ? "YES" : "NO");
     
     const { data, error } = await supabase
       .from("user_research_reports")
