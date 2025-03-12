@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { 
   getUserPricePredictions,
   deletePricePrediction,
@@ -22,7 +22,7 @@ export const useSavedPredictions = () => {
   const [predictions, setPredictions] = useState<SavedPrediction[]>([]);
   const { user, isLoading, setIsLoading, error, setError, checkUserLoggedIn } = useSavedContentBase();
 
-  const fetchPredictions = async () => {
+  const fetchPredictions = useCallback(async () => {
     if (!checkUserLoggedIn()) {
       setPredictions([]);
       return;
@@ -37,7 +37,7 @@ export const useSavedPredictions = () => {
       
       console.log("Raw data from getUserPricePredictions:", data);
       
-      if (data.length === 0) {
+      if (!data || data.length === 0) {
         console.log("No predictions found for user");
         setPredictions([]);
         setIsLoading(false);
@@ -72,7 +72,7 @@ export const useSavedPredictions = () => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [user, setIsLoading, setError, checkUserLoggedIn]);
 
   const deletePrediction = async (predictionId: string) => {
     console.log("Deleting prediction:", predictionId);
@@ -96,7 +96,7 @@ export const useSavedPredictions = () => {
     if (predictionId) {
       // Refresh predictions list after saving
       console.log("Prediction saved successfully, refreshing predictions list");
-      fetchPredictions();
+      await fetchPredictions();
     } else {
       console.error("Failed to save prediction - no ID returned");
     }
@@ -105,9 +105,14 @@ export const useSavedPredictions = () => {
 
   // Fetch predictions when the component mounts or user changes
   useEffect(() => {
-    console.log("useSavedPredictions useEffect - fetching predictions");
-    fetchPredictions();
-  }, [user]);
+    if (user) {
+      console.log("useSavedPredictions useEffect - fetching predictions for user:", user.id);
+      fetchPredictions();
+    } else {
+      console.log("useSavedPredictions useEffect - no user, clearing predictions");
+      setPredictions([]);
+    }
+  }, [user, fetchPredictions]);
 
   return { 
     predictions, 

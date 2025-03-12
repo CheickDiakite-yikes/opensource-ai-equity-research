@@ -60,10 +60,12 @@ export const savePricePrediction = async (
       console.log("Current prediction count:", count);
 
       // Manage item limit - delete oldest if over limit
-      const limitManaged = await manageItemLimit("user_price_predictions", userId, count);
-      if (!limitManaged) {
-        console.error("Failed to manage item limit");
-        return null;
+      if (count && count >= 10) {
+        const limitManaged = await manageItemLimit("user_price_predictions", userId, count);
+        if (!limitManaged) {
+          console.error("Failed to manage item limit");
+          return null;
+        }
       }
     }
 

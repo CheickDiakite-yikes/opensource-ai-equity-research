@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -32,6 +31,7 @@ export const manageItemLimit = async (
   count: number | null
 ): Promise<boolean> => {
   try {
+    // If count is null or below limit, no action needed
     if (!count || count < MAX_SAVED_ITEMS) {
       console.log(`Current count (${count}) is below limit (${MAX_SAVED_ITEMS}), no cleanup needed`);
       return true;
@@ -62,22 +62,22 @@ export const manageItemLimit = async (
     
     console.log(`Found ${oldestItems.length} items to delete from ${tableName}`);
     
-    // Delete items one by one to avoid potential issues
-    for (const item of oldestItems) {
-      console.log(`Deleting item ${item.id} from ${tableName}`);
-      const { error: deleteError } = await supabase
-        .from(tableName)
-        .delete()
-        .eq("id", item.id);
+    // Get array of IDs to delete
+    const idsToDelete = oldestItems.map(item => item.id);
+    console.log(`Deleting items with IDs: ${idsToDelete.join(', ')}`);
+    
+    // Delete items in a single operation
+    const { error: deleteError } = await supabase
+      .from(tableName)
+      .delete()
+      .in('id', idsToDelete);
 
-      if (deleteError) {
-        console.error(`Error deleting item ${item.id} from ${tableName}:`, deleteError);
-        // Continue with other deletions even if one fails
-      } else {
-        console.log(`Successfully deleted item ${item.id} from ${tableName}`);
-      }
+    if (deleteError) {
+      console.error(`Error deleting items from ${tableName}:`, deleteError);
+      return false;
     }
     
+    console.log(`Successfully deleted ${idsToDelete.length} items from ${tableName}`);
     return true;
   } catch (error) {
     console.error(`Error in manageItemLimit for ${tableName}:`, error);

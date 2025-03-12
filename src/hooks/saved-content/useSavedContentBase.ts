@@ -18,10 +18,11 @@ export const useSavedContentBase = () => {
     return true;
   };
 
-  // Reset loading state when component mounts
+  // Reset loading state when component mounts or user changes
   useEffect(() => {
-    console.log("useSavedContentBase hook initialized");
-  }, []);
+    console.log("useSavedContentBase hook initialized or user changed:", user?.id);
+    setIsLoading(true); // Reset loading state when user changes
+  }, [user]);
 
   return {
     user,

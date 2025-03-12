@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { 
   useSavedReports, 
@@ -17,14 +17,16 @@ export const useSavedContentPage = () => {
   const [selectedPrediction, setSelectedPrediction] = useState<SavedPrediction | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
-  // Refresh reports when page loads
+  // Refresh reports when page loads or user changes
   useEffect(() => {
     if (user) {
-      console.log("SavedContent component mounted, fetching reports...");
+      console.log("SavedContent component mounted with user:", user.id);
       fetchReports();
       fetchPredictions();
+    } else {
+      console.log("SavedContent component mounted without user");
     }
-  }, [user]);
+  }, [user, fetchReports, fetchPredictions]);
 
   // Log reports when they change
   useEffect(() => {
@@ -32,7 +34,12 @@ export const useSavedContentPage = () => {
     reports.forEach(report => {
       console.log(`- Report ${report.id}: ${report.symbol}, HTML: ${report.html_content ? "YES" : "NO"}`);
     });
-  }, [reports]);
+
+    // Clear selected report if it's no longer in the list
+    if (selectedReport && !reports.some(r => r.id === selectedReport.id)) {
+      setSelectedReport(null);
+    }
+  }, [reports, selectedReport]);
 
   // Log predictions when they change
   useEffect(() => {
@@ -40,7 +47,12 @@ export const useSavedContentPage = () => {
     predictions.forEach(prediction => {
       console.log(`- Prediction ${prediction.id}: ${prediction.symbol}`);
     });
-  }, [predictions]);
+
+    // Clear selected prediction if it's no longer in the list
+    if (selectedPrediction && !predictions.some(p => p.id === selectedPrediction.id)) {
+      setSelectedPrediction(null);
+    }
+  }, [predictions, selectedPrediction]);
 
   const isLoading = authLoading || reportsLoading || predictionsLoading;
 

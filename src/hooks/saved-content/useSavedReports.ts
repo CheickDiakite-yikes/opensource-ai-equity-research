@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { 
   getUserResearchReports, 
   deleteResearchReport,
@@ -23,7 +23,7 @@ export const useSavedReports = () => {
   const [reports, setReports] = useState<SavedReport[]>([]);
   const { user, isLoading, setIsLoading, error, setError, checkUserLoggedIn } = useSavedContentBase();
 
-  const fetchReports = async () => {
+  const fetchReports = useCallback(async () => {
     if (!checkUserLoggedIn()) {
       setReports([]);
       return;
@@ -39,7 +39,7 @@ export const useSavedReports = () => {
       // Enhanced debug logging
       console.log("Raw data from getUserResearchReports:", data);
       
-      if (data.length === 0) {
+      if (!data || data.length === 0) {
         console.log("No reports found for user");
         setReports([]);
         setIsLoading(false);
@@ -82,7 +82,7 @@ export const useSavedReports = () => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [user, setIsLoading, setError, checkUserLoggedIn]);
 
   const deleteReport = async (reportId: string) => {
     console.log("Deleting report:", reportId);
@@ -113,9 +113,14 @@ export const useSavedReports = () => {
 
   // Fetch reports when the component mounts or user changes
   useEffect(() => {
-    console.log("useSavedReports useEffect - fetching reports");
-    fetchReports();
-  }, [user]);
+    if (user) {
+      console.log("useSavedReports useEffect - fetching reports for user:", user.id);
+      fetchReports();
+    } else {
+      console.log("useSavedReports useEffect - no user, clearing reports");
+      setReports([]);
+    }
+  }, [user, fetchReports]);
 
   return { reports, isLoading, error, fetchReports, deleteReport, saveReport };
 };

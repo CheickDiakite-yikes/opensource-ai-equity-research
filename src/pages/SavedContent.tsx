@@ -2,7 +2,7 @@
 import React from "react";
 import { Navigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import { AnimatePresence } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 import AppHeader from "@/components/layout/AppHeader";
 import SavedContentLoader from "@/components/saved-content/SavedContentLoader";
 import SavedContentMain from "@/components/saved-content/SavedContentMain";
@@ -36,11 +36,12 @@ const SavedContent = () => {
     <>
       <AppHeader featuredSymbols={featuredSymbols} />
       
-      <AnimatePresence>
+      <AnimatePresence mode="sync">
         {isLoading ? (
-          <SavedContentLoader />
+          <SavedContentLoader key="loader" />
         ) : (
           <SavedContentMain
+            key="content"
             userEmail={user?.email || null}
             isRefreshing={isRefreshing}
             reports={reports}
