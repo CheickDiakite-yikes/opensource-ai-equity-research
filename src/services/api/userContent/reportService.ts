@@ -71,9 +71,11 @@ export const saveResearchReport = async (
       console.error("Error generating HTML content:", htmlError);
     }
 
-    // Now, insert the new report - use type cast to Json
+    // Now, insert the new report
     console.log("Inserting report into database with HTML:", htmlContent ? "YES" : "NO");
-    console.log("Report data sample:", JSON.stringify(reportData).substring(0, 200) + "...");
+    
+    const expiresAt = new Date();
+    expiresAt.setDate(expiresAt.getDate() + 7); // 7 days from now
     
     const { data, error } = await supabase
       .from("user_research_reports")
@@ -82,7 +84,8 @@ export const saveResearchReport = async (
         symbol,
         company_name: companyName,
         report_data: reportData as unknown as Json,
-        html_content: htmlContent
+        html_content: htmlContent,
+        expires_at: expiresAt.toISOString()
       })
       .select("id, html_content");
 
@@ -152,6 +155,8 @@ export const getUserResearchReports = async () => {
  */
 export const deleteResearchReport = async (reportId: string): Promise<boolean> => {
   try {
+    console.log("Deleting report with ID:", reportId);
+    
     const { error } = await supabase
       .from("user_research_reports")
       .delete()
@@ -159,7 +164,7 @@ export const deleteResearchReport = async (reportId: string): Promise<boolean> =
 
     if (error) {
       console.error("Error deleting report:", error);
-      toast.error("Failed to delete report");
+      toast.error("Failed to delete report: " + error.message);
       return false;
     }
 

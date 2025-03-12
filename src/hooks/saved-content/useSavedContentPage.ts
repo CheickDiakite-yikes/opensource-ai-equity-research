@@ -65,19 +65,45 @@ export const useSavedContentPage = () => {
 
   const handleDeleteReport = async (reportId: string, e: React.MouseEvent) => {
     e.stopPropagation();
+    e.preventDefault(); // Prevent any default behavior
     console.log("Deleting report:", reportId);
-    const success = await deleteReport(reportId);
-    if (success && selectedReport?.id === reportId) {
-      setSelectedReport(null);
+    
+    try {
+      const success = await deleteReport(reportId);
+      console.log("Delete report result:", success);
+      
+      if (success) {
+        if (selectedReport?.id === reportId) {
+          setSelectedReport(null);
+        }
+        // Force a refresh of reports list
+        fetchReports();
+      }
+    } catch (error) {
+      console.error("Error in handleDeleteReport:", error);
+      toast.error("Error deleting report");
     }
   };
 
   const handleDeletePrediction = async (predictionId: string, e: React.MouseEvent) => {
     e.stopPropagation();
+    e.preventDefault(); // Prevent any default behavior
     console.log("Deleting prediction:", predictionId);
-    const success = await deletePrediction(predictionId);
-    if (success && selectedPrediction?.id === predictionId) {
-      setSelectedPrediction(null);
+    
+    try {
+      const success = await deletePrediction(predictionId);
+      console.log("Delete prediction result:", success);
+      
+      if (success) {
+        if (selectedPrediction?.id === predictionId) {
+          setSelectedPrediction(null);
+        }
+        // Force a refresh of predictions list
+        fetchPredictions();
+      }
+    } catch (error) {
+      console.error("Error in handleDeletePrediction:", error);
+      toast.error("Error deleting prediction");
     }
   };
 

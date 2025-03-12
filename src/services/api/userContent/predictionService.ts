@@ -45,7 +45,11 @@ export const savePricePrediction = async (
       return null;
     }
 
-    // Now, insert the new prediction - use type cast to Json
+    // Prepare expiration date
+    const expiresAt = new Date();
+    expiresAt.setDate(expiresAt.getDate() + 7); // 7 days from now
+    
+    // Now, insert the new prediction
     console.log("Inserting prediction into database");
     console.log("Prediction data sample:", JSON.stringify(predictionData).substring(0, 200) + "...");
     
@@ -56,6 +60,7 @@ export const savePricePrediction = async (
         symbol,
         company_name: companyName,
         prediction_data: predictionData as unknown as Json,
+        expires_at: expiresAt.toISOString()
       })
       .select("id");
 
@@ -125,6 +130,8 @@ export const getUserPricePredictions = async () => {
  */
 export const deletePricePrediction = async (predictionId: string): Promise<boolean> => {
   try {
+    console.log("Deleting prediction with ID:", predictionId);
+    
     const { error } = await supabase
       .from("user_price_predictions")
       .delete()
@@ -132,7 +139,7 @@ export const deletePricePrediction = async (predictionId: string): Promise<boole
 
     if (error) {
       console.error("Error deleting prediction:", error);
-      toast.error("Failed to delete prediction");
+      toast.error("Failed to delete prediction: " + error.message);
       return false;
     }
 

@@ -46,7 +46,7 @@ export const manageItemLimit = async (
 
     if (fetchError) {
       console.error(`Error fetching oldest ${tableName}:`, fetchError);
-      toast.error(`Failed to manage saved ${tableName}`);
+      toast.error(`Failed to manage saved items`);
       return false;
     }
 
@@ -54,15 +54,17 @@ export const manageItemLimit = async (
       const oldestIds = oldestItems.map(item => item.id);
       console.log(`Deleting oldest ${tableName}:`, oldestIds);
       
-      const { error: deleteError } = await supabase
-        .from(tableName)
-        .delete()
-        .in("id", oldestIds);
-
-      if (deleteError) {
-        console.error(`Error deleting old ${tableName}:`, deleteError);
-        toast.error(`Failed to manage saved ${tableName}`);
-        return false;
+      // Delete items one by one to avoid potential issues with array operations
+      for (const id of oldestIds) {
+        const { error: deleteError } = await supabase
+          .from(tableName)
+          .delete()
+          .eq("id", id);
+          
+        if (deleteError) {
+          console.error(`Error deleting old item from ${tableName}:`, deleteError);
+          toast.error(`Failed to manage saved items`);
+        }
       }
     }
     
