@@ -46,7 +46,7 @@ export const savePricePrediction = async (
         .update({
           company_name: companyName,
           prediction_data: predictionData as unknown as Json,
-          expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // Reset expiration to 7 days
+          expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), // Reset expiration to 7 days
         })
         .eq("id", existingPrediction.id)
         .select("id")
