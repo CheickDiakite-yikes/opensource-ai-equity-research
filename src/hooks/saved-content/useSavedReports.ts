@@ -99,19 +99,26 @@ export const useSavedReports = () => {
     console.log("Deleting report:", reportId);
     
     try {
+      // Optimistically update UI first for immediate feedback
+      setReports(prevReports => prevReports.filter(report => report.id !== reportId));
+      
+      // Then perform the actual deletion
       const success = await deleteResearchReport(reportId);
-      if (success) {
-        console.log("Report deleted successfully, updating state");
-        // Update the reports list in state
-        setReports(prevReports => prevReports.filter(report => report.id !== reportId));
-        toast.success("Report deleted successfully");
+      
+      if (!success) {
+        console.error("Failed to delete report, fetching fresh data");
+        // If deletion failed, refresh the reports list to ensure UI is in sync with database
+        await fetchReports();
       } else {
-        console.error("Failed to delete report");
+        console.log("Report deleted successfully");
       }
+      
       return success;
     } catch (error) {
       console.error("Error in deleteReport:", error);
       toast.error("Failed to delete report: Unexpected error");
+      // Refresh the reports list to ensure UI is in sync with database
+      await fetchReports();
       return false;
     }
   };

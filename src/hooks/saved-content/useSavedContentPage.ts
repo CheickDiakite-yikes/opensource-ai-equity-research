@@ -113,14 +113,16 @@ export const useSavedContentPage = () => {
     console.log("Deleting report:", reportId);
     
     try {
-      const success = await deleteReport(reportId);
-      if (success && selectedReport?.id === reportId) {
+      // Clear selected report if we're deleting it
+      if (selectedReport?.id === reportId) {
         setSelectedReport(null);
       }
       
-      if (success) {
-        // Refresh the reports list to ensure UI is in sync with database
-        await fetchReports();
+      // Delete the report
+      const success = await deleteReport(reportId);
+      
+      if (!success) {
+        console.error("Failed to delete report");
       }
     } catch (error) {
       console.error("Error in handleDeleteReport:", error);
@@ -133,14 +135,16 @@ export const useSavedContentPage = () => {
     console.log("Deleting prediction:", predictionId);
     
     try {
-      const success = await deletePrediction(predictionId);
-      if (success && selectedPrediction?.id === predictionId) {
+      // Clear selected prediction if we're deleting it
+      if (selectedPrediction?.id === predictionId) {
         setSelectedPrediction(null);
       }
       
-      if (success) {
-        // Refresh the predictions list to ensure UI is in sync with database
-        await fetchPredictions();
+      // Delete the prediction
+      const success = await deletePrediction(predictionId);
+      
+      if (!success) {
+        console.error("Failed to delete prediction");
       }
     } catch (error) {
       console.error("Error in handleDeletePrediction:", error);

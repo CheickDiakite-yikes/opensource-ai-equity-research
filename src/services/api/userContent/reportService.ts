@@ -205,7 +205,7 @@ export const deleteResearchReport = async (reportId: string): Promise<boolean> =
       return false;
     }
     
-    // Perform the deletion
+    // Perform the deletion - NO ON CONFLICT here, just a simple delete
     const { error } = await supabase
       .from("user_research_reports")
       .delete()

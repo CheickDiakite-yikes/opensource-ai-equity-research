@@ -31,6 +31,8 @@ export const checkItemExists = async (
   itemId: string
 ): Promise<boolean> => {
   try {
+    console.log(`Checking if item ${itemId} exists in ${tableName}`);
+    
     const { data, error, count } = await supabase
       .from(tableName)
       .select("*", { count: "exact", head: true })
@@ -41,7 +43,9 @@ export const checkItemExists = async (
       return false;
     }
     
-    return (count !== null && count > 0);
+    const exists = (count !== null && count > 0);
+    console.log(`Item ${itemId} exists in ${tableName}: ${exists}`);
+    return exists;
   } catch (error) {
     console.error(`Error in checkItemExists for ${tableName}:`, error);
     return false;
@@ -111,4 +115,3 @@ export const manageItemLimit = async (
     return false;
   }
 };
-
