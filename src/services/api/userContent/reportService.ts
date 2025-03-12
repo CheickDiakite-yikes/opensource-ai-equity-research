@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { ResearchReport } from "@/types/ai-analysis/reportTypes";
@@ -199,11 +198,11 @@ export const deleteResearchReport = async (reportId: string): Promise<boolean> =
   try {
     console.log(`Deleting report with ID: ${reportId}`);
     
-    // Simple delete operation without ON CONFLICT
-    const { error } = await supabase
+    // Clear ON CONFLICT or transaction handling and use a direct delete
+    const { data, error } = await supabase
       .from("user_research_reports")
       .delete()
-      .eq("id", reportId);
+      .match({ id: reportId });
 
     if (error) {
       console.error("Error deleting report:", error);
