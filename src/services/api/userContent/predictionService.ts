@@ -169,6 +169,9 @@ export const getUserPricePredictions = async () => {
  */
 export const deletePricePrediction = async (predictionId: string): Promise<boolean> => {
   try {
+    console.log(`Deleting prediction with ID: ${predictionId}`);
+    
+    // Simple delete operation without ON CONFLICT
     const { error } = await supabase
       .from("user_price_predictions")
       .delete()
@@ -176,10 +179,11 @@ export const deletePricePrediction = async (predictionId: string): Promise<boole
 
     if (error) {
       console.error("Error deleting prediction:", error);
-      toast.error("Failed to delete prediction");
+      toast.error("Failed to delete prediction: " + error.message);
       return false;
     }
 
+    console.log("Prediction deleted successfully");
     toast.success("Prediction deleted successfully");
     return true;
   } catch (error) {

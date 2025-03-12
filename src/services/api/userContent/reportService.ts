@@ -197,6 +197,9 @@ export const getUserResearchReports = async () => {
  */
 export const deleteResearchReport = async (reportId: string): Promise<boolean> => {
   try {
+    console.log(`Deleting report with ID: ${reportId}`);
+    
+    // Simple delete operation without ON CONFLICT
     const { error } = await supabase
       .from("user_research_reports")
       .delete()
@@ -204,10 +207,11 @@ export const deleteResearchReport = async (reportId: string): Promise<boolean> =
 
     if (error) {
       console.error("Error deleting report:", error);
-      toast.error("Failed to delete report");
+      toast.error("Failed to delete report: " + error.message);
       return false;
     }
 
+    console.log("Report deleted successfully");
     toast.success("Report deleted successfully");
     return true;
   } catch (error) {
