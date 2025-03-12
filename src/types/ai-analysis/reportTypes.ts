@@ -98,5 +98,4 @@ export interface ReportRequest {
   news?: any[];
   peers?: string[];
   reportType?: string;
-  reasoningEffort?: string;
 }

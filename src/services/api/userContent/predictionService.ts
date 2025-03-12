@@ -24,46 +24,7 @@ export const savePricePrediction = async (
     
     console.log("User ID:", userId);
 
-    // First, check if this prediction already exists
-    const { data: existingPrediction, error: checkError } = await supabase
-      .from("user_price_predictions")
-      .select("id")
-      .eq("user_id", userId)
-      .eq("symbol", symbol)
-      .single();
-
-    if (checkError && checkError.code !== 'PGRST116') { // Not found is OK
-      console.error("Error checking for existing prediction:", checkError);
-      toast.error("Failed to save prediction: " + checkError.message);
-      return null;
-    }
-
-    // If prediction already exists, update it
-    if (existingPrediction) {
-      console.log("Updating existing prediction for:", symbol, existingPrediction.id);
-      const { data: updatedData, error: updateError } = await supabase
-        .from("user_price_predictions")
-        .update({
-          company_name: companyName,
-          prediction_data: predictionData as unknown as Json,
-          expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), // Reset expiration to 7 days
-        })
-        .eq("id", existingPrediction.id)
-        .select("id")
-        .single();
-
-      if (updateError) {
-        console.error("Error updating prediction:", updateError);
-        toast.error("Failed to update prediction: " + updateError.message);
-        return null;
-      }
-
-      console.log("Prediction updated successfully. ID:", updatedData.id);
-      toast.success("Price prediction updated successfully");
-      return updatedData.id;
-    }
-
-    // If no existing prediction, count existing predictions
+    // First, count existing predictions
     const { count, error: countError } = await supabase
       .from("user_price_predictions")
       .select("*", { count: "exact", head: true })
@@ -84,8 +45,8 @@ export const savePricePrediction = async (
       return null;
     }
 
-    // Now, insert the new prediction
-    console.log("Inserting new prediction into database");
+    // Now, insert the new prediction - use type cast to Json
+    console.log("Inserting prediction into database");
     console.log("Prediction data sample:", JSON.stringify(predictionData).substring(0, 200) + "...");
     
     const { data, error } = await supabase
@@ -96,8 +57,7 @@ export const savePricePrediction = async (
         company_name: companyName,
         prediction_data: predictionData as unknown as Json,
       })
-      .select("id")
-      .single();
+      .select("id");
 
     if (error) {
       console.error("Error saving prediction:", error);
@@ -105,9 +65,15 @@ export const savePricePrediction = async (
       return null;
     }
 
-    console.log("Prediction saved successfully. ID:", data.id);
+    if (!data || data.length === 0) {
+      console.error("No data returned after saving prediction");
+      toast.error("Failed to save prediction - no data returned");
+      return null;
+    }
+
+    console.log("Prediction saved successfully. ID:", data[0].id);
     toast.success("Price prediction saved successfully");
-    return data.id;
+    return data[0].id;
   } catch (error) {
     console.error("Error in savePricePrediction:", error);
     toast.error("An unexpected error occurred");

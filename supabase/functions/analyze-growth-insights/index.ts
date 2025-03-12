@@ -1,7 +1,6 @@
 
 import { corsHeaders } from "../_shared/cors.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.36.0";
-import { OPENAI_MODELS } from "../_shared/constants.ts";
 
 const supabaseUrl = Deno.env.get("SUPABASE_URL") || "";
 const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY") || "";
@@ -212,14 +211,13 @@ Return an array of 3-5 of the most significant growth insights.`;
         "Authorization": `Bearer ${openAIApiKey}`
       },
       body: JSON.stringify({
-        model: OPENAI_MODELS.DEFAULT,
+        model: "gpt-4o-mini",
         messages: [
           { role: "system", content: systemPrompt },
           { role: "user", content: prompt }
         ],
         temperature: 0.3,
-        max_tokens: 1000,
-        reasoning_effort: "medium"
+        max_tokens: 1000
       })
     });
 

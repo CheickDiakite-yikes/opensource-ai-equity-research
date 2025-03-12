@@ -63,20 +63,18 @@ export const useReportGeneration = (symbol: string, data: ReportData) => {
         },
         news: data.news,
         peers: data.peers,
-        reportType: reportType, // Pass the report type to guide AI generation
-        reasoningEffort: reportType === "comprehensive" ? "high" : "medium" // Use higher reasoning for comprehensive reports
+        reportType: reportType // Pass the report type to guide AI generation
       };
       
       toast({
         title: "Generating AI Report",
-        description: `Creating a detailed ${reportType} research report with GPT-4o reasoning technology...`,
+        description: `Creating a detailed ${reportType} research report based on financial data...`,
       });
       
       console.log("Sending report request:", {
         symbol,
         companyName: data.profile.companyName,
         reportType,
-        reasoningEffort: reportRequest.reasoningEffort,
         hasFinancials: !!data.income?.length,
         newsCount: data.news?.length,
         peersCount: data.peers?.length
@@ -121,7 +119,7 @@ export const useReportGeneration = (symbol: string, data: ReportData) => {
       
       toast({
         title: "AI Report Generated",
-        description: `Research report for ${data.profile.companyName} successfully generated with ${generatedReport.sections.length} sections using GPT-4o reasoning technology.`,
+        description: `Research report for ${data.profile.companyName} successfully generated with ${generatedReport.sections.length} sections.`,
       });
     } catch (err: any) {
       console.error("Error generating report:", err);
@@ -160,7 +158,7 @@ export const useReportGeneration = (symbol: string, data: ReportData) => {
       
       toast({
         title: "Generating AI Prediction",
-        description: "Analyzing financial data with GPT-4o reasoning technology to predict future prices...",
+        description: "Analyzing real financial data and market trends using AI to predict future prices...",
       });
       
       const prediction = await generateStockPrediction(
@@ -184,7 +182,7 @@ export const useReportGeneration = (symbol: string, data: ReportData) => {
       
       toast({
         title: "AI Prediction Generated",
-        description: "Price prediction has been successfully generated with GPT-4o reasoning technology.",
+        description: "Price prediction has been successfully generated based on AI analysis of real market data.",
       });
     } catch (err: any) {
       console.error("Error generating prediction:", err);
