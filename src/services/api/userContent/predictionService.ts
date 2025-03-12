@@ -75,7 +75,8 @@ export const savePricePrediction = async (
           expires_at: expiresAt.toISOString()
         })
         .eq("id", existingPredictions[0].id)
-        .select("id");
+        .select("id")
+        .single();
         
       if (error) {
         console.error("Error updating prediction:", error);
@@ -83,7 +84,7 @@ export const savePricePrediction = async (
         return null;
       }
       
-      predictionId = data?.[0]?.id || null;
+      predictionId = data?.id || null;
     } else {
       // Insert new prediction
       console.log("Inserting new prediction for symbol:", symbol);
@@ -96,7 +97,8 @@ export const savePricePrediction = async (
           prediction_data: predictionData as unknown as Json,
           expires_at: expiresAt.toISOString()
         })
-        .select("id");
+        .select("id")
+        .single();
         
       if (error) {
         console.error("Error saving prediction:", error);
@@ -104,7 +106,7 @@ export const savePricePrediction = async (
         return null;
       }
       
-      predictionId = data?.[0]?.id || null;
+      predictionId = data?.id || null;
     }
 
     if (!predictionId) {

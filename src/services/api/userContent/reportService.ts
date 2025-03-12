@@ -102,7 +102,8 @@ export const saveResearchReport = async (
           expires_at: expiresAt.toISOString()
         })
         .eq("id", existingReports[0].id)
-        .select("id");
+        .select("id")
+        .single();
         
       if (error) {
         console.error("Error updating report:", error);
@@ -110,7 +111,7 @@ export const saveResearchReport = async (
         return null;
       }
       
-      reportId = data?.[0]?.id || null;
+      reportId = data?.id || null;
     } else {
       // Insert new report
       console.log("Inserting new report for symbol:", symbol);
@@ -124,7 +125,8 @@ export const saveResearchReport = async (
           html_content: htmlContent,
           expires_at: expiresAt.toISOString()
         })
-        .select("id");
+        .select("id")
+        .single();
         
       if (error) {
         console.error("Error saving report:", error);
@@ -132,7 +134,7 @@ export const saveResearchReport = async (
         return null;
       }
       
-      reportId = data?.[0]?.id || null;
+      reportId = data?.id || null;
     }
 
     if (!reportId) {
