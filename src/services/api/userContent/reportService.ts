@@ -71,81 +71,36 @@ export const saveResearchReport = async (
       console.error("Error generating HTML content:", htmlError);
     }
 
-    // Prepare expiration date
-    const expiresAt = new Date();
-    expiresAt.setDate(expiresAt.getDate() + 7); // 7 days from now
+    // Now, insert the new report - use type cast to Json
+    console.log("Inserting report into database with HTML:", htmlContent ? "YES" : "NO");
+    console.log("Report data sample:", JSON.stringify(reportData).substring(0, 200) + "...");
     
-    // Check if a report with this symbol already exists for this user
-    const { data: existingReports, error: existingError } = await supabase
+    const { data, error } = await supabase
       .from("user_research_reports")
-      .select("id")
-      .eq("user_id", userId)
-      .eq("symbol", symbol);
-      
-    if (existingError) {
-      console.error("Error checking for existing reports:", existingError);
-      toast.error("Failed to save report");
-      return null;
-    }
-    
-    let reportId: string | null = null;
-    
-    if (existingReports && existingReports.length > 0) {
-      // Update existing report
-      console.log("Updating existing report for symbol:", symbol);
-      const { data, error } = await supabase
-        .from("user_research_reports")
-        .update({
-          company_name: companyName,
-          report_data: reportData as unknown as Json,
-          html_content: htmlContent,
-          expires_at: expiresAt.toISOString()
-        })
-        .eq("id", existingReports[0].id)
-        .select("id")
-        .single();
-        
-      if (error) {
-        console.error("Error updating report:", error);
-        toast.error("Failed to update report: " + error.message);
-        return null;
-      }
-      
-      reportId = data?.id || null;
-    } else {
-      // Insert new report
-      console.log("Inserting new report for symbol:", symbol);
-      const { data, error } = await supabase
-        .from("user_research_reports")
-        .insert({
-          user_id: userId,
-          symbol,
-          company_name: companyName,
-          report_data: reportData as unknown as Json,
-          html_content: htmlContent,
-          expires_at: expiresAt.toISOString()
-        })
-        .select("id")
-        .single();
-        
-      if (error) {
-        console.error("Error saving report:", error);
-        toast.error("Failed to save report: " + error.message);
-        return null;
-      }
-      
-      reportId = data?.id || null;
-    }
+      .insert({
+        user_id: userId,
+        symbol,
+        company_name: companyName,
+        report_data: reportData as unknown as Json,
+        html_content: htmlContent
+      })
+      .select("id, html_content");
 
-    if (!reportId) {
-      console.error("No report ID returned after saving");
-      toast.error("Failed to save report - no ID returned");
+    if (error) {
+      console.error("Error saving report:", error);
+      toast.error("Failed to save report: " + error.message);
       return null;
     }
 
-    console.log("Report saved successfully. ID:", reportId);
+    if (!data || data.length === 0) {
+      console.error("No data returned after saving report");
+      toast.error("Failed to save report - no data returned");
+      return null;
+    }
+
+    console.log("Report saved successfully. ID:", data[0].id, "HTML content:", data[0].html_content ? "YES" : "NO");
     toast.success("Research report saved successfully");
-    return reportId;
+    return data[0].id;
   } catch (error) {
     console.error("Error in saveResearchReport:", error);
     toast.error("An unexpected error occurred");
@@ -197,8 +152,6 @@ export const getUserResearchReports = async () => {
  */
 export const deleteResearchReport = async (reportId: string): Promise<boolean> => {
   try {
-    console.log("Deleting report with ID:", reportId);
-    
     const { error } = await supabase
       .from("user_research_reports")
       .delete()
@@ -206,7 +159,7 @@ export const deleteResearchReport = async (reportId: string): Promise<boolean> =
 
     if (error) {
       console.error("Error deleting report:", error);
-      toast.error("Failed to delete report: " + error.message);
+      toast.error("Failed to delete report");
       return false;
     }
 

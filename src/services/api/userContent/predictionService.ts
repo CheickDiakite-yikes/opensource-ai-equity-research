@@ -45,79 +45,35 @@ export const savePricePrediction = async (
       return null;
     }
 
-    // Prepare expiration date
-    const expiresAt = new Date();
-    expiresAt.setDate(expiresAt.getDate() + 7); // 7 days from now
+    // Now, insert the new prediction - use type cast to Json
+    console.log("Inserting prediction into database");
+    console.log("Prediction data sample:", JSON.stringify(predictionData).substring(0, 200) + "...");
     
-    // Check if a prediction with this symbol already exists for this user
-    const { data: existingPredictions, error: existingError } = await supabase
+    const { data, error } = await supabase
       .from("user_price_predictions")
-      .select("id")
-      .eq("user_id", userId)
-      .eq("symbol", symbol);
-      
-    if (existingError) {
-      console.error("Error checking for existing predictions:", existingError);
-      toast.error("Failed to save prediction");
-      return null;
-    }
-    
-    let predictionId: string | null = null;
-    
-    if (existingPredictions && existingPredictions.length > 0) {
-      // Update existing prediction
-      console.log("Updating existing prediction for symbol:", symbol);
-      const { data, error } = await supabase
-        .from("user_price_predictions")
-        .update({
-          company_name: companyName,
-          prediction_data: predictionData as unknown as Json,
-          expires_at: expiresAt.toISOString()
-        })
-        .eq("id", existingPredictions[0].id)
-        .select("id")
-        .single();
-        
-      if (error) {
-        console.error("Error updating prediction:", error);
-        toast.error("Failed to update prediction: " + error.message);
-        return null;
-      }
-      
-      predictionId = data?.id || null;
-    } else {
-      // Insert new prediction
-      console.log("Inserting new prediction for symbol:", symbol);
-      const { data, error } = await supabase
-        .from("user_price_predictions")
-        .insert({
-          user_id: userId,
-          symbol,
-          company_name: companyName,
-          prediction_data: predictionData as unknown as Json,
-          expires_at: expiresAt.toISOString()
-        })
-        .select("id")
-        .single();
-        
-      if (error) {
-        console.error("Error saving prediction:", error);
-        toast.error("Failed to save prediction: " + error.message);
-        return null;
-      }
-      
-      predictionId = data?.id || null;
-    }
+      .insert({
+        user_id: userId,
+        symbol,
+        company_name: companyName,
+        prediction_data: predictionData as unknown as Json,
+      })
+      .select("id");
 
-    if (!predictionId) {
-      console.error("No prediction ID returned after saving");
-      toast.error("Failed to save prediction - no ID returned");
+    if (error) {
+      console.error("Error saving prediction:", error);
+      toast.error("Failed to save prediction: " + error.message);
       return null;
     }
 
-    console.log("Prediction saved successfully. ID:", predictionId);
+    if (!data || data.length === 0) {
+      console.error("No data returned after saving prediction");
+      toast.error("Failed to save prediction - no data returned");
+      return null;
+    }
+
+    console.log("Prediction saved successfully. ID:", data[0].id);
     toast.success("Price prediction saved successfully");
-    return predictionId;
+    return data[0].id;
   } catch (error) {
     console.error("Error in savePricePrediction:", error);
     toast.error("An unexpected error occurred");
@@ -169,8 +125,6 @@ export const getUserPricePredictions = async () => {
  */
 export const deletePricePrediction = async (predictionId: string): Promise<boolean> => {
   try {
-    console.log("Deleting prediction with ID:", predictionId);
-    
     const { error } = await supabase
       .from("user_price_predictions")
       .delete()
@@ -178,7 +132,7 @@ export const deletePricePrediction = async (predictionId: string): Promise<boole
 
     if (error) {
       console.error("Error deleting prediction:", error);
-      toast.error("Failed to delete prediction: " + error.message);
+      toast.error("Failed to delete prediction");
       return false;
     }
 

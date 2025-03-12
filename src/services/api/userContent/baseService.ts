@@ -36,41 +36,33 @@ export const manageItemLimit = async (
       return true;
     }
 
-    // If at limit, delete oldest items one by one
+    // If at limit, delete oldest
     const { data: oldestItems, error: fetchError } = await supabase
       .from(tableName)
-      .select("id, created_at")
+      .select("id")
       .eq("user_id", userId)
       .order("created_at", { ascending: true })
       .limit(count - MAX_SAVED_ITEMS + 1);
 
     if (fetchError) {
       console.error(`Error fetching oldest ${tableName}:`, fetchError);
-      toast.error(`Failed to manage saved items`);
+      toast.error(`Failed to manage saved ${tableName}`);
       return false;
     }
 
     if (oldestItems && oldestItems.length > 0) {
-      console.log(`Deleting ${oldestItems.length} oldest ${tableName}`, 
-        oldestItems.map(item => ({ id: item.id, created_at: item.created_at })));
+      const oldestIds = oldestItems.map(item => item.id);
+      console.log(`Deleting oldest ${tableName}:`, oldestIds);
       
-      // Delete items one by one to avoid potential issues
-      let allDeletesSuccessful = true;
-      
-      for (const item of oldestItems) {
-        const { error: deleteError } = await supabase
-          .from(tableName)
-          .delete()
-          .eq("id", item.id);
-          
-        if (deleteError) {
-          console.error(`Error deleting item ${item.id} from ${tableName}:`, deleteError);
-          allDeletesSuccessful = false;
-        }
-      }
-      
-      if (!allDeletesSuccessful) {
-        toast.error(`Some items could not be deleted automatically`);
+      const { error: deleteError } = await supabase
+        .from(tableName)
+        .delete()
+        .in("id", oldestIds);
+
+      if (deleteError) {
+        console.error(`Error deleting old ${tableName}:`, deleteError);
+        toast.error(`Failed to manage saved ${tableName}`);
+        return false;
       }
     }
     
