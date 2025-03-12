@@ -1,4 +1,3 @@
-
 import { ResearchReport } from "./reportTypes.ts";
 import { formatLargeNumber } from "./dataFormatter.ts";
 import { createFallbackReport, ensureCompleteReportStructure, createDefaultSections, enhanceSectionContent } from "./fallbackReportGenerator.ts";

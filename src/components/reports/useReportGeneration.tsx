@@ -69,7 +69,7 @@ export const useReportGeneration = (symbol: string, data: ReportData) => {
       
       toast({
         title: "Generating AI Report",
-        description: `Creating a detailed ${reportType} research report with o3-mini reasoning technology...`,
+        description: `Creating a detailed ${reportType} research report with GPT-4o reasoning technology...`,
       });
       
       console.log("Sending report request:", {
@@ -121,7 +121,7 @@ export const useReportGeneration = (symbol: string, data: ReportData) => {
       
       toast({
         title: "AI Report Generated",
-        description: `Research report for ${data.profile.companyName} successfully generated with ${generatedReport.sections.length} sections using o3-mini reasoning technology.`,
+        description: `Research report for ${data.profile.companyName} successfully generated with ${generatedReport.sections.length} sections using GPT-4o reasoning technology.`,
       });
     } catch (err: any) {
       console.error("Error generating report:", err);
@@ -160,7 +160,7 @@ export const useReportGeneration = (symbol: string, data: ReportData) => {
       
       toast({
         title: "Generating AI Prediction",
-        description: "Analyzing financial data with o3-mini reasoning technology to predict future prices...",
+        description: "Analyzing financial data with GPT-4o reasoning technology to predict future prices...",
       });
       
       const prediction = await generateStockPrediction(
@@ -184,7 +184,7 @@ export const useReportGeneration = (symbol: string, data: ReportData) => {
       
       toast({
         title: "AI Prediction Generated",
-        description: "Price prediction has been successfully generated with o3-mini reasoning technology.",
+        description: "Price prediction has been successfully generated with GPT-4o reasoning technology.",
       });
     } catch (err: any) {
       console.error("Error generating prediction:", err);
