@@ -38,7 +38,11 @@ export const savePricePrediction = async (
       return null;
     }
     
-    const existingPredictionId = existingPredictions && existingPredictions.length > 0 ? existingPredictions[0].id : null;
+    const existingPredictionId = existingPredictions && existingPredictions.length > 0 
+      ? existingPredictions[0].id 
+      : null;
+    
+    console.log("Existing prediction ID:", existingPredictionId);
     
     // If we're not updating an existing prediction, check the total count and manage limit
     if (!existingPredictionId) {
@@ -74,16 +78,17 @@ export const savePricePrediction = async (
       expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
     };
     
-    let newPredictionId = null;
+    let newPredictionId: string | null = null;
     
     // Insert or update based on whether prediction exists
     if (existingPredictionId) {
       console.log("Updating existing prediction with ID:", existingPredictionId);
       
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from("user_price_predictions")
         .update(predictionInfo)
-        .eq("id", existingPredictionId);
+        .eq("id", existingPredictionId)
+        .select();
         
       if (error) {
         console.error("Error updating prediction:", error);
@@ -91,7 +96,8 @@ export const savePricePrediction = async (
         return null;
       }
       
-      newPredictionId = existingPredictionId;
+      newPredictionId = data && data.length > 0 ? data[0].id : existingPredictionId;
+      console.log("Updated prediction, returned data:", data);
     } else {
       console.log("Inserting new prediction");
       console.log("Prediction data sample:", JSON.stringify(predictionData).substring(0, 200) + "...");
@@ -110,6 +116,8 @@ export const savePricePrediction = async (
       if (data && data.length > 0) {
         newPredictionId = data[0].id;
       }
+      
+      console.log("Inserted prediction, returned data:", data);
     }
 
     if (!newPredictionId) {
