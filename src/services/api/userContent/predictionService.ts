@@ -24,56 +24,99 @@ export const savePricePrediction = async (
     
     console.log("User ID:", userId);
 
-    // First, count existing predictions
-    const { count, error: countError } = await supabase
+    // First, check if prediction already exists for this symbol
+    const { data: existingPrediction, error: checkError } = await supabase
       .from("user_price_predictions")
-      .select("*", { count: "exact", head: true })
-      .eq("user_id", userId);
+      .select("id")
+      .eq("user_id", userId)
+      .eq("symbol", symbol)
+      .maybeSingle();
 
-    if (countError) {
-      console.error("Error counting predictions:", countError);
+    if (checkError) {
+      console.error("Error checking existing prediction:", checkError);
       toast.error("Failed to save prediction");
       return null;
     }
 
-    console.log("Current prediction count:", count);
+    // Set expiration date (7 days from now)
+    const expiresAt = new Date();
+    expiresAt.setDate(expiresAt.getDate() + 7);
 
-    // Manage item limit
-    const limitManaged = await manageItemLimit("user_price_predictions", userId, count);
-    if (!limitManaged) {
-      console.error("Failed to manage item limit");
-      return null;
+    if (existingPrediction) {
+      // Update existing prediction
+      console.log("Updating existing prediction for:", symbol);
+      const { data, error } = await supabase
+        .from("user_price_predictions")
+        .update({
+          company_name: companyName,
+          prediction_data: predictionData as unknown as Json,
+          expires_at: expiresAt.toISOString() // Convert Date to ISO string
+        })
+        .eq("id", existingPrediction.id)
+        .select("id");
+
+      if (error) {
+        console.error("Error updating prediction:", error);
+        toast.error("Failed to update prediction: " + error.message);
+        return null;
+      }
+
+      console.log("Prediction updated successfully. ID:", existingPrediction.id);
+      toast.success("Price prediction updated successfully");
+      return existingPrediction.id;
+    } else {
+      // If no existing prediction, count and manage limits
+      const { count, error: countError } = await supabase
+        .from("user_price_predictions")
+        .select("*", { count: "exact", head: true })
+        .eq("user_id", userId);
+
+      if (countError) {
+        console.error("Error counting predictions:", countError);
+        toast.error("Failed to save prediction");
+        return null;
+      }
+
+      console.log("Current prediction count:", count);
+
+      // Manage item limit
+      const limitManaged = await manageItemLimit("user_price_predictions", userId, count);
+      if (!limitManaged) {
+        console.error("Failed to manage item limit");
+        return null;
+      }
+
+      // Insert new prediction
+      console.log("Inserting new prediction into database");
+      console.log("Prediction data sample:", JSON.stringify(predictionData).substring(0, 200) + "...");
+      
+      const { data, error } = await supabase
+        .from("user_price_predictions")
+        .insert({
+          user_id: userId,
+          symbol,
+          company_name: companyName,
+          prediction_data: predictionData as unknown as Json,
+          expires_at: expiresAt.toISOString() // Convert Date to ISO string
+        })
+        .select("id");
+
+      if (error) {
+        console.error("Error saving prediction:", error);
+        toast.error("Failed to save prediction: " + error.message);
+        return null;
+      }
+
+      if (!data || data.length === 0) {
+        console.error("No data returned after saving prediction");
+        toast.error("Failed to save prediction - no data returned");
+        return null;
+      }
+
+      console.log("Prediction saved successfully. ID:", data[0].id);
+      toast.success("Price prediction saved successfully");
+      return data[0].id;
     }
-
-    // Now, insert the new prediction - use type cast to Json
-    console.log("Inserting prediction into database");
-    console.log("Prediction data sample:", JSON.stringify(predictionData).substring(0, 200) + "...");
-    
-    const { data, error } = await supabase
-      .from("user_price_predictions")
-      .insert({
-        user_id: userId,
-        symbol,
-        company_name: companyName,
-        prediction_data: predictionData as unknown as Json,
-      })
-      .select("id");
-
-    if (error) {
-      console.error("Error saving prediction:", error);
-      toast.error("Failed to save prediction: " + error.message);
-      return null;
-    }
-
-    if (!data || data.length === 0) {
-      console.error("No data returned after saving prediction");
-      toast.error("Failed to save prediction - no data returned");
-      return null;
-    }
-
-    console.log("Prediction saved successfully. ID:", data[0].id);
-    toast.success("Price prediction saved successfully");
-    return data[0].id;
   } catch (error) {
     console.error("Error in savePricePrediction:", error);
     toast.error("An unexpected error occurred");
