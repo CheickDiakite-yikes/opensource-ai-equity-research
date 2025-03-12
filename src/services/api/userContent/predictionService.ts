@@ -29,8 +29,7 @@ export const savePricePrediction = async (
       .from("user_price_predictions")
       .select("id")
       .eq("user_id", userId)
-      .eq("symbol", symbol)
-      .limit(1);
+      .eq("symbol", symbol);
       
     if (checkError) {
       console.error("Error checking existing predictions:", checkError);
@@ -78,17 +77,14 @@ export const savePricePrediction = async (
       expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
     };
     
-    let newPredictionId: string | null = null;
-    
     // Insert or update based on whether prediction exists
     if (existingPredictionId) {
       console.log("Updating existing prediction with ID:", existingPredictionId);
       
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from("user_price_predictions")
         .update(predictionInfo)
-        .eq("id", existingPredictionId)
-        .select();
+        .eq("id", existingPredictionId);
         
       if (error) {
         console.error("Error updating prediction:", error);
@@ -96,11 +92,11 @@ export const savePricePrediction = async (
         return null;
       }
       
-      newPredictionId = data && data.length > 0 ? data[0].id : existingPredictionId;
-      console.log("Updated prediction, returned data:", data);
+      console.log("Successfully updated prediction");
+      toast.success("Price prediction updated successfully");
+      return existingPredictionId;
     } else {
       console.log("Inserting new prediction");
-      console.log("Prediction data sample:", JSON.stringify(predictionData).substring(0, 200) + "...");
       
       const { data, error } = await supabase
         .from("user_price_predictions")
@@ -113,22 +109,18 @@ export const savePricePrediction = async (
         return null;
       }
       
-      if (data && data.length > 0) {
-        newPredictionId = data[0].id;
+      const newPredictionId = data && data.length > 0 ? data[0].id : null;
+      
+      if (!newPredictionId) {
+        console.error("No prediction ID returned after save operation");
+        toast.error("Failed to save prediction - no ID returned");
+        return null;
       }
       
-      console.log("Inserted prediction, returned data:", data);
+      console.log("Successfully inserted prediction with ID:", newPredictionId);
+      toast.success("Price prediction saved successfully");
+      return newPredictionId;
     }
-
-    if (!newPredictionId) {
-      console.error("No prediction ID returned after save operation");
-      toast.error("Failed to save prediction - no ID returned");
-      return null;
-    }
-
-    console.log("Prediction saved successfully. ID:", newPredictionId);
-    toast.success(existingPredictionId ? "Price prediction updated successfully" : "Price prediction saved successfully");
-    return newPredictionId;
   } catch (error) {
     console.error("Error in savePricePrediction:", error);
     toast.error("An unexpected error occurred while saving prediction");

@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -40,7 +41,7 @@ export const manageItemLimit = async (
     const deleteCount = count - MAX_SAVED_ITEMS + 1;
     console.log(`Need to delete ${deleteCount} oldest items from ${tableName}`);
 
-    // If at limit, delete oldest
+    // Get the oldest items
     const { data: oldestItems, error: fetchError } = await supabase
       .from(tableName)
       .select("id")

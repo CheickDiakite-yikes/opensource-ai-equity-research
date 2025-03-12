@@ -30,8 +30,7 @@ export const saveResearchReport = async (
       .from("user_research_reports")
       .select("id")
       .eq("user_id", userId)
-      .eq("symbol", symbol)
-      .limit(1);
+      .eq("symbol", symbol);
       
     if (checkError) {
       console.error("Error checking existing reports:", checkError);
@@ -101,8 +100,6 @@ export const saveResearchReport = async (
       expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
     };
     
-    let newReportId = null;
-    
     // Insert or update based on whether report exists
     if (existingReportId) {
       console.log("Updating existing report with ID:", existingReportId);
@@ -118,7 +115,9 @@ export const saveResearchReport = async (
         return null;
       }
       
-      newReportId = existingReportId;
+      console.log("Report updated successfully");
+      toast.success("Research report updated successfully");
+      return existingReportId;
     } else {
       console.log("Inserting new report");
       
@@ -133,20 +132,18 @@ export const saveResearchReport = async (
         return null;
       }
       
-      if (data && data.length > 0) {
-        newReportId = data[0].id;
+      const newReportId = data && data.length > 0 ? data[0].id : null;
+      
+      if (!newReportId) {
+        console.error("No report ID returned after save operation");
+        toast.error("Failed to save report - no ID returned");
+        return null;
       }
+      
+      console.log("Report saved successfully with ID:", newReportId);
+      toast.success("Research report saved successfully");
+      return newReportId;
     }
-
-    if (!newReportId) {
-      console.error("No report ID returned after save operation");
-      toast.error("Failed to save report - no ID returned");
-      return null;
-    }
-
-    console.log("Report saved successfully. ID:", newReportId);
-    toast.success(existingReportId ? "Research report updated successfully" : "Research report saved successfully");
-    return newReportId;
   } catch (error) {
     console.error("Error in saveResearchReport:", error);
     toast.error("An unexpected error occurred");
