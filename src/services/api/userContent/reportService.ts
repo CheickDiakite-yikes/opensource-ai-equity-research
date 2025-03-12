@@ -75,36 +75,75 @@ export const saveResearchReport = async (
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + 7); // 7 days from now
     
-    // Now, insert the new report
-    console.log("Inserting report into database with HTML:", htmlContent ? "YES" : "NO");
-    
-    const { data, error } = await supabase
+    // Check if a report with this symbol already exists for this user
+    const { data: existingReports, error: existingError } = await supabase
       .from("user_research_reports")
-      .insert({
-        user_id: userId,
-        symbol,
-        company_name: companyName,
-        report_data: reportData as unknown as Json,
-        html_content: htmlContent,
-        expires_at: expiresAt.toISOString()
-      })
-      .select("id, html_content");
+      .select("id")
+      .eq("user_id", userId)
+      .eq("symbol", symbol);
+      
+    if (existingError) {
+      console.error("Error checking for existing reports:", existingError);
+      toast.error("Failed to save report");
+      return null;
+    }
+    
+    let reportId: string | null = null;
+    
+    if (existingReports && existingReports.length > 0) {
+      // Update existing report
+      console.log("Updating existing report for symbol:", symbol);
+      const { data, error } = await supabase
+        .from("user_research_reports")
+        .update({
+          company_name: companyName,
+          report_data: reportData as unknown as Json,
+          html_content: htmlContent,
+          expires_at: expiresAt.toISOString()
+        })
+        .eq("id", existingReports[0].id)
+        .select("id");
+        
+      if (error) {
+        console.error("Error updating report:", error);
+        toast.error("Failed to update report: " + error.message);
+        return null;
+      }
+      
+      reportId = data?.[0]?.id || null;
+    } else {
+      // Insert new report
+      console.log("Inserting new report for symbol:", symbol);
+      const { data, error } = await supabase
+        .from("user_research_reports")
+        .insert({
+          user_id: userId,
+          symbol,
+          company_name: companyName,
+          report_data: reportData as unknown as Json,
+          html_content: htmlContent,
+          expires_at: expiresAt.toISOString()
+        })
+        .select("id");
+        
+      if (error) {
+        console.error("Error saving report:", error);
+        toast.error("Failed to save report: " + error.message);
+        return null;
+      }
+      
+      reportId = data?.[0]?.id || null;
+    }
 
-    if (error) {
-      console.error("Error saving report:", error);
-      toast.error("Failed to save report: " + error.message);
+    if (!reportId) {
+      console.error("No report ID returned after saving");
+      toast.error("Failed to save report - no ID returned");
       return null;
     }
 
-    if (!data || data.length === 0) {
-      console.error("No data returned after saving report");
-      toast.error("Failed to save report - no data returned");
-      return null;
-    }
-
-    console.log("Report saved successfully. ID:", data[0].id, "HTML content:", data[0].html_content ? "YES" : "NO");
+    console.log("Report saved successfully. ID:", reportId);
     toast.success("Research report saved successfully");
-    return data[0].id;
+    return reportId;
   } catch (error) {
     console.error("Error in saveResearchReport:", error);
     toast.error("An unexpected error occurred");
