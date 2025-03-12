@@ -111,18 +111,40 @@ export const useSavedContentPage = () => {
   const handleDeleteReport = async (reportId: string, e: React.MouseEvent) => {
     e.stopPropagation();
     console.log("Deleting report:", reportId);
-    const success = await deleteReport(reportId);
-    if (success && selectedReport?.id === reportId) {
-      setSelectedReport(null);
+    
+    try {
+      const success = await deleteReport(reportId);
+      if (success && selectedReport?.id === reportId) {
+        setSelectedReport(null);
+      }
+      
+      if (success) {
+        // Refresh the reports list to ensure UI is in sync with database
+        await fetchReports();
+      }
+    } catch (error) {
+      console.error("Error in handleDeleteReport:", error);
+      toast.error("Failed to delete report due to an unexpected error");
     }
   };
 
   const handleDeletePrediction = async (predictionId: string, e: React.MouseEvent) => {
     e.stopPropagation();
     console.log("Deleting prediction:", predictionId);
-    const success = await deletePrediction(predictionId);
-    if (success && selectedPrediction?.id === predictionId) {
-      setSelectedPrediction(null);
+    
+    try {
+      const success = await deletePrediction(predictionId);
+      if (success && selectedPrediction?.id === predictionId) {
+        setSelectedPrediction(null);
+      }
+      
+      if (success) {
+        // Refresh the predictions list to ensure UI is in sync with database
+        await fetchPredictions();
+      }
+    } catch (error) {
+      console.error("Error in handleDeletePrediction:", error);
+      toast.error("Failed to delete prediction due to an unexpected error");
     }
   };
 

@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -19,6 +20,31 @@ export const getUserId = async (): Promise<string | null> => {
   } catch (error) {
     console.error("Error getting user ID:", error);
     return null;
+  }
+};
+
+/**
+ * Check if an item exists by ID in a specific table
+ */
+export const checkItemExists = async (
+  tableName: "user_research_reports" | "user_price_predictions",
+  itemId: string
+): Promise<boolean> => {
+  try {
+    const { data, error, count } = await supabase
+      .from(tableName)
+      .select("*", { count: "exact", head: true })
+      .eq("id", itemId);
+      
+    if (error) {
+      console.error(`Error checking if item exists in ${tableName}:`, error);
+      return false;
+    }
+    
+    return (count !== null && count > 0);
+  } catch (error) {
+    console.error(`Error in checkItemExists for ${tableName}:`, error);
+    return false;
   }
 };
 
@@ -85,3 +111,4 @@ export const manageItemLimit = async (
     return false;
   }
 };
+

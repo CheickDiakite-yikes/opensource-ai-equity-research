@@ -97,15 +97,23 @@ export const useSavedReports = () => {
 
   const deleteReport = async (reportId: string) => {
     console.log("Deleting report:", reportId);
-    const success = await deleteResearchReport(reportId);
-    if (success) {
-      console.log("Report deleted successfully, updating state");
-      setReports(prevReports => prevReports.filter(report => report.id !== reportId));
-      toast.success("Report deleted successfully");
-    } else {
-      console.error("Failed to delete report");
+    
+    try {
+      const success = await deleteResearchReport(reportId);
+      if (success) {
+        console.log("Report deleted successfully, updating state");
+        // Update the reports list in state
+        setReports(prevReports => prevReports.filter(report => report.id !== reportId));
+        toast.success("Report deleted successfully");
+      } else {
+        console.error("Failed to delete report");
+      }
+      return success;
+    } catch (error) {
+      console.error("Error in deleteReport:", error);
+      toast.error("Failed to delete report: Unexpected error");
+      return false;
     }
-    return success;
   };
 
   const saveReport = async (symbol: string, companyName: string, reportData: ResearchReport) => {

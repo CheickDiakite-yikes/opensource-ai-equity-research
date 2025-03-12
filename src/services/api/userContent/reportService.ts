@@ -4,7 +4,7 @@ import { toast } from "sonner";
 import { ResearchReport } from "@/types/ai-analysis/reportTypes";
 import { Json } from "@/integrations/supabase/types";
 import { generateReportHTML } from "./htmlGenerator";
-import { getUserId, manageItemLimit } from "./baseService";
+import { getUserId, manageItemLimit, checkItemExists } from "./baseService";
 
 /**
  * Save a research report for the current user
@@ -196,6 +196,16 @@ export const getUserResearchReports = async () => {
 export const deleteResearchReport = async (reportId: string): Promise<boolean> => {
   try {
     console.log("Deleting report with ID:", reportId);
+    
+    // First check if the report exists
+    const exists = await checkItemExists("user_research_reports", reportId);
+    if (!exists) {
+      console.error("Report not found for deletion:", reportId);
+      toast.error("Report not found");
+      return false;
+    }
+    
+    // Perform the deletion
     const { error } = await supabase
       .from("user_research_reports")
       .delete()
@@ -203,7 +213,14 @@ export const deleteResearchReport = async (reportId: string): Promise<boolean> =
 
     if (error) {
       console.error("Error deleting report:", error);
-      toast.error("Failed to delete report: " + error.message);
+      
+      if (error.code === "23503") { // Foreign key violation
+        toast.error("Cannot delete report: it is referenced by other data");
+      } else if (error.code === "23505") { // Unique constraint violation
+        toast.error("Error deleting report: unique constraint violation");
+      } else {
+        toast.error("Failed to delete report: " + error.message);
+      }
       return false;
     }
 
