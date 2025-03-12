@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { StockPrediction } from "@/types/ai-analysis/predictionTypes";
 import { Json } from "@/integrations/supabase/types";
-import { getUserId, manageItemLimit } from "./baseService";
+import { getUserId, manageItemLimit, checkItemExists } from "./baseService";
 
 /**
  * Save a price prediction for the current user
@@ -60,12 +60,10 @@ export const savePricePrediction = async (
       console.log("Current prediction count:", count);
 
       // Manage item limit - delete oldest if over limit
-      if (count && count >= 10) {
-        const limitManaged = await manageItemLimit("user_price_predictions", userId, count);
-        if (!limitManaged) {
-          console.error("Failed to manage item limit");
-          return null;
-        }
+      const limitManaged = await manageItemLimit("user_price_predictions", userId, count);
+      if (!limitManaged) {
+        console.error("Failed to manage item limit");
+        return null;
       }
     }
 
@@ -100,7 +98,6 @@ export const savePricePrediction = async (
     } else {
       console.log("Inserting new prediction");
       
-      // Don't use upsert with on conflict, use simple insert for new predictions
       const { data, error } = await supabase
         .from("user_price_predictions")
         .insert(predictionInfo)
@@ -176,6 +173,16 @@ export const getUserPricePredictions = async () => {
 export const deletePricePrediction = async (predictionId: string): Promise<boolean> => {
   try {
     console.log("Deleting prediction with ID:", predictionId);
+    
+    // First check if the prediction exists
+    const exists = await checkItemExists("user_price_predictions", predictionId);
+    if (!exists) {
+      console.error("Prediction not found for deletion:", predictionId);
+      toast.error("Prediction not found");
+      return false;
+    }
+    
+    // Perform the deletion - NO ON CONFLICT here, just a simple delete
     const { error } = await supabase
       .from("user_price_predictions")
       .delete()
@@ -183,7 +190,14 @@ export const deletePricePrediction = async (predictionId: string): Promise<boole
 
     if (error) {
       console.error("Error deleting prediction:", error);
-      toast.error("Failed to delete prediction: " + error.message);
+      
+      if (error.code === "23503") { // Foreign key violation
+        toast.error("Cannot delete prediction: it is referenced by other data");
+      } else if (error.code === "23505") { // Unique constraint violation
+        toast.error("Error deleting prediction: unique constraint violation");
+      } else {
+        toast.error("Failed to delete prediction: " + error.message);
+      }
       return false;
     }
 

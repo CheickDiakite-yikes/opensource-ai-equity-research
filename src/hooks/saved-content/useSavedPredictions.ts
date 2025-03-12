@@ -93,17 +93,30 @@ export const useSavedPredictions = () => {
 
   const deletePrediction = async (predictionId: string) => {
     console.log("Deleting prediction:", predictionId);
-    const success = await deletePricePrediction(predictionId);
-    if (success) {
-      console.log("Prediction deleted successfully, updating state");
-      setPredictions(prevPredictions => 
-        prevPredictions.filter(prediction => prediction.id !== predictionId)
-      );
-      toast.success("Prediction deleted successfully");
-    } else {
-      console.error("Failed to delete prediction");
+    
+    try {
+      // Optimistically update UI first for immediate feedback
+      setPredictions(prevPredictions => prevPredictions.filter(prediction => prediction.id !== predictionId));
+      
+      // Then perform the actual deletion
+      const success = await deletePricePrediction(predictionId);
+      
+      if (!success) {
+        console.error("Failed to delete prediction, fetching fresh data");
+        // If deletion failed, refresh the predictions list to ensure UI is in sync with database
+        await fetchPredictions();
+      } else {
+        console.log("Prediction deleted successfully");
+      }
+      
+      return success;
+    } catch (error) {
+      console.error("Error in deletePrediction:", error);
+      toast.error("Failed to delete prediction due to an unexpected error");
+      // Refresh the predictions list to ensure UI is in sync with database
+      await fetchPredictions();
+      return false;
     }
-    return success;
   };
 
   const savePrediction = async (symbol: string, companyName: string, predictionData: StockPrediction) => {
