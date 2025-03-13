@@ -75,7 +75,8 @@ export const saveResearchReport = async (
     const { data: existingReports, error: checkError } = await supabase
       .from("user_research_reports")
       .select("id")
-      .match({ user_id: userId, symbol: symbol });
+      .eq("user_id", userId)
+      .eq("symbol", symbol);
       
     if (checkError) {
       console.error("Error checking for existing report:", checkError);

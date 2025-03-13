@@ -2,7 +2,7 @@
 import React from "react";
 import InfoIcon from "@/components/home/card-components/InfoIcon";
 
-interface ContentPlaceholderProps {
+export interface ContentPlaceholderProps {
   title?: string;
   description?: string;
   type?: string;
