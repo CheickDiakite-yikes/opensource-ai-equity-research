@@ -554,6 +554,10 @@ export type Database = {
           similarity: number
         }[]
       }
+      get_service_status: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
+      }
       is_active_content: {
         Args: {
           expires_at: string

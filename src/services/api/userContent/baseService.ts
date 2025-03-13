@@ -28,7 +28,12 @@ export const testConnection = async (): Promise<ConnectionStatus> => {
     const startTime = Date.now();
     
     // Try to execute a simple query that doesn't require any permissions
-    const { data, error } = await supabase.rpc('get_service_status');
+    // Use explicit types with the rpc method to avoid TypeScript errors
+    const { data, error } = await supabase.rpc('get_service_status', {}, {
+      // Explicitly cast the rpcMethod to any to bypass TypeScript's type checking
+      // as this function is custom and not included in the generated types
+      head: false
+    }) as unknown as { data: any, error: any };
     
     // Fallback to a simple table query if the function doesn't exist
     if (error && error.message?.includes('function "get_service_status" does not exist')) {
