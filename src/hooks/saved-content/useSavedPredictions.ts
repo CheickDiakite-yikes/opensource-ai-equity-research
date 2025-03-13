@@ -6,7 +6,7 @@ import {
   savePricePrediction 
 } from "@/services/api/userContent";
 import { StockPrediction } from "@/types/ai-analysis/predictionTypes";
-import { useSavedContentBase } from "./useSavedContentBase";
+import { useSavedContentBase, SavedContentError } from "./useSavedContentBase";
 import { toast } from "sonner";
 
 export interface SavedPrediction {
@@ -20,8 +20,18 @@ export interface SavedPrediction {
 
 export const useSavedPredictions = () => {
   const [predictions, setPredictions] = useState<SavedPrediction[]>([]);
-  const [lastError, setLastError] = useState<Error | null>(null);
-  const { user, isLoading, setIsLoading, error, setError, checkUserLoggedIn } = useSavedContentBase();
+  const {
+    user,
+    isLoading,
+    setIsLoading,
+    error,
+    setError,
+    lastError,
+    setLastError,
+    checkUserLoggedIn,
+    handleError
+  } = useSavedContentBase();
+  const [debugInfo, setDebugInfo] = useState<string | null>(null);
 
   const fetchPredictions = async () => {
     if (!checkUserLoggedIn()) {
@@ -29,15 +39,18 @@ export const useSavedPredictions = () => {
       return;
     }
 
-    console.log("Fetching predictions for user:", user.id);
+    console.log("=== Fetching predictions ===");
+    console.log("User:", user.id);
     setIsLoading(true);
     setError(null);
-    setLastError(null);
+    setDebugInfo(null);
     
     try {
       const data = await getUserPricePredictions();
       
+      // Debug logging
       console.log("Raw data from getUserPricePredictions:", data);
+      setDebugInfo(`Retrieved ${data.length} predictions from database`);
       
       if (data.length === 0) {
         console.log("No predictions found for user");
@@ -48,6 +61,7 @@ export const useSavedPredictions = () => {
       
       // Convert Json type to StockPrediction type with type assertion
       const convertedPredictions = data.map(item => {
+        setDebugInfo(prev => `${prev}\nProcessing prediction ${item.id}: ${item.symbol}`);
         console.log(`Processing prediction ${item.id}:`, {
           symbol: item.symbol,
           company_name: item.company_name,
@@ -57,28 +71,60 @@ export const useSavedPredictions = () => {
         
         // Validate prediction_data
         if (!item.prediction_data) {
-          console.error(`Prediction ${item.id} has no prediction_data!`);
+          const errorMsg = `Prediction ${item.id} has no prediction_data!`;
+          console.error(errorMsg);
+          setDebugInfo(prev => `${prev}\nERROR: ${errorMsg}`);
         }
         
-        return {
-          ...item,
-          prediction_data: item.prediction_data as unknown as StockPrediction
-        };
+        try {
+          return {
+            ...item,
+            prediction_data: item.prediction_data as unknown as StockPrediction
+          };
+        } catch (parseError) {
+          const errorMsg = `Error parsing prediction ${item.id}: ${String(parseError)}`;
+          console.error(errorMsg);
+          setDebugInfo(prev => `${prev}\nERROR: ${errorMsg}`);
+          
+          // Return with basic prediction data structure to prevent crashes
+          return {
+            ...item,
+            prediction_data: {
+              symbol: item.symbol,
+              currentPrice: 0,
+              predictedPrice: {
+                oneMonth: 0,
+                threeMonths: 0,
+                sixMonths: 0,
+                oneYear: 0
+              },
+              sentimentAnalysis: "Error parsing data",
+              confidenceLevel: 0,
+              keyDrivers: ["Error parsing data"],
+              risks: ["Error parsing data"]
+            } as StockPrediction
+          };
+        }
       }) as SavedPrediction[];
       
+      // More debug
       console.log(`Fetched ${convertedPredictions.length} predictions`);
+      setDebugInfo(prev => `${prev}\nSuccessfully processed ${convertedPredictions.length} predictions`);
+      
       setPredictions(convertedPredictions);
     } catch (err) {
-      console.error("Error fetching saved predictions:", err);
-      setError("Failed to load saved predictions");
-      setLastError(err instanceof Error ? err : new Error(String(err)));
+      const errorInfo = handleError(err, "fetchPredictions", "Failed to load saved predictions");
+      setDebugInfo(`Error: ${errorInfo.message}\nDetails: ${JSON.stringify(errorInfo.details)}`);
     } finally {
       setIsLoading(false);
     }
   };
 
   const deletePrediction = async (predictionId: string) => {
-    console.log("Deleting prediction:", predictionId);
+    console.log("=== Deleting prediction ===");
+    console.log("Prediction ID:", predictionId);
+    setDebugInfo(`Attempting to delete prediction: ${predictionId}`);
+    
     try {
       const success = await deletePricePrediction(predictionId);
       if (success) {
@@ -86,35 +132,43 @@ export const useSavedPredictions = () => {
         setPredictions(prevPredictions => 
           prevPredictions.filter(prediction => prediction.id !== predictionId)
         );
+        setDebugInfo(prev => `${prev}\nSuccessfully deleted prediction ${predictionId}`);
       } else {
         console.error("Failed to delete prediction");
+        setDebugInfo(prev => `${prev}\nFailed to delete prediction ${predictionId}`);
       }
       return success;
     } catch (err) {
-      console.error("Error deleting prediction:", err);
-      setLastError(err instanceof Error ? err : new Error(String(err)));
+      const errorInfo = handleError(err, "deletePrediction", "Failed to delete prediction");
+      setDebugInfo(prev => `${prev}\nError deleting prediction: ${JSON.stringify(errorInfo)}`);
       return false;
     }
   };
 
   const savePrediction = async (symbol: string, companyName: string, predictionData: StockPrediction) => {
-    console.log("Saving prediction for:", symbol, companyName);
-    setLastError(null);
+    console.log("=== Saving prediction ===");
+    console.log("Symbol:", symbol);
+    console.log("Company:", companyName);
+    setDebugInfo(`Attempting to save prediction for: ${symbol} (${companyName})`);
+    
     try {
       const predictionId = await savePricePrediction(symbol, companyName, predictionData);
       console.log("Save result - prediction ID:", predictionId);
+      setDebugInfo(prev => `${prev}\nSave result - prediction ID: ${predictionId || 'FAILED'}`);
       
       if (predictionId) {
         // Refresh predictions list after saving
         console.log("Prediction saved successfully, refreshing predictions list");
-        fetchPredictions();
+        setDebugInfo(prev => `${prev}\nPrediction saved successfully, refreshing list`);
+        await fetchPredictions();
       } else {
         console.error("Failed to save prediction - no ID returned");
+        setDebugInfo(prev => `${prev}\nFailed to save prediction - no ID returned`);
       }
       return predictionId;
     } catch (err) {
-      console.error("Error saving prediction:", err);
-      setLastError(err instanceof Error ? err : new Error(String(err)));
+      const errorInfo = handleError(err, "savePrediction", "Failed to save prediction");
+      setDebugInfo(prev => `${prev}\nError saving prediction: ${JSON.stringify(errorInfo)}`);
       return null;
     }
   };
@@ -130,6 +184,7 @@ export const useSavedPredictions = () => {
     isLoading, 
     error, 
     lastError,
+    debugInfo,
     fetchPredictions, 
     deletePrediction, 
     savePrediction 

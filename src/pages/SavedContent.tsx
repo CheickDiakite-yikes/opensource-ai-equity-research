@@ -18,6 +18,14 @@ const SavedContent = () => {
     predictions,
     selectedReport,
     selectedPrediction,
+    activeTab,
+    setActiveTab,
+    reportsError,
+    reportsLastError,
+    reportsDebugInfo,
+    predictionsError,
+    predictionsLastError,
+    predictionsDebugInfo,
     handleSelectReport,
     handleSelectPrediction,
     handleDeleteReport,
@@ -47,6 +55,14 @@ const SavedContent = () => {
             predictions={predictions}
             selectedReport={selectedReport}
             selectedPrediction={selectedPrediction}
+            activeTab={activeTab}
+            setActiveTab={setActiveTab}
+            reportsError={reportsError}
+            reportsLastError={reportsLastError}
+            reportsDebugInfo={reportsDebugInfo}
+            predictionsError={predictionsError}
+            predictionsLastError={predictionsLastError}
+            predictionsDebugInfo={predictionsDebugInfo}
             onRefresh={handleRefresh}
             onSelectReport={handleSelectReport}
             onSelectPrediction={handleSelectPrediction}

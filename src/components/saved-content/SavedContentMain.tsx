@@ -1,6 +1,7 @@
 
 import React from "react";
 import { SavedReport, SavedPrediction } from "@/hooks/saved-content";
+import { SavedContentError } from "@/hooks/saved-content/useSavedContentBase";
 import { motion } from "framer-motion";
 import SavedContentHeader from "@/components/saved-content/SavedContentHeader";
 import SavedContentTabs from "@/components/saved-content/SavedContentTabs";
@@ -12,7 +13,15 @@ interface SavedContentMainProps {
   predictions: SavedPrediction[];
   selectedReport: SavedReport | null;
   selectedPrediction: SavedPrediction | null;
-  onRefresh: () => void;
+  activeTab: 'reports' | 'predictions';
+  setActiveTab: (tab: 'reports' | 'predictions') => void;
+  reportsError: string | null;
+  reportsLastError: SavedContentError | null;
+  reportsDebugInfo: string | null;
+  predictionsError: string | null;
+  predictionsLastError: SavedContentError | null;
+  predictionsDebugInfo: string | null;
+  onRefresh: () => Promise<void>;
   onSelectReport: (report: SavedReport) => void;
   onSelectPrediction: (prediction: SavedPrediction) => void;
   onDeleteReport: (reportId: string, e: React.MouseEvent) => Promise<void>;
@@ -27,6 +36,14 @@ const SavedContentMain: React.FC<SavedContentMainProps> = ({
   predictions,
   selectedReport,
   selectedPrediction,
+  activeTab,
+  setActiveTab,
+  reportsError,
+  reportsLastError,
+  reportsDebugInfo,
+  predictionsError,
+  predictionsLastError,
+  predictionsDebugInfo,
   onRefresh,
   onSelectReport,
   onSelectPrediction,
@@ -53,11 +70,20 @@ const SavedContentMain: React.FC<SavedContentMainProps> = ({
         predictions={predictions}
         selectedReport={selectedReport}
         selectedPrediction={selectedPrediction}
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
+        reportsError={reportsError}
+        reportsLastError={reportsLastError}
+        reportsDebugInfo={reportsDebugInfo}
+        predictionsError={predictionsError}
+        predictionsLastError={predictionsLastError}
+        predictionsDebugInfo={predictionsDebugInfo}
         onSelectReport={onSelectReport}
         onSelectPrediction={onSelectPrediction}
         onDeleteReport={onDeleteReport}
         onDeletePrediction={onDeletePrediction}
         onDownloadHtml={onDownloadHtml}
+        onRefresh={onRefresh}
       />
     </motion.div>
   );

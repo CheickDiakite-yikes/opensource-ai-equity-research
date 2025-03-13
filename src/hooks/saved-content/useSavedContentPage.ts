@@ -11,36 +11,61 @@ import { toast } from "sonner";
 
 export const useSavedContentPage = () => {
   const { user, isLoading: authLoading } = useAuth();
-  const { reports, isLoading: reportsLoading, deleteReport, fetchReports } = useSavedReports();
-  const { predictions, isLoading: predictionsLoading, deletePrediction, fetchPredictions } = useSavedPredictions();
+  const { 
+    reports, 
+    isLoading: reportsLoading, 
+    deleteReport, 
+    fetchReports, 
+    error: reportsError,
+    lastError: reportsLastError,
+    debugInfo: reportsDebugInfo
+  } = useSavedReports();
+  
+  const { 
+    predictions, 
+    isLoading: predictionsLoading, 
+    deletePrediction, 
+    fetchPredictions,
+    error: predictionsError,
+    lastError: predictionsLastError,
+    debugInfo: predictionsDebugInfo
+  } = useSavedPredictions();
+  
   const [selectedReport, setSelectedReport] = useState<SavedReport | null>(null);
   const [selectedPrediction, setSelectedPrediction] = useState<SavedPrediction | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [activeTab, setActiveTab] = useState<'reports' | 'predictions'>('reports');
 
-  // Refresh reports when page loads
+  // Refresh content when page loads
   useEffect(() => {
     if (user) {
-      console.log("SavedContent component mounted, fetching reports...");
+      console.log("SavedContent component mounted, fetching content...");
       fetchReports();
       fetchPredictions();
     }
   }, [user]);
 
-  // Log reports when they change
+  // Update selected content when lists change
   useEffect(() => {
-    console.log("Reports updated:", reports.length);
-    reports.forEach(report => {
-      console.log(`- Report ${report.id}: ${report.symbol}, HTML: ${report.html_content ? "YES" : "NO"}`);
-    });
-  }, [reports]);
-
-  // Log predictions when they change
-  useEffect(() => {
-    console.log("Predictions updated:", predictions.length);
-    predictions.forEach(prediction => {
-      console.log(`- Prediction ${prediction.id}: ${prediction.symbol}`);
-    });
-  }, [predictions]);
+    // If selected report is no longer in the list, clear selection
+    if (selectedReport && !reports.find(r => r.id === selectedReport.id)) {
+      setSelectedReport(null);
+    }
+    
+    // If selected prediction is no longer in the list, clear selection
+    if (selectedPrediction && !predictions.find(p => p.id === selectedPrediction.id)) {
+      setSelectedPrediction(null);
+    }
+    
+    // Auto-select first item if nothing selected and we have items
+    if (!selectedReport && !selectedPrediction) {
+      if (activeTab === 'reports' && reports.length > 0) {
+        setSelectedReport(reports[0]);
+      } else if (activeTab === 'predictions' && predictions.length > 0) {
+        setSelectedPrediction(predictions[0]);
+      }
+    }
+  }, [reports, predictions, selectedReport, selectedPrediction, activeTab]);
 
   const isLoading = authLoading || reportsLoading || predictionsLoading;
 
@@ -48,6 +73,7 @@ export const useSavedContentPage = () => {
     console.log("Selecting report:", report.id);
     setSelectedReport(report);
     setSelectedPrediction(null);
+    setActiveTab('reports');
     
     // Debug HTML content
     if (report.html_content) {
@@ -61,6 +87,7 @@ export const useSavedContentPage = () => {
     console.log("Selecting prediction:", prediction.id);
     setSelectedPrediction(prediction);
     setSelectedReport(null);
+    setActiveTab('predictions');
   };
 
   const handleDeleteReport = async (reportId: string, e: React.MouseEvent) => {
@@ -123,6 +150,14 @@ export const useSavedContentPage = () => {
     predictions,
     selectedReport,
     selectedPrediction,
+    activeTab,
+    setActiveTab,
+    reportsError,
+    reportsLastError,
+    reportsDebugInfo,
+    predictionsError,
+    predictionsLastError,
+    predictionsDebugInfo,
     handleSelectReport,
     handleSelectPrediction,
     handleDeleteReport,

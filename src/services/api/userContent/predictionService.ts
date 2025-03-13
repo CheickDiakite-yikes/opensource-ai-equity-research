@@ -1,9 +1,8 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { StockPrediction } from "@/types/ai-analysis/predictionTypes";
 import { Json } from "@/integrations/supabase/types";
-import { getUserId, manageItemLimit } from "./baseService";
+import { getUserId, manageItemLimit, UserContentError } from "./baseService";
 
 /**
  * Save a price prediction for the current user
@@ -14,26 +13,26 @@ export const savePricePrediction = async (
   predictionData: StockPrediction
 ): Promise<string | null> => {
   try {
-    console.log("Starting savePricePrediction for:", symbol);
+    console.log("=== Starting savePricePrediction ===");
+    console.log("Symbol:", symbol);
+    console.log("Company:", companyName);
+    
     const userId = await getUserId();
     if (!userId) {
-      console.error("No user ID found when saving prediction");
       toast.error("You must be signed in to save predictions");
       return null;
     }
     
     console.log("User ID:", userId);
 
-    // First, count existing predictions
+    // Count existing predictions
     const { count, error: countError } = await supabase
       .from("user_price_predictions")
       .select("*", { count: "exact", head: true })
       .eq("user_id", userId);
 
     if (countError) {
-      console.error("Error counting predictions:", countError);
-      toast.error("Failed to save prediction");
-      return null;
+      throw new UserContentError("Error counting predictions", "savePricePrediction", countError);
     }
 
     console.log("Current prediction count:", count);
@@ -41,46 +40,49 @@ export const savePricePrediction = async (
     // Manage item limit
     const limitManaged = await manageItemLimit("user_price_predictions", userId, count);
     if (!limitManaged) {
-      console.error("Failed to manage item limit");
-      return null;
+      throw new UserContentError("Failed to manage item limit", "savePricePrediction");
     }
 
-    // Now, insert the new prediction - use type cast to Json
+    // Insert the new prediction - WITHOUT on conflict
     console.log("Inserting prediction into database");
     
-    // Debug: Log the full object being inserted
+    // Debug log the full object being inserted
     const insertObject = {
       user_id: userId,
       symbol,
       company_name: companyName,
       prediction_data: predictionData as unknown as Json,
     };
-    console.log("Full insert object:", JSON.stringify(insertObject));
+    console.log("Insert object:", JSON.stringify(insertObject));
     
-    // Simple insert without ON CONFLICT - crucial fix
+    // Simple insert without ON CONFLICT
     const { data, error } = await supabase
       .from("user_price_predictions")
       .insert(insertObject)
       .select("id");
 
     if (error) {
-      console.error("Error saving prediction:", error);
-      toast.error("Failed to save prediction: " + error.message);
-      return null;
+      throw new UserContentError("Error saving prediction", "savePricePrediction", error);
     }
 
     if (!data || data.length === 0) {
-      console.error("No data returned after saving prediction");
-      toast.error("Failed to save prediction - no data returned");
-      return null;
+      throw new UserContentError("No data returned after saving prediction", "savePricePrediction");
     }
 
     console.log("Prediction saved successfully. ID:", data[0].id);
     toast.success("Price prediction saved successfully");
     return data[0].id;
   } catch (error) {
-    console.error("Error in savePricePrediction:", error);
-    toast.error("An unexpected error occurred");
+    // Handle UserContentError properly
+    if (error instanceof UserContentError) {
+      console.error(`${error.source}: ${error.message}`, error.details);
+      toast.error(error.message);
+      return null;
+    }
+    
+    // Otherwise create a new error
+    console.error("Unexpected error in savePricePrediction:", error);
+    toast.error("An unexpected error occurred while saving prediction");
     return null;
   }
 };
@@ -90,7 +92,7 @@ export const savePricePrediction = async (
  */
 export const getUserPricePredictions = async () => {
   try {
-    console.log("Getting user price predictions");
+    console.log("=== Getting user price predictions ===");
     const userId = await getUserId();
     if (!userId) {
       console.log("No user ID found when getting predictions");
@@ -105,9 +107,7 @@ export const getUserPricePredictions = async () => {
       .order("created_at", { ascending: false });
 
     if (error) {
-      console.error("Error fetching user predictions:", error);
-      toast.error("Failed to load saved predictions: " + error.message);
-      return [];
+      throw new UserContentError("Error fetching user predictions", "getUserPricePredictions", error);
     }
 
     if (!data || data.length === 0) {
@@ -116,10 +116,26 @@ export const getUserPricePredictions = async () => {
     }
 
     console.log(`Found ${data.length} predictions for user`);
+    // Log sample data structure for debugging
+    if (data.length > 0) {
+      console.log("Sample prediction data structure:", {
+        id: data[0].id,
+        symbol: data[0].symbol,
+        created_at: data[0].created_at,
+        data_keys: data[0].prediction_data ? Object.keys(data[0].prediction_data) : 'no data'
+      });
+    }
+    
     return data || [];
   } catch (error) {
-    console.error("Error in getUserPricePredictions:", error);
-    toast.error("An unexpected error occurred");
+    if (error instanceof UserContentError) {
+      console.error(`${error.source}: ${error.message}`, error.details);
+      toast.error(error.message);
+      return [];
+    }
+    
+    console.error("Unexpected error in getUserPricePredictions:", error);
+    toast.error("An unexpected error occurred while fetching predictions");
     return [];
   }
 };
@@ -129,22 +145,29 @@ export const getUserPricePredictions = async () => {
  */
 export const deletePricePrediction = async (predictionId: string): Promise<boolean> => {
   try {
+    console.log("=== Deleting prediction ===");
+    console.log("Prediction ID:", predictionId);
+    
     const { error } = await supabase
       .from("user_price_predictions")
       .delete()
       .eq("id", predictionId);
 
     if (error) {
-      console.error("Error deleting prediction:", error);
-      toast.error("Failed to delete prediction");
-      return false;
+      throw new UserContentError("Error deleting prediction", "deletePricePrediction", error);
     }
 
     toast.success("Prediction deleted successfully");
     return true;
   } catch (error) {
-    console.error("Error in deletePricePrediction:", error);
-    toast.error("An unexpected error occurred");
+    if (error instanceof UserContentError) {
+      console.error(`${error.source}: ${error.message}`, error.details);
+      toast.error(error.message);
+      return false;
+    }
+    
+    console.error("Unexpected error in deletePricePrediction:", error);
+    toast.error("An unexpected error occurred while deleting prediction");
     return false;
   }
 };

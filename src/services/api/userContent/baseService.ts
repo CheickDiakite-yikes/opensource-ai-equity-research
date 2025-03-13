@@ -1,24 +1,49 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
 // Maximum number of reports/predictions to keep per user
 export const MAX_SAVED_ITEMS = 20;
 
+// Error class for better debugging
+export class UserContentError extends Error {
+  public details: any;
+  public source: string;
+  
+  constructor(message: string, source: string, details?: any) {
+    super(message);
+    this.name = "UserContentError";
+    this.source = source;
+    this.details = details;
+    
+    // Log all errors to console for debugging
+    console.error(`[${source}] ${message}`, details);
+  }
+}
+
 /**
  * Check if user is authenticated and return user ID
  */
 export const getUserId = async (): Promise<string | null> => {
   try {
-    const { data } = await supabase.auth.getUser();
+    const { data, error } = await supabase.auth.getUser();
+    
+    if (error) {
+      throw new UserContentError("Authentication error", "getUserId", error);
+    }
+    
     if (!data.user) {
       console.log("No authenticated user found");
       return null;
     }
+    
     console.log("Authenticated user ID:", data.user.id);
     return data.user.id;
   } catch (error) {
-    console.error("Error getting user ID:", error);
-    return null;
+    if (error instanceof UserContentError) {
+      throw error;
+    }
+    throw new UserContentError("Error getting user ID", "getUserId", error);
   }
 };
 
@@ -35,6 +60,8 @@ export const manageItemLimit = async (
       return true;
     }
 
+    console.log(`Managing item limit for ${tableName}, current count: ${count}`);
+    
     // If at limit, delete oldest
     const { data: oldestItems, error: fetchError } = await supabase
       .from(tableName)
@@ -44,9 +71,7 @@ export const manageItemLimit = async (
       .limit(count - MAX_SAVED_ITEMS + 1);
 
     if (fetchError) {
-      console.error(`Error fetching oldest ${tableName}:`, fetchError);
-      toast.error(`Failed to manage saved ${tableName}`);
-      return false;
+      throw new UserContentError(`Error fetching oldest ${tableName}`, "manageItemLimit", fetchError);
     }
 
     if (oldestItems && oldestItems.length > 0) {
@@ -59,15 +84,25 @@ export const manageItemLimit = async (
         .in("id", oldestIds);
 
       if (deleteError) {
-        console.error(`Error deleting old ${tableName}:`, deleteError);
-        toast.error(`Failed to manage saved ${tableName}`);
-        return false;
+        throw new UserContentError(`Error deleting old ${tableName}`, "manageItemLimit", deleteError);
       }
+      
+      console.log(`Successfully deleted ${oldestIds.length} old items from ${tableName}`);
     }
     
     return true;
   } catch (error) {
-    console.error(`Error in manageItemLimit for ${tableName}:`, error);
-    return false;
+    if (error instanceof UserContentError) {
+      toast.error(error.message);
+      throw error;
+    }
+    
+    const userContentError = new UserContentError(
+      `Error in manageItemLimit for ${tableName}`, 
+      "manageItemLimit", 
+      error
+    );
+    toast.error(userContentError.message);
+    throw userContentError;
   }
 };
