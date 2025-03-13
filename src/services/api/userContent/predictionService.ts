@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { StockPrediction } from "@/types/ai-analysis/predictionTypes";
@@ -75,9 +74,6 @@ export const savePricePrediction = async (
       return null;
     }
     
-    // Calculate expiration date (30 days from now)
-    const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
-    
     try {
       // Try using the edge function first for better reliability
       console.log("Calling save-price-prediction edge function");
@@ -131,6 +127,9 @@ export const savePricePrediction = async (
         toast.error("Failed to update prediction: " + deleteError.message);
         return null;
       }
+      
+      // Calculate expiration date (30 days from now)
+      const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
       
       // Step 2: Insert a new prediction with explicit columns
       console.log("Inserting new prediction for symbol:", symbol);

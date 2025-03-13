@@ -62,6 +62,7 @@ serve(async (req) => {
     
     // Calculate expiration date (30 days from now)
     const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
+    const createdAt = new Date().toISOString();
     
     // Step 2: Insert a new prediction with explicitly listed columns
     const { data, error } = await supabase
@@ -72,7 +73,7 @@ serve(async (req) => {
         company_name: companyName,
         prediction_data: predictionData,
         expires_at: expiresAt,
-        created_at: new Date().toISOString()
+        created_at: createdAt
       })
       .select("id")
       .single();
