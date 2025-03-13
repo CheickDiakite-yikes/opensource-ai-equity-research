@@ -1,7 +1,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { fetchStockQuote, fetchStockRating } from "@/services/api/profileService";
-import { useStockPrediction } from "@/hooks/useStockPrediction";
+import { useStockPrediction } from "@/hooks/stock-prediction";
 import { useState, useEffect } from "react";
 import { StockQuote } from "@/types";
 
@@ -53,7 +53,6 @@ export const useCompanyCardData = (symbol: string) => {
     prediction, 
     isLoading: isPredictionLoading, 
     error: predictionError, 
-    setError: setError,
     generatePrediction
   } = useStockPrediction(symbol, companyName);
 

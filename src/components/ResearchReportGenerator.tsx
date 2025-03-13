@@ -96,7 +96,7 @@ const ResearchReportGenerator = ({ symbol }: ResearchReportGeneratorProps) => {
       </div>
       
       {showDataWarning && (
-        <Alert>
+        <Alert variant="default">
           <AlertTriangle className="h-4 w-4" />
           <AlertTitle>Limited Data Available</AlertTitle>
           <AlertDescription>
