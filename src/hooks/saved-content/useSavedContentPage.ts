@@ -60,13 +60,15 @@ export const useSavedContentPage = () => {
       return;
     }
     
-    // Use the correct function name that exists in our codebase
-    const filename = `${report.symbol}_research_report.html`;
-    
-    // Create a temporary ResearchReport object with the minimum required properties
+    // Create a temporary ResearchReport object with the required properties
     const tempReport = {
       symbol: report.symbol,
       companyName: report.company_name,
+      date: new Date().toISOString().split('T')[0],
+      recommendation: report.report_data?.recommendation || "N/A",
+      targetPrice: report.report_data?.targetPrice || "N/A",
+      summary: report.report_data?.summary || "N/A",
+      sections: report.report_data?.sections || [],
       html_content: report.html_content
     };
     

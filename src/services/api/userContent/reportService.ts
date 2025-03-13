@@ -1,10 +1,9 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { ResearchReport } from "@/types/ai-analysis/reportTypes";
 import { Json } from "@/integrations/supabase/types";
 import { generateReportHTML } from "./htmlGenerator";
-import { getUserId, manageItemLimit } from "./baseService";
+import { getUserId, countUserItems, deleteOldestItems } from "./baseService";
 
 /**
  * Save a research report for the current user
@@ -26,24 +25,17 @@ export const saveResearchReport = async (
     console.log("User ID:", userId);
 
     // First, count existing reports
-    const { count, error: countError } = await supabase
-      .from("user_research_reports")
-      .select("*", { count: "exact", head: true })
-      .eq("user_id", userId);
+    const currentCount = await countUserItems("user_research_reports", userId);
+    console.log("Current report count:", currentCount);
 
-    if (countError) {
-      console.error("Error counting reports:", countError);
-      toast.error("Failed to save report");
-      return null;
-    }
-
-    console.log("Current report count:", count);
-
-    // Manage item limit
-    const limitManaged = await manageItemLimit("user_research_reports", userId, count);
-    if (!limitManaged) {
-      console.error("Failed to manage item limit");
-      return null;
+    // Delete oldest reports if over limit
+    if (currentCount >= 10) {
+      const deleted = await deleteOldestItems("user_research_reports", userId, currentCount);
+      if (!deleted) {
+        console.error("Failed to delete oldest reports");
+        toast.error("Failed to save report - couldn't manage report limit");
+        return null;
+      }
     }
 
     // Generate HTML version of the report

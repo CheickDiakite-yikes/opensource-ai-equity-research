@@ -24,25 +24,54 @@ export const getUserId = async (): Promise<string | null> => {
 };
 
 /**
- * Manage maximum items per user - delete oldest if over limit
+ * Count items in table for a user
  */
-export const manageItemLimit = async (
+export const countUserItems = async (
+  tableName: "user_research_reports" | "user_price_predictions",
+  userId: string
+): Promise<number> => {
+  try {
+    const { count, error } = await supabase
+      .from(tableName)
+      .select("*", { count: "exact", head: true })
+      .eq("user_id", userId);
+
+    if (error) {
+      console.error(`Error counting ${tableName}:`, error);
+      return 0;
+    }
+
+    return count || 0;
+  } catch (error) {
+    console.error(`Error in countUserItems for ${tableName}:`, error);
+    return 0;
+  }
+};
+
+/**
+ * Delete oldest items if over limit
+ */
+export const deleteOldestItems = async (
   tableName: "user_research_reports" | "user_price_predictions",
   userId: string,
-  count: number | null
+  count: number
 ): Promise<boolean> => {
   try {
-    if (!count || count < MAX_SAVED_ITEMS) {
+    if (count < MAX_SAVED_ITEMS) {
       return true;
     }
 
-    // If at limit, delete oldest
+    // If at or over limit, delete oldest to make room
+    const toDelete = count - MAX_SAVED_ITEMS + 1;
+    console.log(`Need to delete ${toDelete} oldest ${tableName}`);
+    
+    // Fetch oldest items
     const { data: oldestItems, error: fetchError } = await supabase
       .from(tableName)
       .select("id")
       .eq("user_id", userId)
       .order("created_at", { ascending: true })
-      .limit(count - MAX_SAVED_ITEMS + 1);
+      .limit(toDelete);
 
     if (fetchError) {
       console.error(`Error fetching oldest ${tableName}:`, fetchError);
@@ -50,25 +79,29 @@ export const manageItemLimit = async (
       return false;
     }
 
-    if (oldestItems && oldestItems.length > 0) {
-      const oldestIds = oldestItems.map(item => item.id);
-      console.log(`Deleting oldest ${tableName}:`, oldestIds);
-      
-      const { error: deleteError } = await supabase
-        .from(tableName)
-        .delete()
-        .in("id", oldestIds);
+    if (!oldestItems || oldestItems.length === 0) {
+      console.log(`No old ${tableName} found to delete`);
+      return false;
+    }
 
-      if (deleteError) {
-        console.error(`Error deleting old ${tableName}:`, deleteError);
-        toast.error(`Failed to manage saved ${tableName}`);
-        return false;
-      }
+    const oldestIds = oldestItems.map(item => item.id);
+    console.log(`Deleting oldest ${tableName}:`, oldestIds);
+    
+    const { error: deleteError } = await supabase
+      .from(tableName)
+      .delete()
+      .in("id", oldestIds);
+
+    if (deleteError) {
+      console.error(`Error deleting old ${tableName}:`, deleteError);
+      toast.error(`Failed to manage saved ${tableName}`);
+      return false;
     }
     
+    console.log(`Successfully deleted ${oldestIds.length} old ${tableName}`);
     return true;
   } catch (error) {
-    console.error(`Error in manageItemLimit for ${tableName}:`, error);
+    console.error(`Error in deleteOldestItems for ${tableName}:`, error);
     return false;
   }
 };

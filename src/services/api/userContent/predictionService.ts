@@ -1,9 +1,8 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { StockPrediction } from "@/types/ai-analysis/predictionTypes";
 import { Json } from "@/integrations/supabase/types";
-import { getUserId, manageItemLimit } from "./baseService";
+import { getUserId, countUserItems, deleteOldestItems } from "./baseService";
 
 /**
  * Save a price prediction for the current user
@@ -24,25 +23,18 @@ export const savePricePrediction = async (
     
     console.log("User ID:", userId);
 
-    // First, count existing predictions
-    const { count, error: countError } = await supabase
-      .from("user_price_predictions")
-      .select("*", { count: "exact", head: true })
-      .eq("user_id", userId);
+    // Count existing predictions
+    const currentCount = await countUserItems("user_price_predictions", userId);
+    console.log("Current prediction count:", currentCount);
 
-    if (countError) {
-      console.error("Error counting predictions:", countError);
-      toast.error("Failed to save prediction");
-      return null;
-    }
-
-    console.log("Current prediction count:", count);
-
-    // Manage item limit
-    const limitManaged = await manageItemLimit("user_price_predictions", userId, count);
-    if (!limitManaged) {
-      console.error("Failed to manage item limit");
-      return null;
+    // Delete oldest predictions if over limit
+    if (currentCount >= 10) {
+      const deleted = await deleteOldestItems("user_price_predictions", userId, currentCount);
+      if (!deleted) {
+        console.error("Failed to delete oldest predictions");
+        toast.error("Failed to save prediction - couldn't manage prediction limit");
+        return null;
+      }
     }
 
     // Now, insert the new prediction - use type cast to Json
