@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { corsHeaders } from "../_shared/cors.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.4";
@@ -43,8 +44,8 @@ serve(async (req) => {
     const { data: existingPredictions, error: queryError } = await supabase
       .from("user_price_predictions")
       .select("id")
-      .match({ user_id: userId, symbol: symbol })
-      .order("created_at", { ascending: false })
+      .eq("user_id", userId)
+      .eq("symbol", symbol)
       .limit(1);
     
     if (queryError) {
@@ -72,16 +73,17 @@ serve(async (req) => {
           expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString() // 30 days from now
         })
         .eq("id", existingPredictions[0].id)
-        .select("id");
+        .select("id")
+        .single();
       
       if (error) {
         console.error("Error updating prediction:", error);
         return new Response(
           JSON.stringify({ error: error.message, success: false }),
-        {
-          status: 500,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        }
+          {
+            status: 500,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          }
         );
       }
       
@@ -99,7 +101,8 @@ serve(async (req) => {
           prediction_data: predictionData,
           expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString() // 30 days from now
         })
-        .select("id");
+        .select("id")
+        .single();
       
       if (error) {
         console.error("Error inserting prediction:", error);
@@ -112,7 +115,7 @@ serve(async (req) => {
         );
       }
       
-      if (!data || data.length === 0) {
+      if (!data) {
         return new Response(
           JSON.stringify({ error: "No data returned after saving", success: false }),
           {
@@ -122,7 +125,7 @@ serve(async (req) => {
         );
       }
       
-      predictionId = data[0].id;
+      predictionId = data.id;
     }
     
     // Return success response

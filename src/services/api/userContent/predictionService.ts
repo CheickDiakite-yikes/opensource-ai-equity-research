@@ -110,7 +110,8 @@ export const savePricePrediction = async (
     const { data: existingPredictions, error: queryError } = await supabase
       .from("user_price_predictions")
       .select("id")
-      .match({ user_id: userId, symbol })
+      .eq("user_id", userId)
+      .eq("symbol", symbol)
       .limit(1);
       
     if (queryError) {
