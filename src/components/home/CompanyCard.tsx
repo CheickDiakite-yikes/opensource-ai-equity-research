@@ -3,8 +3,7 @@ import React from "react";
 import { TrendingUp, TrendingDown, ExternalLink, DollarSign } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { motion } from "framer-motion";
-import { fetchStockQuote, fetchStockRating } from "@/services/api/profileService";
-import { useQuery } from "@tanstack/react-query";
+import { useCompanyCardData } from "@/hooks/useCompanyCardData";
 
 export interface CompanyCardProps {
   company: { symbol: string, name: string };
@@ -31,21 +30,13 @@ export const itemAnimation = {
 };
 
 const CompanyCard = ({ company, onSelect }: CompanyCardProps) => {
-  const { data: quote } = useQuery({
-    queryKey: ['stockQuote', company.symbol],
-    queryFn: () => fetchStockQuote(company.symbol),
-    staleTime: 5 * 60 * 1000, // 5 minutes
-  });
-
-  const { data: ratingData } = useQuery({
-    queryKey: ['stockRating', company.symbol],
-    queryFn: () => fetchStockRating(company.symbol),
-    staleTime: 15 * 60 * 1000, // 15 minutes
-  });
-
-  const predictedPrice = quote?.price 
-    ? (quote.price * (1 + (Math.sin(company.symbol.charCodeAt(0)) * 0.25))).toFixed(2)
-    : null;
+  const { 
+    quote, 
+    ratingData, 
+    predictedPrice, 
+    isLoading, 
+    error 
+  } = useCompanyCardData(company.symbol);
 
   const getTrendIndicator = (symbol: string) => {
     if (!quote) return null;
@@ -80,64 +71,77 @@ const CompanyCard = ({ company, onSelect }: CompanyCardProps) => {
       >
         <div className="h-1 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-t-xl" />
         <CardContent className="p-6 relative">
-          <div className="flex flex-col h-full justify-between space-y-4">
-            <div>
-              <div className="flex justify-between items-center mb-2">
-                <span className="font-bold text-2xl text-slate-800 dark:text-slate-100">
-                  {company.symbol}
-                </span>
-                <motion.div
-                  whileHover={{ rotate: 15, scale: 1.1 }}
-                  className="p-1.5 rounded-full bg-slate-100 dark:bg-slate-700"
-                >
-                  <ExternalLink className="h-4 w-4 text-slate-500 dark:text-slate-300" />
-                </motion.div>
-              </div>
-              <div className="text-sm text-slate-500 dark:text-slate-400 mb-4 truncate font-medium">
-                {company.name}
+          {isLoading ? (
+            <div className="animate-pulse space-y-4">
+              <div className="h-4 bg-slate-200 dark:bg-slate-700 rounded w-1/3"></div>
+              <div className="h-3 bg-slate-200 dark:bg-slate-700 rounded w-2/3"></div>
+              <div className="grid grid-cols-2 gap-4 mt-4">
+                <div className="h-10 bg-slate-200 dark:bg-slate-700 rounded"></div>
+                <div className="h-10 bg-slate-200 dark:bg-slate-700 rounded"></div>
               </div>
             </div>
-
-            <div className="grid grid-cols-2 gap-4 mb-2">
-              {quote && (
-                <div className="flex flex-col space-y-1">
-                  <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">Current Price</span>
-                  <div className="flex items-center">
-                    <DollarSign className="h-4 w-4 text-blue-500 mr-1" />
-                    <span className="font-bold text-lg">{quote.price.toFixed(2)}</span>
-                  </div>
-                </div>
-              )}
-
-              {predictedPrice && (
-                <div className="flex flex-col space-y-1">
-                  <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">AI Prediction</span>
-                  <div className="flex items-center">
-                    <DollarSign className="h-4 w-4 text-indigo-500 mr-1" />
-                    <span className="font-bold text-lg">{predictedPrice}</span>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            <div className="flex items-center justify-between">
-              {trend && (
-                <div className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-md ${trend.color} w-fit`}>
-                  {trend.icon}
-                  <span className="font-semibold text-sm">
-                    {trend.value}
+          ) : error ? (
+            <div className="text-sm text-red-500">Unable to load data</div>
+          ) : (
+            <div className="flex flex-col h-full justify-between space-y-4">
+              <div>
+                <div className="flex justify-between items-center mb-2">
+                  <span className="font-bold text-2xl text-slate-800 dark:text-slate-100">
+                    {company.symbol}
                   </span>
-                  <span className="text-xs opacity-70">24h</span>
+                  <motion.div
+                    whileHover={{ rotate: 15, scale: 1.1 }}
+                    className="p-1.5 rounded-full bg-slate-100 dark:bg-slate-700"
+                  >
+                    <ExternalLink className="h-4 w-4 text-slate-500 dark:text-slate-300" />
+                  </motion.div>
                 </div>
-              )}
-              
-              {ratingData && (
-                <div className="px-2.5 py-1.5 rounded-md bg-blue-500/10 text-blue-600 dark:bg-blue-500/20 dark:text-blue-400 text-sm font-medium">
-                  {ratingData.rating || "Hold"}
+                <div className="text-sm text-slate-500 dark:text-slate-400 mb-4 truncate font-medium">
+                  {company.name}
                 </div>
-              )}
+              </div>
+
+              <div className="grid grid-cols-2 gap-4 mb-2">
+                {quote && (
+                  <div className="flex flex-col space-y-1">
+                    <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">Current Price</span>
+                    <div className="flex items-center">
+                      <DollarSign className="h-4 w-4 text-blue-500 mr-1" />
+                      <span className="font-bold text-lg">{quote.price.toFixed(2)}</span>
+                    </div>
+                  </div>
+                )}
+
+                {predictedPrice && (
+                  <div className="flex flex-col space-y-1">
+                    <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">AI Prediction</span>
+                    <div className="flex items-center">
+                      <DollarSign className="h-4 w-4 text-indigo-500 mr-1" />
+                      <span className="font-bold text-lg">{predictedPrice.toFixed(2)}</span>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <div className="flex items-center justify-between">
+                {trend && (
+                  <div className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-md ${trend.color} w-fit`}>
+                    {trend.icon}
+                    <span className="font-semibold text-sm">
+                      {trend.value}
+                    </span>
+                    <span className="text-xs opacity-70">24h</span>
+                  </div>
+                )}
+                
+                {ratingData && (
+                  <div className="px-2.5 py-1.5 rounded-md bg-blue-500/10 text-blue-600 dark:bg-blue-500/20 dark:text-blue-400 text-sm font-medium">
+                    {ratingData.rating || "Hold"}
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
+          )}
         </CardContent>
       </Card>
     </motion.div>
