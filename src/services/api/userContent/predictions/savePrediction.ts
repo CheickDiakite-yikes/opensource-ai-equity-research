@@ -95,7 +95,7 @@ export const savePricePrediction = async (
         // Calculate expiration date (30 days from now)
         const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
         
-        // Insert a new prediction
+        // Insert a new prediction without ON CONFLICT clause
         console.log("Inserting new prediction for symbol:", symbol);
         const { data, error } = await supabase
           .from("user_price_predictions")
