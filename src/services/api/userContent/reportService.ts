@@ -67,7 +67,7 @@ export const saveResearchReport = async (
       console.error("Error generating HTML content:", htmlError);
     }
 
-    // Insert the new report
+    // Insert the new report without any ON CONFLICT clause
     console.log("Inserting report for user:", userId);
     
     const { data, error } = await supabase

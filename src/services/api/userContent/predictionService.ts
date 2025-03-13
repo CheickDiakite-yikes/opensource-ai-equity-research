@@ -41,7 +41,7 @@ export const savePricePrediction = async (
       }
     }
 
-    // Insert the new prediction
+    // Insert the new prediction without any ON CONFLICT clause
     console.log("Inserting prediction for user:", userId);
     
     const { data, error } = await supabase
