@@ -8,22 +8,46 @@ export const MAX_SAVED_ITEMS = 10;
 // Connection status and diagnostics
 export type ConnectionStatus = 'connected' | 'disconnected' | 'unknown';
 let currentConnectionStatus: ConnectionStatus = 'unknown';
+let lastConnectionCheck: number = 0;
+const CONNECTION_CHECK_INTERVAL = 30000; // 30 seconds
 
 /**
  * Test connection to Supabase database
  */
 export const testConnection = async (): Promise<ConnectionStatus> => {
   try {
-    const startTime = Date.now();
-    const { data, error } = await supabase.from('user_price_predictions').select('count(*)', { count: 'exact', head: true });
-    const latency = Date.now() - startTime;
+    // Only check connection if it's been more than 30 seconds since last check
+    // or if status is unknown/disconnected
+    const now = Date.now();
+    if (currentConnectionStatus === 'connected' && 
+        now - lastConnectionCheck < CONNECTION_CHECK_INTERVAL) {
+      return currentConnectionStatus;
+    }
     
-    if (error) {
+    lastConnectionCheck = now;
+    const startTime = Date.now();
+    
+    // Try to execute a simple query that doesn't require any permissions
+    const { data, error } = await supabase.rpc('get_service_status');
+    
+    // Fallback to a simple table query if the function doesn't exist
+    if (error && error.message?.includes('function "get_service_status" does not exist')) {
+      const { error: pingError } = await supabase
+        .from('user_price_predictions')
+        .select('count(*)', { count: 'exact', head: true });
+      
+      if (pingError) {
+        console.error("Database connection test failed:", pingError);
+        currentConnectionStatus = 'disconnected';
+        return 'disconnected';
+      }
+    } else if (error) {
       console.error("Database connection test failed:", error);
       currentConnectionStatus = 'disconnected';
       return 'disconnected';
     }
     
+    const latency = Date.now() - startTime;
     console.log(`Database connection successful. Latency: ${latency}ms`);
     currentConnectionStatus = 'connected';
     return 'connected';
@@ -124,11 +148,14 @@ export const getDiagnosticInfo = async (): Promise<{
   authStatus: string;
   latency?: number;
   lastError?: string;
+  canInsert?: boolean;
 }> => {
   try {
     // Test basic connectivity
     const startTime = Date.now();
-    const { error: pingError } = await supabase.from('user_price_predictions').select('count(*)', { count: 'exact', head: true });
+    const { error: pingError } = await supabase
+      .from('user_price_predictions')
+      .select('count(*)', { count: 'exact', head: true });
     const latency = Date.now() - startTime;
     
     // Check authentication
@@ -151,10 +178,15 @@ export const getDiagnosticInfo = async (): Promise<{
       };
     }
     
+    // We'll add write permission test later
+    const { testPredictionInsert } = await import('./predictionService');
+    const canInsert = await testPredictionInsert();
+    
     return {
       connected: true,
       latency,
-      authStatus: userData?.user ? 'authenticated' : 'not-authenticated'
+      authStatus: userData?.user ? 'authenticated' : 'not-authenticated',
+      canInsert
     };
   } catch (err) {
     return {

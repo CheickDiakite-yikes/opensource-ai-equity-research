@@ -1,8 +1,9 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { StockPrediction } from "@/types/ai-analysis/predictionTypes";
 import { Json } from "@/integrations/supabase/types";
-import { getUserId, manageItemLimit } from "./baseService";
+import { getUserId, manageItemLimit, testConnection } from "./baseService";
 
 /**
  * Save a price prediction for the current user
@@ -14,6 +15,15 @@ export const savePricePrediction = async (
 ): Promise<string | null> => {
   try {
     console.log("Starting savePricePrediction for:", symbol);
+    
+    // Test connection first to avoid timeouts
+    const connectionStatus = await testConnection();
+    if (connectionStatus !== 'connected') {
+      console.error("Database connection test failed when saving prediction");
+      toast.error("Cannot save prediction: Database connection error");
+      return null;
+    }
+    
     const userId = await getUserId();
     if (!userId) {
       console.error("No user ID found when saving prediction");
@@ -72,41 +82,47 @@ export const savePricePrediction = async (
     // Now, insert the new prediction - use type cast to Json
     console.log("Inserting prediction into database");
     
-    const { data, error } = await supabase
-      .from("user_price_predictions")
-      .insert({
-        user_id: userId,
-        symbol,
-        company_name: companyName,
-        prediction_data: cleanedPredictionData as unknown as Json,
-      })
-      .select("id");
+    try {
+      const { data, error } = await supabase
+        .from("user_price_predictions")
+        .insert({
+          user_id: userId,
+          symbol,
+          company_name: companyName,
+          prediction_data: cleanedPredictionData as unknown as Json,
+        })
+        .select("id");
 
-    if (error) {
-      console.error("Error saving prediction:", error);
-      
-      // More specific error message based on error code
-      if (error.code === "23505") {
-        toast.error("This prediction already exists. Please update it instead.");
-      } else if (error.code === "23503") {
-        toast.error("Authentication error. Please sign in again.");
-      } else if (error.code === "42P01") {
-        toast.error("Database configuration error. Please contact support.");
-      } else {
-        toast.error(`Failed to save prediction: ${error.message}`);
+      if (error) {
+        console.error("Error saving prediction:", error);
+        
+        // More specific error message based on error code
+        if (error.code === "23505") {
+          toast.error("This prediction already exists. Please update it instead.");
+        } else if (error.code === "23503") {
+          toast.error("Authentication error. Please sign in again.");
+        } else if (error.code === "42P01") {
+          toast.error("Database configuration error. Please contact support.");
+        } else {
+          toast.error(`Failed to save prediction. Please try again.`);
+        }
+        return null;
       }
+
+      if (!data || data.length === 0) {
+        console.error("No data returned after saving prediction");
+        toast.error("Failed to save prediction - no data returned");
+        return null;
+      }
+
+      console.log("Prediction saved successfully. ID:", data[0].id);
+      toast.success("Price prediction saved successfully");
+      return data[0].id;
+    } catch (insertError) {
+      console.error("Exception during database insert:", insertError);
+      toast.error("Failed to save prediction. Please try again.");
       return null;
     }
-
-    if (!data || data.length === 0) {
-      console.error("No data returned after saving prediction");
-      toast.error("Failed to save prediction - no data returned");
-      return null;
-    }
-
-    console.log("Prediction saved successfully. ID:", data[0].id);
-    toast.success("Price prediction saved successfully");
-    return data[0].id;
   } catch (error) {
     console.error("Error in savePricePrediction:", error);
     toast.error("An unexpected error occurred while saving prediction");
@@ -120,6 +136,15 @@ export const savePricePrediction = async (
 export const getUserPricePredictions = async () => {
   try {
     console.log("Getting user price predictions");
+    
+    // Test connection first
+    const connectionStatus = await testConnection();
+    if (connectionStatus !== 'connected') {
+      console.error("Database connection test failed when getting predictions");
+      toast.error("Cannot load predictions: Database connection error");
+      return [];
+    }
+    
     const userId = await getUserId();
     if (!userId) {
       console.log("No user ID found when getting predictions");
@@ -127,20 +152,6 @@ export const getUserPricePredictions = async () => {
     }
 
     console.log("Fetching predictions for user:", userId);
-    
-    // Test database connectivity before attempting to fetch data
-    try {
-      const { error: pingError } = await supabase.from("user_price_predictions").select("count(*)", { count: "exact", head: true });
-      if (pingError) {
-        console.error("Database connectivity test failed:", pingError);
-        toast.error("Database connection error");
-        return [];
-      }
-    } catch (pingErr) {
-      console.error("Exception during database connectivity test:", pingErr);
-      toast.error("Database connection error");
-      return [];
-    }
     
     const { data, error } = await supabase
       .from("user_price_predictions")
@@ -179,6 +190,14 @@ export const deletePricePrediction = async (predictionId: string): Promise<boole
       return false;
     }
     
+    // Test connection first
+    const connectionStatus = await testConnection();
+    if (connectionStatus !== 'connected') {
+      console.error("Database connection test failed when deleting prediction");
+      toast.error("Cannot delete prediction: Database connection error");
+      return false;
+    }
+    
     const { error } = await supabase
       .from("user_price_predictions")
       .delete()
@@ -195,6 +214,62 @@ export const deletePricePrediction = async (predictionId: string): Promise<boole
   } catch (error) {
     console.error("Error in deletePricePrediction:", error);
     toast.error("An unexpected error occurred while deleting");
+    return false;
+  }
+};
+
+/**
+ * Test if we can insert data in the predictions table
+ * (for connection diagnostics)
+ */
+export const testPredictionInsert = async (): Promise<boolean> => {
+  try {
+    const userId = await getUserId();
+    if (!userId) {
+      return false;
+    }
+    
+    // Create a temporary test record
+    const testData = {
+      symbol: "_TEST",
+      currentPrice: 0,
+      predictedPrice: {
+        oneMonth: 0,
+        threeMonths: 0,
+        sixMonths: 0,
+        oneYear: 0
+      }
+    } as StockPrediction;
+    
+    // Try to insert it
+    const { data, error } = await supabase
+      .from("user_price_predictions")
+      .insert({
+        user_id: userId,
+        symbol: "_TEST",
+        company_name: "Test Company",
+        prediction_data: testData as unknown as Json,
+      })
+      .select("id");
+    
+    if (error) {
+      console.error("Test insert failed:", error);
+      return false;
+    }
+    
+    // If insert succeeded, delete the test record
+    if (data && data.length > 0) {
+      await supabase
+        .from("user_price_predictions")
+        .delete()
+        .eq("id", data[0].id);
+      
+      return true;
+    }
+    
+    return false;
+  } catch (error) {
+    console.error("Error in testPredictionInsert:", error);
     return false;
   }
 };

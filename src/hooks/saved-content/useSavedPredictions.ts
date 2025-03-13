@@ -25,6 +25,7 @@ export const useSavedPredictions = () => {
   const [debugInfo, setDebugInfo] = useState<any>(null);
   const [connectionStatus, setConnectionStatus] = useState(getConnectionStatus());
   const { user, isLoading, setIsLoading, error, setError, checkUserLoggedIn } = useSavedContentBase();
+  const [retryCount, setRetryCount] = useState(0);
 
   // Periodic connection check
   useEffect(() => {
@@ -56,6 +57,18 @@ export const useSavedPredictions = () => {
     clearErrors();
     
     try {
+      // Check connection before proceeding
+      const status = await testConnection();
+      setConnectionStatus(status);
+      
+      if (status !== 'connected') {
+        setError("Database connection error");
+        setLastError("Cannot connect to database. Please check your internet connection.");
+        setPredictions([]);
+        setIsLoading(false);
+        return;
+      }
+      
       // Get diagnostic info to help with debugging
       const diagnostics = await getDiagnosticInfo();
       setDebugInfo(diagnostics);
@@ -122,6 +135,7 @@ export const useSavedPredictions = () => {
       
       console.log(`Fetched ${convertedPredictions.length} predictions`);
       setPredictions(convertedPredictions);
+      setRetryCount(0); // Reset retry count on success
     } catch (err) {
       console.error("Error fetching saved predictions:", err);
       setError("Failed to load saved predictions");
@@ -179,10 +193,22 @@ export const useSavedPredictions = () => {
         // Refresh predictions list after saving
         console.log("Prediction saved successfully, refreshing predictions list");
         await fetchPredictions();
+        return predictionId;
       } else {
         console.error("Failed to save prediction - no ID returned");
+        
+        // Auto-retry once after a short delay
+        if (retryCount < 1) {
+          setRetryCount(prev => prev + 1);
+          toast.info("Retrying save operation...");
+          
+          // Wait a moment and try again
+          await new Promise(resolve => setTimeout(resolve, 1500));
+          return savePricePrediction(symbol, companyName, predictionData);
+        }
+        
+        return null;
       }
-      return predictionId;
     } catch (err) {
       console.error("Error in savePrediction:", err);
       toast.error("Failed to save prediction due to an unexpected error");
