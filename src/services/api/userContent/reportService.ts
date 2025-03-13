@@ -67,37 +67,76 @@ export const saveResearchReport = async (
       console.error("Error generating HTML content:", htmlError);
     }
 
-    // Insert the new report with ON CONFLICT clause now that we have a unique constraint
-    console.log("Inserting report for user:", userId);
-    
-    const { data, error } = await supabase
+    // First, check if a report with this user_id and symbol already exists
+    console.log("Checking for existing report...");
+    const { data: existingData, error: existingError } = await supabase
       .from("user_research_reports")
-      .insert({
-        user_id: userId,
-        symbol,
-        company_name: companyName,
-        report_data: reportData as unknown as Json,
-        html_content: htmlContent
-      })
-      .on('conflict', ['user_id', 'symbol'])
-      .merge() // Update the existing record if there's a conflict
-      .select("id, html_content");
+      .select("id")
+      .eq("user_id", userId)
+      .eq("symbol", symbol)
+      .maybeSingle();
 
-    if (error) {
-      console.error("Error saving report:", error);
-      toast.error("Failed to save report: " + error.message);
+    if (existingError) {
+      console.error("Error checking for existing report:", existingError);
+      toast.error("Failed to save report: " + existingError.message);
       return null;
     }
 
-    if (!data || data.length === 0) {
+    let result;
+
+    if (existingData) {
+      // Update existing report
+      console.log("Updating existing report ID:", existingData.id);
+      const { data, error } = await supabase
+        .from("user_research_reports")
+        .update({
+          company_name: companyName,
+          report_data: reportData as unknown as Json,
+          html_content: htmlContent,
+          updated_at: new Date().toISOString()
+        })
+        .eq("id", existingData.id)
+        .select("id, html_content");
+
+      if (error) {
+        console.error("Error updating report:", error);
+        toast.error("Failed to update report: " + error.message);
+        return null;
+      }
+      
+      result = data;
+    } else {
+      // Insert new report
+      console.log("Inserting new report for user:", userId);
+      const { data, error } = await supabase
+        .from("user_research_reports")
+        .insert({
+          user_id: userId,
+          symbol,
+          company_name: companyName,
+          report_data: reportData as unknown as Json,
+          html_content: htmlContent
+        })
+        .select("id, html_content");
+
+      if (error) {
+        console.error("Error saving report:", error);
+        toast.error("Failed to save report: " + error.message);
+        return null;
+      }
+      
+      result = data;
+    }
+
+    if (!result || result.length === 0) {
       console.error("No data returned after saving report");
       toast.error("Failed to save report - no data returned");
       return null;
     }
 
-    console.log("Report saved successfully. ID:", data[0].id, "HTML content:", data[0].html_content ? "YES" : "NO");
+    console.log("Report saved successfully. ID:", result[0].id, "HTML content:", result[0].html_content ? "YES" : "NO");
     toast.success("Research report saved successfully");
-    return data[0].id;
+    return result[0].id;
   } catch (error) {
     console.error("Error in saveResearchReport:", error);
     toast.error("An unexpected error occurred");
