@@ -9,6 +9,90 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      api_cache: {
+        Row: {
+          cache_key: string
+          created_at: string | null
+          data: Json
+          expires_at: string
+          id: number
+          metadata: Json | null
+        }
+        Insert: {
+          cache_key: string
+          created_at?: string | null
+          data: Json
+          expires_at: string
+          id?: number
+          metadata?: Json | null
+        }
+        Update: {
+          cache_key?: string
+          created_at?: string | null
+          data?: Json
+          expires_at?: string
+          id?: number
+          metadata?: Json | null
+        }
+        Relationships: []
+      }
+      dcf_assumptions: {
+        Row: {
+          assumptions: Json
+          created_at: string
+          expires_at: string
+          id: string
+          is_mock: boolean | null
+          symbol: string
+        }
+        Insert: {
+          assumptions: Json
+          created_at?: string
+          expires_at: string
+          id?: string
+          is_mock?: boolean | null
+          symbol: string
+        }
+        Update: {
+          assumptions?: Json
+          created_at?: string
+          expires_at?: string
+          id?: string
+          is_mock?: boolean | null
+          symbol?: string
+        }
+        Relationships: []
+      }
+      dcf_calculations: {
+        Row: {
+          created_at: string
+          id: string
+          is_mock: boolean | null
+          parameters: Json | null
+          result: Json
+          symbol: string
+          type: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_mock?: boolean | null
+          parameters?: Json | null
+          result: Json
+          symbol: string
+          type: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_mock?: boolean | null
+          parameters?: Json | null
+          result?: Json
+          symbol?: string
+          type?: string
+        }
+        Relationships: []
+      }
       earnings_transcripts: {
         Row: {
           content: string | null
@@ -45,6 +129,84 @@ export type Database = {
           title?: string | null
           url?: string | null
           year?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string | null
+          firm_name: string | null
+          first_name: string | null
+          id: string
+          industry: string | null
+          job_role: string | null
+          last_name: string | null
+          location: string | null
+          updated_at: string | null
+          years_experience: number | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string | null
+          firm_name?: string | null
+          first_name?: string | null
+          id: string
+          industry?: string | null
+          job_role?: string | null
+          last_name?: string | null
+          location?: string | null
+          updated_at?: string | null
+          years_experience?: number | null
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string | null
+          firm_name?: string | null
+          first_name?: string | null
+          id?: string
+          industry?: string | null
+          job_role?: string | null
+          last_name?: string | null
+          location?: string | null
+          updated_at?: string | null
+          years_experience?: number | null
+        }
+        Relationships: []
+      }
+      saved_analyses: {
+        Row: {
+          analysis_data: Json
+          analysis_type: string
+          created_at: string | null
+          description: string | null
+          id: string
+          name: string
+          symbol: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          analysis_data: Json
+          analysis_type: string
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          name: string
+          symbol: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          analysis_data?: Json
+          analysis_type?: string
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          name?: string
+          symbol?: string
+          updated_at?: string | null
+          user_id?: string
         }
         Relationships: []
       }
@@ -93,6 +255,234 @@ export type Database = {
         }
         Relationships: []
       }
+      stock_prediction_history: {
+        Row: {
+          confidence_level: number | null
+          current_price: number
+          id: string
+          key_drivers: Json | null
+          metadata: Json | null
+          one_month_price: number
+          one_year_price: number
+          prediction_date: string | null
+          risks: Json | null
+          sentiment_analysis: string | null
+          six_month_price: number
+          symbol: string
+          three_month_price: number
+        }
+        Insert: {
+          confidence_level?: number | null
+          current_price: number
+          id?: string
+          key_drivers?: Json | null
+          metadata?: Json | null
+          one_month_price: number
+          one_year_price: number
+          prediction_date?: string | null
+          risks?: Json | null
+          sentiment_analysis?: string | null
+          six_month_price: number
+          symbol: string
+          three_month_price: number
+        }
+        Update: {
+          confidence_level?: number | null
+          current_price?: number
+          id?: string
+          key_drivers?: Json | null
+          metadata?: Json | null
+          one_month_price?: number
+          one_year_price?: number
+          prediction_date?: string | null
+          risks?: Json | null
+          sentiment_analysis?: string | null
+          six_month_price?: number
+          symbol?: string
+          three_month_price?: number
+        }
+        Relationships: []
+      }
+      user_activity_summary: {
+        Row: {
+          created_at: string | null
+          favorite_symbols: string[] | null
+          id: string
+          last_activity: string | null
+          prediction_accuracy: number | null
+          report_success_rate: number | null
+          total_predictions: number | null
+          total_reports: number | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          favorite_symbols?: string[] | null
+          id?: string
+          last_activity?: string | null
+          prediction_accuracy?: number | null
+          report_success_rate?: number | null
+          total_predictions?: number | null
+          total_reports?: number | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          favorite_symbols?: string[] | null
+          id?: string
+          last_activity?: string | null
+          prediction_accuracy?: number | null
+          report_success_rate?: number | null
+          total_predictions?: number | null
+          total_reports?: number | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_analytics: {
+        Row: {
+          access_count: number | null
+          action: string
+          category: string
+          created_at: string
+          id: string
+          label: string | null
+          last_accessed: string | null
+          metadata: Json | null
+          session_id: string
+          timestamp: string
+          user_id: string | null
+          value: number | null
+        }
+        Insert: {
+          access_count?: number | null
+          action: string
+          category: string
+          created_at?: string
+          id?: string
+          label?: string | null
+          last_accessed?: string | null
+          metadata?: Json | null
+          session_id: string
+          timestamp?: string
+          user_id?: string | null
+          value?: number | null
+        }
+        Update: {
+          access_count?: number | null
+          action?: string
+          category?: string
+          created_at?: string
+          id?: string
+          label?: string | null
+          last_accessed?: string | null
+          metadata?: Json | null
+          session_id?: string
+          timestamp?: string
+          user_id?: string | null
+          value?: number | null
+        }
+        Relationships: []
+      }
+      user_preferences: {
+        Row: {
+          created_at: string | null
+          default_view: string | null
+          id: string
+          preferred_metrics: string[] | null
+          theme: string | null
+          updated_at: string | null
+          user_id: string
+          watched_symbols: string[] | null
+        }
+        Insert: {
+          created_at?: string | null
+          default_view?: string | null
+          id?: string
+          preferred_metrics?: string[] | null
+          theme?: string | null
+          updated_at?: string | null
+          user_id: string
+          watched_symbols?: string[] | null
+        }
+        Update: {
+          created_at?: string | null
+          default_view?: string | null
+          id?: string
+          preferred_metrics?: string[] | null
+          theme?: string | null
+          updated_at?: string | null
+          user_id?: string
+          watched_symbols?: string[] | null
+        }
+        Relationships: []
+      }
+      user_price_predictions: {
+        Row: {
+          company_name: string
+          created_at: string
+          expires_at: string
+          id: string
+          prediction_data: Json
+          symbol: string
+          user_id: string
+        }
+        Insert: {
+          company_name: string
+          created_at?: string
+          expires_at?: string
+          id?: string
+          prediction_data: Json
+          symbol: string
+          user_id: string
+        }
+        Update: {
+          company_name?: string
+          created_at?: string
+          expires_at?: string
+          id?: string
+          prediction_data?: Json
+          symbol?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_research_reports: {
+        Row: {
+          company_name: string
+          created_at: string
+          expires_at: string
+          html_content: string | null
+          id: string
+          report_data: Json
+          symbol: string
+          user_id: string
+        }
+        Insert: {
+          company_name: string
+          created_at?: string
+          expires_at?: string
+          html_content?: string | null
+          id?: string
+          report_data: Json
+          symbol: string
+          user_id: string
+        }
+        Update: {
+          company_name?: string
+          created_at?: string
+          expires_at?: string
+          html_content?: string | null
+          id?: string
+          report_data?: Json
+          symbol?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -102,14 +492,105 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
-      get_or_create_cache: {
+      cleanup_expired_user_data: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
+      cleanup_old_analytics_data: {
         Args: {
-          p_user_id: string
-          p_cache_key: string
-          p_expires_at: string
-          p_default_data?: Json
+          days_to_keep?: number
+        }
+        Returns: number
+      }
+      execute_sql: {
+        Args: {
+          sql_statement: string
         }
         Returns: Json
+      }
+      extract_financial_metrics: {
+        Args: {
+          p_doc_id: number
+          p_doc_type: string
+        }
+        Returns: Json
+      }
+      get_analytics_insights: {
+        Args: {
+          timeframe?: string
+        }
+        Returns: Json
+      }
+      get_or_create_cache:
+        | {
+            Args: {
+              p_cache_key: string
+              p_expires_at: string
+              p_default_data?: Json
+            }
+            Returns: Json
+          }
+        | {
+            Args: {
+              p_user_id: string
+              p_cache_key: string
+              p_expires_at: string
+              p_default_data?: Json
+            }
+            Returns: Json
+          }
+      get_related_documents: {
+        Args: {
+          p_doc_id: number
+          p_doc_type: string
+          p_limit?: number
+        }
+        Returns: {
+          doc_id: number
+          doc_type: string
+          symbol: string
+          date: string
+          title: string
+          similarity: number
+        }[]
+      }
+      get_service_status: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
+      }
+      is_active_content: {
+        Args: {
+          expires_at: string
+        }
+        Returns: boolean
+      }
+      schedule_cache_cleanup: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
+      semantic_document_search: {
+        Args: {
+          p_search_term: string
+          p_symbol?: string
+          p_doc_type?: string
+          p_limit?: number
+        }
+        Returns: {
+          doc_id: number
+          doc_type: string
+          symbol: string
+          date: string
+          title: string
+          relevance: number
+          content_snippet: string
+        }[]
+      }
+      table_exists: {
+        Args: {
+          schema_name: string
+          table_name: string
+        }
+        Returns: boolean
       }
       update_user_portfolio: {
         Args: {

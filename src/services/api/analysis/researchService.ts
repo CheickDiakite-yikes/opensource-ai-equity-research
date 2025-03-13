@@ -59,3 +59,53 @@ export const generateStockPrediction = async (
     throw error;
   }
 };
+
+/**
+ * Save an AI research report to the database
+ */
+export const saveResearchReport = async (
+  symbol: string,
+  companyName: string,
+  report: ResearchReport
+): Promise<void> => {
+  try {
+    console.log(`Saving research report for ${symbol}`);
+    
+    await invokeSupabaseFunction('save-ai-analysis', {
+      type: 'report',
+      symbol,
+      companyName,
+      data: report
+    });
+    
+    console.log(`Research report saved for ${symbol}`);
+  } catch (error) {
+    console.error("Error saving research report:", error);
+    throw error;
+  }
+};
+
+/**
+ * Save an AI stock price prediction to the database
+ */
+export const savePricePrediction = async (
+  symbol: string,
+  companyName: string,
+  prediction: StockPrediction
+): Promise<void> => {
+  try {
+    console.log(`Saving price prediction for ${symbol}`);
+    
+    await invokeSupabaseFunction('save-ai-analysis', {
+      type: 'prediction',
+      symbol,
+      companyName,
+      data: prediction
+    });
+    
+    console.log(`Price prediction saved for ${symbol}`);
+  } catch (error) {
+    console.error("Error saving price prediction:", error);
+    throw error;
+  }
+};
