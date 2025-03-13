@@ -1,0 +1,147 @@
+
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
+import { StockPrediction } from "@/types/ai-analysis/predictionTypes";
+import { Json } from "@/integrations/supabase/types";
+import { getUserId, manageItemLimit } from "../baseService";
+
+/**
+ * Save a price prediction for the current user
+ */
+export const savePricePrediction = async (
+  symbol: string,
+  companyName: string,
+  predictionData: StockPrediction
+): Promise<string | null> => {
+  try {
+    console.log("Starting savePricePrediction for:", symbol);
+    const userId = await getUserId();
+    if (!userId) {
+      console.error("No user ID found when saving prediction");
+      toast.error("You must be signed in to save predictions");
+      return null;
+    }
+    
+    console.log("User ID:", userId);
+
+    // First, count existing predictions
+    const { count, error: countError } = await supabase
+      .from("user_price_predictions")
+      .select("*", { count: "exact", head: true })
+      .eq("user_id", userId);
+
+    if (countError) {
+      console.error("Error counting predictions:", countError);
+      toast.error("Failed to save prediction");
+      return null;
+    }
+
+    console.log("Current prediction count:", count);
+
+    // Manage item limit
+    const limitManaged = await manageItemLimit("user_price_predictions", userId, count);
+    if (!limitManaged) {
+      console.error("Failed to manage item limit");
+      return null;
+    }
+    
+    try {
+      // Try using the edge function first for better reliability
+      console.log("Calling save-price-prediction edge function");
+      const { data: edgeFunctionData, error: edgeFunctionError } = await supabase.functions.invoke(
+        "save-price-prediction",
+        {
+          body: {
+            userId,
+            symbol,
+            companyName,
+            predictionData
+          }
+        }
+      );
+      
+      if (edgeFunctionError) {
+        console.error("Edge function error:", edgeFunctionError);
+        throw new Error(`Edge function error: ${edgeFunctionError.message}`);
+      } 
+      
+      if (edgeFunctionData && edgeFunctionData.success === false) {
+        console.error("Edge function returned an error:", edgeFunctionData.error);
+        throw new Error(`Database error: ${edgeFunctionData.error || "Unknown error"}`);
+      }
+      
+      if (edgeFunctionData && edgeFunctionData.id) {
+        console.log("Edge function success - prediction saved with ID:", edgeFunctionData.id);
+        toast.success("Price prediction saved successfully");
+        return edgeFunctionData.id;
+      }
+      
+      // If edge function didn't return an ID but didn't throw an error either
+      if (edgeFunctionData) {
+        console.error("Edge function returned data but no ID:", edgeFunctionData);
+        throw new Error("Edge function response missing ID");
+      }
+      
+      throw new Error("Edge function returned no data");
+      
+    } catch (edgeFunctionErr) {
+      console.error("Error with edge function, using direct approach:", edgeFunctionErr);
+      toast.error("Edge function failed, trying direct database access");
+      
+      // Fallback: Direct database operations if edge function failed
+      console.log("Using fallback: direct database operations");
+
+      try {
+        // Calculate expiration date (30 days from now)
+        const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
+        
+        // Insert a new prediction
+        console.log("Inserting new prediction for symbol:", symbol);
+        const { data, error } = await supabase
+          .from("user_price_predictions")
+          .insert({
+            user_id: userId,
+            symbol,
+            company_name: companyName,
+            prediction_data: predictionData as unknown as Json,
+            expires_at: expiresAt,
+            created_at: new Date().toISOString()
+          })
+          .select("id");
+
+        if (error) {
+          // Format error message for better user feedback
+          let errorMessage = "Failed to save prediction";
+          if (error.code) {
+            errorMessage += ` (Error code: ${error.code})`;
+          }
+          if (error.message) {
+            errorMessage += `: ${error.message}`;
+          }
+          
+          console.error("Error saving prediction:", error);
+          toast.error(errorMessage);
+          return null;
+        }
+
+        if (!data || data.length === 0) {
+          console.error("No data returned after saving prediction");
+          toast.error("Failed to save prediction - no data returned");
+          return null;
+        }
+
+        console.log("Prediction saved successfully. ID:", data[0].id);
+        toast.success("Price prediction saved successfully");
+        return data[0].id;
+      } catch (dbError: any) {
+        console.error("Database operation error:", dbError);
+        toast.error("Database error: " + (dbError.message || "Unknown error"));
+        return null;
+      }
+    }
+  } catch (error: any) {
+    console.error("Error in savePricePrediction:", error);
+    toast.error("An unexpected error occurred: " + (error.message || "Unknown error"));
+    return null;
+  }
+};
