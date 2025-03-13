@@ -8,7 +8,7 @@ const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
 
 /**
  * Edge function to save price predictions to the database.
- * This provides a more reliable way to save data and better handles duplicates.
+ * This directly inserts predictions without managing conflicts or deletions.
  */
 serve(async (req) => {
   // Handle CORS preflight requests
@@ -40,37 +40,11 @@ serve(async (req) => {
     // Create a Supabase client with the service role key
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
     
-    // Step 1: Delete any existing predictions for this user and symbol combination
-    const { error: deleteError } = await supabase
-      .from("user_price_predictions")
-      .delete()
-      .eq("user_id", userId)
-      .eq("symbol", symbol);
-    
-    if (deleteError) {
-      console.error("Error deleting existing predictions:", deleteError);
-      return new Response(
-        JSON.stringify({ 
-          error: deleteError.message, 
-          code: deleteError.code,
-          details: deleteError.details,
-          hint: deleteError.hint,
-          success: false 
-        }),
-        {
-          status: 500,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        }
-      );
-    }
-    
-    console.log(`Deleted any existing predictions for ${symbol}, now creating a new one`);
-    
     // Calculate expiration date (30 days from now)
     const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
     const createdAt = new Date().toISOString();
     
-    // Step 2: Insert a new prediction - we don't use ON CONFLICT as it requires a unique constraint
+    // Insert a new prediction without deleting existing ones
     try {
       const { data, error } = await supabase
         .from("user_price_predictions")

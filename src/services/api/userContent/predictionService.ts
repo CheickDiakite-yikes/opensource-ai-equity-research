@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { StockPrediction } from "@/types/ai-analysis/predictionTypes";
@@ -122,24 +121,10 @@ export const savePricePrediction = async (
       console.log("Using fallback: direct database operations");
 
       try {
-        // Step 1: Delete any existing predictions for this user and symbol
-        console.log("Deleting any existing predictions for symbol:", symbol);
-        const { error: deleteError } = await supabase
-          .from("user_price_predictions")
-          .delete()
-          .eq("user_id", userId)
-          .eq("symbol", symbol);
-          
-        if (deleteError) {
-          console.error("Error deleting existing predictions:", deleteError);
-          toast.error("Failed to update prediction: " + deleteError.message);
-          return null;
-        }
-        
         // Calculate expiration date (30 days from now)
         const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
         
-        // Step 2: Insert a new prediction with explicit columns
+        // Insert a new prediction without deleting existing ones
         console.log("Inserting new prediction for symbol:", symbol);
         const { data, error } = await supabase
           .from("user_price_predictions")
