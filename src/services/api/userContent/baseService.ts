@@ -1,9 +1,8 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
 // Maximum number of reports/predictions to keep per user
-export const MAX_SAVED_ITEMS = 10;
+export const MAX_SAVED_ITEMS = 20;
 
 /**
  * Check if user is authenticated and return user ID

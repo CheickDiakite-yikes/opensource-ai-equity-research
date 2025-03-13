@@ -7,6 +7,7 @@ export const useSavedContentBase = () => {
   const { user } = useAuth();
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   // Helper function to check if user is logged in
   const checkUserLoggedIn = () => {
@@ -18,6 +19,20 @@ export const useSavedContentBase = () => {
     return true;
   };
 
+  // Function to safely refresh data
+  const refreshData = async (fetchFunction: () => Promise<void>) => {
+    try {
+      setIsRefreshing(true);
+      await fetchFunction();
+    } catch (err) {
+      console.error("Error refreshing data:", err);
+      setError("Failed to refresh data");
+      toast.error("Failed to refresh data");
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
+
   // Reset loading state when component mounts
   useEffect(() => {
     console.log("useSavedContentBase hook initialized");
@@ -27,8 +42,11 @@ export const useSavedContentBase = () => {
     user,
     isLoading,
     setIsLoading,
+    isRefreshing,
+    setIsRefreshing,
     error,
     setError,
-    checkUserLoggedIn
+    checkUserLoggedIn,
+    refreshData
   };
 };
