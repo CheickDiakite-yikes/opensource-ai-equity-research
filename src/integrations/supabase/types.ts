@@ -585,6 +585,14 @@ export type Database = {
           content_snippet: string
         }[]
       }
+      set_cache: {
+        Args: {
+          p_cache_key: string
+          p_data: Json
+          p_ttl_minutes?: number
+        }
+        Returns: boolean
+      }
       table_exists: {
         Args: {
           schema_name: string
