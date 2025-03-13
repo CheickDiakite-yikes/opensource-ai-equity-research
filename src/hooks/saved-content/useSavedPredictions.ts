@@ -20,6 +20,7 @@ export interface SavedPrediction {
 
 export const useSavedPredictions = () => {
   const [predictions, setPredictions] = useState<SavedPrediction[]>([]);
+  const [lastError, setLastError] = useState<Error | null>(null);
   const { user, isLoading, setIsLoading, error, setError, checkUserLoggedIn } = useSavedContentBase();
 
   const fetchPredictions = async () => {
@@ -31,6 +32,7 @@ export const useSavedPredictions = () => {
     console.log("Fetching predictions for user:", user.id);
     setIsLoading(true);
     setError(null);
+    setLastError(null);
     
     try {
       const data = await getUserPricePredictions();
@@ -69,6 +71,7 @@ export const useSavedPredictions = () => {
     } catch (err) {
       console.error("Error fetching saved predictions:", err);
       setError("Failed to load saved predictions");
+      setLastError(err instanceof Error ? err : new Error(String(err)));
     } finally {
       setIsLoading(false);
     }
@@ -76,31 +79,44 @@ export const useSavedPredictions = () => {
 
   const deletePrediction = async (predictionId: string) => {
     console.log("Deleting prediction:", predictionId);
-    const success = await deletePricePrediction(predictionId);
-    if (success) {
-      console.log("Prediction deleted successfully, updating state");
-      setPredictions(prevPredictions => 
-        prevPredictions.filter(prediction => prediction.id !== predictionId)
-      );
-    } else {
-      console.error("Failed to delete prediction");
+    try {
+      const success = await deletePricePrediction(predictionId);
+      if (success) {
+        console.log("Prediction deleted successfully, updating state");
+        setPredictions(prevPredictions => 
+          prevPredictions.filter(prediction => prediction.id !== predictionId)
+        );
+      } else {
+        console.error("Failed to delete prediction");
+      }
+      return success;
+    } catch (err) {
+      console.error("Error deleting prediction:", err);
+      setLastError(err instanceof Error ? err : new Error(String(err)));
+      return false;
     }
-    return success;
   };
 
   const savePrediction = async (symbol: string, companyName: string, predictionData: StockPrediction) => {
     console.log("Saving prediction for:", symbol, companyName);
-    const predictionId = await savePricePrediction(symbol, companyName, predictionData);
-    console.log("Save result - prediction ID:", predictionId);
-    
-    if (predictionId) {
-      // Refresh predictions list after saving
-      console.log("Prediction saved successfully, refreshing predictions list");
-      fetchPredictions();
-    } else {
-      console.error("Failed to save prediction - no ID returned");
+    setLastError(null);
+    try {
+      const predictionId = await savePricePrediction(symbol, companyName, predictionData);
+      console.log("Save result - prediction ID:", predictionId);
+      
+      if (predictionId) {
+        // Refresh predictions list after saving
+        console.log("Prediction saved successfully, refreshing predictions list");
+        fetchPredictions();
+      } else {
+        console.error("Failed to save prediction - no ID returned");
+      }
+      return predictionId;
+    } catch (err) {
+      console.error("Error saving prediction:", err);
+      setLastError(err instanceof Error ? err : new Error(String(err)));
+      return null;
     }
-    return predictionId;
   };
 
   // Fetch predictions when the component mounts or user changes
@@ -113,6 +129,7 @@ export const useSavedPredictions = () => {
     predictions, 
     isLoading, 
     error, 
+    lastError,
     fetchPredictions, 
     deletePrediction, 
     savePrediction 

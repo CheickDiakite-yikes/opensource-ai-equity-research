@@ -47,17 +47,20 @@ export const savePricePrediction = async (
 
     // Now, insert the new prediction - use type cast to Json
     console.log("Inserting prediction into database");
-    console.log("Prediction data sample:", JSON.stringify(predictionData).substring(0, 200) + "...");
     
-    // Simple insert instead of upsert (removed ON CONFLICT handling)
+    // Debug: Log the full object being inserted
+    const insertObject = {
+      user_id: userId,
+      symbol,
+      company_name: companyName,
+      prediction_data: predictionData as unknown as Json,
+    };
+    console.log("Full insert object:", JSON.stringify(insertObject));
+    
+    // Simple insert without ON CONFLICT - crucial fix
     const { data, error } = await supabase
       .from("user_price_predictions")
-      .insert({
-        user_id: userId,
-        symbol,
-        company_name: companyName,
-        prediction_data: predictionData as unknown as Json,
-      })
+      .insert(insertObject)
       .select("id");
 
     if (error) {
