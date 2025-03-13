@@ -84,6 +84,7 @@ export const saveResearchReport = async (
       html_content: htmlContent
     };
     
+    // Use simple insert without ON CONFLICT
     const { data, error } = await supabase
       .from("user_research_reports")
       .insert(insertObject)

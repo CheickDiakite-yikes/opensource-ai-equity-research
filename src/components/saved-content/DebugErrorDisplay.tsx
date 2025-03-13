@@ -2,7 +2,7 @@
 import React, { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { BugIcon, XIcon, TerminalIcon, RefreshCwIcon } from "lucide-react";
+import { BugIcon, XIcon, TerminalIcon, RefreshCwIcon, AlertCircleIcon } from "lucide-react";
 import { SavedContentError } from "@/hooks/saved-content/useSavedContentBase";
 
 interface DebugErrorDisplayProps {
@@ -10,13 +10,15 @@ interface DebugErrorDisplayProps {
   lastError: SavedContentError | null;
   debugInfo: string | null;
   onRefresh?: () => Promise<void>;
+  onClear?: () => void;
 }
 
 const DebugErrorDisplay: React.FC<DebugErrorDisplayProps> = ({
   error,
   lastError,
   debugInfo,
-  onRefresh
+  onRefresh,
+  onClear
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -37,13 +39,25 @@ const DebugErrorDisplay: React.FC<DebugErrorDisplayProps> = ({
     }
   };
 
+  const handleClear = () => {
+    if (onClear) {
+      onClear();
+    }
+  };
+
   return (
     <Card className="mt-4 border border-yellow-200 bg-yellow-50 dark:bg-yellow-900/20 dark:border-yellow-800 overflow-hidden">
       <div className="p-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2 text-yellow-800 dark:text-yellow-200">
-            <BugIcon className="h-5 w-5" />
-            <h3 className="font-medium">Debug Information</h3>
+            {error ? (
+              <AlertCircleIcon className="h-5 w-5 text-red-500" />
+            ) : (
+              <BugIcon className="h-5 w-5" />
+            )}
+            <h3 className="font-medium">
+              {error ? "Error Detected" : "Debug Information"}
+            </h3>
           </div>
           <div className="flex items-center gap-2">
             {onRefresh && (
@@ -56,6 +70,17 @@ const DebugErrorDisplay: React.FC<DebugErrorDisplayProps> = ({
               >
                 <RefreshCwIcon className={`h-4 w-4 mr-1 ${isRefreshing ? 'animate-spin' : ''}`} />
                 Retry
+              </Button>
+            )}
+            {onClear && (
+              <Button 
+                size="sm" 
+                variant="outline" 
+                className="h-8 px-2 border-yellow-300 dark:border-yellow-700"
+                onClick={handleClear}
+              >
+                <XIcon className="h-4 w-4 mr-1" />
+                Clear
               </Button>
             )}
             <Button 

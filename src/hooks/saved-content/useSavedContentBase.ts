@@ -16,6 +16,7 @@ export const useSavedContentBase = () => {
   const [error, setError] = useState<string | null>(null);
   const [lastError, setLastError] = useState<SavedContentError | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [debugInfo, setDebugInfo] = useState<string | null>(null);
 
   // Helper function to check if user is logged in
   const checkUserLoggedIn = () => {
@@ -33,7 +34,9 @@ export const useSavedContentBase = () => {
     try {
       setIsRefreshing(true);
       setError(null);
+      setDebugInfo("Starting refresh operation");
       await fetchFunction();
+      setDebugInfo(prev => `${prev}\nRefresh completed successfully`);
     } catch (err) {
       console.error("Error refreshing data:", err);
       setError("Failed to refresh data");
@@ -43,6 +46,7 @@ export const useSavedContentBase = () => {
         details: err,
         time: new Date()
       });
+      setDebugInfo(prev => `${prev}\nRefresh failed with error: ${err instanceof Error ? err.message : String(err)}`);
       toast.error("Failed to refresh data");
     } finally {
       setIsRefreshing(false);
@@ -62,13 +66,22 @@ export const useSavedContentBase = () => {
     
     setLastError(errorDetails);
     setError(message);
+    setDebugInfo(prev => `${prev ? prev + '\n' : ''}Error in ${source}: ${message}\nDetails: ${JSON.stringify(err)}`);
     
     return errorDetails;
+  };
+
+  // Clear errors function
+  const clearErrors = () => {
+    setError(null);
+    setLastError(null);
+    setDebugInfo(null);
   };
 
   // Reset loading state when component mounts
   useEffect(() => {
     console.log("useSavedContentBase hook initialized");
+    setDebugInfo("Hook initialized. Waiting for data operations.");
   }, []);
 
   return {
@@ -81,8 +94,11 @@ export const useSavedContentBase = () => {
     setError,
     lastError,
     setLastError,
+    debugInfo,
+    setDebugInfo,
     checkUserLoggedIn,
     refreshData,
-    handleError
+    handleError,
+    clearErrors
   };
 };
