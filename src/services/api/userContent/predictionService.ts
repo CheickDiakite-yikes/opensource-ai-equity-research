@@ -41,7 +41,7 @@ export const savePricePrediction = async (
       }
     }
 
-    // Insert the new prediction without any ON CONFLICT clause
+    // Insert the new prediction with ON CONFLICT clause now that we have a unique constraint
     console.log("Inserting prediction for user:", userId);
     
     const { data, error } = await supabase
@@ -52,6 +52,8 @@ export const savePricePrediction = async (
         company_name: companyName,
         prediction_data: predictionData as unknown as Json
       })
+      .on('conflict', ['user_id', 'symbol'])
+      .merge() // Update the existing record if there's a conflict
       .select("id");
 
     if (error) {

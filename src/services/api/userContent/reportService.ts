@@ -67,7 +67,7 @@ export const saveResearchReport = async (
       console.error("Error generating HTML content:", htmlError);
     }
 
-    // Insert the new report without any ON CONFLICT clause
+    // Insert the new report with ON CONFLICT clause now that we have a unique constraint
     console.log("Inserting report for user:", userId);
     
     const { data, error } = await supabase
@@ -79,6 +79,8 @@ export const saveResearchReport = async (
         report_data: reportData as unknown as Json,
         html_content: htmlContent
       })
+      .on('conflict', ['user_id', 'symbol'])
+      .merge() // Update the existing record if there's a conflict
       .select("id, html_content");
 
     if (error) {
