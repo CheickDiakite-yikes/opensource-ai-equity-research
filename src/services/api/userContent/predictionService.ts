@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { StockPrediction } from "@/types/ai-analysis/predictionTypes";
@@ -62,8 +61,8 @@ export const savePricePrediction = async (
         oneYear: 0
       },
       // Convert any non-serializable data
-      riskFactors: Array.isArray(predictionData.riskFactors) 
-        ? predictionData.riskFactors 
+      risks: Array.isArray(predictionData.risks) 
+        ? predictionData.risks 
         : [],
       keyDrivers: Array.isArray(predictionData.keyDrivers) 
         ? predictionData.keyDrivers 

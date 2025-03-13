@@ -3,7 +3,7 @@ import React from "react";
 import { SavedReport, SavedPrediction } from "@/hooks/saved-content";
 import { motion } from "framer-motion";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ResearchReportDisplay } from "@/components/reports/ResearchReportDisplay";
+import ResearchReportDisplay from "@/components/reports/ResearchReportDisplay";
 import { Button } from "@/components/ui/button";
 import { DownloadIcon, Trash2Icon } from "lucide-react";
 import DebugErrorDisplay from "./DebugErrorDisplay";
