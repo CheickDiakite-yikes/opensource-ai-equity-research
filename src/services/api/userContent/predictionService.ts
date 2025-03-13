@@ -116,6 +116,7 @@ export const savePricePrediction = async (
       
     } catch (edgeFunctionErr) {
       console.error("Error with edge function, using direct approach:", edgeFunctionErr);
+      toast.error("Edge function failed, trying direct database access");
       
       // Fallback: Direct database operations if edge function failed
       console.log("Using fallback: direct database operations");
@@ -176,15 +177,15 @@ export const savePricePrediction = async (
         console.log("Prediction saved successfully. ID:", data[0].id);
         toast.success("Price prediction saved successfully");
         return data[0].id;
-      } catch (dbError) {
+      } catch (dbError: any) {
         console.error("Database operation error:", dbError);
         toast.error("Database error: " + (dbError.message || "Unknown error"));
         return null;
       }
     }
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error in savePricePrediction:", error);
-    toast.error("An unexpected error occurred");
+    toast.error("An unexpected error occurred: " + (error.message || "Unknown error"));
     return null;
   }
 };

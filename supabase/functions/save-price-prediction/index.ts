@@ -70,27 +70,65 @@ serve(async (req) => {
     const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
     const createdAt = new Date().toISOString();
     
-    // Step 2: Insert a new prediction
-    const { data, error } = await supabase
-      .from("user_price_predictions")
-      .insert({
-        user_id: userId,
-        symbol: symbol,
-        company_name: companyName,
-        prediction_data: predictionData,
-        expires_at: expiresAt,
-        created_at: createdAt
-      })
-      .select("id");
-    
-    if (error) {
-      console.error("Error inserting prediction:", error);
+    // Step 2: Insert a new prediction - we don't use ON CONFLICT as it requires a unique constraint
+    try {
+      const { data, error } = await supabase
+        .from("user_price_predictions")
+        .insert({
+          user_id: userId,
+          symbol: symbol,
+          company_name: companyName,
+          prediction_data: predictionData,
+          expires_at: expiresAt,
+          created_at: createdAt
+        })
+        .select("id");
+      
+      if (error) {
+        console.error("Error inserting prediction:", error);
+        return new Response(
+          JSON.stringify({ 
+            error: error.message, 
+            code: error.code,
+            details: error.details,
+            hint: error.hint,
+            success: false 
+          }),
+          {
+            status: 500,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          }
+        );
+      }
+      
+      if (!data || data.length === 0) {
+        return new Response(
+          JSON.stringify({ error: "No data returned after saving", success: false }),
+          {
+            status: 500,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          }
+        );
+      }
+      
+      // Return success response
       return new Response(
         JSON.stringify({ 
-          error: error.message, 
-          code: error.code,
-          details: error.details,
-          hint: error.hint,
+          id: data[0].id, 
+          success: true, 
+          message: "Price prediction saved successfully" 
+        }),
+        {
+          status: 200,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      );
+    } catch (insertError) {
+      console.error("Exception during insert operation:", insertError);
+      return new Response(
+        JSON.stringify({ 
+          error: insertError.message, 
+          type: "InsertException",
           success: false 
         }),
         {
@@ -99,29 +137,6 @@ serve(async (req) => {
         }
       );
     }
-    
-    if (!data || data.length === 0) {
-      return new Response(
-        JSON.stringify({ error: "No data returned after saving", success: false }),
-        {
-          status: 500,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        }
-      );
-    }
-    
-    // Return success response
-    return new Response(
-      JSON.stringify({ 
-        id: data[0].id, 
-        success: true, 
-        message: "Price prediction saved successfully" 
-      }),
-      {
-        status: 200,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      }
-    );
   } catch (error) {
     console.error("Unexpected error in save-price-prediction:", error);
     return new Response(
