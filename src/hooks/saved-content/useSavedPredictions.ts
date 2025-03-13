@@ -63,7 +63,8 @@ export const useSavedPredictions = () => {
         return;
       }
       
-      if (!diagnostics.connected) {
+      // Safely check for diagnostics properties
+      if (diagnostics.connected === false) {
         setError("Database connection error");
         setLastError(diagnostics.lastError || "Could not connect to database");
         setPredictions([]);
@@ -71,7 +72,7 @@ export const useSavedPredictions = () => {
         return;
       }
       
-      if (diagnostics.authStatus !== 'authenticated') {
+      if (diagnostics.authStatus && diagnostics.authStatus !== 'authenticated') {
         setError("Authentication error");
         setLastError("User is not authenticated");
         setPredictions([]);
@@ -96,7 +97,8 @@ export const useSavedPredictions = () => {
       const success = await removeUserPrediction(predictionId);
       if (success) {
         console.log("Prediction deleted successfully, updating state");
-        setPredictions(prevPredictions => 
+        // Use the functional form with proper typing
+        setPredictions((prevPredictions: SavedPrediction[]) => 
           prevPredictions.filter(prediction => prediction.id !== predictionId)
         );
       }

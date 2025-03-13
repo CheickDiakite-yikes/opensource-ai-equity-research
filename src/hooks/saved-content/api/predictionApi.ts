@@ -117,7 +117,19 @@ export const saveUserPrediction = async (
   }
 };
 
-export const getDatabaseStatus = async () => {
+export interface DatabaseStatus {
+  status: 'connected' | 'disconnected' | 'unknown';
+  diagnostics: {
+    connected?: boolean;
+    authStatus?: string;
+    latency?: number;
+    lastError?: string;
+    canInsert?: boolean;
+    error?: any;
+  };
+}
+
+export const getDatabaseStatus = async (): Promise<DatabaseStatus> => {
   try {
     // Check connection
     const status = await testConnection();
@@ -132,7 +144,7 @@ export const getDatabaseStatus = async () => {
   } catch (err) {
     console.error("Error getting database status:", err);
     return {
-      status: 'error',
+      status: 'disconnected',
       diagnostics: { error: err }
     };
   }
