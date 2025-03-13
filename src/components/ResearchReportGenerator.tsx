@@ -4,7 +4,7 @@ import LoadingSkeleton from "@/components/LoadingSkeleton";
 import ErrorDisplay from "@/components/reports/ErrorDisplay";
 import ResearchReportContent from "@/components/reports/ResearchReportContent";
 import { useResearchReportData } from "@/components/reports/useResearchReportData";
-import { useReportGeneration } from "@/components/reports/useReportGeneration";
+import { useReportGeneration, ReportType } from "@/components/reports/useReportGeneration";
 
 interface ResearchReportGeneratorProps {
   symbol: string;
@@ -48,6 +48,11 @@ const ResearchReportGenerator = ({ symbol }: ResearchReportGeneratorProps) => {
     return <ErrorDisplay error={error} />;
   }
 
+  // Create a wrapper function to handle the type conversion
+  const handleReportTypeChange = (value: string) => {
+    setReportType(value as ReportType);
+  };
+
   return (
     <ResearchReportContent
       data={data}
@@ -56,7 +61,7 @@ const ResearchReportGenerator = ({ symbol }: ResearchReportGeneratorProps) => {
       isPredicting={isPredicting}
       hasStockData={hasStockData}
       reportType={reportType}
-      setReportType={setReportType}
+      setReportType={handleReportTypeChange}
       onGenerateReport={handleGenerateReport}
       onPredictPrice={handlePredictPrice}
       report={report}

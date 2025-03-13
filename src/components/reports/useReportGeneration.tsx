@@ -10,7 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 import { ResearchReport } from "@/types/ai-analysis/reportTypes";
 import { StockPrediction } from "@/types/ai-analysis/predictionTypes";
 
-export type ReportType = "standard" | "comprehensive" | "valuation" | "growth";
+export type ReportType = "standard" | "comprehensive" | "valuation" | "growth" | "financial";
 
 export const useReportGeneration = (symbol: string, stockData: any) => {
   const [isGenerating, setIsGenerating] = useState(false);
