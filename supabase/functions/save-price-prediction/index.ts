@@ -44,8 +44,23 @@ serve(async (req) => {
     const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
     const createdAt = new Date().toISOString();
     
-    // Insert a new prediction as a new record (no ON CONFLICT)
+    // First, check if we should delete any existing predictions for this symbol
     try {
+      // Delete any existing predictions for this symbol
+      const { error: deleteError } = await supabase
+        .from("user_price_predictions")
+        .delete()
+        .eq("user_id", userId)
+        .eq("symbol", symbol);
+      
+      if (deleteError) {
+        console.error("Error deleting existing predictions:", deleteError);
+        // Continue anyway - we'll try to insert the new prediction
+      } else {
+        console.log("Deleted any existing predictions for %s, now creating a new one", symbol);
+      }
+      
+      // Insert a new prediction as a new record
       const { data, error } = await supabase
         .from("user_price_predictions")
         .insert({
