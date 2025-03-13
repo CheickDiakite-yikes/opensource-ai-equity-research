@@ -4,7 +4,7 @@ import { toast } from "sonner";
 import { ResearchReport } from "@/types/ai-analysis/reportTypes";
 import { Json } from "@/integrations/supabase/types";
 import { generateReportHTML } from "./htmlGenerator";
-import { getUserId, manageItemLimit, UserContentError } from "./baseService";
+import { getUserId, manageItemLimit } from "./baseService";
 
 /**
  * Save a research report for the current user
@@ -15,12 +15,10 @@ export const saveResearchReport = async (
   reportData: ResearchReport
 ): Promise<string | null> => {
   try {
-    console.log("=== Starting saveResearchReport ===");
-    console.log("Symbol:", symbol);
-    console.log("Company:", companyName);
-    
+    console.log("Starting saveResearchReport for:", symbol);
     const userId = await getUserId();
     if (!userId) {
+      console.error("No user ID found when saving report");
       toast.error("You must be signed in to save reports");
       return null;
     }
@@ -34,7 +32,9 @@ export const saveResearchReport = async (
       .eq("user_id", userId);
 
     if (countError) {
-      throw new UserContentError("Error counting reports", "saveResearchReport", countError);
+      console.error("Error counting reports:", countError);
+      toast.error("Failed to save report");
+      return null;
     }
 
     console.log("Current report count:", count);
@@ -42,7 +42,8 @@ export const saveResearchReport = async (
     // Manage item limit
     const limitManaged = await manageItemLimit("user_research_reports", userId, count);
     if (!limitManaged) {
-      throw new UserContentError("Failed to manage item limit", "saveResearchReport");
+      console.error("Failed to manage item limit");
+      return null;
     }
 
     // Generate HTML version of the report
@@ -70,46 +71,39 @@ export const saveResearchReport = async (
       console.error("Error generating HTML content:", htmlError);
     }
 
-    // Insert the new report - WITHOUT on conflict
+    // Now, insert the new report - use type cast to Json
     console.log("Inserting report into database with HTML:", htmlContent ? "YES" : "NO");
+    console.log("Report data sample:", JSON.stringify(reportData).substring(0, 200) + "...");
     
-    // Debug log the full object being inserted (truncated for readability)
-    console.log("Report data keys:", Object.keys(reportData));
-    
-    const insertObject = {
-      user_id: userId,
-      symbol,
-      company_name: companyName,
-      report_data: reportData as unknown as Json,
-      html_content: htmlContent
-    };
-    
-    // Use simple insert without ON CONFLICT
     const { data, error } = await supabase
       .from("user_research_reports")
-      .insert(insertObject)
+      .insert({
+        user_id: userId,
+        symbol,
+        company_name: companyName,
+        report_data: reportData as unknown as Json,
+        html_content: htmlContent
+      })
       .select("id, html_content");
 
     if (error) {
-      throw new UserContentError("Error saving report", "saveResearchReport", error);
+      console.error("Error saving report:", error);
+      toast.error("Failed to save report: " + error.message);
+      return null;
     }
 
     if (!data || data.length === 0) {
-      throw new UserContentError("No data returned after saving report", "saveResearchReport");
+      console.error("No data returned after saving report");
+      toast.error("Failed to save report - no data returned");
+      return null;
     }
 
     console.log("Report saved successfully. ID:", data[0].id, "HTML content:", data[0].html_content ? "YES" : "NO");
     toast.success("Research report saved successfully");
     return data[0].id;
   } catch (error) {
-    if (error instanceof UserContentError) {
-      console.error(`${error.source}: ${error.message}`, error.details);
-      toast.error(error.message);
-      return null;
-    }
-    
-    console.error("Unexpected error in saveResearchReport:", error);
-    toast.error("An unexpected error occurred while saving report");
+    console.error("Error in saveResearchReport:", error);
+    toast.error("An unexpected error occurred");
     return null;
   }
 };
@@ -119,7 +113,7 @@ export const saveResearchReport = async (
  */
 export const getUserResearchReports = async () => {
   try {
-    console.log("=== Getting user research reports ===");
+    console.log("Getting user research reports");
     const userId = await getUserId();
     if (!userId) {
       console.log("No user ID found when getting reports");
@@ -134,7 +128,9 @@ export const getUserResearchReports = async () => {
       .order("created_at", { ascending: false });
 
     if (error) {
-      throw new UserContentError("Error fetching user reports", "getUserResearchReports", error);
+      console.error("Error fetching user reports:", error);
+      toast.error("Failed to load saved reports: " + error.message);
+      return [];
     }
 
     if (!data || data.length === 0) {
@@ -143,27 +139,10 @@ export const getUserResearchReports = async () => {
     }
 
     console.log(`Found ${data.length} reports for user`);
-    // Log sample data structure for debugging
-    if (data.length > 0) {
-      console.log("Sample report data structure:", {
-        id: data[0].id,
-        symbol: data[0].symbol,
-        created_at: data[0].created_at,
-        has_html: !!data[0].html_content,
-        data_keys: data[0].report_data ? Object.keys(data[0].report_data) : 'no data'
-      });
-    }
-    
     return data || [];
   } catch (error) {
-    if (error instanceof UserContentError) {
-      console.error(`${error.source}: ${error.message}`, error.details);
-      toast.error(error.message);
-      return [];
-    }
-    
-    console.error("Unexpected error in getUserResearchReports:", error);
-    toast.error("An unexpected error occurred while fetching reports");
+    console.error("Error in getUserResearchReports:", error);
+    toast.error("An unexpected error occurred");
     return [];
   }
 };
@@ -173,29 +152,22 @@ export const getUserResearchReports = async () => {
  */
 export const deleteResearchReport = async (reportId: string): Promise<boolean> => {
   try {
-    console.log("=== Deleting report ===");
-    console.log("Report ID:", reportId);
-    
     const { error } = await supabase
       .from("user_research_reports")
       .delete()
       .eq("id", reportId);
 
     if (error) {
-      throw new UserContentError("Error deleting report", "deleteResearchReport", error);
+      console.error("Error deleting report:", error);
+      toast.error("Failed to delete report");
+      return false;
     }
 
     toast.success("Report deleted successfully");
     return true;
   } catch (error) {
-    if (error instanceof UserContentError) {
-      console.error(`${error.source}: ${error.message}`, error.details);
-      toast.error(error.message);
-      return false;
-    }
-    
-    console.error("Unexpected error in deleteResearchReport:", error);
-    toast.error("An unexpected error occurred while deleting report");
+    console.error("Error in deleteResearchReport:", error);
+    toast.error("An unexpected error occurred");
     return false;
   }
 };

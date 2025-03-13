@@ -3,10 +3,8 @@ import React from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { FileText, TrendingUp } from "lucide-react";
 import { SavedReport, SavedPrediction } from "@/hooks/saved-content";
-import { SavedContentError } from "@/hooks/saved-content/useSavedContentBase";
 import ReportsTabContent from "./ReportsTabContent";
 import PredictionsTabContent from "./PredictionsTabContent";
-import DebugErrorDisplay from "./DebugErrorDisplay";
 import { motion, AnimatePresence } from "framer-motion";
 
 interface SavedContentTabsProps {
@@ -14,20 +12,11 @@ interface SavedContentTabsProps {
   predictions: SavedPrediction[];
   selectedReport: SavedReport | null;
   selectedPrediction: SavedPrediction | null;
-  activeTab: 'reports' | 'predictions';
-  setActiveTab: (tab: 'reports' | 'predictions') => void;
-  reportsError: string | null;
-  reportsLastError: SavedContentError | null;
-  reportsDebugInfo: string | null;
-  predictionsError: string | null;
-  predictionsLastError: SavedContentError | null;
-  predictionsDebugInfo: string | null;
   onSelectReport: (report: SavedReport) => void;
   onSelectPrediction: (prediction: SavedPrediction) => void;
   onDeleteReport: (reportId: string, e: React.MouseEvent) => Promise<void>;
   onDeletePrediction: (predictionId: string, e: React.MouseEvent) => Promise<void>;
   onDownloadHtml: (report: SavedReport) => void;
-  onRefresh: () => Promise<void>;
 }
 
 const SavedContentTabs: React.FC<SavedContentTabsProps> = ({
@@ -35,23 +24,14 @@ const SavedContentTabs: React.FC<SavedContentTabsProps> = ({
   predictions,
   selectedReport,
   selectedPrediction,
-  activeTab,
-  setActiveTab,
-  reportsError,
-  reportsLastError,
-  reportsDebugInfo,
-  predictionsError,
-  predictionsLastError,
-  predictionsDebugInfo,
   onSelectReport,
   onSelectPrediction,
   onDeleteReport,
   onDeletePrediction,
-  onDownloadHtml,
-  onRefresh
+  onDownloadHtml
 }) => {
   return (
-    <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as 'reports' | 'predictions')} className="w-full">
+    <Tabs defaultValue="reports" className="w-full">
       <TabsList className="w-full grid grid-cols-2 mb-8 bg-secondary/50 p-1 rounded-xl">
         <TabsTrigger 
           value="reports" 
@@ -88,26 +68,6 @@ const SavedContentTabs: React.FC<SavedContentTabsProps> = ({
           </motion.div>
         </TabsTrigger>
       </TabsList>
-      
-      {/* Debug error display for reports */}
-      {activeTab === 'reports' && (
-        <DebugErrorDisplay 
-          error={reportsError}
-          lastError={reportsLastError}
-          debugInfo={reportsDebugInfo}
-          onRefresh={onRefresh}
-        />
-      )}
-      
-      {/* Debug error display for predictions */}
-      {activeTab === 'predictions' && (
-        <DebugErrorDisplay 
-          error={predictionsError}
-          lastError={predictionsLastError}
-          debugInfo={predictionsDebugInfo}
-          onRefresh={onRefresh}
-        />
-      )}
       
       <AnimatePresence mode="wait">
         <TabsContent value="reports" className="space-y-6">

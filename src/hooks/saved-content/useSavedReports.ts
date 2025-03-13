@@ -6,7 +6,7 @@ import {
   saveResearchReport 
 } from "@/services/api/userContent";
 import { ResearchReport } from "@/types/ai-analysis/reportTypes";
-import { useSavedContentBase, SavedContentError } from "./useSavedContentBase";
+import { useSavedContentBase } from "./useSavedContentBase";
 import { toast } from "sonner";
 
 export interface SavedReport {
@@ -21,20 +21,7 @@ export interface SavedReport {
 
 export const useSavedReports = () => {
   const [reports, setReports] = useState<SavedReport[]>([]);
-  const {
-    user,
-    isLoading,
-    setIsLoading,
-    error,
-    setError,
-    lastError,
-    setLastError,
-    checkUserLoggedIn,
-    handleError,
-    clearErrors: baseClearErrors,
-    debugInfo,
-    setDebugInfo
-  } = useSavedContentBase();
+  const { user, isLoading, setIsLoading, error, setError, checkUserLoggedIn } = useSavedContentBase();
 
   const fetchReports = async () => {
     if (!checkUserLoggedIn()) {
@@ -42,18 +29,15 @@ export const useSavedReports = () => {
       return;
     }
 
-    console.log("=== Fetching reports ===");
-    console.log("User:", user.id);
+    console.log("Fetching reports for user:", user.id);
     setIsLoading(true);
     setError(null);
-    setDebugInfo(null);
     
     try {
       const data = await getUserResearchReports();
       
-      // Debug logging
+      // Enhanced debug logging
       console.log("Raw data from getUserResearchReports:", data);
-      setDebugInfo(`Retrieved ${data.length} reports from database`);
       
       if (data.length === 0) {
         console.log("No reports found for user");
@@ -64,7 +48,6 @@ export const useSavedReports = () => {
       
       // Convert Json type to ResearchReport type with type assertion
       const convertedReports = data.map(item => {
-        setDebugInfo(prev => `${prev}\nProcessing report ${item.id}: ${item.symbol}`);
         console.log(`Processing report ${item.id}:`, {
           symbol: item.symbol,
           company_name: item.company_name,
@@ -76,9 +59,7 @@ export const useSavedReports = () => {
         
         // Validate report_data
         if (!item.report_data) {
-          const errorMsg = `Report ${item.id} has no report_data!`;
-          console.error(errorMsg);
-          setDebugInfo(prev => `${prev}\nERROR: ${errorMsg}`);
+          console.error(`Report ${item.id} has no report_data!`);
         }
         
         return {
@@ -88,78 +69,46 @@ export const useSavedReports = () => {
         };
       }) as SavedReport[];
       
-      // More debug
+      // Debug
       console.log(`Fetched ${convertedReports.length} reports`);
-      setDebugInfo(prev => `${prev}\nSuccessfully processed ${convertedReports.length} reports`);
-      
       convertedReports.forEach(report => {
         console.log(`Report ${report.id}: Symbol=${report.symbol}, HTML content: ${report.html_content ? `YES (${report.html_content.length} chars)` : 'NO'}`);
       });
       
       setReports(convertedReports);
     } catch (err) {
-      const errorInfo = handleError(err, "fetchReports", "Failed to load saved reports");
-      setDebugInfo(`Error: ${errorInfo.message}\nDetails: ${JSON.stringify(errorInfo.details)}`);
+      console.error("Error fetching saved reports:", err);
+      setError("Failed to load saved reports");
     } finally {
       setIsLoading(false);
     }
   };
 
   const deleteReport = async (reportId: string) => {
-    console.log("=== Deleting report ===");
-    console.log("Report ID:", reportId);
-    setDebugInfo(`Attempting to delete report: ${reportId}`);
-    
-    try {
-      const success = await deleteResearchReport(reportId);
-      if (success) {
-        console.log("Report deleted successfully, updating state");
-        setReports(prevReports => prevReports.filter(report => report.id !== reportId));
-        setDebugInfo(prev => `${prev}\nSuccessfully deleted report ${reportId}`);
-      } else {
-        console.error("Failed to delete report");
-        setDebugInfo(prev => `${prev}\nFailed to delete report ${reportId}`);
-      }
-      return success;
-    } catch (err) {
-      const errorInfo = handleError(err, "deleteReport", "Failed to delete report");
-      setDebugInfo(prev => `${prev}\nError deleting report: ${JSON.stringify(errorInfo)}`);
-      return false;
+    console.log("Deleting report:", reportId);
+    const success = await deleteResearchReport(reportId);
+    if (success) {
+      console.log("Report deleted successfully, updating state");
+      setReports(prevReports => prevReports.filter(report => report.id !== reportId));
+    } else {
+      console.error("Failed to delete report");
     }
+    return success;
   };
 
   const saveReport = async (symbol: string, companyName: string, reportData: ResearchReport) => {
-    console.log("=== Saving report ===");
-    console.log("Symbol:", symbol);
-    console.log("Company:", companyName);
-    setDebugInfo(`Attempting to save report for: ${symbol} (${companyName})`);
+    console.log("Saving report for:", symbol, companyName);
+    const reportId = await saveResearchReport(symbol, companyName, reportData);
+    console.log("Save result - report ID:", reportId);
     
-    try {
-      const reportId = await saveResearchReport(symbol, companyName, reportData);
-      console.log("Save result - report ID:", reportId);
-      setDebugInfo(prev => `${prev}\nSave result - report ID: ${reportId || 'FAILED'}`);
-      
-      if (reportId) {
-        // Refresh reports list after saving
-        console.log("Report saved successfully, refreshing reports list");
-        setDebugInfo(prev => `${prev}\nReport saved successfully, refreshing list`);
-        await fetchReports();
-      } else {
-        console.error("Failed to save report - no ID returned");
-        setDebugInfo(prev => `${prev}\nFailed to save report - no ID returned`);
-      }
-      return reportId;
-    } catch (err) {
-      const errorInfo = handleError(err, "saveReport", "Failed to save report");
-      setDebugInfo(prev => `${prev}\nError saving report: ${JSON.stringify(errorInfo)}`);
-      return null;
+    if (reportId) {
+      // Refresh reports list after saving
+      console.log("Report saved successfully, refreshing reports list");
+      await fetchReports();
+    } else {
+      console.error("Failed to save report - no ID returned");
     }
-  };
-
-  // Add the clearErrors function that was missing
-  const clearErrors = () => {
-    baseClearErrors();
-    setDebugInfo(null);
+    return reportId;
   };
 
   // Fetch reports when the component mounts or user changes
@@ -168,15 +117,5 @@ export const useSavedReports = () => {
     fetchReports();
   }, [user]);
 
-  return { 
-    reports, 
-    isLoading, 
-    error, 
-    lastError,
-    debugInfo, 
-    fetchReports, 
-    deleteReport, 
-    saveReport,
-    clearErrors
-  };
+  return { reports, isLoading, error, fetchReports, deleteReport, saveReport };
 };

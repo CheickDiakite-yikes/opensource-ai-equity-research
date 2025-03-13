@@ -102,37 +102,29 @@ Deno.serve(async (req) => {
     
     // Save prediction to history table for future reference and consistency
     try {
-      // Debug: Log the insert object
-      const historyRecord = {
-        symbol: prediction.symbol,
-        current_price: prediction.currentPrice,
-        one_month_price: prediction.predictedPrice.oneMonth,
-        three_month_price: prediction.predictedPrice.threeMonths,
-        six_month_price: prediction.predictedPrice.sixMonths,
-        one_year_price: prediction.predictedPrice.oneYear,
-        sentiment_analysis: prediction.sentimentAnalysis,
-        confidence_level: prediction.confidenceLevel,
-        key_drivers: prediction.keyDrivers,
-        risks: prediction.risks,
-        metadata: {
-          generation_method: attempts === maxAttempts ? 'fallback' : 'openai',
-          quick_mode: quickMode === true,
-          industry: formattedData.industry,
-          attempt_count: attempts
-        }
-      };
-      
-      console.log(`Saving prediction to history:`);
-      
-      // Using simple insert without ON CONFLICT clause to avoid RLS policy errors
       const { error: insertError } = await supabase
         .from('stock_prediction_history')
-        .insert(historyRecord);
+        .insert({
+          symbol: prediction.symbol,
+          current_price: prediction.currentPrice,
+          one_month_price: prediction.predictedPrice.oneMonth,
+          three_month_price: prediction.predictedPrice.threeMonths,
+          six_month_price: prediction.predictedPrice.sixMonths,
+          one_year_price: prediction.predictedPrice.oneYear,
+          sentiment_analysis: prediction.sentimentAnalysis,
+          confidence_level: prediction.confidenceLevel,
+          key_drivers: prediction.keyDrivers,
+          risks: prediction.risks,
+          metadata: {
+            generation_method: attempts === maxAttempts ? 'fallback' : 'openai',
+            quick_mode: quickMode === true,
+            industry: formattedData.industry,
+            attempt_count: attempts
+          }
+        });
         
       if (insertError) {
-        // Don't fail the operation, just log the error
         console.error(`Error saving prediction history for ${symbol}:`, insertError);
-        console.error(`Error details: ${JSON.stringify(insertError)}`);
       } else {
         console.log(`Successfully saved prediction history for ${symbol}`);
       }
