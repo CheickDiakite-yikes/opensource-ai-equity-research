@@ -49,6 +49,7 @@ export const savePricePrediction = async (
     console.log("Inserting prediction into database");
     console.log("Prediction data sample:", JSON.stringify(predictionData).substring(0, 200) + "...");
     
+    // Simple insert instead of upsert (removed ON CONFLICT handling)
     const { data, error } = await supabase
       .from("user_price_predictions")
       .insert({

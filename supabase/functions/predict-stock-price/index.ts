@@ -102,6 +102,7 @@ Deno.serve(async (req) => {
     
     // Save prediction to history table for future reference and consistency
     try {
+      // Remove the ON CONFLICT clause that was causing the error
       const { error: insertError } = await supabase
         .from('stock_prediction_history')
         .insert({
