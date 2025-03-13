@@ -17,8 +17,14 @@ export const saveResearchReport = async (
   try {
     console.log("Starting saveResearchReport for:", symbol);
     
-    // Get the current session
-    const { data: sessionData } = await supabase.auth.getSession();
+    // Get the current session directly
+    const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+    
+    if (sessionError) {
+      console.error("Session error:", sessionError);
+      toast.error("Authentication error: " + sessionError.message);
+      return null;
+    }
     
     if (!sessionData.session) {
       console.error("No active session found");
@@ -75,7 +81,7 @@ export const saveResearchReport = async (
       console.error("Error generating HTML content:", htmlError);
     }
 
-    // Now, insert the new report
+    // Now, insert the new report - removed ON CONFLICT clause
     console.log("Inserting report for user:", userId);
     
     const { data, error } = await supabase
@@ -119,7 +125,12 @@ export const getUserResearchReports = async () => {
     console.log("Getting user research reports");
     
     // Get the current session
-    const { data: sessionData } = await supabase.auth.getSession();
+    const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+    
+    if (sessionError) {
+      console.error("Session error:", sessionError);
+      return [];
+    }
     
     if (!sessionData.session) {
       console.log("No active session found");
@@ -166,7 +177,13 @@ export const getUserResearchReports = async () => {
 export const deleteResearchReport = async (reportId: string): Promise<boolean> => {
   try {
     // Get the current session
-    const { data: sessionData } = await supabase.auth.getSession();
+    const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+    
+    if (sessionError) {
+      console.error("Session error:", sessionError);
+      toast.error("Authentication error: " + sessionError.message);
+      return false;
+    }
     
     if (!sessionData.session) {
       console.error("No active session found");

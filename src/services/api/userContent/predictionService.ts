@@ -16,8 +16,14 @@ export const savePricePrediction = async (
   try {
     console.log("Starting savePricePrediction for:", symbol);
     
-    // Get the current session
-    const { data: sessionData } = await supabase.auth.getSession();
+    // Get the current user ID directly
+    const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+    
+    if (sessionError) {
+      console.error("Session error:", sessionError);
+      toast.error("Authentication error: " + sessionError.message);
+      return null;
+    }
     
     if (!sessionData.session) {
       console.error("No active session found");
@@ -49,7 +55,7 @@ export const savePricePrediction = async (
       }
     }
 
-    // Now, insert the new prediction
+    // Now, insert the new prediction - removed ON CONFLICT clause
     console.log("Inserting prediction for user:", userId);
     
     const { data, error } = await supabase
@@ -92,7 +98,12 @@ export const getUserPricePredictions = async () => {
     console.log("Getting user price predictions");
     
     // Get the current session
-    const { data: sessionData } = await supabase.auth.getSession();
+    const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+    
+    if (sessionError) {
+      console.error("Session error:", sessionError);
+      return [];
+    }
     
     if (!sessionData.session) {
       console.log("No active session found");
@@ -139,7 +150,13 @@ export const getUserPricePredictions = async () => {
 export const deletePricePrediction = async (predictionId: string): Promise<boolean> => {
   try {
     // Get the current session
-    const { data: sessionData } = await supabase.auth.getSession();
+    const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+    
+    if (sessionError) {
+      console.error("Session error:", sessionError);
+      toast.error("Authentication error: " + sessionError.message);
+      return false;
+    }
     
     if (!sessionData.session) {
       console.error("No active session found");

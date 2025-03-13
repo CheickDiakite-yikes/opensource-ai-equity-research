@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -9,7 +10,12 @@ export const MAX_SAVED_ITEMS = 10;
  */
 export const getUserId = async (): Promise<string | null> => {
   try {
-    const { data: sessionData } = await supabase.auth.getSession();
+    const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+    
+    if (sessionError) {
+      console.error("Error getting session:", sessionError);
+      return null;
+    }
     
     if (!sessionData.session) {
       console.log("No active session found");
