@@ -72,6 +72,7 @@ export const saveResearchReport = async (
     const { data: authData } = await supabase.auth.getSession();
     console.log("Current auth session:", authData?.session ? "Active" : "No active session");
     
+    // Simple insert without ON CONFLICT clause
     const { data, error } = await supabase
       .from("user_research_reports")
       .insert({

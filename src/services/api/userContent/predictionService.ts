@@ -46,7 +46,7 @@ export const savePricePrediction = async (
     console.log("Inserting prediction into database");
     console.log("Prediction data sample:", JSON.stringify(predictionData).substring(0, 200) + "...");
     
-    // Insert without using ON CONFLICT since there's no unique constraint defined
+    // Simple insert without ON CONFLICT clause
     const { data, error } = await supabase
       .from("user_price_predictions")
       .insert({
