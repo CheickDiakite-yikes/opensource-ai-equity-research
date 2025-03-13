@@ -8,7 +8,8 @@ const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
 
 /**
  * Edge function to save price predictions to the database.
- * This directly inserts predictions without managing conflicts or deletions.
+ * This function first deletes any existing predictions for the same symbol,
+ * then creates a new one to ensure only one prediction per symbol exists.
  */
 serve(async (req) => {
   // Handle CORS preflight requests
