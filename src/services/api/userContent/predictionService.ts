@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { StockPrediction } from "@/types/ai-analysis/predictionTypes";
@@ -36,6 +37,10 @@ export const savePricePrediction = async (
         return null;
       }
     }
+
+    // Debug the user authentication state
+    const { data: authData } = await supabase.auth.getSession();
+    console.log("Current auth session:", authData?.session ? "Active" : "No active session");
 
     // Now, insert the new prediction - use type cast to Json
     console.log("Inserting prediction into database");

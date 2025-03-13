@@ -10,15 +10,24 @@ export const MAX_SAVED_ITEMS = 10;
  */
 export const getUserId = async (): Promise<string | null> => {
   try {
-    const { data } = await supabase.auth.getUser();
+    const { data, error } = await supabase.auth.getUser();
+    
+    if (error) {
+      console.error("Authentication error:", error.message);
+      toast.error("Authentication error: " + error.message);
+      return null;
+    }
+    
     if (!data.user) {
       console.log("No authenticated user found");
       return null;
     }
+    
     console.log("Authenticated user ID:", data.user.id);
     return data.user.id;
   } catch (error) {
     console.error("Error getting user ID:", error);
+    toast.error("Failed to verify authentication status");
     return null;
   }
 };

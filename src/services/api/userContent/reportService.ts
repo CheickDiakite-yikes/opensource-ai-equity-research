@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { ResearchReport } from "@/types/ai-analysis/reportTypes";
@@ -66,6 +67,10 @@ export const saveResearchReport = async (
     // Now, insert the new report - use type cast to Json
     console.log("Inserting report into database with HTML:", htmlContent ? "YES" : "NO");
     console.log("Report data sample:", JSON.stringify(reportData).substring(0, 200) + "...");
+    
+    // Debug the user authentication state
+    const { data: authData } = await supabase.auth.getSession();
+    console.log("Current auth session:", authData?.session ? "Active" : "No active session");
     
     const { data, error } = await supabase
       .from("user_research_reports")
