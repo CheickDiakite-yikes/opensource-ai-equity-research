@@ -40,6 +40,12 @@ export const countUserItems = async (
   userId: string
 ): Promise<number> => {
   try {
+    // Double check userId is valid before proceeding
+    if (!userId) {
+      console.error(`No user ID provided when counting ${tableName}`);
+      return 0;
+    }
+    
     const { count, error } = await supabase
       .from(tableName)
       .select("*", { count: "exact", head: true })
@@ -66,6 +72,12 @@ export const deleteOldestItems = async (
   count: number
 ): Promise<boolean> => {
   try {
+    // Double check userId is valid before proceeding
+    if (!userId) {
+      console.error(`No user ID provided when deleting oldest ${tableName}`);
+      return false;
+    }
+    
     if (count < MAX_SAVED_ITEMS) {
       return true;
     }
