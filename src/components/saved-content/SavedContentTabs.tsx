@@ -5,7 +5,7 @@ import { FileText, TrendingUp } from "lucide-react";
 import { SavedReport, SavedPrediction } from "@/hooks/saved-content";
 import ReportsTabContent from "./ReportsTabContent";
 import PredictionsTabContent from "./PredictionsTabContent";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 
 interface SavedContentTabsProps {
   reports: SavedReport[];
@@ -69,40 +69,40 @@ const SavedContentTabs: React.FC<SavedContentTabsProps> = ({
         </TabsTrigger>
       </TabsList>
       
-      <TabsContent value="reports" className="space-y-6">
-        <motion.div
-          key="reports-tab"
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -10 }}
-          transition={{ duration: 0.3 }}
-        >
-          <ReportsTabContent
-            reports={reports}
-            selectedReport={selectedReport}
-            onSelectReport={onSelectReport}
-            onDeleteReport={onDeleteReport}
-            onDownloadHtml={onDownloadHtml}
-          />
-        </motion.div>
-      </TabsContent>
-      
-      <TabsContent value="predictions" className="space-y-6">
-        <motion.div
-          key="predictions-tab"
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -10 }}
-          transition={{ duration: 0.3 }}
-        >
-          <PredictionsTabContent
-            predictions={predictions}
-            selectedPrediction={selectedPrediction}
-            onSelectPrediction={onSelectPrediction}
-            onDeletePrediction={onDeletePrediction}
-          />
-        </motion.div>
-      </TabsContent>
+      <AnimatePresence mode="wait">
+        <TabsContent value="reports" className="space-y-6">
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.3 }}
+          >
+            <ReportsTabContent
+              reports={reports}
+              selectedReport={selectedReport}
+              onSelectReport={onSelectReport}
+              onDeleteReport={onDeleteReport}
+              onDownloadHtml={onDownloadHtml}
+            />
+          </motion.div>
+        </TabsContent>
+        
+        <TabsContent value="predictions" className="space-y-6">
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.3 }}
+          >
+            <PredictionsTabContent
+              predictions={predictions}
+              selectedPrediction={selectedPrediction}
+              onSelectPrediction={onSelectPrediction}
+              onDeletePrediction={onDeletePrediction}
+            />
+          </motion.div>
+        </TabsContent>
+      </AnimatePresence>
     </Tabs>
   );
 };

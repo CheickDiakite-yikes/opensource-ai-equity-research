@@ -1,5 +1,5 @@
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { 
   useSavedReports, 
@@ -11,57 +11,20 @@ import { toast } from "sonner";
 
 export const useSavedContentPage = () => {
   const { user, isLoading: authLoading } = useAuth();
-  const { 
-    reports, 
-    isLoading: reportsLoading, 
-    error: reportsError, 
-    deleteReport, 
-    fetchReports 
-  } = useSavedReports();
-  
-  const { 
-    predictions, 
-    isLoading: predictionsLoading, 
-    error: predictionsError, 
-    deletePrediction, 
-    fetchPredictions 
-  } = useSavedPredictions();
-  
+  const { reports, isLoading: reportsLoading, deleteReport, fetchReports } = useSavedReports();
+  const { predictions, isLoading: predictionsLoading, deletePrediction, fetchPredictions } = useSavedPredictions();
   const [selectedReport, setSelectedReport] = useState<SavedReport | null>(null);
   const [selectedPrediction, setSelectedPrediction] = useState<SavedPrediction | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
-  // Show toast for errors
+  // Refresh reports when page loads
   useEffect(() => {
-    if (reportsError) {
-      toast.error(`Error loading reports: ${reportsError}`);
+    if (user) {
+      console.log("SavedContent component mounted, fetching reports...");
+      fetchReports();
+      fetchPredictions();
     }
-    if (predictionsError) {
-      toast.error(`Error loading predictions: ${predictionsError}`);
-    }
-  }, [reportsError, predictionsError]);
-
-  const isLoading = authLoading || reportsLoading || predictionsLoading;
-
-  // Refresh all data manually
-  const handleRefresh = useCallback(async () => {
-    if (!user) {
-      toast.error("You must be signed in to view saved content");
-      return;
-    }
-    
-    setIsRefreshing(true);
-    console.log("Manually refreshing content...");
-    try {
-      await Promise.all([fetchReports(), fetchPredictions()]);
-      toast.success("Content refreshed");
-    } catch (error) {
-      console.error("Error refreshing content:", error);
-      toast.error("Failed to refresh content");
-    } finally {
-      setIsRefreshing(false);
-    }
-  }, [user, fetchReports, fetchPredictions]);
+  }, [user]);
 
   // Log reports when they change
   useEffect(() => {
@@ -69,12 +32,7 @@ export const useSavedContentPage = () => {
     reports.forEach(report => {
       console.log(`- Report ${report.id}: ${report.symbol}, HTML: ${report.html_content ? "YES" : "NO"}`);
     });
-
-    // Clear selected report if it's no longer in the list
-    if (selectedReport && !reports.some(r => r.id === selectedReport.id)) {
-      setSelectedReport(null);
-    }
-  }, [reports, selectedReport]);
+  }, [reports]);
 
   // Log predictions when they change
   useEffect(() => {
@@ -82,12 +40,9 @@ export const useSavedContentPage = () => {
     predictions.forEach(prediction => {
       console.log(`- Prediction ${prediction.id}: ${prediction.symbol}`);
     });
+  }, [predictions]);
 
-    // Clear selected prediction if it's no longer in the list
-    if (selectedPrediction && !predictions.some(p => p.id === selectedPrediction.id)) {
-      setSelectedPrediction(null);
-    }
-  }, [predictions, selectedPrediction]);
+  const isLoading = authLoading || reportsLoading || predictionsLoading;
 
   const handleSelectReport = (report: SavedReport) => {
     console.log("Selecting report:", report.id);
@@ -111,44 +66,18 @@ export const useSavedContentPage = () => {
   const handleDeleteReport = async (reportId: string, e: React.MouseEvent) => {
     e.stopPropagation();
     console.log("Deleting report:", reportId);
-    
-    try {
-      // Clear selected report if we're deleting it
-      if (selectedReport?.id === reportId) {
-        setSelectedReport(null);
-      }
-      
-      // Delete the report
-      const success = await deleteReport(reportId);
-      
-      if (!success) {
-        console.error("Failed to delete report");
-      }
-    } catch (error) {
-      console.error("Error in handleDeleteReport:", error);
-      toast.error("Failed to delete report due to an unexpected error");
+    const success = await deleteReport(reportId);
+    if (success && selectedReport?.id === reportId) {
+      setSelectedReport(null);
     }
   };
 
   const handleDeletePrediction = async (predictionId: string, e: React.MouseEvent) => {
     e.stopPropagation();
     console.log("Deleting prediction:", predictionId);
-    
-    try {
-      // Clear selected prediction if we're deleting it
-      if (selectedPrediction?.id === predictionId) {
-        setSelectedPrediction(null);
-      }
-      
-      // Delete the prediction
-      const success = await deletePrediction(predictionId);
-      
-      if (!success) {
-        console.error("Failed to delete prediction");
-      }
-    } catch (error) {
-      console.error("Error in handleDeletePrediction:", error);
-      toast.error("Failed to delete prediction due to an unexpected error");
+    const success = await deletePrediction(predictionId);
+    if (success && selectedPrediction?.id === predictionId) {
+      setSelectedPrediction(null);
     }
   };
 
@@ -170,6 +99,20 @@ export const useSavedContentPage = () => {
     URL.revokeObjectURL(url);
     
     toast.success("Report downloaded as HTML");
+  };
+
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    console.log("Manually refreshing content...");
+    try {
+      await Promise.all([fetchReports(), fetchPredictions()]);
+      toast.success("Content refreshed");
+    } catch (error) {
+      console.error("Error refreshing content:", error);
+      toast.error("Failed to refresh content");
+    } finally {
+      setIsRefreshing(false);
+    }
   };
 
   return {

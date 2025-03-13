@@ -21,7 +21,7 @@ const PredictionsTabContent: React.FC<PredictionsTabContentProps> = ({
   onSelectPrediction,
   onDeletePrediction,
 }) => {
-  if (!predictions || predictions.length === 0) {
+  if (predictions.length === 0) {
     return <EmptyContentState type="predictions" />;
   }
 

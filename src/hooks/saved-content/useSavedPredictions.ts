@@ -1,5 +1,5 @@
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { 
   getUserPricePredictions,
   deletePricePrediction,
@@ -20,27 +20,11 @@ export interface SavedPrediction {
 
 export const useSavedPredictions = () => {
   const [predictions, setPredictions] = useState<SavedPrediction[]>([]);
-  const { 
-    user, 
-    authLoading,
-    isLoading, 
-    setIsLoading, 
-    error, 
-    setError, 
-    checkUserLoggedIn 
-  } = useSavedContentBase();
+  const { user, isLoading, setIsLoading, error, setError, checkUserLoggedIn } = useSavedContentBase();
 
-  const fetchPredictions = useCallback(async () => {
-    if (authLoading) {
-      console.log("Auth is still loading, waiting...");
-      return;
-    }
-    
-    if (!user) {
-      console.log("useSavedPredictions: No user, clearing predictions");
+  const fetchPredictions = async () => {
+    if (!checkUserLoggedIn()) {
       setPredictions([]);
-      setError(null);
-      setIsLoading(false);
       return;
     }
 
@@ -53,7 +37,7 @@ export const useSavedPredictions = () => {
       
       console.log("Raw data from getUserPricePredictions:", data);
       
-      if (!data || data.length === 0) {
+      if (data.length === 0) {
         console.log("No predictions found for user");
         setPredictions([]);
         setIsLoading(false);
@@ -85,38 +69,23 @@ export const useSavedPredictions = () => {
     } catch (err) {
       console.error("Error fetching saved predictions:", err);
       setError("Failed to load saved predictions");
-      toast.error("Failed to load saved predictions");
     } finally {
       setIsLoading(false);
     }
-  }, [user, authLoading, setIsLoading, setError]);
+  };
 
   const deletePrediction = async (predictionId: string) => {
     console.log("Deleting prediction:", predictionId);
-    
-    try {
-      // Optimistically update UI first for immediate feedback
-      setPredictions(prevPredictions => prevPredictions.filter(prediction => prediction.id !== predictionId));
-      
-      // Then perform the actual deletion
-      const success = await deletePricePrediction(predictionId);
-      
-      if (!success) {
-        console.error("Failed to delete prediction, fetching fresh data");
-        // If deletion failed, refresh the predictions list to ensure UI is in sync with database
-        await fetchPredictions();
-      } else {
-        console.log("Prediction deleted successfully");
-      }
-      
-      return success;
-    } catch (error) {
-      console.error("Error in deletePrediction:", error);
-      toast.error("Failed to delete prediction due to an unexpected error");
-      // Refresh the predictions list to ensure UI is in sync with database
-      await fetchPredictions();
-      return false;
+    const success = await deletePricePrediction(predictionId);
+    if (success) {
+      console.log("Prediction deleted successfully, updating state");
+      setPredictions(prevPredictions => 
+        prevPredictions.filter(prediction => prediction.id !== predictionId)
+      );
+    } else {
+      console.error("Failed to delete prediction");
     }
+    return success;
   };
 
   const savePrediction = async (symbol: string, companyName: string, predictionData: StockPrediction) => {
@@ -127,33 +96,22 @@ export const useSavedPredictions = () => {
     if (predictionId) {
       // Refresh predictions list after saving
       console.log("Prediction saved successfully, refreshing predictions list");
-      await fetchPredictions();
-      toast.success("Prediction saved successfully");
+      fetchPredictions();
     } else {
       console.error("Failed to save prediction - no ID returned");
-      toast.error("Failed to save prediction");
     }
     return predictionId;
   };
 
   // Fetch predictions when the component mounts or user changes
   useEffect(() => {
-    // Only fetch if auth loading is complete
-    if (!authLoading) {
-      if (user) {
-        console.log("useSavedPredictions useEffect - fetching predictions for user:", user.id);
-        fetchPredictions();
-      } else {
-        console.log("useSavedPredictions useEffect - no user, clearing predictions");
-        setPredictions([]);
-        setIsLoading(false);
-      }
-    }
-  }, [user, authLoading, fetchPredictions]);
+    console.log("useSavedPredictions useEffect - fetching predictions");
+    fetchPredictions();
+  }, [user]);
 
   return { 
     predictions, 
-    isLoading: isLoading || authLoading, 
+    isLoading, 
     error, 
     fetchPredictions, 
     deletePrediction, 

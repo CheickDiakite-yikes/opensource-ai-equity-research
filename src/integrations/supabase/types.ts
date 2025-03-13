@@ -261,54 +261,13 @@ export type Database = {
         }
         Relationships: []
       }
-      user_activity_summary: {
-        Row: {
-          created_at: string | null
-          favorite_symbols: string[] | null
-          id: string
-          last_activity: string | null
-          prediction_accuracy: number | null
-          report_success_rate: number | null
-          total_predictions: number | null
-          total_reports: number | null
-          updated_at: string | null
-          user_id: string
-        }
-        Insert: {
-          created_at?: string | null
-          favorite_symbols?: string[] | null
-          id?: string
-          last_activity?: string | null
-          prediction_accuracy?: number | null
-          report_success_rate?: number | null
-          total_predictions?: number | null
-          total_reports?: number | null
-          updated_at?: string | null
-          user_id: string
-        }
-        Update: {
-          created_at?: string | null
-          favorite_symbols?: string[] | null
-          id?: string
-          last_activity?: string | null
-          prediction_accuracy?: number | null
-          report_success_rate?: number | null
-          total_predictions?: number | null
-          total_reports?: number | null
-          updated_at?: string | null
-          user_id?: string
-        }
-        Relationships: []
-      }
       user_analytics: {
         Row: {
-          access_count: number | null
           action: string
           category: string
           created_at: string
           id: string
           label: string | null
-          last_accessed: string | null
           metadata: Json | null
           session_id: string
           timestamp: string
@@ -316,13 +275,11 @@ export type Database = {
           value: number | null
         }
         Insert: {
-          access_count?: number | null
           action: string
           category: string
           created_at?: string
           id?: string
           label?: string | null
-          last_accessed?: string | null
           metadata?: Json | null
           session_id: string
           timestamp?: string
@@ -330,13 +287,11 @@ export type Database = {
           value?: number | null
         }
         Update: {
-          access_count?: number | null
           action?: string
           category?: string
           created_at?: string
           id?: string
           label?: string | null
-          last_accessed?: string | null
           metadata?: Json | null
           session_id?: string
           timestamp?: string
@@ -511,12 +466,6 @@ export type Database = {
           title: string
           similarity: number
         }[]
-      }
-      is_active_content: {
-        Args: {
-          expires_at: string
-        }
-        Returns: boolean
       }
       schedule_cache_cleanup: {
         Args: Record<PropertyKey, never>

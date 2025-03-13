@@ -13,11 +13,7 @@ import { StockPrediction } from "@/types/ai-analysis/predictionTypes";
 
 import type { ReportData } from "./useResearchReportData";
 import { useAuth } from "@/contexts/AuthContext";
-import { 
-  incrementUsedPredictions, 
-  canGeneratePrediction, 
-  canGenerateReport 
-} from "@/services/api/userContent/freePredictionsService";
+import { incrementUsedPredictions } from "@/services/api/userContent/freePredictionsService";
 
 export const useReportGeneration = (symbol: string, data: ReportData) => {
   const [isGenerating, setIsGenerating] = useState(false);
@@ -39,8 +35,13 @@ export const useReportGeneration = (symbol: string, data: ReportData) => {
         return;
       }
       
-      // Check if user can generate a report
-      if (!canGenerateReport(!!user)) {
+      // Only authenticated users can generate reports
+      if (!user) {
+        toast({
+          title: "Authentication Required",
+          description: "You must be signed in to generate research reports",
+          variant: "destructive",
+        });
         return;
       }
       
@@ -141,11 +142,6 @@ export const useReportGeneration = (symbol: string, data: ReportData) => {
           description: "Cannot generate prediction: missing stock data",
           variant: "destructive",
         });
-        return;
-      }
-      
-      // Check if the user can generate a prediction
-      if (!canGeneratePrediction(!!user)) {
         return;
       }
       
