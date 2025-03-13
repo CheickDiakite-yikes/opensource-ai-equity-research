@@ -40,24 +40,19 @@ Deno.serve(async (req) => {
     formattedData.industry = determineIndustry(symbol);
     
     // Retrieve historical predictions for this symbol for consistency
-    try {
-      const { data: historyData, error: historyError } = await supabase
-        .from('stock_prediction_history')
-        .select('*')
-        .eq('symbol', symbol)
-        .order('prediction_date', { ascending: false })
-        .limit(5);
-      
-      if (historyError) {
-        console.warn(`Error retrieving prediction history for ${symbol}:`, historyError);
-      } else {
-        // Add historical predictions to formatted data
-        formattedData.predictionHistory = historyData || [];
-      }
-    } catch (historyFetchError) {
-      console.warn(`Exception retrieving prediction history for ${symbol}:`, historyFetchError);
-      formattedData.predictionHistory = [];
+    const { data: historyData, error: historyError } = await supabase
+      .from('stock_prediction_history')
+      .select('*')
+      .eq('symbol', symbol)
+      .order('prediction_date', { ascending: false })
+      .limit(5);
+    
+    if (historyError) {
+      console.warn(`Error retrieving prediction history for ${symbol}:`, historyError);
     }
+    
+    // Add historical predictions to formatted data
+    formattedData.predictionHistory = historyData || [];
     
     // Attempt to generate AI prediction with a max of 3 retries for better quality
     let prediction: StockPrediction | null = null;
@@ -107,7 +102,6 @@ Deno.serve(async (req) => {
     
     // Save prediction to history table for future reference and consistency
     try {
-      // Remove ON CONFLICT handling which may be causing RLS policy violations
       const { error: insertError } = await supabase
         .from('stock_prediction_history')
         .insert({
@@ -130,14 +124,13 @@ Deno.serve(async (req) => {
         });
         
       if (insertError) {
-        // Non-fatal error, just log it
-        console.warn(`Warning: Could not save prediction history for ${symbol}:`, insertError);
+        console.error(`Error saving prediction history for ${symbol}:`, insertError);
       } else {
         console.log(`Successfully saved prediction history for ${symbol}`);
       }
     } catch (saveError) {
-      // Non-fatal error, just log it
-      console.warn(`Warning: Exception saving prediction history for ${symbol}:`, saveError);
+      console.error(`Exception saving prediction history for ${symbol}:`, saveError);
+      // Non-critical error, continue with returning the prediction
     }
     
     // Final logging of prediction values

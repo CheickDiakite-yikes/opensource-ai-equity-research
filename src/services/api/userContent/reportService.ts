@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { ResearchReport } from "@/types/ai-analysis/reportTypes";
 import { Json } from "@/integrations/supabase/types";
-import { generateReportHTML } from "@/services/api/userContent/htmlGenerator";
+import { generateReportHTML } from "./htmlGenerator";
 import { getUserId, manageItemLimit } from "./baseService";
 
 /**

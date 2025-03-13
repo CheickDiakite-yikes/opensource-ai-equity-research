@@ -1,43 +1,26 @@
 
-import { useEffect, useCallback } from "react";
-import { testConnection, getConnectionStatus } from "@/services/api/userContent/baseService";
+import { useState, useEffect } from "react";
+import { 
+  getUserPricePredictions,
+  deletePricePrediction,
+  savePricePrediction 
+} from "@/services/api/userContent";
 import { StockPrediction } from "@/types/ai-analysis/predictionTypes";
 import { useSavedContentBase } from "./useSavedContentBase";
-import { usePredictionsState } from "./state/usePredictionsState";
-import { 
-  fetchUserPredictions, 
-  removeUserPrediction, 
-  saveUserPrediction,
-  getDatabaseStatus
-} from "./api/predictionApi";
-import { SavedPrediction } from "./types/predictionTypes";
 import { toast } from "sonner";
 
-export type { SavedPrediction };
+export interface SavedPrediction {
+  id: string;
+  symbol: string;
+  company_name: string;
+  prediction_data: StockPrediction;
+  created_at: string;
+  expires_at: string;
+}
 
 export const useSavedPredictions = () => {
-  const [
-    { predictions, isLoading, error, lastError, debugInfo, connectionStatus, retryCount },
-    { 
-      setPredictions, setIsLoading, setError, setLastError, 
-      setDebugInfo, setConnectionStatus, setRetryCount, clearErrors 
-    }
-  ] = usePredictionsState();
-  
-  const { user, setIsLoading: setBaseIsLoading, setError: setBaseError, checkUserLoggedIn } = useSavedContentBase();
-
-  // Periodic connection check
-  useEffect(() => {
-    const checkConnection = async () => {
-      const status = await testConnection();
-      setConnectionStatus(status);
-    };
-    
-    checkConnection();
-    const interval = setInterval(checkConnection, 5 * 60 * 1000); // Check every 5 minutes
-    
-    return () => clearInterval(interval);
-  }, [setConnectionStatus]);
+  const [predictions, setPredictions] = useState<SavedPrediction[]>([]);
+  const { user, isLoading, setIsLoading, error, setError, checkUserLoggedIn } = useSavedContentBase();
 
   const fetchPredictions = async () => {
     if (!checkUserLoggedIn()) {
@@ -47,118 +30,91 @@ export const useSavedPredictions = () => {
 
     console.log("Fetching predictions for user:", user.id);
     setIsLoading(true);
-    clearErrors();
+    setError(null);
     
     try {
-      // Get connection status and diagnostic info
-      const { status, diagnostics } = await getDatabaseStatus();
-      setConnectionStatus(status);
-      setDebugInfo(diagnostics);
+      const data = await getUserPricePredictions();
       
-      if (status !== 'connected') {
-        setError("Database connection error");
-        setLastError("Cannot connect to database. Please check your internet connection.");
+      console.log("Raw data from getUserPricePredictions:", data);
+      
+      if (data.length === 0) {
+        console.log("No predictions found for user");
         setPredictions([]);
         setIsLoading(false);
         return;
       }
       
-      // Safely check for diagnostics properties
-      if (diagnostics.connected === false) {
-        setError("Database connection error");
-        setLastError(diagnostics.lastError || "Could not connect to database");
-        setPredictions([]);
-        setIsLoading(false);
-        return;
-      }
+      // Convert Json type to StockPrediction type with type assertion
+      const convertedPredictions = data.map(item => {
+        console.log(`Processing prediction ${item.id}:`, {
+          symbol: item.symbol,
+          company_name: item.company_name,
+          created_at: item.created_at,
+          expires_at: item.expires_at
+        });
+        
+        // Validate prediction_data
+        if (!item.prediction_data) {
+          console.error(`Prediction ${item.id} has no prediction_data!`);
+        }
+        
+        return {
+          ...item,
+          prediction_data: item.prediction_data as unknown as StockPrediction
+        };
+      }) as SavedPrediction[];
       
-      if (diagnostics.authStatus && diagnostics.authStatus !== 'authenticated') {
-        setError("Authentication error");
-        setLastError("User is not authenticated");
-        setPredictions([]);
-        setIsLoading(false);
-        return;
-      }
-      
-      const data = await fetchUserPredictions();
-      setPredictions(data);
-      setRetryCount(0); // Reset retry count on success
+      console.log(`Fetched ${convertedPredictions.length} predictions`);
+      setPredictions(convertedPredictions);
     } catch (err) {
       console.error("Error fetching saved predictions:", err);
       setError("Failed to load saved predictions");
-      setLastError(err instanceof Error ? err.message : String(err));
     } finally {
       setIsLoading(false);
     }
   };
 
   const deletePrediction = async (predictionId: string) => {
-    try {
-      const success = await removeUserPrediction(predictionId);
-      if (success) {
-        console.log("Prediction deleted successfully, updating state");
-        // Now this will work with our modified usePredictionsState
-        setPredictions((prevPredictions) => 
-          prevPredictions.filter(prediction => prediction.id !== predictionId)
-        );
-      }
-      return success;
-    } catch (err) {
-      console.error("Error in deletePrediction:", err);
-      setLastError(err instanceof Error ? err.message : String(err));
-      return false;
+    console.log("Deleting prediction:", predictionId);
+    const success = await deletePricePrediction(predictionId);
+    if (success) {
+      console.log("Prediction deleted successfully, updating state");
+      setPredictions(prevPredictions => 
+        prevPredictions.filter(prediction => prediction.id !== predictionId)
+      );
+    } else {
+      console.error("Failed to delete prediction");
     }
+    return success;
   };
 
   const savePrediction = async (symbol: string, companyName: string, predictionData: StockPrediction) => {
-    try {
-      const predictionId = await saveUserPrediction(symbol, companyName, predictionData);
-      
-      if (predictionId) {
-        // Refresh predictions list after saving
-        console.log("Prediction saved successfully, refreshing predictions list");
-        await fetchPredictions();
-        return predictionId;
-      } else {
-        console.error("Failed to save prediction - no ID returned");
-        
-        // Auto-retry once after a short delay
-        if (retryCount < 1) {
-          setRetryCount(prev => prev + 1);
-          toast.info("Retrying save operation...");
-          
-          // Wait a moment and try again
-          await new Promise(resolve => setTimeout(resolve, 1500));
-          return saveUserPrediction(symbol, companyName, predictionData);
-        }
-        
-        return null;
-      }
-    } catch (err) {
-      console.error("Error in savePrediction:", err);
-      setLastError(err instanceof Error ? err.message : String(err));
-      return null;
+    console.log("Saving prediction for:", symbol, companyName);
+    const predictionId = await savePricePrediction(symbol, companyName, predictionData);
+    console.log("Save result - prediction ID:", predictionId);
+    
+    if (predictionId) {
+      // Refresh predictions list after saving
+      console.log("Prediction saved successfully, refreshing predictions list");
+      fetchPredictions();
+    } else {
+      console.error("Failed to save prediction - no ID returned");
     }
+    return predictionId;
   };
 
   // Fetch predictions when the component mounts or user changes
   useEffect(() => {
-    if (user) {
-      console.log("useSavedPredictions useEffect - fetching predictions");
-      fetchPredictions();
-    }
+    console.log("useSavedPredictions useEffect - fetching predictions");
+    fetchPredictions();
   }, [user]);
 
   return { 
     predictions, 
     isLoading, 
-    error,
-    lastError,
-    debugInfo,
-    connectionStatus,
+    error, 
     fetchPredictions, 
     deletePrediction, 
-    savePrediction,
-    clearErrors
+    savePrediction 
   };
 };

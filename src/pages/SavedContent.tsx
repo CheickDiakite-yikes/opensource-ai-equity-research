@@ -18,23 +18,12 @@ const SavedContent = () => {
     predictions,
     selectedReport,
     selectedPrediction,
-    activeTab,
-    setActiveTab,
-    reportsError,
-    reportsLastError,
-    reportsDebugInfo,
-    predictionsError,
-    predictionsLastError,
-    predictionsDebugInfo,
-    connectionStatus,
     handleSelectReport,
     handleSelectPrediction,
     handleDeleteReport,
     handleDeletePrediction,
     handleDownloadHtml,
-    handleRefresh,
-    clearErrors,
-    checkConnection
+    handleRefresh
   } = useSavedContentPage();
 
   // If user is not logged in, redirect to login page
@@ -58,17 +47,7 @@ const SavedContent = () => {
             predictions={predictions}
             selectedReport={selectedReport}
             selectedPrediction={selectedPrediction}
-            activeTab={activeTab}
-            setActiveTab={setActiveTab}
-            reportsError={reportsError}
-            reportsLastError={reportsLastError}
-            reportsDebugInfo={reportsDebugInfo}
-            predictionsError={predictionsError}
-            predictionsLastError={predictionsLastError}
-            predictionsDebugInfo={predictionsDebugInfo}
-            connectionStatus={connectionStatus}
             onRefresh={handleRefresh}
-            onCheckConnection={checkConnection}
             onSelectReport={handleSelectReport}
             onSelectPrediction={handleSelectPrediction}
             onDeleteReport={handleDeleteReport}
