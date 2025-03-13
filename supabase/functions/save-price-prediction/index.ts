@@ -64,8 +64,7 @@ serve(async (req) => {
     const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
     const createdAt = new Date().toISOString();
     
-    // Step 2: Insert a new prediction with explicitly listed columns
-    // Removed .single() to avoid ON CONFLICT issues
+    // Step 2: Insert a new prediction
     const { data, error } = await supabase
       .from("user_price_predictions")
       .insert({
