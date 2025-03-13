@@ -1,6 +1,69 @@
 
+# Project ID
 project_id = "rnpcygrrxeeqphdjuesh"
-[api]
-enabled = true
-[functions.generate-research-report]
+
+# A schema version for your functions
+version = 1
+
+[check-database-status]
+verify_jwt = false
+
+[download-sec-filing]
+verify_jwt = false
+
+[execute-sql]
+verify_jwt = false
+
+[generate-research-report]
+verify_jwt = false
+
+[get-finnhub-company-news]
+verify_jwt = false
+
+[get-finnhub-financials]
+verify_jwt = false
+
+[get-finnhub-news]
+verify_jwt = false
+
+[get-finnhub-ownership]
+verify_jwt = false
+
+[get-finnhub-social-sentiment]
+verify_jwt = false
+
+[get-fmp-acquisition-ownership]
+verify_jwt = false
+
+[get-fmp-insider-trading-stats]
+verify_jwt = false
+
+[get-latest-8k-filings]
+verify_jwt = false
+
+[get-latest-sec-filings]
+verify_jwt = false
+
+[get-sec-company-profile]
+verify_jwt = false
+
+[get-sec-filings-by-form]
+verify_jwt = false
+
+[get-sec-filings]
+verify_jwt = false
+
+[get-stock-data]
+verify_jwt = false
+
+[optimize-database]
+verify_jwt = false
+
+[predict-stock-price]
+verify_jwt = false
+
+[save-price-prediction]
+verify_jwt = false
+
+[save-research-report]
 verify_jwt = false
