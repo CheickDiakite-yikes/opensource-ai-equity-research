@@ -60,16 +60,20 @@ export const useSavedContentPage = () => {
       return;
     }
     
-    // Create a temporary ResearchReport object with the required properties
+    // Create a complete ResearchReport object with all required properties
     const tempReport = {
       symbol: report.symbol,
       companyName: report.company_name,
-      date: new Date().toISOString().split('T')[0],
+      date: report.report_data?.date || new Date().toISOString().split('T')[0],
       recommendation: report.report_data?.recommendation || "N/A",
       targetPrice: report.report_data?.targetPrice || "N/A",
       summary: report.report_data?.summary || "N/A",
       sections: report.report_data?.sections || [],
-      html_content: report.html_content
+      html_content: report.html_content,
+      // Include optional properties if they exist in the report_data
+      ratingDetails: report.report_data?.ratingDetails,
+      scenarioAnalysis: report.report_data?.scenarioAnalysis,
+      catalysts: report.report_data?.catalysts
     };
     
     downloadReportAsHTML(tempReport);
