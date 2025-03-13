@@ -1,7 +1,8 @@
+
 import React from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ResearchReportDisplay } from "@/components/reports/ResearchReportDisplay";
-import { StockPredictionDisplay } from "@/components/predictions/StockPredictionDisplay";
+import ResearchReportDisplay from "@/components/reports/ResearchReportDisplay";
+import StockPredictionDisplay from "@/components/predictions/StockPredictionDisplay";
 import { Button } from "@/components/ui/button";
 import { DownloadIcon, Trash2Icon } from "lucide-react";
 import { saveAs } from "file-saver";

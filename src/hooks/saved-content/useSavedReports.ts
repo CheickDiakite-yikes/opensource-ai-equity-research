@@ -30,9 +30,11 @@ export const useSavedReports = () => {
     lastError,
     setLastError,
     checkUserLoggedIn,
-    handleError
+    handleError,
+    clearErrors: baseClearErrors,
+    debugInfo,
+    setDebugInfo
   } = useSavedContentBase();
-  const [debugInfo, setDebugInfo] = useState<string | null>(null);
 
   const fetchReports = async () => {
     if (!checkUserLoggedIn()) {
@@ -154,6 +156,12 @@ export const useSavedReports = () => {
     }
   };
 
+  // Add the clearErrors function that was missing
+  const clearErrors = () => {
+    baseClearErrors();
+    setDebugInfo(null);
+  };
+
   // Fetch reports when the component mounts or user changes
   useEffect(() => {
     console.log("useSavedReports useEffect - fetching reports");
@@ -168,6 +176,7 @@ export const useSavedReports = () => {
     debugInfo, 
     fetchReports, 
     deleteReport, 
-    saveReport 
+    saveReport,
+    clearErrors
   };
 };
