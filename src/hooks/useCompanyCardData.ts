@@ -47,13 +47,15 @@ export const useCompanyCardData = (symbol: string) => {
     }
   });
   
-  // Use prediction hook with autoFetch and quickMode enabled
+  // Use prediction hook
+  const companyName = quote?.name || "";
   const { 
     prediction, 
     isLoading: isPredictionLoading, 
     error: predictionError, 
-    retry: retryPrediction 
-  } = useStockPrediction(symbol, true, true);
+    setError: setError,
+    generatePrediction
+  } = useStockPrediction(symbol, companyName);
 
   // Auto retry predictions with error once
   useEffect(() => {
@@ -63,12 +65,13 @@ export const useCompanyCardData = (symbol: string) => {
       // Only retry once to avoid infinite loops
       if (retryPredictionCount < 1) {
         setTimeout(() => {
-          retryPrediction();
+          // Call retryPrediction function
+          generatePrediction(true);
           setRetryPredictionCount(prev => prev + 1);
         }, 2000);
       }
     }
-  }, [predictionError, symbol, retryPrediction, retryPredictionCount]);
+  }, [predictionError, symbol, generatePrediction, retryPredictionCount]);
 
   return {
     quote,
@@ -80,6 +83,6 @@ export const useCompanyCardData = (symbol: string) => {
     isQuoteError,
     isRatingError,
     predictionError,
-    retryPrediction
+    retryPrediction: () => generatePrediction(true)
   };
 };

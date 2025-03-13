@@ -108,7 +108,8 @@ export interface ResearchReport {
   investmentThesis?: string;
   growthProspects?: string;
   competitiveAdvantages?: string;
-  catalysts?: string;
+  // Remove the duplicate catalysts field
+  // catalysts?: string; 
   riskSummary?: string;
   marketRisks?: string;
   businessRisks?: string;

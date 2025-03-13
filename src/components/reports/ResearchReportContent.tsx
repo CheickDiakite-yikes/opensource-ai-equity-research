@@ -34,10 +34,10 @@ const ResearchReportContent: React.FC<ResearchReportContentProps> = ({
       console.log("Auto-saving report on display:", symbol);
       autoSaveReport(symbol, companyName, report);
     }
-  }, [report, symbol, companyName]);
+  }, [report, symbol, companyName, autoSaveReport]);
 
   // Format the report date
-  const reportDate = report.date ? report.date : formatDate(new Date());
+  const reportDate = report.date ? report.date : formatDate(new Date().toISOString());
 
   const findSectionContent = (title: string): string => {
     const section = report.sections.find(s => 
