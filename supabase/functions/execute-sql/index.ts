@@ -32,8 +32,6 @@ serve(async (req) => {
       );
     }
     
-    console.log("Executing SQL statement:", sql_statement);
-    
     // Create Supabase client with service role key (admin privileges)
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
     
