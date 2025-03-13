@@ -44,7 +44,7 @@ serve(async (req) => {
     const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
     const createdAt = new Date().toISOString();
     
-    // Insert a new prediction without deleting existing ones
+    // Insert a new prediction as a new record (no ON CONFLICT)
     try {
       const { data, error } = await supabase
         .from("user_price_predictions")
