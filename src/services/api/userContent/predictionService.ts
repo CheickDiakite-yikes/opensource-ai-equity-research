@@ -45,35 +45,76 @@ export const savePricePrediction = async (
       return null;
     }
 
-    // Now, insert the new prediction - use type cast to Json
-    console.log("Inserting prediction into database");
-    console.log("Prediction data sample:", JSON.stringify(predictionData).substring(0, 200) + "...");
-    
-    const { data, error } = await supabase
+    // Check if prediction for this symbol already exists
+    const { data: existingPredictions, error: checkError } = await supabase
       .from("user_price_predictions")
-      .insert({
-        user_id: userId,
-        symbol,
-        company_name: companyName,
-        prediction_data: predictionData as unknown as Json,
-      })
-      .select("id");
-
-    if (error) {
-      console.error("Error saving prediction:", error);
-      toast.error("Failed to save prediction: " + error.message);
+      .select("id")
+      .match({ user_id: userId, symbol: symbol });
+      
+    if (checkError) {
+      console.error("Error checking for existing prediction:", checkError);
+      toast.error("Failed to save prediction");
       return null;
     }
+    
+    let predictionId = null;
+    
+    if (existingPredictions && existingPredictions.length > 0) {
+      // Update existing prediction
+      console.log("Updating existing prediction for", symbol);
+      const { data, error: updateError } = await supabase
+        .from("user_price_predictions")
+        .update({
+          company_name: companyName,
+          prediction_data: predictionData as unknown as Json,
+          created_at: new Date().toISOString(),
+          expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
+        })
+        .eq("id", existingPredictions[0].id)
+        .select("id");
+        
+      if (updateError) {
+        console.error("Error updating prediction:", updateError);
+        toast.error("Failed to update prediction: " + updateError.message);
+        return null;
+      }
+      
+      predictionId = existingPredictions[0].id;
+      console.log("Prediction updated successfully. ID:", predictionId);
+      toast.success("Price prediction updated successfully");
+    } else {
+      // Insert new prediction - use type cast to Json
+      console.log("Inserting new prediction into database");
+      console.log("Prediction data sample:", JSON.stringify(predictionData).substring(0, 200) + "...");
+      
+      const { data, error } = await supabase
+        .from("user_price_predictions")
+        .insert({
+          user_id: userId,
+          symbol,
+          company_name: companyName,
+          prediction_data: predictionData as unknown as Json,
+        })
+        .select("id");
 
-    if (!data || data.length === 0) {
-      console.error("No data returned after saving prediction");
-      toast.error("Failed to save prediction - no data returned");
-      return null;
+      if (error) {
+        console.error("Error saving prediction:", error);
+        toast.error("Failed to save prediction: " + error.message);
+        return null;
+      }
+
+      if (!data || data.length === 0) {
+        console.error("No data returned after saving prediction");
+        toast.error("Failed to save prediction - no data returned");
+        return null;
+      }
+
+      predictionId = data[0].id;
+      console.log("Prediction saved successfully. ID:", predictionId);
+      toast.success("Price prediction saved successfully");
     }
-
-    console.log("Prediction saved successfully. ID:", data[0].id);
-    toast.success("Price prediction saved successfully");
-    return data[0].id;
+    
+    return predictionId;
   } catch (error) {
     console.error("Error in savePricePrediction:", error);
     toast.error("An unexpected error occurred");
@@ -139,7 +180,7 @@ export const deletePricePrediction = async (predictionId: string): Promise<boole
     toast.success("Prediction deleted successfully");
     return true;
   } catch (error) {
-    console.error("Error in deletePricePrediction:", error);
+    console.error("Error in deletePrediction:", error);
     toast.error("An unexpected error occurred");
     return false;
   }
