@@ -40,9 +40,7 @@ serve(async (req) => {
     // Create a Supabase client with the service role key
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
     
-    // Step 1: Delete any existing predictions for this user and symbol
-    // This is a safer approach than trying to update, especially when 
-    // there might be multiple records with the same user_id and symbol
+    // Step 1: Delete any existing predictions for this user and symbol combination
     const { error: deleteError } = await supabase
       .from("user_price_predictions")
       .delete()
@@ -62,15 +60,19 @@ serve(async (req) => {
     
     console.log(`Deleted any existing predictions for ${symbol}, now creating a new one`);
     
-    // Step 2: Insert a new prediction
+    // Calculate expiration date (30 days from now)
+    const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
+    
+    // Step 2: Insert a new prediction with explicitly listed columns
     const { data, error } = await supabase
       .from("user_price_predictions")
       .insert({
         user_id: userId,
-        symbol,
+        symbol: symbol,
         company_name: companyName,
         prediction_data: predictionData,
-        expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString() // 30 days from now
+        expires_at: expiresAt,
+        created_at: new Date().toISOString()
       })
       .select("id")
       .single();
@@ -78,7 +80,13 @@ serve(async (req) => {
     if (error) {
       console.error("Error inserting prediction:", error);
       return new Response(
-        JSON.stringify({ error: error.message, success: false }),
+        JSON.stringify({ 
+          error: error.message, 
+          code: error.code,
+          details: error.details,
+          hint: error.hint,
+          success: false 
+        }),
         {
           status: 500,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }
@@ -111,7 +119,11 @@ serve(async (req) => {
   } catch (error) {
     console.error("Unexpected error in save-price-prediction:", error);
     return new Response(
-      JSON.stringify({ error: error.message, success: false }),
+      JSON.stringify({ 
+        error: error.message, 
+        stack: error.stack,
+        success: false 
+      }),
       {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
