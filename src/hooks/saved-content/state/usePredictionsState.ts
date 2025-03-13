@@ -1,4 +1,3 @@
-
 import { useState, useCallback } from "react";
 import { SavedPrediction, UsePredictionsState } from "../types/predictionTypes";
 import { getConnectionStatus } from "@/services/api/userContent/baseService";
@@ -6,7 +5,7 @@ import { getConnectionStatus } from "@/services/api/userContent/baseService";
 export const usePredictionsState = (): [
   UsePredictionsState,
   {
-    setPredictions: (predictions: SavedPrediction[]) => void;
+    setPredictions: (predictions: SavedPrediction[] | ((prev: SavedPrediction[]) => SavedPrediction[])) => void;
     setIsLoading: (isLoading: boolean) => void;
     setError: (error: string | null) => void;
     setLastError: (lastError: string | null) => void;
@@ -26,8 +25,13 @@ export const usePredictionsState = (): [
     retryCount: 0,
   });
 
-  const setPredictions = useCallback((predictions: SavedPrediction[]) => {
-    setState(prev => ({ ...prev, predictions }));
+  const setPredictions = useCallback((predictions: SavedPrediction[] | ((prev: SavedPrediction[]) => SavedPrediction[])) => {
+    setState(prev => ({
+      ...prev,
+      predictions: typeof predictions === 'function' 
+        ? predictions(prev.predictions) 
+        : predictions
+    }));
   }, []);
 
   const setIsLoading = useCallback((isLoading: boolean) => {

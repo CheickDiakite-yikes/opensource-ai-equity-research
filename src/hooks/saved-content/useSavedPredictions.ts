@@ -97,8 +97,8 @@ export const useSavedPredictions = () => {
       const success = await removeUserPrediction(predictionId);
       if (success) {
         console.log("Prediction deleted successfully, updating state");
-        // Use the functional form with proper typing
-        setPredictions((prevPredictions: SavedPrediction[]) => 
+        // Now this will work with our modified usePredictionsState
+        setPredictions((prevPredictions) => 
           prevPredictions.filter(prediction => prediction.id !== predictionId)
         );
       }
