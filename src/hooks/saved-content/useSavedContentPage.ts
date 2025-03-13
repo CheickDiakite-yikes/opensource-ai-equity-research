@@ -17,18 +17,33 @@ export const useSavedContentPage = () => {
   const [selectedPrediction, setSelectedPrediction] = useState<SavedPrediction | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
+  // Debug function to check authentication and data
+  const debugStatus = () => {
+    console.log("Auth status:", { userId: user?.id, isAuthenticated: !!user });
+    console.log("Reports:", reports.length);
+    console.log("Predictions:", predictions.length);
+  };
+
   // Refresh reports when page loads
   useEffect(() => {
     if (user) {
       console.log("SavedContent component mounted, fetching reports...");
       fetchReports();
       fetchPredictions();
+      
+      // Debug output
+      console.log("User authenticated:", !!user);
+      debugStatus();
+    } else {
+      console.log("User not authenticated, skipping content fetch");
     }
   }, [user]);
 
   // Log reports when they change
   useEffect(() => {
     console.log("Reports updated:", reports.length);
+    debugStatus();
+    
     reports.forEach(report => {
       console.log(`- Report ${report.id}: ${report.symbol}, HTML: ${report.html_content ? "YES" : "NO"}`);
     });
@@ -37,6 +52,8 @@ export const useSavedContentPage = () => {
   // Log predictions when they change
   useEffect(() => {
     console.log("Predictions updated:", predictions.length);
+    debugStatus();
+    
     predictions.forEach(prediction => {
       console.log(`- Prediction ${prediction.id}: ${prediction.symbol}`);
     });
@@ -106,6 +123,7 @@ export const useSavedContentPage = () => {
     console.log("Manually refreshing content...");
     try {
       await Promise.all([fetchReports(), fetchPredictions()]);
+      debugStatus();
       toast.success("Content refreshed");
     } catch (error) {
       console.error("Error refreshing content:", error);
