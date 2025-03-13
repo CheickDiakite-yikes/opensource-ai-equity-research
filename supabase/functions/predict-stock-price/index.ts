@@ -122,9 +122,9 @@ Deno.serve(async (req) => {
         }
       };
       
-      console.log(`Saving prediction to history:`, JSON.stringify(historyRecord).substring(0, 200) + "...");
+      console.log(`Saving prediction to history:`);
       
-      // Use a simple insert without any ON CONFLICT clause
+      // Using simple insert without ON CONFLICT clause to avoid RLS policy errors
       const { error: insertError } = await supabase
         .from('stock_prediction_history')
         .insert(historyRecord);

@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { StockPrediction } from "@/types/ai-analysis/predictionTypes";
@@ -43,7 +44,7 @@ export const savePricePrediction = async (
       throw new UserContentError("Failed to manage item limit", "savePricePrediction");
     }
 
-    // Insert the new prediction - WITHOUT on conflict
+    // Insert the new prediction using a simple insert without ON CONFLICT
     console.log("Inserting prediction into database");
     
     // Debug log the full object being inserted

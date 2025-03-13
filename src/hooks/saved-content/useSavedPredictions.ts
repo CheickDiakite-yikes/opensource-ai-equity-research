@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { 
   getUserPricePredictions,
   deletePricePrediction,
@@ -29,9 +29,13 @@ export const useSavedPredictions = () => {
     lastError,
     setLastError,
     checkUserLoggedIn,
-    handleError
+    handleError,
+    connectionStatus,
+    checkConnection,
+    debugInfo,
+    setDebugInfo,
+    clearErrors
   } = useSavedContentBase();
-  const [debugInfo, setDebugInfo] = useState<string | null>(null);
 
   const fetchPredictions = async () => {
     if (!checkUserLoggedIn()) {
@@ -43,14 +47,22 @@ export const useSavedPredictions = () => {
     console.log("User:", user.id);
     setIsLoading(true);
     setError(null);
-    setDebugInfo(null);
+    setDebugInfo("Fetching predictions from database");
+    
+    // Check connection first
+    const isConnected = await checkConnection();
+    if (!isConnected) {
+      setError("Cannot fetch predictions: disconnected from database");
+      setIsLoading(false);
+      return;
+    }
     
     try {
       const data = await getUserPricePredictions();
       
       // Debug logging
       console.log("Raw data from getUserPricePredictions:", data);
-      setDebugInfo(`Retrieved ${data.length} predictions from database`);
+      setDebugInfo(prev => `${prev}\nRetrieved ${data.length} predictions from database`);
       
       if (data.length === 0) {
         console.log("No predictions found for user");
@@ -125,6 +137,15 @@ export const useSavedPredictions = () => {
     console.log("Prediction ID:", predictionId);
     setDebugInfo(`Attempting to delete prediction: ${predictionId}`);
     
+    // Check connection first
+    const isConnected = await checkConnection();
+    if (!isConnected) {
+      const msg = "Cannot delete prediction: disconnected from database";
+      setError(msg);
+      toast.error(msg);
+      return false;
+    }
+    
     try {
       const success = await deletePricePrediction(predictionId);
       if (success) {
@@ -150,6 +171,15 @@ export const useSavedPredictions = () => {
     console.log("Symbol:", symbol);
     console.log("Company:", companyName);
     setDebugInfo(`Attempting to save prediction for: ${symbol} (${companyName})`);
+    
+    // Check connection first
+    const isConnected = await checkConnection();
+    if (!isConnected) {
+      const msg = "Cannot save prediction: disconnected from database";
+      setError(msg);
+      toast.error(msg);
+      return null;
+    }
     
     try {
       const predictionId = await savePricePrediction(symbol, companyName, predictionData);
@@ -185,8 +215,11 @@ export const useSavedPredictions = () => {
     error, 
     lastError,
     debugInfo,
+    connectionStatus,
     fetchPredictions, 
     deletePrediction, 
-    savePrediction 
+    savePrediction,
+    checkConnection,
+    clearErrors
   };
 };
