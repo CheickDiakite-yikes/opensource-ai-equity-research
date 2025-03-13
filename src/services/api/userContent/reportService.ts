@@ -34,7 +34,7 @@ export const saveResearchReport = async (
 
     // Delete oldest reports if over limit
     if (currentCount >= 10) {
-      const deleted = await deleteOldestItems("user_research_reports", userId, currentCount);
+      const deleted = await deleteOldestItems("user_research_reports", userId, currentCount - 9);
       if (!deleted) {
         console.error("Failed to delete oldest reports");
         toast.error("Failed to save report - couldn't manage report limit");
@@ -163,7 +163,7 @@ export const deleteResearchReport = async (reportId: string): Promise<boolean> =
       .from("user_research_reports")
       .delete()
       .eq("id", reportId)
-      .eq("user_id", userId); // Add this to ensure users can only delete their own reports
+      .eq("user_id", userId); // Ensure users can only delete their own reports
 
     if (error) {
       console.error("Error deleting report:", error);

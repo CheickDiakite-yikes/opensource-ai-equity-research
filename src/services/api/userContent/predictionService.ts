@@ -33,7 +33,7 @@ export const savePricePrediction = async (
 
     // Delete oldest predictions if over limit
     if (currentCount >= 10) {
-      const deleted = await deleteOldestItems("user_price_predictions", userId, currentCount);
+      const deleted = await deleteOldestItems("user_price_predictions", userId, currentCount - 9);
       if (!deleted) {
         console.error("Failed to delete oldest predictions");
         toast.error("Failed to save prediction - couldn't manage prediction limit");
@@ -136,7 +136,7 @@ export const deletePricePrediction = async (predictionId: string): Promise<boole
       .from("user_price_predictions")
       .delete()
       .eq("id", predictionId)
-      .eq("user_id", userId); // Add this to ensure users can only delete their own predictions
+      .eq("user_id", userId); // Ensure users can only delete their own predictions
 
     if (error) {
       console.error("Error deleting prediction:", error);
