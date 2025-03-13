@@ -9,39 +9,26 @@ serve(async (req) => {
   }
 
   try {
-    // Gather more detailed diagnostic information
-    const diagnosticInfo = {
+    // Simple health check response
+    const responseData = {
       status: 'online',
       timestamp: new Date().toISOString(),
-      environment: Deno.env.get('ENVIRONMENT') || 'development',
-      region: Deno.env.get('REGION') || 'unknown',
-      function_version: '1.0.1',
-      service_details: {
-        memory_usage: Deno.memoryUsage(),
-        uptime_ms: performance.now(),
-      }
+      environment: Deno.env.get('ENVIRONMENT') || 'development'
     }
 
     return new Response(
-      JSON.stringify(diagnosticInfo),
+      JSON.stringify(responseData),
       { 
         headers: {
           ...corsHeaders,
-          'Content-Type': 'application/json',
-          'Cache-Control': 'no-cache, no-store, must-revalidate'
+          'Content-Type': 'application/json'
         },
         status: 200 
       }
     )
   } catch (error) {
-    console.error('Error in check-database-status function:', error)
-    
     return new Response(
-      JSON.stringify({ 
-        error: error.message,
-        status: 'error',
-        timestamp: new Date().toISOString()
-      }),
+      JSON.stringify({ error: error.message }),
       { 
         headers: {
           ...corsHeaders,

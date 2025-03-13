@@ -26,7 +26,6 @@ export const useSavedPredictions = () => {
   const [connectionStatus, setConnectionStatus] = useState(getConnectionStatus());
   const { user, isLoading, setIsLoading, error, setError, checkUserLoggedIn } = useSavedContentBase();
   const [retryCount, setRetryCount] = useState(0);
-  const [isRefreshing, setIsRefreshing] = useState(false);
 
   // Periodic connection check
   useEffect(() => {
@@ -143,7 +142,6 @@ export const useSavedPredictions = () => {
       setLastError(err instanceof Error ? err.message : String(err));
     } finally {
       setIsLoading(false);
-      setIsRefreshing(false);
     }
   };
 
@@ -178,7 +176,6 @@ export const useSavedPredictions = () => {
 
   const savePrediction = async (symbol: string, companyName: string, predictionData: StockPrediction) => {
     console.log("Saving prediction for:", symbol, companyName);
-    setIsRefreshing(true);
     
     try {
       const status = await testConnection();
@@ -186,7 +183,6 @@ export const useSavedPredictions = () => {
       
       if (status !== 'connected') {
         toast.error("Cannot save prediction: Database connection error");
-        setIsRefreshing(false);
         return null;
       }
       
@@ -211,23 +207,14 @@ export const useSavedPredictions = () => {
           return savePricePrediction(symbol, companyName, predictionData);
         }
         
-        setIsRefreshing(false);
         return null;
       }
     } catch (err) {
       console.error("Error in savePrediction:", err);
       toast.error("Failed to save prediction due to an unexpected error");
       setLastError(err instanceof Error ? err.message : String(err));
-      setIsRefreshing(false);
       return null;
     }
-  };
-
-  // Manual refresh function
-  const refresh = async () => {
-    setIsRefreshing(true);
-    await fetchPredictions();
-    setIsRefreshing(false);
   };
 
   // Fetch predictions when the component mounts or user changes
@@ -240,8 +227,7 @@ export const useSavedPredictions = () => {
 
   return { 
     predictions, 
-    isLoading,
-    isRefreshing,
+    isLoading, 
     error,
     lastError,
     debugInfo,
@@ -249,7 +235,6 @@ export const useSavedPredictions = () => {
     fetchPredictions, 
     deletePrediction, 
     savePrediction,
-    refresh,
     clearErrors
   };
 };

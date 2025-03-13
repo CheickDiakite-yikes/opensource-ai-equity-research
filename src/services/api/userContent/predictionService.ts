@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { StockPrediction } from "@/types/ai-analysis/predictionTypes";
@@ -54,19 +55,6 @@ export const savePricePrediction = async (
       return null;
     }
 
-    // Check if a prediction with this symbol already exists for this user
-    const { data: existingPredictions, error: findError } = await supabase
-      .from("user_price_predictions")
-      .select("id")
-      .eq("user_id", userId)
-      .eq("symbol", symbol);
-      
-    if (findError) {
-      console.error("Error checking for existing prediction:", findError);
-      toast.error("Failed to save prediction: Database error");
-      return null;
-    }
-
     // Prepare the prediction data for insertion
     console.log("Preparing prediction data for database insertion");
     
@@ -91,53 +79,26 @@ export const savePricePrediction = async (
         : [],
     };
     
+    // Now, insert the new prediction - use type cast to Json
+    console.log("Inserting prediction into database");
+    
     try {
-      let data;
-      let error;
-      
-      // If prediction exists, update it
-      if (existingPredictions && existingPredictions.length > 0) {
-        console.log("Updating existing prediction with ID:", existingPredictions[0].id);
-        
-        const result = await supabase
-          .from("user_price_predictions")
-          .update({
-            prediction_data: cleanedPredictionData as unknown as Json,
-            expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
-          })
-          .eq("id", existingPredictions[0].id)
-          .select("id");
-          
-        data = result.data;
-        error = result.error;
-        
-        if (!error) {
-          return existingPredictions[0].id;
-        }
-      } else {
-        // Otherwise insert a new prediction
-        console.log("Inserting new prediction");
-        
-        const result = await supabase
-          .from("user_price_predictions")
-          .insert({
-            user_id: userId,
-            symbol,
-            company_name: companyName,
-            prediction_data: cleanedPredictionData as unknown as Json,
-          })
-          .select("id");
-          
-        data = result.data;
-        error = result.error;
-      }
+      const { data, error } = await supabase
+        .from("user_price_predictions")
+        .insert({
+          user_id: userId,
+          symbol,
+          company_name: companyName,
+          prediction_data: cleanedPredictionData as unknown as Json,
+        })
+        .select("id");
 
       if (error) {
         console.error("Error saving prediction:", error);
         
         // More specific error message based on error code
         if (error.code === "23505") {
-          toast.error("This prediction already exists. Please try again in a moment.");
+          toast.error("This prediction already exists. Please update it instead.");
         } else if (error.code === "23503") {
           toast.error("Authentication error. Please sign in again.");
         } else if (error.code === "42P01") {
