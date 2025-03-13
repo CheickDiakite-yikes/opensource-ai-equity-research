@@ -181,9 +181,6 @@ export const useSavedPredictions = () => {
     setIsRefreshing(true);
     
     try {
-      // Wait for a short delay to avoid race conditions
-      await new Promise(resolve => setTimeout(resolve, 500));
-
       const status = await testConnection();
       setConnectionStatus(status);
       
@@ -191,20 +188,6 @@ export const useSavedPredictions = () => {
         toast.error("Cannot save prediction: Database connection error");
         setIsRefreshing(false);
         return null;
-      }
-      
-      // Check if this prediction is already in our local state
-      const existingPrediction = predictions.find(p => p.symbol === symbol);
-      if (existingPrediction) {
-        console.log("Prediction already exists in local state, updating:", existingPrediction.id);
-        // Try deleting first to avoid constraints issues
-        try {
-          await deletePricePrediction(existingPrediction.id);
-          console.log("Existing prediction deleted successfully");
-        } catch (deleteErr) {
-          console.warn("Could not delete existing prediction:", deleteErr);
-          // Continue with save attempt even if delete fails
-        }
       }
       
       const predictionId = await savePricePrediction(symbol, companyName, predictionData);

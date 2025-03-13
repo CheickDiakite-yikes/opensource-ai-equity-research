@@ -115,7 +115,7 @@ export const savePricePrediction = async (
           return existingPredictions[0].id;
         }
       } else {
-        // Otherwise insert a new prediction (remove the ON CONFLICT clause)
+        // Otherwise insert a new prediction
         console.log("Inserting new prediction");
         
         const result = await supabase
