@@ -1,3 +1,4 @@
+
 import React, { useEffect } from "react";
 import { ResearchReport } from "@/types/ai-analysis/reportTypes";
 import { useReportSaving } from "@/hooks/reports/useReportSaving";
@@ -8,14 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Download } from "lucide-react";
 import { formatDate } from "@/lib/utils";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import CompanyOverview from "./report-sections/CompanyOverview";
-import FinancialAnalysis from "./report-sections/FinancialAnalysis";
-import InvestmentAnalysis from "./report-sections/InvestmentAnalysis";
-import RiskAssessment from "./report-sections/RiskAssessment";
-import TechnicalAnalysis from "./report-sections/TechnicalAnalysis";
-import ValuationAnalysis from "./report-sections/ValuationAnalysis";
-import ReportSummary from "./report-sections/ReportSummary";
-import ReportHeader from "./report-sections/ReportHeader";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface ResearchReportContentProps {
   report: ResearchReport;
@@ -43,7 +37,14 @@ const ResearchReportContent: React.FC<ResearchReportContentProps> = ({
   }, [report, symbol, companyName]);
 
   // Format the report date
-  const reportDate = report.reportDate ? formatDate(new Date(report.reportDate)) : formatDate(new Date());
+  const reportDate = report.date ? report.date : formatDate(new Date());
+
+  const findSectionContent = (title: string): string => {
+    const section = report.sections.find(s => 
+      s.title.toLowerCase().includes(title.toLowerCase())
+    );
+    return section?.content || "No information available";
+  };
 
   return (
     <div className="space-y-6 pb-8">
@@ -53,13 +54,31 @@ const ResearchReportContent: React.FC<ResearchReportContentProps> = ({
         </div>
       )}
       
-      <ReportHeader 
-        symbol={symbol} 
-        companyName={companyName} 
-        reportDate={reportDate}
-        targetPrice={report.targetPrice}
-        recommendation={report.recommendation}
-      />
+      <div className="flex justify-between items-start">
+        <div>
+          <h2 className="text-xl font-bold">{companyName} ({symbol})</h2>
+          <p className="text-sm text-muted-foreground">Report Date: {reportDate}</p>
+        </div>
+        
+        <div className="flex items-center space-x-3">
+          <Badge 
+            className={`px-2.5 py-1 font-semibold ${
+              report.recommendation.toLowerCase().includes('buy') ? 'bg-green-100 text-green-800' :
+              report.recommendation.toLowerCase().includes('hold') ? 'bg-yellow-100 text-yellow-800' :
+              report.recommendation.toLowerCase().includes('sell') ? 'bg-red-100 text-red-800' :
+              'bg-blue-100 text-blue-800'
+            }`}
+            variant="outline"
+          >
+            {report.recommendation}
+          </Badge>
+          
+          <div className="text-right">
+            <div className="text-xs text-muted-foreground">Price Target</div>
+            <div className="text-lg font-semibold">{report.targetPrice}</div>
+          </div>
+        </div>
+      </div>
 
       {onDownloadHtml && htmlContent && (
         <div className="flex justify-end">
@@ -74,87 +93,139 @@ const ResearchReportContent: React.FC<ResearchReportContentProps> = ({
           </Button>
         </div>
       )}
+      
+      <Card className="p-4 bg-primary/5">
+        <h3 className="font-semibold mb-2">Executive Summary</h3>
+        <p className="text-sm text-muted-foreground">{report.summary}</p>
+      </Card>
 
-      <Tabs defaultValue="summary" className="w-full">
-        <TabsList className="grid grid-cols-7 mb-4">
-          <TabsTrigger value="summary">Summary</TabsTrigger>
+      <Tabs defaultValue="company" className="w-full">
+        <TabsList className="grid grid-cols-5 mb-4">
           <TabsTrigger value="company">Company</TabsTrigger>
           <TabsTrigger value="financial">Financial</TabsTrigger>
           <TabsTrigger value="valuation">Valuation</TabsTrigger>
-          <TabsTrigger value="technical">Technical</TabsTrigger>
-          <TabsTrigger value="investment">Investment</TabsTrigger>
+          <TabsTrigger value="growth">Growth</TabsTrigger>
           <TabsTrigger value="risk">Risk</TabsTrigger>
         </TabsList>
         
-        <TabsContent value="summary" className="mt-0">
-          <ReportSummary 
-            summary={report.executiveSummary} 
-            highlights={report.investmentHighlights}
-            recommendation={report.recommendation}
-            targetPrice={report.targetPrice}
-          />
+        <TabsContent value="company" className="mt-0 space-y-4">
+          {report.sections.filter(s => 
+            s.title.toLowerCase().includes('company') || 
+            s.title.toLowerCase().includes('business') ||
+            s.title.toLowerCase().includes('product') ||
+            s.title.toLowerCase().includes('industry')
+          ).map((section, index) => (
+            <Card key={index} className="p-4">
+              <h3 className="text-lg font-semibold mb-2">{section.title}</h3>
+              <p className="text-sm text-muted-foreground">{section.content}</p>
+            </Card>
+          ))}
         </TabsContent>
         
-        <TabsContent value="company" className="mt-0">
-          <CompanyOverview 
-            companyDescription={report.companyDescription}
-            businessModel={report.businessModel}
-            productsServices={report.productsServices}
-            industryOverview={report.industryOverview}
-            competitiveLandscape={report.competitiveLandscape}
-          />
+        <TabsContent value="financial" className="mt-0 space-y-4">
+          {report.sections.filter(s => 
+            s.title.toLowerCase().includes('financial') || 
+            s.title.toLowerCase().includes('revenue') ||
+            s.title.toLowerCase().includes('profit') ||
+            s.title.toLowerCase().includes('balance sheet') ||
+            s.title.toLowerCase().includes('cash flow')
+          ).map((section, index) => (
+            <Card key={index} className="p-4">
+              <h3 className="text-lg font-semibold mb-2">{section.title}</h3>
+              <p className="text-sm text-muted-foreground">{section.content}</p>
+            </Card>
+          ))}
         </TabsContent>
         
-        <TabsContent value="financial" className="mt-0">
-          <FinancialAnalysis 
-            financialSummary={report.financialSummary}
-            revenueAnalysis={report.revenueAnalysis}
-            profitabilityAnalysis={report.profitabilityAnalysis}
-            balanceSheetAnalysis={report.balanceSheetAnalysis}
-            cashFlowAnalysis={report.cashFlowAnalysis}
-          />
+        <TabsContent value="valuation" className="mt-0 space-y-4">
+          {report.sections.filter(s => 
+            s.title.toLowerCase().includes('valuation') || 
+            s.title.toLowerCase().includes('price') ||
+            s.title.toLowerCase().includes('ratio') ||
+            s.title.toLowerCase().includes('metrics')
+          ).map((section, index) => (
+            <Card key={index} className="p-4">
+              <h3 className="text-lg font-semibold mb-2">{section.title}</h3>
+              <p className="text-sm text-muted-foreground">{section.content}</p>
+            </Card>
+          ))}
+          
+          {report.scenarioAnalysis && (
+            <Card className="p-4">
+              <h3 className="text-lg font-semibold mb-2">Scenario Analysis</h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-2">
+                <div className="p-3 border rounded bg-green-50">
+                  <h4 className="font-medium">Bull Case: {report.scenarioAnalysis.bullCase.price}</h4>
+                  <p className="text-xs mt-1">{report.scenarioAnalysis.bullCase.description}</p>
+                </div>
+                <div className="p-3 border rounded bg-blue-50">
+                  <h4 className="font-medium">Base Case: {report.scenarioAnalysis.baseCase.price}</h4>
+                  <p className="text-xs mt-1">{report.scenarioAnalysis.baseCase.description}</p>
+                </div>
+                <div className="p-3 border rounded bg-red-50">
+                  <h4 className="font-medium">Bear Case: {report.scenarioAnalysis.bearCase.price}</h4>
+                  <p className="text-xs mt-1">{report.scenarioAnalysis.bearCase.description}</p>
+                </div>
+              </div>
+            </Card>
+          )}
         </TabsContent>
         
-        <TabsContent value="valuation" className="mt-0">
-          <ValuationAnalysis 
-            valuationSummary={report.valuationSummary}
-            peRatio={report.peRatio}
-            pbRatio={report.pbRatio}
-            evToEbitda={report.evToEbitda}
-            dividendYield={report.dividendYield}
-            discountedCashFlow={report.discountedCashFlow}
-            priceForecast={report.priceForecast}
-          />
+        <TabsContent value="growth" className="mt-0 space-y-4">
+          {report.sections.filter(s => 
+            s.title.toLowerCase().includes('growth') || 
+            s.title.toLowerCase().includes('investment') ||
+            s.title.toLowerCase().includes('prospect') ||
+            s.title.toLowerCase().includes('future') ||
+            s.title.toLowerCase().includes('strategy')
+          ).map((section, index) => (
+            <Card key={index} className="p-4">
+              <h3 className="text-lg font-semibold mb-2">{section.title}</h3>
+              <p className="text-sm text-muted-foreground">{section.content}</p>
+            </Card>
+          ))}
+          
+          {report.catalysts && (
+            <Card className="p-4">
+              <h3 className="text-lg font-semibold mb-2">Growth Catalysts</h3>
+              
+              {report.catalysts.positive && report.catalysts.positive.length > 0 && (
+                <div className="mt-2">
+                  <h4 className="font-medium text-sm">Positive Catalysts</h4>
+                  <ul className="list-disc pl-5 text-sm mt-1">
+                    {report.catalysts.positive.map((item, idx) => (
+                      <li key={idx} className="text-sm">{item}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              
+              {report.catalysts.negative && report.catalysts.negative.length > 0 && (
+                <div className="mt-3">
+                  <h4 className="font-medium text-sm">Negative Catalysts</h4>
+                  <ul className="list-disc pl-5 text-sm mt-1">
+                    {report.catalysts.negative.map((item, idx) => (
+                      <li key={idx} className="text-sm">{item}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </Card>
+          )}
         </TabsContent>
         
-        <TabsContent value="technical" className="mt-0">
-          <TechnicalAnalysis 
-            technicalSummary={report.technicalSummary}
-            trendAnalysis={report.trendAnalysis}
-            supportResistanceLevels={report.supportResistanceLevels}
-            movingAverages={report.movingAverages}
-            relativeStrengthIndex={report.relativeStrengthIndex}
-            macdAnalysis={report.macdAnalysis}
-          />
-        </TabsContent>
-        
-        <TabsContent value="investment" className="mt-0">
-          <InvestmentAnalysis 
-            investmentThesis={report.investmentThesis}
-            growthProspects={report.growthProspects}
-            competitiveAdvantages={report.competitiveAdvantages}
-            catalysts={report.catalysts}
-          />
-        </TabsContent>
-        
-        <TabsContent value="risk" className="mt-0">
-          <RiskAssessment 
-            riskSummary={report.riskSummary}
-            marketRisks={report.marketRisks}
-            businessRisks={report.businessRisks}
-            financialRisks={report.financialRisks}
-            regulatoryRisks={report.regulatoryRisks}
-          />
+        <TabsContent value="risk" className="mt-0 space-y-4">
+          {report.sections.filter(s => 
+            s.title.toLowerCase().includes('risk') || 
+            s.title.toLowerCase().includes('challenge') ||
+            s.title.toLowerCase().includes('threat') ||
+            s.title.toLowerCase().includes('concern')
+          ).map((section, index) => (
+            <Card key={index} className="p-4">
+              <h3 className="text-lg font-semibold mb-2">{section.title}</h3>
+              <p className="text-sm text-muted-foreground">{section.content}</p>
+            </Card>
+          ))}
         </TabsContent>
       </Tabs>
       
