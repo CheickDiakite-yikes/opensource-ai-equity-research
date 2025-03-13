@@ -1,47 +1,101 @@
-import { useState } from "react";
+
+import { useState, useEffect } from "react";
 import { StockPrediction } from "@/types/ai-analysis/predictionTypes";
+import { toast } from "@/components/ui/use-toast";
+import { usePredictionHistory } from "./usePredictionHistory";
 import { usePredictionGenerator } from "./usePredictionGenerator";
+import { useRetryStrategy } from "./useRetryStrategy";
+import { StockPredictionHookResult } from "./types";
 
-// This is a wrapper around usePredictionGenerator that adds the extra properties
-// needed by components using this hook
-export const useStockPrediction = (symbol: string) => {
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const { isPredicting, prediction, handlePredictPrice } = usePredictionGenerator(symbol);
-
-  const generatePrediction = async (params: { symbol: string; quickMode: boolean }) => {
-    // This is a wrapper function that provides compatibility with the existing code
-    setIsLoading(true);
-    setError(null);
-    
+/**
+ * Hook to manage stock price predictions
+ */
+export const useStockPrediction = (
+  symbol: string, 
+  autoFetch: boolean = false, 
+  quickMode: boolean = true
+): StockPredictionHookResult => {
+  const [prediction, setPrediction] = useState<StockPrediction | null>(null);
+  const { history, fetchPredictionHistory } = usePredictionHistory(symbol);
+  
+  const { 
+    isLoading, 
+    error: generatorError, 
+    setError,
+    generatePrediction: generatePredictionData 
+  } = usePredictionGenerator({ symbol, quickMode });
+  
+  const performRetry = async () => {
     try {
-      // We're ignoring the quickMode parameter here since it's not used in the implementation
-      // but we keep it for compatibility
-      return await handlePredictPrice(
-        params.symbol,
-        params.symbol, // Using symbol as a fallback for companyName
-        {}, // Empty profile object, will be populated in the handlePredictPrice function
-        {}, // Empty financials object, will be populated in the handlePredictPrice function
-        [] // Empty news array
-      );
+      const result = await generateStockPrediction();
+      if (result) {
+        setRetryCount(0); // Reset retry count on success
+      }
+      return result;
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Unknown error occurred");
+      console.error(`Retry failed for ${symbol}:`, err);
       return null;
-    } finally {
-      setIsLoading(false);
+    }
+  };
+  
+  const { 
+    retryCount, 
+    setRetryCount, 
+    error: retryError, 
+    setError: setRetryError 
+  } = useRetryStrategy({
+    onRetry: performRetry,
+    autoFetch
+  });
+  
+  // Combine errors from different sources
+  const error = generatorError || retryError;
+
+  /**
+   * Generate a stock prediction
+   */
+  const generateStockPrediction = async (): Promise<StockPrediction | null> => {
+    try {
+      // First fetch prediction history
+      const historyData = await fetchPredictionHistory();
+      
+      // Generate the prediction
+      const result = await generatePredictionData(historyData);
+      
+      if (result) {
+        setPrediction(result);
+      }
+      
+      return result;
+    } catch (err: any) {
+      setError(err.message || `Failed to generate prediction for ${symbol}`);
+      return null;
     }
   };
 
+  // Auto-fetch on mount if enabled
+  useEffect(() => {
+    if (autoFetch && symbol) {
+      generateStockPrediction().catch(err => {
+        console.error(`Auto-fetch prediction error for ${symbol}:`, err);
+      });
+    }
+  }, [symbol, autoFetch]);
+
+  const retry = () => {
+    setRetryCount(0); // Reset retry count
+    return generateStockPrediction();
+  };
+
   return {
-    isLoading,
-    isPredicting,
     prediction,
+    predictionHistory: history,
+    isLoading,
     error,
-    setError,
-    generatePrediction,
-    handlePredictPrice
+    generatePrediction: generateStockPrediction,
+    retry
   };
 };
 
-// Re-export the original hook for direct usage
-export { usePredictionGenerator } from "./usePredictionGenerator";
+// Re-export types
+export * from "./types";

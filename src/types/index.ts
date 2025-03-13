@@ -1,4 +1,3 @@
-
 // Re-export all types from domain-specific files
 
 // Profile and company data types
@@ -32,3 +31,30 @@ export type { FinancialData, RatioData } from './financialDataTypes';
 // Re-export AI analysis types for backward compatibility
 export type { RatingDetails } from './ai-analysis/reportTypes';
 export type { ResearchReport } from './ai-analysis/reportTypes';
+
+export interface StockQuote {
+  symbol: string;
+  name: string;
+  price: number;
+  changesPercentage: number;
+  change: number;
+  dayLow: number;
+  dayHigh: number;
+  yearHigh: number;
+  yearLow: number;
+  marketCap: number;
+  priceAvg50: number;
+  priceAvg200: number;
+  volume: number;
+  avgVolume: number;
+  exchange: string;
+  open: number;
+  previousClose: number;
+  eps: number;
+  pe: number;
+  earningsAnnouncement: string | null;
+  sharesOutstanding: number;
+  timestamp: number;
+  isCommonTicker?: boolean;
+  category?: string;
+}

@@ -1,72 +1,136 @@
 
 import { useState } from "react";
 import { StockPrediction } from "@/types/ai-analysis/predictionTypes";
-import { generateStockPrediction, savePricePrediction } from "@/services/api/analysis/researchService";
-import { useToast } from "@/hooks/use-toast";
+import { generateStockPrediction } from "@/services/api/analysis/researchService";
+import { fetchStockQuote } from "@/services/api/profileService";
+import { fetchAllFinancialData } from "@/services/api/financialService";
+import { fetchMarketNews } from "@/services/api/marketData/newsService";
+import { NewsArticle } from "@/types/news/newsTypes";
+import { PredictionHistoryEntry } from "./types";
 
-export const usePredictionGenerator = (symbol: string) => {
-  const [isPredicting, setIsPredicting] = useState(false);
-  const [prediction, setPrediction] = useState<StockPrediction | null>(null);
-  const { toast } = useToast();
+interface PredictionGeneratorParams {
+  symbol: string;
+  quickMode: boolean;
+}
 
-  const handlePredictPrice = async (
-    symbol: string,
-    companyName: string, 
-    profile: any, 
-    financials: any,
-    news: any[] = []  // Made news optional with default empty array
-  ) => {
-    if (!profile || !financials) {
-      toast({
-        title: "Missing data",
-        description: "Cannot generate prediction without company data.",
-        variant: "destructive",
-      });
-      return null;
-    }
+/**
+ * Hook to generate stock price predictions
+ */
+export const usePredictionGenerator = ({ symbol, quickMode }: PredictionGeneratorParams) => {
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
 
-    setIsPredicting(true);
+  /**
+   * Check if we should use a recent prediction from history
+   */
+  const shouldUseRecentPrediction = (
+    historyData: PredictionHistoryEntry[], 
+    useQuickMode: boolean
+  ): PredictionHistoryEntry | null => {
+    if (historyData.length === 0 || useQuickMode) return null;
+    
+    const recentPrediction = historyData.find(p => {
+      const predictionDate = new Date(p.prediction_date);
+      const now = new Date();
+      const hoursSinceGeneration = (now.getTime() - predictionDate.getTime()) / (1000 * 60 * 60);
+      return hoursSinceGeneration < 24;
+    });
+    
+    return recentPrediction || null;
+  };
+
+  /**
+   * Format a historical prediction entry to StockPrediction format
+   */
+  const formatHistoricalPrediction = (entry: PredictionHistoryEntry): StockPrediction => {
+    return {
+      symbol: entry.symbol,
+      currentPrice: entry.current_price,
+      predictedPrice: {
+        oneMonth: entry.one_month_price,
+        threeMonths: entry.three_month_price,
+        sixMonths: entry.six_month_price,
+        oneYear: entry.one_year_price
+      },
+      sentimentAnalysis: entry.sentiment_analysis || '',
+      confidenceLevel: entry.confidence_level || 75,
+      // Ensure these are arrays
+      keyDrivers: Array.isArray(entry.key_drivers) ? entry.key_drivers : [],
+      risks: Array.isArray(entry.risks) ? entry.risks : []
+    };
+  };
+
+  /**
+   * Generate a new stock prediction
+   */
+  const generatePrediction = async (
+    historyData: PredictionHistoryEntry[]
+  ): Promise<StockPrediction | null> => {
     try {
-      const generatedPrediction = await generateStockPrediction(
-        symbol,
-        profile,
-        financials,
-        news
-      );
+      setIsLoading(true);
+      setError(null);
       
-      setPrediction(generatedPrediction);
+      // Check for recent prediction we can use
+      const recentPrediction = shouldUseRecentPrediction(historyData, quickMode);
       
-      // Save the generated prediction to the database
-      if (generatedPrediction) {
-        await savePricePrediction(
-          symbol, 
-          companyName || symbol, 
-          generatedPrediction
-        );
-        
-        toast({
-          title: "Prediction saved",
-          description: "Your price prediction has been saved and can be accessed later.",
-        });
+      if (recentPrediction) {
+        console.log(`Using recent prediction for ${symbol} from ${new Date(recentPrediction.prediction_date).toLocaleString()}`);
+        return formatHistoricalPrediction(recentPrediction);
       }
       
-      return generatedPrediction;
-    } catch (error) {
-      console.error("Error generating prediction:", error);
-      toast({
-        title: "Error",
-        description: "Failed to generate the price prediction. Please try again.",
-        variant: "destructive",
-      });
+      // Get required data for prediction
+      const [quote, financials, marketNews] = await Promise.all([
+        fetchStockQuote(symbol).catch(err => {
+          console.error(`Error fetching quote for ${symbol}:`, err);
+          return null;
+        }),
+        fetchAllFinancialData(symbol).catch(err => {
+          console.error(`Error fetching financials for ${symbol}:`, err);
+          return {};
+        }),
+        fetchMarketNews(5, 'general').catch(err => {
+          console.error('Error fetching market news:', err);
+          return [];
+        })
+      ]);
+      
+      if (!quote) {
+        throw new Error(`Could not fetch stock data for ${symbol}`);
+      }
+      
+      // Transform marketNews to match the NewsArticle type
+      const news: NewsArticle[] = marketNews.map(item => ({
+        symbol: symbol, // Add the required symbol property
+        publishedDate: item.publishedDate || '',
+        title: item.title || item.headline || '',
+        image: item.image || '',
+        site: item.site || item.source || '',
+        text: item.text || item.summary || '',
+        url: item.url || ''
+      }));
+      
+      // Generate the prediction
+      const result = await generateStockPrediction(symbol, quote, financials, news, quickMode);
+      
+      if (!result) {
+        throw new Error(`Failed to generate prediction for ${symbol}`);
+      }
+      
+      return result;
+    } catch (err: any) {
+      const errorMessage = err.message || `Failed to generate prediction for ${symbol}`;
+      setError(errorMessage);
+      console.error(`Error generating prediction for ${symbol}:`, err);
       return null;
     } finally {
-      setIsPredicting(false);
+      setIsLoading(false);
     }
   };
 
   return {
-    isPredicting,
-    prediction,
-    handlePredictPrice
+    isLoading,
+    error,
+    setError,
+    generatePrediction
   };
 };

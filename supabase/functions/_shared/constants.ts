@@ -1,36 +1,19 @@
 
-/**
- * API Keys
- */
-export const FMP_API_KEY = Deno.env.get("FMP_API_KEY") || "";
-
-/**
- * Common constants for API URLs
- */
+// API Base URLs
 export const API_BASE_URLS = {
   FMP: "https://financialmodelingprep.com/api/v3",
-  FMP_STABLE: "https://financialmodelingprep.com/stable"
-}
+  ALTERNATIVE: "https://alternative-data-api.com/v1",
+  NEWS: "https://financial-news-api.com/v1",
+  OPENAI: "https://api.openai.com/v1"
+};
 
-/**
- * Common error messages
- */
-export const ERROR_MESSAGES = {
-  PROFILE_NOT_FOUND: (symbol: string) => `No profile data found for ${symbol}`,
-  QUOTE_NOT_FOUND: (symbol: string) => `No quote data found for ${symbol}`,
-  API_REQUEST_FAILED: (endpoint: string, symbol: string) => `Unable to fetch ${endpoint} data for ${symbol}`,
-  INDEX_NOT_FOUND: (symbol: string) => `No index data found for ${symbol}`
-}
+// API Keys
+export const FMP_API_KEY = Deno.env.get("FMP_API_KEY") || "";
+export const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY") || "";
 
-/**
- * Stock Index Constants
- */
-export const STOCK_INDICES = {
-  SP500: "^GSPC",
-  DOW: "^DJI",
-  NASDAQ: "^IXIC",
-  RUSSELL: "^RUT",
-  VIX: "^VIX",
-  FTSE: "^FTSE",
-  DAX: "^GDAXI"
-}
+// OpenAI Models
+export const OPENAI_MODELS = {
+  DEFAULT: "gpt-4o-mini",
+  ADVANCED: "gpt-4o",
+  LEGACY: "gpt-3.5-turbo"
+};

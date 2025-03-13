@@ -1,44 +1,72 @@
 
-import type { 
-  StockQuote,
-  IncomeStatement,
-  BalanceSheet,
-  CashFlowStatement,
-  KeyRatio,
-  NewsArticle
-} from '../index';
-
-// OpenAI Types
-export interface ReportRequest {
-  symbol: string;
-  companyName: string;
-  sector: string;
-  industry: string;
-  description: string;
-  stockData: StockQuote;
-  financials: {
-    income: IncomeStatement[];
-    balance: BalanceSheet[];
-    cashflow: CashFlowStatement[];
-    ratios: KeyRatio[];
-  };
-  news: NewsArticle[];
-  peers: string[];
-  reportType?: string;
-}
-
+/**
+ * Research Report Section
+ */
 export interface ReportSection {
   title: string;
   content: string;
 }
 
+/**
+ * Rating Details
+ */
 export interface RatingDetails {
-  ratingScale: string;
+  overallRating: string;
+  financialStrength: string;
+  growthOutlook: string;
+  valuationAttractiveness: string;
+  competitivePosition: string;
+  // Add the properties used in the components
+  ratingScale?: string;
   ratingJustification?: string;
 }
 
+/**
+ * Scenario Analysis
+ */
+export interface ScenarioAnalysis {
+  bullCase: {
+    price: string;
+    description: string;
+    probability?: string;
+    drivers?: string[];
+  };
+  baseCase: {
+    price: string;
+    description: string;
+    probability?: string;
+    drivers?: string[];
+  };
+  bearCase: {
+    price: string;
+    description: string;
+    probability?: string;
+    drivers?: string[];
+  };
+}
+
+/**
+ * Catalyst Timeline
+ */
+export interface CatalystTimeline {
+  shortTerm?: string[];
+  mediumTerm?: string[];
+  longTerm?: string[];
+}
+
+/**
+ * Growth Catalysts
+ */
+export interface GrowthCatalysts {
+  positive?: string[];
+  negative?: string[];
+  timeline?: CatalystTimeline;
+}
+
+/**
+ * Research Report
+ */
 export interface ResearchReport {
-  id?: string;
   symbol: string;
   companyName: string;
   date: string;
@@ -47,30 +75,27 @@ export interface ResearchReport {
   summary: string;
   sections: ReportSection[];
   ratingDetails?: RatingDetails;
-  scenarioAnalysis?: {
-    bullCase: {
-      price: string;
-      probability: string;
-      drivers: string[];
-    };
-    baseCase: {
-      price: string;
-      probability: string;
-      drivers: string[];
-    };
-    bearCase: {
-      price: string;
-      probability: string;
-      drivers: string[];
-    };
+  scenarioAnalysis?: ScenarioAnalysis;
+  catalysts?: GrowthCatalysts;
+}
+
+/**
+ * Report Request
+ */
+export interface ReportRequest {
+  symbol: string;
+  companyName: string;
+  sector?: string;
+  industry?: string;
+  description?: string;
+  stockData?: any;
+  financials?: {
+    income?: any[];
+    balance?: any[];
+    cashflow?: any[];
+    ratios?: any[];
   };
-  catalysts?: {
-    positive: string[];
-    negative: string[];
-    timeline?: {
-      shortTerm: string[];
-      mediumTerm: string[];
-      longTerm: string[];
-    };
-  };
+  news?: any[];
+  peers?: string[];
+  reportType?: string;
 }

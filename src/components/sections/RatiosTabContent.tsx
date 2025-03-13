@@ -5,9 +5,10 @@ import { Card, CardHeader, CardContent, CardTitle } from "@/components/ui/card";
 import RatioCard from "@/components/cards/RatioCard";
 import TTMCard from "@/components/cards/TTMCard";
 import ProfitabilityChart from "@/components/charts/ProfitabilityChart";
+import { RatioData } from "@/types/financialDataTypes";
 
 interface RatiosTabContentProps {
-  ratioData: any[];
+  ratioData: RatioData[];
   symbol?: string;
 }
 
@@ -27,6 +28,12 @@ const item = {
 };
 
 const RatiosTabContent: React.FC<RatiosTabContentProps> = ({ ratioData, symbol = "" }) => {
+  // Sort the ratioData by year in descending order to get the most recent years first
+  const sortedRatioData = [...ratioData].sort((a, b) => {
+    // Compare years as numbers to ensure proper sorting
+    return parseInt(b.year) - parseInt(a.year);
+  });
+
   return (
     <motion.div 
       variants={container}
@@ -38,16 +45,16 @@ const RatiosTabContent: React.FC<RatiosTabContentProps> = ({ ratioData, symbol =
         variants={container} 
         className="grid grid-cols-1 md:grid-cols-4 gap-4"
       >
-        {ratioData.slice(0, 3).map((ratio, index) => (
+        {/* Display TTM card first, followed by the most recent years */}
+        <motion.div variants={item}>
+          <TTMCard symbol={symbol} className="h-full" />
+        </motion.div>
+        
+        {sortedRatioData.slice(0, 3).map((ratio, index) => (
           <motion.div key={index} variants={item}>
             <RatioCard data={ratio} />
           </motion.div>
         ))}
-        {symbol && (
-          <motion.div variants={item}>
-            <TTMCard symbol={symbol} />
-          </motion.div>
-        )}
       </motion.div>
       
       <motion.div variants={item} transition={{ delay: 0.3 }}>

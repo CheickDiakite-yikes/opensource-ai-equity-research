@@ -1,49 +1,147 @@
 
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { corsHeaders } from '../_shared/cors.ts';
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.36.0';
+import { StockPrediction } from './types.ts';
+import { formatDataForPrediction } from './dataFormatter.ts';
+import { generatePredictionWithOpenAI } from './predictionService.ts';
+import { createFallbackPrediction } from './fallbackGenerator.ts';
+import { validatePrediction } from './validationService.ts';
+import { determineIndustry } from './industryAnalysis.ts';
 
-// Define types for the response
-interface StockPrediction {
-  symbol: string;
-  currentPrice: number;
-  predictedPrice: {
-    oneMonth: number;
-    threeMonths: number;
-    sixMonths: number;
-    oneYear: number;
-  };
-  sentimentAnalysis: string;
-  confidenceLevel: number;
-  keyDrivers: string[];
-  risks: string[];
-}
+const supabaseUrl = Deno.env.get("SUPABASE_URL") || "";
+const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY") || "";
+const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 Deno.serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
   
   try {
-    const { symbol, stockData, financials, news } = await req.json();
+    const { symbol, stockData, financials, news, quickMode } = await req.json();
     
     if (!symbol || !stockData) {
-      throw new Error('Missing required parameters');
+      throw new Error('Missing required parameters: symbol and stockData are required');
     }
     
-    console.log(`Generating price prediction for ${symbol}`);
+    console.log(`Generating AI price prediction for ${symbol}${quickMode ? ' (quick mode)' : ''}`);
+    console.log(`Stock data received: price=${stockData.price}, marketCap=${stockData.marketCap || 'N/A'}`);
+    console.log(`Financial data received: ${financials ? 'yes' : 'no'}, News count: ${news?.length || 0}`);
     
-    // In a real scenario, here we would call an AI model or other analysis service
-    // For now, we'll generate a realistic-looking mock prediction
-    const prediction: StockPrediction = {
-      symbol,
-      currentPrice: stockData.price || 100,
-      predictedPrice: generatePredictedPrices(stockData.price || 100),
-      sentimentAnalysis: generateSentimentAnalysis(news),
-      confidenceLevel: Math.floor(Math.random() * 30) + 65, // 65-95%
-      keyDrivers: generateKeyDrivers(),
-      risks: generateRisks()
-    };
+    // Enhanced input validation
+    if (!stockData.price || typeof stockData.price !== 'number' || stockData.price <= 0) {
+      throw new Error(`Invalid price data for ${symbol}: ${stockData.price}`);
+    }
+    
+    const formattedData = formatDataForPrediction(symbol, stockData, financials, news);
+    formattedData.quickMode = quickMode === true; // Ensure quickMode is passed through
+    
+    // Add industry classification for better prediction context
+    formattedData.industry = determineIndustry(symbol);
+    
+    // Retrieve historical predictions for this symbol for consistency
+    try {
+      const { data: historyData, error: historyError } = await supabase
+        .from('stock_prediction_history')
+        .select('*')
+        .eq('symbol', symbol)
+        .order('prediction_date', { ascending: false })
+        .limit(5);
+      
+      if (historyError) {
+        console.warn(`Error retrieving prediction history for ${symbol}:`, historyError);
+      } else {
+        // Add historical predictions to formatted data
+        formattedData.predictionHistory = historyData || [];
+      }
+    } catch (historyFetchError) {
+      console.warn(`Exception retrieving prediction history for ${symbol}:`, historyFetchError);
+      formattedData.predictionHistory = [];
+    }
+    
+    // Attempt to generate AI prediction with a max of 3 retries for better quality
+    let prediction: StockPrediction | null = null;
+    let attempts = 0;
+    const maxAttempts = 4;
+    
+    while (!prediction && attempts < maxAttempts) {
+      attempts++;
+      console.log(`Prediction attempt ${attempts}/${maxAttempts} for ${symbol}`);
+      
+      try {
+        // If we're on the last attempt, force fallback to ensure we return something
+        if (attempts === maxAttempts) {
+          console.log(`Using fallback prediction for ${symbol} on final attempt`);
+          prediction = createFallbackPrediction(formattedData);
+          break;
+        }
+        
+        prediction = await generatePredictionWithOpenAI(formattedData);
+        
+        // Critical validation: Ensure prediction is meaningfully different from current price
+        const currentPrice = stockData.price;
+        
+        // Enhanced validation with more criteria
+        if (!validatePrediction(prediction, currentPrice)) {
+          console.warn(`Invalid prediction generated for ${symbol}, retrying...`);
+          prediction = null;
+          continue;
+        }
+        
+        console.log(`Valid prediction generated for ${symbol}`);
+      } catch (predictionError) {
+        console.error(`Error in prediction attempt ${attempts}:`, predictionError);
+        prediction = null;
+        
+        // On last attempt, use fallback
+        if (attempts === maxAttempts - 1) {
+          console.log(`Falling back to enhanced prediction generator for ${symbol}`);
+          prediction = createFallbackPrediction(formattedData);
+        }
+      }
+    }
+    
+    if (!prediction) {
+      throw new Error(`Failed to generate valid prediction for ${symbol} after ${maxAttempts} attempts`);
+    }
+    
+    // Save prediction to history table for future reference and consistency
+    try {
+      // Remove ON CONFLICT handling which may be causing RLS policy violations
+      const { error: insertError } = await supabase
+        .from('stock_prediction_history')
+        .insert({
+          symbol: prediction.symbol,
+          current_price: prediction.currentPrice,
+          one_month_price: prediction.predictedPrice.oneMonth,
+          three_month_price: prediction.predictedPrice.threeMonths,
+          six_month_price: prediction.predictedPrice.sixMonths,
+          one_year_price: prediction.predictedPrice.oneYear,
+          sentiment_analysis: prediction.sentimentAnalysis,
+          confidence_level: prediction.confidenceLevel,
+          key_drivers: prediction.keyDrivers,
+          risks: prediction.risks,
+          metadata: {
+            generation_method: attempts === maxAttempts ? 'fallback' : 'openai',
+            quick_mode: quickMode === true,
+            industry: formattedData.industry,
+            attempt_count: attempts
+          }
+        });
+        
+      if (insertError) {
+        // Non-fatal error, just log it
+        console.warn(`Warning: Could not save prediction history for ${symbol}:`, insertError);
+      } else {
+        console.log(`Successfully saved prediction history for ${symbol}`);
+      }
+    } catch (saveError) {
+      // Non-fatal error, just log it
+      console.warn(`Warning: Exception saving prediction history for ${symbol}:`, saveError);
+    }
+    
+    // Final logging of prediction values
+    logPredictionResults(symbol, stockData.price, prediction);
     
     return new Response(JSON.stringify(prediction), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -59,74 +157,22 @@ Deno.serve(async (req) => {
   }
 });
 
-// Helper functions to generate prediction content
-function generatePredictedPrices(currentPrice: number) {
-  // Generate predictions that generally trend upward but with realistic variation
-  const oneMonthChange = (Math.random() * 0.15) - 0.05; // -5% to +10%
-  const threeMonthsChange = (Math.random() * 0.25) - 0.05; // -5% to +20%
-  const sixMonthsChange = (Math.random() * 0.35) - 0.05; // -5% to +30%
-  const oneYearChange = (Math.random() * 0.45) - 0.05; // -5% to +40%
+/**
+ * Log detailed prediction results
+ */
+function logPredictionResults(symbol: string, currentPrice: number, prediction: StockPrediction): void {
+  const oneMonthChange = ((prediction.predictedPrice.oneMonth / currentPrice) - 1) * 100;
+  const threeMonthChange = ((prediction.predictedPrice.threeMonths / currentPrice) - 1) * 100;
+  const sixMonthChange = ((prediction.predictedPrice.sixMonths / currentPrice) - 1) * 100;
+  const oneYearChange = ((prediction.predictedPrice.oneYear / currentPrice) - 1) * 100;
   
-  return {
-    oneMonth: +(currentPrice * (1 + oneMonthChange)).toFixed(2),
-    threeMonths: +(currentPrice * (1 + threeMonthsChange)).toFixed(2),
-    sixMonths: +(currentPrice * (1 + sixMonthsChange)).toFixed(2),
-    oneYear: +(currentPrice * (1 + oneYearChange)).toFixed(2)
-  };
-}
-
-function generateSentimentAnalysis(news: any[] = []) {
-  const sentiments = [
-    "Based on recent news and market trends, the overall sentiment for this stock is positive. Major announcements regarding product innovations and strategic partnerships have been well-received by the market.",
-    "Market sentiment is cautiously optimistic with a mix of positive financial results offset by some industry-wide challenges. The company's recent strategic initiatives may provide tailwinds in the coming quarters.",
-    "Sentiment analysis of recent news and social media indicates neutral to slightly positive perception. While the company has made progress on key initiatives, market participants remain cautious about macroeconomic factors.",
-    "Our analysis shows a bullish sentiment shift over the past quarter, driven by stronger-than-expected earnings and positive analyst revisions. Institutional ownership has also increased, suggesting growing confidence.",
-    "The sentiment surrounding this stock remains mixed. While fundamental indicators suggest solid performance, market narratives and technical indicators show potential headwinds in the short term."
-  ];
-  
-  return sentiments[Math.floor(Math.random() * sentiments.length)];
-}
-
-function generateKeyDrivers() {
-  const allDrivers = [
-    "Strong revenue growth in core product lines",
-    "Expansion into emerging markets",
-    "Margin improvement through operational efficiency",
-    "New product launches expected in upcoming quarters",
-    "Strategic acquisitions enhancing market position",
-    "Industry consolidation creating favorable pricing environment",
-    "Technological innovations driving competitive advantage",
-    "Cost-cutting initiatives showing positive results",
-    "Increasing demand in key market segments",
-    "Favorable regulatory changes",
-    "Strong digital transformation momentum",
-    "Growing recurring revenue streams"
-  ];
-  
-  // Randomly select 4-6 drivers
-  const numDrivers = Math.floor(Math.random() * 3) + 4;
-  const shuffled = [...allDrivers].sort(() => 0.5 - Math.random());
-  return shuffled.slice(0, numDrivers);
-}
-
-function generateRisks() {
-  const allRisks = [
-    "Increasing competition in primary markets",
-    "Potential regulatory headwinds",
-    "Rising input costs affecting margins",
-    "Macroeconomic uncertainties affecting consumer spending",
-    "Currency exchange rate volatility",
-    "Technological disruption from emerging competitors",
-    "Supply chain constraints",
-    "Geopolitical tensions affecting global operations",
-    "Cybersecurity threats to digital infrastructure",
-    "Changing consumer preferences",
-    "Intellectual property challenges",
-    "Labor market pressures and talent retention"
-  ];
-  
-  // Randomly select 3-5 risks
-  const numRisks = Math.floor(Math.random() * 3) + 3;
-  const shuffled = [...allRisks].sort(() => 0.5 - Math.random());
-  return shuffled.slice(0, numRisks);
+  console.log(`Final prediction for ${symbol}: 
+    Current: $${currentPrice.toFixed(2)}
+    1-month: $${prediction.predictedPrice.oneMonth.toFixed(2)} (${oneMonthChange.toFixed(2)}%)
+    3-month: $${prediction.predictedPrice.threeMonths.toFixed(2)} (${threeMonthChange.toFixed(2)}%)
+    6-month: $${prediction.predictedPrice.sixMonths.toFixed(2)} (${sixMonthChange.toFixed(2)}%)
+    1-year: $${prediction.predictedPrice.oneYear.toFixed(2)} (${oneYearChange.toFixed(2)}%)
+    Sentiment: ${prediction.sentimentAnalysis || 'N/A'}
+    Confidence: ${prediction.confidenceLevel}%
+  `);
 }

@@ -1,82 +1,73 @@
-
 /**
- * Format large numbers to a more readable format (e.g., 1,000,000 to $1M)
+ * Format percentage with 2 decimals
  */
-export function formatCurrency(value: number | null | undefined): string {
-  if (value === null || value === undefined || Number.isNaN(value)) return 'N/A';
-  
-  const absValue = Math.abs(value);
-  
-  if (absValue >= 1_000_000_000) {
-    return `$${(value / 1_000_000_000).toFixed(2)}B`;
-  } else if (absValue >= 1_000_000) {
-    return `$${(value / 1_000_000).toFixed(2)}M`;
-  } else if (absValue >= 1_000) {
-    return `$${(value / 1_000).toFixed(2)}K`;
-  } else {
-    return `$${value.toFixed(2)}`;
+export const formatPercentage = (value: number | null | undefined): string => {
+  if (value === null || value === undefined) {
+    return "N/A";
   }
-}
+  return (value * 100).toFixed(2) + "%";
+};
 
 /**
- * Format percentage values
+ * Format currency with 2 decimals
  */
-export function formatPercentage(value: number | null | undefined): string {
-  if (value === null || value === undefined || Number.isNaN(value)) return 'N/A';
-  return `${value.toFixed(2)}%`;
-}
+export const formatCurrency = (value: number | null | undefined): string => {
+  if (value === null || value === undefined) {
+    return "N/A";
+  }
+  return value.toLocaleString('en-US', {
+    style: 'currency',
+    currency: 'USD',
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+};
 
 /**
- * Format number with commas for thousands separator
+ * Format number with thousand separators
  */
-export function formatNumber(value: number | null | undefined): string {
-  if (value === null || value === undefined || Number.isNaN(value)) return 'N/A';
-  return value.toLocaleString(undefined, { maximumFractionDigits: 2 });
-}
+export const formatNumber = (value: number | null | undefined): string => {
+  if (value === null || value === undefined) {
+    return "N/A";
+  }
+  return value.toLocaleString();
+};
 
 /**
- * Format date from financial statements
+ * Format a large number with appropriate suffix (K, M, B, T)
  */
-export function formatDate(dateString: string): string {
+export const formatLargeNumber = (num: number): string => {
+  if (num === null || num === undefined || isNaN(num)) return 'N/A';
+  
+  const absNum = Math.abs(num);
+  
+  if (absNum >= 1_000_000_000_000) {
+    return (num / 1_000_000_000_000).toFixed(2) + 'T';
+  } else if (absNum >= 1_000_000_000) {
+    return (num / 1_000_000_000).toFixed(2) + 'B';
+  } else if (absNum >= 1_000_000) {
+    return (num / 1_000_000).toFixed(2) + 'M';
+  } else if (absNum >= 1_000) {
+    return (num / 1_000).toFixed(2) + 'K';
+  } else {
+    return num.toFixed(2);
+  }
+};
+
+/**
+ * Format a date string to a more readable format
+ */
+export const formatDate = (dateString: string): string => {
+  if (!dateString) return 'N/A';
+  
   try {
     const date = new Date(dateString);
-    return date.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
-  } catch {
-    return dateString || 'N/A';
+    return date.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    });
+  } catch (e) {
+    return dateString;
   }
-}
-
-/**
- * Get a suggested color based on performance
- */
-export function getPerformanceColor(value: number, isPercentage: boolean = true): string {
-  // For percentages (growth rates, ratios expressed as percentages)
-  if (isPercentage) {
-    if (value >= 25) return '#22c55e'; // green-500
-    if (value >= 10) return '#4ade80'; // green-400
-    if (value >= 0) return '#86efac'; // green-300
-    if (value >= -10) return '#fca5a5'; // red-300
-    if (value >= -25) return '#f87171'; // red-400
-    return '#ef4444'; // red-500
-  } 
-  // For ratios and non-percentage values
-  else {
-    if (value >= 3) return '#22c55e'; // green-500
-    if (value >= 2) return '#4ade80'; // green-400
-    if (value >= 1) return '#86efac'; // green-300
-    if (value >= 0.5) return '#fca5a5'; // red-300
-    if (value >= 0.25) return '#f87171'; // red-400
-    return '#ef4444'; // red-500
-  }
-}
-
-/**
- * Determine the growth trend direction and strength
- */
-export function determineGrowthTrend(cagr: number): 'strong-positive' | 'positive' | 'neutral' | 'negative' | 'strong-negative' {
-  if (cagr >= 25) return 'strong-positive';
-  if (cagr >= 10) return 'positive';
-  if (cagr >= -5) return 'neutral';
-  if (cagr >= -15) return 'negative';
-  return 'strong-negative';
-}
+};

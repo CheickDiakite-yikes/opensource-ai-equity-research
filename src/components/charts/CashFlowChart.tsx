@@ -10,19 +10,22 @@ interface CashFlowChartProps {
 }
 
 const CashFlowChart: React.FC<CashFlowChartProps> = ({ data }) => {
-  const chartData = [...data].reverse().map(item => {
-    // Estimate values if not provided
-    const operatingCashFlow = item.operatingCashFlow || item.netIncome * 1.2;
-    const freeCashFlow = item.freeCashFlow || operatingCashFlow * 0.7;
-    const investmentCashFlow = item.investmentCashFlow || item.netIncome * -0.35;
-    
-    return {
-      year: item.year,
-      "Operating Cash Flow": operatingCashFlow,
-      "Free Cash Flow": freeCashFlow,
-      "Investment Cash Flow": Math.abs(investmentCashFlow) * -1 // Make negative for visualization
-    };
-  });
+  // Sort data by year in ascending order (oldest to newest)
+  const chartData = [...data]
+    .sort((a, b) => parseInt(a.year) - parseInt(b.year))
+    .map(item => {
+      // Estimate values if not provided
+      const operatingCashFlow = item.operatingCashFlow || item.netIncome * 1.2;
+      const freeCashFlow = item.freeCashFlow || operatingCashFlow * 0.7;
+      const investmentCashFlow = item.investmentCashFlow || item.netIncome * -0.35;
+      
+      return {
+        year: item.year,
+        "Operating Cash Flow": operatingCashFlow,
+        "Free Cash Flow": freeCashFlow,
+        "Investment Cash Flow": Math.abs(investmentCashFlow) * -1 // Make negative for visualization
+      };
+    });
 
   // Set consistent denomination for formatting tooltip values
   const denomination = 'millions';

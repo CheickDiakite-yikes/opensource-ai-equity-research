@@ -10,6 +10,11 @@ import EquitySection from "./balance-sheet/EquitySection";
 const BalanceSheetTable: React.FC<BalanceSheetTableProps> = ({ data }) => {
   // Set consistent denomination for this table
   const denomination = 'millions';
+  
+  // Sort data by year in ascending order (oldest to newest)
+  const sortedData = [...data].sort((a, b) => {
+    return parseInt(a.year) - parseInt(b.year);
+  });
 
   return (
     <Card>
@@ -18,11 +23,11 @@ const BalanceSheetTable: React.FC<BalanceSheetTableProps> = ({ data }) => {
       </CardHeader>
       <div className="px-4 overflow-auto">
         <table className="w-full financial-table">
-          <TableHeader data={data} denomination={denomination} />
+          <TableHeader data={sortedData} denomination={denomination} />
           <tbody>
-            <AssetsSection data={data} denomination={denomination} />
-            <LiabilitiesSection data={data} denomination={denomination} />
-            <EquitySection data={data} denomination={denomination} />
+            <AssetsSection data={sortedData} denomination={denomination} />
+            <LiabilitiesSection data={sortedData} denomination={denomination} />
+            <EquitySection data={sortedData} denomination={denomination} />
           </tbody>
         </table>
       </div>

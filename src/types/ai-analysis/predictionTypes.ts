@@ -1,4 +1,7 @@
 
+/**
+ * Stock Price Prediction
+ */
 export interface StockPrediction {
   symbol: string;
   currentPrice: number;
@@ -14,9 +17,17 @@ export interface StockPrediction {
   risks: string[];
 }
 
+/**
+ * Growth Insight
+ */
 export interface GrowthInsight {
-  type: "positive" | "negative" | "neutral";
-  source: "earnings" | "filing" | "analysis";
-  sourceDate: string;
-  content: string;
+  id: string;
+  symbol: string;
+  title: string;
+  description: string;
+  impact: "positive" | "negative" | "neutral";
+  confidence: number;
+  source?: string;
+  category?: string;
+  timeframe?: "short-term" | "medium-term" | "long-term";
 }

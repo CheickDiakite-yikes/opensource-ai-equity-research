@@ -54,9 +54,28 @@ export interface RatioData {
   roa: number;
   currentRatio: number;
   debtToEquity: number;
+  debtEquity?: number; // Added for compatibility with other components
   grossMargin: number;
   operatingMargin: number;
   netMargin: number;
+}
+
+// TTM (Trailing Twelve Months) data interface
+export interface TTMData {
+  peRatio?: number;
+  pbRatio?: number;
+  roe?: number;
+  roa?: number;
+  currentRatio?: number;
+  debtToEquity?: number;
+  grossMargin?: number;
+  operatingMargin?: number;
+  netMargin?: number;
+  revenue?: number;
+  grossProfit?: number;
+  operatingIncome?: number;
+  netIncome?: number;
+  eps?: number;
 }
 
 // Remove the KeyRatio interface from here to avoid conflicts

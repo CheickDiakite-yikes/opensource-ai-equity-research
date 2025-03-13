@@ -4,11 +4,9 @@ import { motion } from "framer-motion";
 import HeroSection from "./HeroSection";
 import FeaturedCompanies from "./FeaturedCompanies";
 import FeatureCards from "./FeatureCards";
-import RecentSearches from "./RecentSearches";
-import HowToUse from "./HowToUse";
-import MarketPerformance from "./MarketPerformance";
+import FAQSection from "./FAQSection";
 import MarketNews from "./MarketNews";
-import { fetchMarketIndices, fetchMarketNews } from "@/services/api/marketDataService";
+import { fetchMarketNews } from "@/services/api/marketDataService";
 import { toast } from "sonner";
 
 interface LandingViewProps {
@@ -29,34 +27,17 @@ const container = {
 };
 
 const LandingView: React.FC<LandingViewProps> = ({ 
-  recentSearches, 
   featuredSymbols, 
   onSelectSymbol 
 }) => {
-  const [marketData, setMarketData] = useState([]);
   const [marketNews, setMarketNews] = useState([]);
-  const [isLoadingMarkets, setIsLoadingMarkets] = useState(true);
   const [isLoadingNews, setIsLoadingNews] = useState(true);
 
   useEffect(() => {
-    const getMarketData = async () => {
-      try {
-        setIsLoadingMarkets(true);
-        const data = await fetchMarketIndices();
-        setMarketData(data);
-        console.log("Market data loaded:", data);
-      } catch (error) {
-        console.error("Failed to fetch market data:", error);
-        toast.error("Unable to load market data. Please try again later.");
-      } finally {
-        setIsLoadingMarkets(false);
-      }
-    };
-
     const getMarketNews = async () => {
       try {
         setIsLoadingNews(true);
-        const news = await fetchMarketNews(6); // Fetch 6 news articles
+        const news = await fetchMarketNews(6);
         setMarketNews(news);
         console.log("Market news loaded:", news);
       } catch (error) {
@@ -67,7 +48,6 @@ const LandingView: React.FC<LandingViewProps> = ({
       }
     };
 
-    getMarketData();
     getMarketNews();
   }, []);
 
@@ -76,27 +56,57 @@ const LandingView: React.FC<LandingViewProps> = ({
       variants={container}
       initial="hidden"
       animate="show"
-      className="space-y-0 my-12"
+      className="overflow-hidden"
     >
-      <HeroSection />
-      <FeatureCards />
-      <FeaturedCompanies 
-        featuredSymbols={featuredSymbols} 
-        onSelectSymbol={onSelectSymbol} 
-      />
-      <MarketPerformance 
-        marketData={marketData} 
-        isLoading={isLoadingMarkets} 
-      />
-      <MarketNews 
-        newsData={marketNews} 
-        isLoading={isLoadingNews} 
-      />
-      <RecentSearches 
-        recentSearches={recentSearches} 
-        onSelectSymbol={onSelectSymbol} 
-      />
-      <HowToUse />
+      {/* Hero Section with search bar integrated */}
+      <HeroSection featuredSymbols={featuredSymbols} />
+      
+      {/* Feature Cards Section */}
+      <div className="py-6">
+        <FeatureCards />
+      </div>
+      
+      {/* Featured Companies Section */}
+      <div id="featured-companies-section" className="max-w-screen-xl mx-auto px-4 py-6 bg-gradient-to-t from-muted/10 to-background">
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.7 }}
+        >
+          <FeaturedCompanies 
+            featuredSymbols={featuredSymbols} 
+            onSelectSymbol={onSelectSymbol} 
+          />
+        </motion.div>
+      </div>
+      
+      {/* News Section */}
+      <div className="max-w-screen-xl mx-auto px-4 py-6 bg-gradient-to-b from-muted/10 to-background">
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.7 }}
+        >
+          <MarketNews 
+            newsData={marketNews} 
+            isLoading={isLoadingNews} 
+          />
+        </motion.div>
+      </div>
+      
+      {/* FAQ Section */}
+      <div className="w-full py-6">
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.7 }}
+        >
+          <FAQSection />
+        </motion.div>
+      </div>
     </motion.div>
   );
 };

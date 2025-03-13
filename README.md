@@ -1,69 +1,75 @@
-# Welcome to your Lovable project
 
-## Project info
+# EquiSight - AI-Powered Equity Research Platform
 
-**URL**: https://lovable.dev/projects/0afff979-e1c5-44f1-9b39-e3e1ecdd2251
+![EquiSight](https://your-repository-url/og-image.png)
 
-## How can I edit this code?
+EquiSight is an AI-powered equity research platform designed to help investment professionals, analysts, and individual investors make data-driven investment decisions through comprehensive stock analysis, custom research reports, and price predictions.
 
-There are several ways of editing your application.
+## Features
 
-**Use Lovable**
+### 🔍 Stock Search and Analysis
+- **Powerful Stock Search**: Quickly find stocks with an intelligent search feature that includes popular tickers and recent searches
+- **Comprehensive Stock Overview**: View company profiles, key metrics, price history, and ownership data
+- **Financial Analysis**: Access detailed financial statements, growth metrics, and ratio analysis
+- **SEC Filings & Earnings Calls**: Stay up-to-date with the latest company documents and earnings call transcripts
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/0afff979-e1c5-44f1-9b39-e3e1ecdd2251) and start prompting.
+### 📊 AI-Generated Insights
+- **Research Reports**: Generate comprehensive investment research reports with fundamental and technical analysis
+- **Price Predictions**: Get AI-powered stock price predictions for 3, 6, and 12-month horizons
+- **Growth Insights**: Analyze growth trends and performance metrics to identify investment opportunities
 
-Changes made via Lovable will be committed automatically to this repo.
+### 💼 User-Centric Features
+- **Dark/Light Theme**: Choose between dark and light modes for comfortable viewing
+- **Saved Content**: Save and access your reports and predictions for later reference
+- **Responsive Design**: Seamless experience across desktop and mobile devices
 
-**Use your preferred IDE**
+## Technical Implementation
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+### Frontend
+- **React**: Component-based UI architecture
+- **TypeScript**: Type-safe development
+- **Tailwind CSS**: Utility-first styling
+- **Shadcn UI**: Beautiful, accessible component system
+- **React Router**: Client-side routing
+- **React Query**: Data fetching and caching
+- **Framer Motion**: Smooth animations and transitions
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+### Backend
+- **Supabase**: Authentication, database, and serverless functions
+- **Edge Functions**: Real-time data processing and AI model integration
+- **OpenAI Integration**: AI-powered report generation and price predictions
 
-Follow these steps:
+### Data Sources
+- Multiple financial data providers for comprehensive stock information
+- SEC EDGAR for official company filings
+- Earnings call transcripts for qualitative analysis
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+## Usage
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+### Account Types
+- **Free Users**: Access to basic stock information and 5 free price predictions
+- **Registered Users**: Unlimited price predictions and research reports, saved content management
 
-# Step 3: Install the necessary dependencies.
-npm i
+### Getting Started
+1. Search for a stock using the search bar at the top of the page
+2. View stock information, financials, and analysis in different tabs
+3. Generate custom research reports and price predictions
+4. Save interesting reports and predictions for future reference
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
-```
+## Future Enhancements
+- Portfolio tracking and optimization
+- Customizable watchlists and alerts
+- Advanced screening and filtering capabilities
+- Comparative analysis between multiple stocks
+- Integration with trading platforms
+- Mobile application
+- Excel/PDF export capabilities
 
-**Edit a file directly in GitHub**
+## License
+[Your license information here]
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+## Acknowledgments
+- Financial data providers
+- Open-source community
+- All contributors and users
 
-**Use GitHub Codespaces**
-
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
-
-## What technologies are used for this project?
-
-This project is built with .
-
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
-
-## How can I deploy this project?
-
-Simply open [Lovable](https://lovable.dev/projects/0afff979-e1c5-44f1-9b39-e3e1ecdd2251) and click on Share -> Publish.
-
-## I want to use a custom domain - is that possible?
-
-We don't support custom domains (yet). If you want to deploy your project under your own domain then we recommend using Netlify. Visit our docs for more details: [Custom domains](https://docs.lovable.dev/tips-tricks/custom-domain/)

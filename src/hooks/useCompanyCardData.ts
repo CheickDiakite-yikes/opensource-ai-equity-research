@@ -1,83 +1,85 @@
 
-import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { fetchStockQuote, fetchStockRating } from "@/services/api/profileService";
-import { useStockPrediction } from "@/hooks/stock-prediction";
-import { StockPrediction } from "@/types/ai-analysis/predictionTypes";
+import { useStockPrediction } from "@/hooks/useStockPrediction";
+import { useState, useEffect } from "react";
+import { StockQuote } from "@/types";
 
 /**
- * Custom hook to fetch and manage data for company cards
+ * Custom hook to fetch and manage all data needed for the CompanyCard component
  */
 export const useCompanyCardData = (symbol: string) => {
-  const [predictedPrice, setPredictedPrice] = useState<number | null>(null);
+  const [retryPredictionCount, setRetryPredictionCount] = useState(0);
   
   // Fetch stock quote data
   const { 
-    data: quote,
+    data: quote, 
     isLoading: isQuoteLoading,
-    error: quoteError
-  } = useQuery({
+    isError: isQuoteError 
+  } = useQuery<StockQuote | null, Error>({
     queryKey: ['stockQuote', symbol],
     queryFn: () => fetchStockQuote(symbol),
     staleTime: 5 * 60 * 1000, // 5 minutes
+    retry: 3,
+    retryDelay: attempt => Math.min(1000 * 2 ** attempt, 10000), // Exponential backoff with max 10s
+    meta: {
+      errorHandler: (error: Error) => {
+        console.error(`Error fetching quote for ${symbol}:`, error);
+      }
+    }
   });
 
   // Fetch stock rating data
   const { 
-    data: ratingData,
+    data: ratingData, 
     isLoading: isRatingLoading,
-    error: ratingError
-  } = useQuery({
+    isError: isRatingError 
+  } = useQuery<{ rating: string } | null, Error>({
     queryKey: ['stockRating', symbol],
     queryFn: () => fetchStockRating(symbol),
     staleTime: 15 * 60 * 1000, // 15 minutes
+    retry: 3,
+    retryDelay: attempt => Math.min(1000 * 2 ** attempt, 10000), // Exponential backoff with max 10s
+    meta: {
+      errorHandler: (error: Error) => {
+        console.warn(`Error fetching rating for ${symbol}:`, error);
+      }
+    }
   });
   
-  // Use our stock prediction hook
+  // Use prediction hook with autoFetch and quickMode enabled
   const { 
-    isPredicting,
-    prediction,
-    error: predictionError,
-    generatePrediction
-  } = useStockPrediction(symbol);
+    prediction, 
+    isLoading: isPredictionLoading, 
+    error: predictionError, 
+    retry: retryPrediction 
+  } = useStockPrediction(symbol, true, true);
 
+  // Auto retry predictions with error once
   useEffect(() => {
-    // Generate prediction when quote data is available
-    if (quote && !prediction && !isPredicting && !predictionError) {
-      const fetchPrediction = async () => {
-        try {
-          await generatePrediction({ 
-            symbol,
-            quickMode: true 
-          });
-        } catch (err) {
-          console.error("Error generating prediction:", err);
-        }
-      };
+    if (predictionError && symbol) {
+      console.error(`Prediction error for ${symbol}:`, predictionError);
       
-      fetchPrediction();
+      // Only retry once to avoid infinite loops
+      if (retryPredictionCount < 1) {
+        setTimeout(() => {
+          retryPrediction();
+          setRetryPredictionCount(prev => prev + 1);
+        }, 2000);
+      }
     }
-  }, [quote, prediction, isPredicting, predictionError, symbol, generatePrediction]);
-
-  useEffect(() => {
-    // Set the predicted price when prediction is available
-    if (prediction) {
-      setPredictedPrice(prediction.predictedPrice.oneMonth);
-    } else if (quote) {
-      // Fallback calculation if no AI prediction is available
-      // This is a simple placeholder calculation
-      const randomFactor = Math.sin(symbol.charCodeAt(0) * 0.01) * 0.25;
-      setPredictedPrice(quote.price * (1 + randomFactor));
-    }
-  }, [prediction, quote, symbol]);
+  }, [predictionError, symbol, retryPrediction, retryPredictionCount]);
 
   return {
     quote,
     ratingData,
-    predictedPrice,
-    isLoading: isQuoteLoading || isRatingLoading,
-    isPredicting,
     prediction,
-    error: quoteError || ratingError || predictionError
+    isQuoteLoading,
+    isRatingLoading,
+    isPredictionLoading,
+    isQuoteError,
+    isRatingError,
+    predictionError,
+    retryPrediction
   };
 };

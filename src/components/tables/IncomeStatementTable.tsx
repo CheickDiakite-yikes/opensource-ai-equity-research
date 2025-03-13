@@ -22,6 +22,11 @@ const IncomeStatementTable: React.FC<IncomeStatementTableProps> = ({ data }) => 
   // Set consistent denomination for this table
   const denomination = 'millions';
   
+  // Sort data by year in ascending order (oldest to newest)
+  const sortedData = [...data].sort((a, b) => {
+    return parseInt(a.year) - parseInt(b.year);
+  });
+  
   return (
     <Card>
       <CardHeader>
@@ -31,13 +36,13 @@ const IncomeStatementTable: React.FC<IncomeStatementTableProps> = ({ data }) => 
         <table className="w-full financial-table">
           <thead>
             <tr>
-              <th colSpan={data.length + 1} className="text-left text-sm text-muted-foreground pb-2">
+              <th colSpan={sortedData.length + 1} className="text-left text-sm text-muted-foreground pb-2">
                 (All figures in $millions)
               </th>
             </tr>
             <tr className="border-b">
               <th className="text-left">Metric</th>
-              {data.map((item) => (
+              {sortedData.map((item) => (
                 <th key={item.year} className="text-right">{item.year}</th>
               ))}
             </tr>
@@ -45,7 +50,7 @@ const IncomeStatementTable: React.FC<IncomeStatementTableProps> = ({ data }) => 
           <tbody>
             <tr>
               <td>Revenue</td>
-              {data.map((item) => (
+              {sortedData.map((item) => (
                 <td key={`revenue-${item.year}`} className="text-right">
                   {formatFinancialTableValue(item.revenue, denomination)}
                 </td>
@@ -53,7 +58,7 @@ const IncomeStatementTable: React.FC<IncomeStatementTableProps> = ({ data }) => 
             </tr>
             <tr>
               <td>Cost of Revenue</td>
-              {data.map((item) => (
+              {sortedData.map((item) => (
                 <td key={`costOfRevenue-${item.year}`} className="text-right">
                   {formatFinancialTableValue(item.costOfRevenue, denomination)}
                 </td>
@@ -61,7 +66,7 @@ const IncomeStatementTable: React.FC<IncomeStatementTableProps> = ({ data }) => 
             </tr>
             <tr>
               <td>Gross Profit</td>
-              {data.map((item) => (
+              {sortedData.map((item) => (
                 <td key={`grossProfit-${item.year}`} className="text-right">
                   {formatFinancialTableValue(item.grossProfit, denomination)}
                 </td>
@@ -69,7 +74,7 @@ const IncomeStatementTable: React.FC<IncomeStatementTableProps> = ({ data }) => 
             </tr>
             <tr>
               <td>Operating Expenses</td>
-              {data.map((item) => (
+              {sortedData.map((item) => (
                 <td key={`operatingExpenses-${item.year}`} className="text-right">
                   {formatFinancialTableValue(item.operatingExpenses, denomination)}
                 </td>
@@ -77,7 +82,7 @@ const IncomeStatementTable: React.FC<IncomeStatementTableProps> = ({ data }) => 
             </tr>
             <tr>
               <td>Operating Income</td>
-              {data.map((item) => (
+              {sortedData.map((item) => (
                 <td key={`operatingIncome-${item.year}`} className="text-right">
                   {formatFinancialTableValue(item.operatingIncome, denomination)}
                 </td>
@@ -85,7 +90,7 @@ const IncomeStatementTable: React.FC<IncomeStatementTableProps> = ({ data }) => 
             </tr>
             <tr>
               <td>Net Income</td>
-              {data.map((item) => (
+              {sortedData.map((item) => (
                 <td key={`netIncome-${item.year}`} className="text-right">
                   {formatFinancialTableValue(item.netIncome, denomination)}
                 </td>
@@ -93,7 +98,7 @@ const IncomeStatementTable: React.FC<IncomeStatementTableProps> = ({ data }) => 
             </tr>
             <tr>
               <td>EPS</td>
-              {data.map((item) => (
+              {sortedData.map((item) => (
                 <td key={`eps-${item.year}`} className="text-right">
                   ${item.eps.toFixed(2)}
                 </td>

@@ -32,6 +32,10 @@ export const ReportHeader: React.FC<ReportHeaderProps> = ({
       return "bg-yellow-100 text-yellow-800";
     } else if (rec.includes('sell') || rec.includes('underperform')) {
       return "bg-red-100 text-red-800";
+    } else if (rec.includes('overweight')) {
+      return "bg-blue-100 text-blue-800";
+    } else if (rec.includes('underweight')) {
+      return "bg-orange-100 text-orange-800";
     }
     return "bg-blue-100 text-blue-800";
   };
@@ -61,13 +65,12 @@ export const ReportHeader: React.FC<ReportHeaderProps> = ({
         </div>
         
         {/* Rating Details if available */}
-        {ratingDetails && (
-          <div className="p-3 border rounded-lg flex-1">
-            <span className="text-xs text-muted-foreground block mb-1">Rating Scale</span>
-            <span className="text-sm font-medium">{ratingDetails.ratingScale}</span>
-          </div>
-        )}
+        <div className="p-3 border rounded-lg flex-1">
+          <span className="text-xs text-muted-foreground block mb-1">Rating Scale</span>
+          <span className="text-sm font-medium">Buy, Sell, Hold, Overweight, Underweight</span>
+        </div>
       </div>
     </>
   );
 };
+

@@ -60,12 +60,6 @@ port = 54327
 vector_port = 54328
 backend = "postgres"
 
-[functions.generate-dcf-assumptions]
-verify_jwt = false
-
-[functions.get-custom-dcf]
-verify_jwt = false
-
 [functions.generate-research-report]
 verify_jwt = false
 
@@ -89,3 +83,22 @@ verify_jwt = false
 
 [functions.fetch-earnings-transcripts]
 verify_jwt = false
+
+[functions.execute-sql]
+verify_jwt = false
+
+[functions.optimize-database]
+verify_jwt = false
+
+[functions.get-finnhub-company-news]
+verify_jwt = false
+
+[functions.get-finnhub-social-sentiment]
+verify_jwt = false
+
+# Commented out as these functions are no longer in use
+# [functions.get-fmp-acquisition-ownership]
+# verify_jwt = false
+
+# [functions.get-fmp-insider-trading-stats]
+# verify_jwt = false

@@ -1,23 +1,15 @@
 
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { corsHeaders } from '../_shared/cors.ts';
+import { OPENAI_API_KEY } from '../_shared/constants.ts';
+import { formatDataForAnalysis } from '../_shared/report-utils/dataFormatter.ts';
+import { generateReportWithOpenAI } from '../_shared/report-utils/openAIGenerator.ts';
+import { 
+  createDefaultSections, 
+  enhanceSectionContent, 
+  ensureCompleteReportStructure 
+} from '../_shared/report-utils/fallbackReportGenerator.ts';
 
-// Define types for the response
-interface ReportSection {
-  title: string;
-  content: string;
-}
-
-interface ResearchReport {
-  symbol: string;
-  companyName: string;
-  date: string;
-  recommendation: string;
-  targetPrice: string;
-  summary: string;
-  sections: ReportSection[];
-}
-
+// Add proper error handling and logging
 Deno.serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -25,25 +17,106 @@ Deno.serve(async (req) => {
   }
   
   try {
+    console.log("Research report generation function called");
+    
     const { reportRequest } = await req.json();
     
     if (!reportRequest || !reportRequest.symbol) {
-      throw new Error('Missing required parameters');
+      console.error("Missing required parameters in request");
+      throw new Error('Missing required parameters: symbol is required');
     }
     
-    console.log(`Generating research report for ${reportRequest.symbol}`);
+    console.log(`Generating AI research report for ${reportRequest.symbol} (type: ${reportRequest.reportType || 'standard'})`);
     
-    // In a real scenario, here we would call an AI model or other analysis service
-    // For now, we'll generate a realistic-looking mock report
-    const report: ResearchReport = {
-      symbol: reportRequest.symbol,
-      companyName: reportRequest.companyName || reportRequest.symbol,
-      date: new Date().toISOString().split('T')[0],
-      recommendation: generateRecommendation(),
-      targetPrice: generateTargetPrice(reportRequest.stockData?.price || 100),
-      summary: generateSummary(reportRequest),
-      sections: generateReportSections(reportRequest)
-    };
+    // Get data ready for OpenAI
+    const formattedData = formatDataForAnalysis(reportRequest);
+    
+    // Generate report using OpenAI
+    console.log("Sending data to OpenAI for processing");
+    const report = await generateReportWithOpenAI(formattedData, reportRequest, OPENAI_API_KEY);
+    
+    // Enhanced section generation and quality checks
+    if (!report.sections || report.sections.length === 0) {
+      console.warn("No sections returned from OpenAI, adding comprehensive default sections");
+      report.sections = createDefaultSections(formattedData);
+    }
+    
+    // Validate all sections have substantial content
+    report.sections = report.sections.map(section => {
+      // Different minimum content length requirements for different section types
+      let minLength = 350; // Increased minimum section length for better quality
+      
+      if (section.title.toLowerCase().includes('financial')) {
+        minLength = 1000; // Financial sections need more detail
+      } else if (
+        section.title.toLowerCase().includes('risk') || 
+        section.title.toLowerCase().includes('valuation') ||
+        section.title.toLowerCase().includes('thesis') ||
+        section.title.toLowerCase().includes('esg')
+      ) {
+        minLength = 700; // Other important analysis sections need substantial detail
+      }
+      
+      if (!section.content || section.content.length < minLength) {
+        console.warn(`Section ${section.title} has insufficient content (${section.content?.length || 0} chars), enhancing it to meet ${minLength} char minimum`);
+        section.content = enhanceSectionContent(section.title, formattedData, 
+          section.title.toLowerCase().includes('financial')); // Pass true for extra detail on financial sections
+      }
+      
+      return section;
+    });
+    
+    // Ensure rating details have the correct scale
+    if (report.ratingDetails) {
+      report.ratingDetails.ratingScale = "Buy, Sell, Hold, Overweight, Underweight";
+    } else {
+      report.ratingDetails = {
+        overallRating: report.recommendation || "Hold",
+        financialStrength: "Average",
+        growthOutlook: "Stable",
+        valuationAttractiveness: "Fair",
+        competitivePosition: "Average",
+        ratingScale: "Buy, Sell, Hold, Overweight, Underweight"
+      };
+    }
+    
+    // Check for required sections and add them if missing
+    const requiredSections = [
+      'Financial Analysis', 
+      'Valuation', 
+      'Risk Factors', 
+      'ESG Considerations',
+      'Investment Thesis',
+      'Business Overview',
+      'Industry Analysis',
+      'Competitive Positioning'
+    ];
+    
+    for (const sectionTitle of requiredSections) {
+      const hasSection = report.sections.some(section => 
+        section.title.toLowerCase().includes(sectionTitle.toLowerCase())
+      );
+      
+      if (!hasSection) {
+        console.log(`Adding missing required section: ${sectionTitle}`);
+        // Add the section in an appropriate position
+        const insertPosition = determineInsertPosition(report.sections, sectionTitle);
+        report.sections.splice(insertPosition, 0, {
+          title: sectionTitle,
+          content: enhanceSectionContent(sectionTitle, formattedData, 
+            sectionTitle.toLowerCase().includes('financial'))
+        });
+      }
+    }
+    
+    // Ensure the sections are in a logical order
+    report.sections = orderSectionsLogically(report.sections);
+    
+    // Ensure we have all required report details
+    ensureCompleteReportStructure(report, formattedData);
+    
+    // Log the sections we're returning
+    console.log(`Returning report with ${report.sections.length} sections: ${report.sections.map(s => s.title).join(', ')}`);
     
     return new Response(JSON.stringify(report), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -59,60 +132,97 @@ Deno.serve(async (req) => {
   }
 });
 
-// Helper functions to generate report content
-function generateRecommendation(): string {
-  const recommendations = ['Buy', 'Strong Buy', 'Hold', 'Sell', 'Strong Sell'];
-  const weights = [0.4, 0.3, 0.2, 0.05, 0.05]; // Weighted towards positive recommendations
-  
-  let random = Math.random();
-  for (let i = 0; i < weights.length; i++) {
-    if (random < weights[i]) {
-      return recommendations[i];
-    }
-    random -= weights[i];
-  }
-  return recommendations[0];
-}
-
-function generateTargetPrice(currentPrice: number): string {
-  // Generate a target price that's +/- 30% of current price
-  const change = (Math.random() * 0.6) - 0.3;
-  const targetPrice = currentPrice * (1 + change);
-  return `$${targetPrice.toFixed(2)}`;
-}
-
-function generateSummary(reportRequest: any): string {
-  const { companyName, sector, industry } = reportRequest;
-  return `${companyName} is a leading company in the ${sector || 'technology'} sector, specifically within the ${industry || 'software'} industry. Based on our comprehensive analysis of the company's financial performance, market position, and growth prospects, we have issued a ${generateRecommendation()} recommendation. The company has demonstrated solid financial performance, with potential for continued growth in its core markets. Investors should consider this stock as part of a diversified portfolio, taking into account the specific risk factors outlined in this report.`;
-}
-
-function generateReportSections(reportRequest: any): ReportSection[] {
-  const { symbol, companyName } = reportRequest;
-  
-  return [
-    {
-      title: "Investment Thesis",
-      content: `Our investment thesis for ${companyName} is based on the company's strong market position, innovative product pipeline, and solid financial foundation. The company has consistently demonstrated its ability to adapt to changing market conditions while maintaining profitability and market share. We believe that ${companyName} is well-positioned to capitalize on emerging opportunities in its industry, potentially driving significant shareholder value over our investment horizon.`
-    },
-    {
-      title: "Business Overview",
-      content: `${companyName} operates primarily in the ${reportRequest.industry || 'technology'} industry. The company's primary products and services include [specific products/services]. Key markets include [geographic regions], with significant growth potential in [emerging markets]. The company faces competition from [key competitors], but maintains competitive advantages through [technological innovation/scale/brand recognition/etc.].`
-    },
-    {
-      title: "Financial Analysis",
-      content: `${companyName} has demonstrated [strong/stable/concerning] financial performance over the past several years. Revenue has grown at a CAGR of approximately [x]%, while profitability metrics indicate [improving/stable/declining] operational efficiency. The company's balance sheet shows [strong/moderate/concerning] liquidity with a debt-to-equity ratio of [x]. Key financial strengths include [high profit margins/strong cash flow/etc.], while areas of concern include [high capex requirements/volatile earnings/etc.].`
-    },
-    {
-      title: "Valuation",
-      content: `Based on our discounted cash flow (DCF) analysis and comparable company analysis, we believe ${companyName} is currently [undervalued/fairly valued/overvalued]. Our target price of [target price] represents a [premium/discount] to the current market price. This valuation is based on projected revenue growth of [x]% over the next five years, with operating margins expected to [improve/remain stable/decline] to [x]% by year five. Key valuation metrics include a forward P/E of [x], EV/EBITDA of [y], and PEG ratio of [z].`
-    },
-    {
-      title: "Risk Factors",
-      content: `Key risks to our investment thesis include: 1) Increased competition in core markets, potentially pressuring margins; 2) Regulatory challenges, particularly regarding [specific regulations]; 3) Technological disruption that could impact the company's existing product portfolio; 4) Macroeconomic headwinds, including inflation and interest rate fluctuations; 5) Execution risks related to the company's growth initiatives and strategic plans.`
-    },
-    {
-      title: "ESG Considerations",
-      content: `${companyName}'s environmental, social, and governance (ESG) profile is [strong/average/below average] compared to industry peers. Environmental initiatives include [specific initiatives], while social responsibility is demonstrated through [specific programs]. The governance structure is [well-established/in need of improvement], with [strong/weak] board independence and [aligned/misaligned] executive compensation structures.`
-    }
+// Helper function to determine the best insert position for a new section
+function determineInsertPosition(sections: Array<{title: string, content: string}>, newSectionTitle: string): number {
+  // Ideal sequence of sections
+  const idealSequence = [
+    'Executive Summary',
+    'Investment Thesis',
+    'Business Overview',
+    'Industry Analysis',
+    'Competitive Positioning',
+    'Financial Analysis',
+    'Valuation',
+    'Growth Outlook',
+    'Risk Factors',
+    'ESG Considerations',
+    'Rating and Recommendation'
   ];
+  
+  const targetIndex = idealSequence.findIndex(title => 
+    title.toLowerCase() === newSectionTitle.toLowerCase());
+  
+  if (targetIndex === -1) {
+    // If not in ideal sequence, add near the end but before rating/recommendation
+    const ratingIndex = sections.findIndex(s => 
+      s.title.toLowerCase().includes('rating') || 
+      s.title.toLowerCase().includes('recommendation'));
+    
+    return ratingIndex !== -1 ? ratingIndex : sections.length;
+  }
+  
+  // Find the first section that should come after the new section
+  for (let i = targetIndex + 1; i < idealSequence.length; i++) {
+    const afterSectionIndex = sections.findIndex(s => 
+      s.title.toLowerCase().includes(idealSequence[i].toLowerCase()));
+    
+    if (afterSectionIndex !== -1) {
+      return afterSectionIndex;
+    }
+  }
+  
+  // Find the last section that should come before the new section
+  for (let i = targetIndex - 1; i >= 0; i--) {
+    const beforeSectionIndex = sections.findIndex(s => 
+      s.title.toLowerCase().includes(idealSequence[i].toLowerCase()));
+    
+    if (beforeSectionIndex !== -1) {
+      return beforeSectionIndex + 1;
+    }
+  }
+  
+  // Default to adding at the end before any rating section
+  const ratingIndex = sections.findIndex(s => 
+    s.title.toLowerCase().includes('rating') || 
+    s.title.toLowerCase().includes('recommendation'));
+  
+  return ratingIndex !== -1 ? ratingIndex : sections.length;
+}
+
+// Helper function to order sections in a logical flow
+function orderSectionsLogically(sections: Array<{title: string, content: string}>): Array<{title: string, content: string}> {
+  const idealOrder = [
+    'Executive Summary',
+    'Investment Thesis',
+    'Business Overview',
+    'Industry Analysis',
+    'Competitive Positioning',
+    'Financial Analysis',
+    'Valuation',
+    'Growth Outlook',
+    'Risk Factors',
+    'ESG Considerations',
+    'Rating and Recommendation'
+  ];
+  
+  // Create a scoring function for sorting based on ideal order
+  const getSectionScore = (title: string): number => {
+    const lowerTitle = title.toLowerCase();
+    
+    for (let i = 0; i < idealOrder.length; i++) {
+      if (lowerTitle.includes(idealOrder[i].toLowerCase())) {
+        return i;
+      }
+    }
+    
+    // If not found in ideal order, place near the end
+    return idealOrder.length;
+  };
+  
+  // Sort sections based on ideal order
+  return [...sections].sort((a, b) => {
+    const scoreA = getSectionScore(a.title);
+    const scoreB = getSectionScore(b.title);
+    return scoreA - scoreB;
+  });
 }

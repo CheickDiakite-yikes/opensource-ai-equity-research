@@ -12,7 +12,7 @@ export async function fetchWithRetry(
   
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
-      console.log(`Fetching ${url} (attempt ${attempt}/${maxRetries})`);
+      console.log(`Fetching ${url.replace(/apikey=[^&]+/, "apikey=API_KEY_HIDDEN")} (attempt ${attempt}/${maxRetries})`);
       const response = await fetch(url, options);
       
       // Check if response is OK
@@ -26,7 +26,7 @@ export async function fetchWithRetry(
         return response;
       }
       
-      // For 5xx responses, log and retry
+      // For 5xx responses, log and retry with exponential backoff
       console.warn(`Request failed with status ${response.status}, retrying...`);
       lastError = new Error(`HTTP error: ${response.status}`);
     } catch (error) {
@@ -65,7 +65,7 @@ export async function safeFetch<T>(
   errorMessage: string = "Failed to fetch data"
 ): Promise<T | null> {
   try {
-    const response = await fetchWithRetry(url, options);
+    const response = await fetchWithRetry(url, options, 3, 1000);
     return await handleFetchResponse<T>(response, errorMessage);
   } catch (error) {
     console.error(`Safe fetch error: ${errorMessage}`, error);

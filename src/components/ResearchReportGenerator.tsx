@@ -1,10 +1,10 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import LoadingSkeleton from "@/components/LoadingSkeleton";
 import ErrorDisplay from "@/components/reports/ErrorDisplay";
 import ResearchReportContent from "@/components/reports/ResearchReportContent";
 import { useResearchReportData } from "@/components/reports/useResearchReportData";
-import { useReportGeneration, ReportType } from "@/components/reports/useReportGeneration";
+import { useReportGeneration } from "@/components/reports/useReportGeneration";
 
 interface ResearchReportGeneratorProps {
   symbol: string;
@@ -25,24 +25,39 @@ const ResearchReportGenerator = ({ symbol }: ResearchReportGeneratorProps) => {
     report,
     prediction,
     reportType,
+    generationError,
     setReportType,
     handleGenerateReport,
     handlePredictPrice
   } = useReportGeneration(symbol, data);
 
-  // Add state for isReportTooBasic and generationError
-  const [isReportTooBasic] = useState(false); // Default to false
-  const [generationError] = useState<string | null>(null); // Default to null
+  // Enhanced debugging for better report troubleshooting
+  useEffect(() => {
+    if (report) {
+      console.log("Report data available:", {
+        symbol: report.symbol,
+        companyName: report.companyName,
+        recommendation: report.recommendation,
+        targetPrice: report.targetPrice,
+        hasRatingDetails: !!report.ratingDetails,
+        hasScenarioAnalysis: !!report.scenarioAnalysis,
+        hasCatalysts: !!report.catalysts,
+        sections: report.sections.map(s => s.title),
+        sectionCount: report.sections.length,
+        sectionSizes: report.sections.map(s => s.content.length),
+        summaryLength: report.summary?.length || 0
+      });
+    }
+  }, [report]);
 
-  // Debug report structure if available
-  if (report) {
-    console.log("Report data available:", {
-      hasRatingDetails: !!report.ratingDetails,
-      hasScenarioAnalysis: !!report.scenarioAnalysis,
-      hasCatalysts: !!report.catalysts,
-      sections: report.sections.map(s => s.title)
-    });
-  }
+  // Check for report quality issues
+  const isReportTooBasic = report && (
+    !report.ratingDetails || 
+    !report.scenarioAnalysis || 
+    !report.catalysts ||
+    report.sections.some(s => s.content.length < 300) ||
+    (report.summary && report.summary.length < 150)
+  );
 
   if (isLoading) {
     return <LoadingSkeleton />;
@@ -52,11 +67,6 @@ const ResearchReportGenerator = ({ symbol }: ResearchReportGeneratorProps) => {
     return <ErrorDisplay error={error} />;
   }
 
-  // Create a wrapper function to handle the type conversion
-  const handleReportTypeChange = (value: string) => {
-    setReportType(value as ReportType);
-  };
-
   return (
     <ResearchReportContent
       data={data}
@@ -65,7 +75,7 @@ const ResearchReportGenerator = ({ symbol }: ResearchReportGeneratorProps) => {
       isPredicting={isPredicting}
       hasStockData={hasStockData}
       reportType={reportType}
-      setReportType={handleReportTypeChange}
+      setReportType={setReportType}
       onGenerateReport={handleGenerateReport}
       onPredictPrice={handlePredictPrice}
       report={report}
