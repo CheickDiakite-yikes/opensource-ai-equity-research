@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { StockPrediction } from "@/types/ai-analysis/predictionTypes";
@@ -92,7 +91,7 @@ export const savePricePrediction = async (
       
       if (edgeFunctionError) {
         console.error("Edge function error:", edgeFunctionError);
-        // If edge function fails, we'll continue with the direct approach below
+        // If edge function fails, we'll continue with the fallback approach below
       } else if (edgeFunctionData && edgeFunctionData.id) {
         console.log("Edge function success - prediction saved with ID:", edgeFunctionData.id);
         toast.success("Price prediction saved successfully");
@@ -103,47 +102,25 @@ export const savePricePrediction = async (
       // Continue with fallback approach
     }
     
-    // Fallback: Direct database insertion if edge function failed
-    console.log("Using fallback: direct database insertion");
+    // Fallback: Direct database operations if edge function failed
+    console.log("Using fallback: direct database operations");
 
-    // Check for existing predictions with the same symbol
-    const { data: existingPredictions, error: queryError } = await supabase
+    // Step 1: Delete any existing predictions for this user and symbol
+    console.log("Deleting any existing predictions for symbol:", symbol);
+    const { error: deleteError } = await supabase
       .from("user_price_predictions")
-      .select("id")
+      .delete()
       .eq("user_id", userId)
-      .eq("symbol", symbol)
-      .limit(1);
+      .eq("symbol", symbol);
       
-    if (queryError) {
-      console.error("Error checking for existing predictions:", queryError);
-    } else if (existingPredictions && existingPredictions.length > 0) {
-      // Update the existing prediction
-      console.log("Updating existing prediction for symbol:", symbol);
-      
-      const { data, error } = await supabase
-        .from("user_price_predictions")
-        .update({
-          company_name: companyName,
-          prediction_data: predictionData as unknown as Json,
-          created_at: new Date().toISOString()
-        })
-        .eq("id", existingPredictions[0].id)
-        .select("id");
-        
-      if (error) {
-        console.error("Error updating prediction:", error);
-        toast.error("Failed to update prediction: " + error.message);
-        return null;
-      }
-      
-      console.log("Prediction updated successfully. ID:", existingPredictions[0].id);
-      toast.success("Price prediction updated successfully");
-      return existingPredictions[0].id;
+    if (deleteError) {
+      console.error("Error deleting existing predictions:", deleteError);
+      toast.error("Failed to update prediction: " + deleteError.message);
+      return null;
     }
     
-    // If no existing prediction found or couldn't query, insert a new one
+    // Step 2: Insert a new prediction
     console.log("Inserting new prediction for symbol:", symbol);
-    
     const { data, error } = await supabase
       .from("user_price_predictions")
       .insert({

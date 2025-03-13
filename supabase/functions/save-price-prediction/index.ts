@@ -40,18 +40,19 @@ serve(async (req) => {
     // Create a Supabase client with the service role key
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
     
-    // Check for existing predictions with the same symbol
-    const { data: existingPredictions, error: queryError } = await supabase
+    // Step 1: Delete any existing predictions for this user and symbol
+    // This is a safer approach than trying to update, especially when 
+    // there might be multiple records with the same user_id and symbol
+    const { error: deleteError } = await supabase
       .from("user_price_predictions")
-      .select("id")
+      .delete()
       .eq("user_id", userId)
-      .eq("symbol", symbol)
-      .limit(1);
+      .eq("symbol", symbol);
     
-    if (queryError) {
-      console.error("Error querying existing predictions:", queryError);
+    if (deleteError) {
+      console.error("Error deleting existing predictions:", deleteError);
       return new Response(
-        JSON.stringify({ error: queryError.message, success: false }),
+        JSON.stringify({ error: deleteError.message, success: false }),
         {
           status: 500,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }
@@ -59,79 +60,46 @@ serve(async (req) => {
       );
     }
     
-    let predictionId;
-    // If there's an existing prediction for this symbol, update it
-    if (existingPredictions && existingPredictions.length > 0) {
-      console.log(`Found existing prediction for ${symbol}, updating it`);
-      
-      const { data, error } = await supabase
-        .from("user_price_predictions")
-        .update({
-          company_name: companyName,
-          prediction_data: predictionData,
-          created_at: new Date().toISOString(),
-          expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString() // 30 days from now
-        })
-        .eq("id", existingPredictions[0].id)
-        .select("id")
-        .single();
-      
-      if (error) {
-        console.error("Error updating prediction:", error);
-        return new Response(
-          JSON.stringify({ error: error.message, success: false }),
-          {
-            status: 500,
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-          }
-        );
-      }
-      
-      predictionId = existingPredictions[0].id;
-    } else {
-      // Otherwise, insert a new prediction
-      console.log(`Creating new prediction for ${symbol}`);
-      
-      const { data, error } = await supabase
-        .from("user_price_predictions")
-        .insert({
-          user_id: userId,
-          symbol,
-          company_name: companyName,
-          prediction_data: predictionData,
-          expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString() // 30 days from now
-        })
-        .select("id")
-        .single();
-      
-      if (error) {
-        console.error("Error inserting prediction:", error);
-        return new Response(
-          JSON.stringify({ error: error.message, success: false }),
-          {
-            status: 500,
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-          }
-        );
-      }
-      
-      if (!data) {
-        return new Response(
-          JSON.stringify({ error: "No data returned after saving", success: false }),
-          {
-            status: 500,
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-          }
-        );
-      }
-      
-      predictionId = data.id;
+    console.log(`Deleted any existing predictions for ${symbol}, now creating a new one`);
+    
+    // Step 2: Insert a new prediction
+    const { data, error } = await supabase
+      .from("user_price_predictions")
+      .insert({
+        user_id: userId,
+        symbol,
+        company_name: companyName,
+        prediction_data: predictionData,
+        expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString() // 30 days from now
+      })
+      .select("id")
+      .single();
+    
+    if (error) {
+      console.error("Error inserting prediction:", error);
+      return new Response(
+        JSON.stringify({ error: error.message, success: false }),
+        {
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      );
+    }
+    
+    if (!data) {
+      return new Response(
+        JSON.stringify({ error: "No data returned after saving", success: false }),
+        {
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      );
     }
     
     // Return success response
     return new Response(
       JSON.stringify({ 
-        id: predictionId, 
+        id: data.id, 
         success: true, 
         message: "Price prediction saved successfully" 
       }),
