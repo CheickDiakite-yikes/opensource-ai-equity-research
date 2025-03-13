@@ -16,28 +16,24 @@ export const savePricePrediction = async (
   try {
     console.log("Starting savePricePrediction for:", symbol);
     
-    // Check authentication status first
-    const { data: authData, error: authError } = await supabase.auth.getSession();
-    if (authError) {
-      console.error("Auth error:", authError);
-      toast.error("Authentication error: " + authError.message);
-      return null;
-    }
+    // Get the current session
+    const { data: sessionData } = await supabase.auth.getSession();
     
-    if (!authData.session) {
+    if (!sessionData.session) {
       console.error("No active session found");
       toast.error("You must be signed in to save predictions");
       return null;
     }
     
-    const userId = authData.session.user.id;
+    const userId = sessionData.session.user.id;
+    
     if (!userId) {
       console.error("No user ID found in active session");
       toast.error("Authentication error: Cannot identify user");
       return null;
     }
     
-    console.log("Authenticated user ID:", userId);
+    console.log("Found user ID:", userId);
 
     // Count existing predictions
     const currentCount = await countUserItems("user_price_predictions", userId);
@@ -53,9 +49,8 @@ export const savePricePrediction = async (
       }
     }
 
-    // Now, insert the new prediction with validated user ID
-    console.log("Inserting prediction into database");
-    console.log("Prediction data sample:", JSON.stringify(predictionData).substring(0, 200) + "...");
+    // Now, insert the new prediction
+    console.log("Inserting prediction for user:", userId);
     
     const { data, error } = await supabase
       .from("user_price_predictions")
@@ -63,7 +58,7 @@ export const savePricePrediction = async (
         user_id: userId,
         symbol,
         company_name: companyName,
-        prediction_data: predictionData as unknown as Json,
+        prediction_data: predictionData as unknown as Json
       })
       .select("id");
 
@@ -96,20 +91,16 @@ export const getUserPricePredictions = async () => {
   try {
     console.log("Getting user price predictions");
     
-    // Check authentication status first
-    const { data: authData, error: authError } = await supabase.auth.getSession();
-    if (authError) {
-      console.error("Auth error when getting predictions:", authError);
-      toast.error("Authentication error: " + authError.message);
-      return [];
-    }
+    // Get the current session
+    const { data: sessionData } = await supabase.auth.getSession();
     
-    if (!authData.session) {
+    if (!sessionData.session) {
       console.log("No active session found");
       return [];
     }
     
-    const userId = authData.session.user.id;
+    const userId = sessionData.session.user.id;
+    
     if (!userId) {
       console.log("No user ID found in active session");
       return [];
@@ -147,10 +138,11 @@ export const getUserPricePredictions = async () => {
  */
 export const deletePricePrediction = async (predictionId: string): Promise<boolean> => {
   try {
-    // Check authentication status first
-    const { data: authData, error: authError } = await supabase.auth.getSession();
-    if (authError || !authData.session) {
-      console.error("Auth error when deleting prediction:", authError);
+    // Get the current session
+    const { data: sessionData } = await supabase.auth.getSession();
+    
+    if (!sessionData.session) {
+      console.error("No active session found");
       toast.error("Authentication error. Please sign in again.");
       return false;
     }

@@ -17,30 +17,26 @@ export const saveResearchReport = async (
   try {
     console.log("Starting saveResearchReport for:", symbol);
     
-    // Check authentication status first
-    const { data: authData, error: authError } = await supabase.auth.getSession();
-    if (authError) {
-      console.error("Auth error:", authError);
-      toast.error("Authentication error: " + authError.message);
-      return null;
-    }
+    // Get the current session
+    const { data: sessionData } = await supabase.auth.getSession();
     
-    if (!authData.session) {
+    if (!sessionData.session) {
       console.error("No active session found");
       toast.error("You must be signed in to save reports");
       return null;
     }
     
-    const userId = authData.session.user.id;
+    const userId = sessionData.session.user.id;
+    
     if (!userId) {
       console.error("No user ID found in active session");
       toast.error("Authentication error: Cannot identify user");
       return null;
     }
     
-    console.log("Authenticated user ID:", userId);
+    console.log("Found user ID:", userId);
 
-    // First, count existing reports
+    // Count existing reports
     const currentCount = await countUserItems("user_research_reports", userId);
     console.log("Current report count:", currentCount);
 
@@ -79,9 +75,8 @@ export const saveResearchReport = async (
       console.error("Error generating HTML content:", htmlError);
     }
 
-    // Now, insert the new report with validated user ID
-    console.log("Inserting report into database with HTML:", htmlContent ? "YES" : "NO");
-    console.log("Report data sample:", JSON.stringify(reportData).substring(0, 200) + "...");
+    // Now, insert the new report
+    console.log("Inserting report for user:", userId);
     
     const { data, error } = await supabase
       .from("user_research_reports")
@@ -123,20 +118,16 @@ export const getUserResearchReports = async () => {
   try {
     console.log("Getting user research reports");
     
-    // Check authentication status first
-    const { data: authData, error: authError } = await supabase.auth.getSession();
-    if (authError) {
-      console.error("Auth error when getting reports:", authError);
-      toast.error("Authentication error: " + authError.message);
-      return [];
-    }
+    // Get the current session
+    const { data: sessionData } = await supabase.auth.getSession();
     
-    if (!authData.session) {
+    if (!sessionData.session) {
       console.log("No active session found");
       return [];
     }
     
-    const userId = authData.session.user.id;
+    const userId = sessionData.session.user.id;
+    
     if (!userId) {
       console.log("No user ID found in active session");
       return [];
@@ -174,10 +165,11 @@ export const getUserResearchReports = async () => {
  */
 export const deleteResearchReport = async (reportId: string): Promise<boolean> => {
   try {
-    // Check authentication status first
-    const { data: authData, error: authError } = await supabase.auth.getSession();
-    if (authError || !authData.session) {
-      console.error("Auth error when deleting report:", authError);
+    // Get the current session
+    const { data: sessionData } = await supabase.auth.getSession();
+    
+    if (!sessionData.session) {
+      console.error("No active session found");
       toast.error("Authentication error. Please sign in again.");
       return false;
     }

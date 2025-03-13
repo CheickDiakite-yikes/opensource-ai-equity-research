@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -10,24 +9,24 @@ export const MAX_SAVED_ITEMS = 10;
  */
 export const getUserId = async (): Promise<string | null> => {
   try {
-    const { data, error } = await supabase.auth.getUser();
+    const { data: sessionData } = await supabase.auth.getSession();
     
-    if (error) {
-      console.error("Authentication error:", error.message);
-      toast.error("Authentication error: " + error.message);
+    if (!sessionData.session) {
+      console.log("No active session found");
       return null;
     }
     
-    if (!data.user) {
-      console.log("No authenticated user found");
+    const userId = sessionData.session.user.id;
+    
+    if (!userId) {
+      console.error("No user ID found in active session");
       return null;
     }
     
-    console.log("Authenticated user ID:", data.user.id);
-    return data.user.id;
+    console.log("Authenticated user ID:", userId);
+    return userId;
   } catch (error) {
     console.error("Error getting user ID:", error);
-    toast.error("Failed to verify authentication status");
     return null;
   }
 };
