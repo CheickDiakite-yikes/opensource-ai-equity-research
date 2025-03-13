@@ -3,7 +3,7 @@ import { useState, useCallback } from "react";
 import { useSavedReports, SavedReport } from "./useSavedReports";
 import { useSavedPredictions, SavedPrediction } from "./useSavedPredictions";
 import { toast } from "sonner";
-import { downloadHtmlFile } from "@/utils/reports/reportDownloadUtils";
+import { downloadReportAsHTML } from "@/utils/reports/reportDownloadUtils";
 
 export const useSavedContentPage = () => {
   const { reports, isLoading: reportsLoading, isRefreshing: reportsRefreshing, error: reportsError, fetchReports, deleteReport } = useSavedReports();
@@ -60,9 +60,17 @@ export const useSavedContentPage = () => {
       return;
     }
     
+    // Use the correct function name that exists in our codebase
     const filename = `${report.symbol}_research_report.html`;
-    downloadHtmlFile(report.html_content, filename);
-    toast.success(`Downloaded report as ${filename}`);
+    
+    // Create a temporary ResearchReport object with the minimum required properties
+    const tempReport = {
+      symbol: report.symbol,
+      companyName: report.company_name,
+      html_content: report.html_content
+    };
+    
+    downloadReportAsHTML(tempReport);
   };
 
   const handleRefresh = useCallback(async () => {
