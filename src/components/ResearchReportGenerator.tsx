@@ -30,6 +30,10 @@ const ResearchReportGenerator = ({ symbol }: ResearchReportGeneratorProps) => {
     handlePredictPrice
   } = useReportGeneration(symbol, data);
 
+  // Add state for isReportTooBasic and generationError
+  const [isReportTooBasic] = useState(false); // Default to false
+  const [generationError] = useState<string | null>(null); // Default to null
+
   // Debug report structure if available
   if (report) {
     console.log("Report data available:", {
@@ -66,6 +70,8 @@ const ResearchReportGenerator = ({ symbol }: ResearchReportGeneratorProps) => {
       onPredictPrice={handlePredictPrice}
       report={report}
       prediction={prediction}
+      isReportTooBasic={isReportTooBasic}
+      generationError={generationError}
     />
   );
 };

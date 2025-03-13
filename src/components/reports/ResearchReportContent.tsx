@@ -9,7 +9,7 @@ import { ResearchReport } from "@/types/ai-analysis/reportTypes";
 import { StockPrediction } from "@/types/ai-analysis/predictionTypes";
 import { motion } from "framer-motion";
 
-interface ResearchReportContentProps {
+export interface ResearchReportContentProps {
   data: ReportData;
   showDataWarning: boolean;
   isGenerating: boolean;
@@ -21,6 +21,8 @@ interface ResearchReportContentProps {
   onPredictPrice: () => void;
   report: ResearchReport | null;
   prediction: StockPrediction | null;
+  isReportTooBasic: boolean;
+  generationError: string | null;
 }
 
 const ResearchReportContent: React.FC<ResearchReportContentProps> = ({
@@ -34,7 +36,9 @@ const ResearchReportContent: React.FC<ResearchReportContentProps> = ({
   onGenerateReport,
   onPredictPrice,
   report,
-  prediction
+  prediction,
+  isReportTooBasic,
+  generationError
 }) => {
   return (
     <div className="space-y-6">
@@ -65,6 +69,20 @@ const ResearchReportContent: React.FC<ResearchReportContentProps> = ({
                 <div className="flex">
                   <AlertCircle className="h-5 w-5 mr-2 flex-shrink-0" />
                   <p>Limited financial data available. Report accuracy may be affected.</p>
+                </div>
+              </motion.div>
+            )}
+            
+            {generationError && (
+              <motion.div 
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3, delay: 0.2 }}
+                className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md text-red-800 text-sm"
+              >
+                <div className="flex">
+                  <AlertCircle className="h-5 w-5 mr-2 flex-shrink-0" />
+                  <p>{generationError}</p>
                 </div>
               </motion.div>
             )}
