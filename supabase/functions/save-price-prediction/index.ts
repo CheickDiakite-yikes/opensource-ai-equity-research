@@ -65,6 +65,7 @@ serve(async (req) => {
     const createdAt = new Date().toISOString();
     
     // Step 2: Insert a new prediction with explicitly listed columns
+    // Removed .single() to avoid ON CONFLICT issues
     const { data, error } = await supabase
       .from("user_price_predictions")
       .insert({
@@ -75,8 +76,7 @@ serve(async (req) => {
         expires_at: expiresAt,
         created_at: createdAt
       })
-      .select("id")
-      .single();
+      .select("id");
     
     if (error) {
       console.error("Error inserting prediction:", error);
@@ -95,7 +95,7 @@ serve(async (req) => {
       );
     }
     
-    if (!data) {
+    if (!data || data.length === 0) {
       return new Response(
         JSON.stringify({ error: "No data returned after saving", success: false }),
         {
@@ -108,7 +108,7 @@ serve(async (req) => {
     // Return success response
     return new Response(
       JSON.stringify({ 
-        id: data.id, 
+        id: data[0].id, 
         success: true, 
         message: "Price prediction saved successfully" 
       }),
