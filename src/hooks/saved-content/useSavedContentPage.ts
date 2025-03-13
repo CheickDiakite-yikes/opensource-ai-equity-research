@@ -1,89 +1,76 @@
 
-import { useState, useEffect } from "react";
-import { useAuth } from "@/contexts/AuthContext";
-import { 
-  useSavedReports, 
-  useSavedPredictions, 
-  SavedReport, 
-  SavedPrediction 
-} from "@/hooks/saved-content";
+import { useState, useCallback } from "react";
+import { useSavedReports } from "./useSavedReports";
+import { useSavedPredictions } from "./useSavedPredictions";
 import { toast } from "sonner";
+import { testConnection } from "@/services/api/userContent/baseService";
 
 export const useSavedContentPage = () => {
-  const { user, isLoading: authLoading } = useAuth();
-  const { reports, isLoading: reportsLoading, deleteReport, fetchReports } = useSavedReports();
-  const { predictions, isLoading: predictionsLoading, deletePrediction, fetchPredictions } = useSavedPredictions();
-  const [selectedReport, setSelectedReport] = useState<SavedReport | null>(null);
-  const [selectedPrediction, setSelectedPrediction] = useState<SavedPrediction | null>(null);
-  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [activeTab, setActiveTab] = useState("reports");
+  const [selectedReport, setSelectedReport] = useState(null);
+  const [selectedPrediction, setSelectedPrediction] = useState(null);
+  
+  const { 
+    reports, 
+    isLoading: reportsLoading, 
+    error: reportsError, 
+    lastError: reportsLastError,
+    debugInfo: reportsDebugInfo,
+    fetchReports, 
+    deleteReport,
+    clearErrors: clearReportsErrors 
+  } = useSavedReports();
+  
+  const { 
+    predictions, 
+    isLoading: predictionsLoading, 
+    error: predictionsError, 
+    lastError: predictionsLastError,
+    debugInfo: predictionsDebugInfo,
+    connectionStatus,
+    fetchPredictions, 
+    deletePrediction,
+    clearErrors: clearPredictionsErrors 
+  } = useSavedPredictions();
 
-  // Refresh reports when page loads
-  useEffect(() => {
-    if (user) {
-      console.log("SavedContent component mounted, fetching reports...");
-      fetchReports();
-      fetchPredictions();
-    }
-  }, [user]);
+  const isLoading = reportsLoading || predictionsLoading;
+  const isRefreshing = false; // We'll use individual refresh indicators instead
 
-  // Log reports when they change
-  useEffect(() => {
-    console.log("Reports updated:", reports.length);
-    reports.forEach(report => {
-      console.log(`- Report ${report.id}: ${report.symbol}, HTML: ${report.html_content ? "YES" : "NO"}`);
-    });
-  }, [reports]);
-
-  // Log predictions when they change
-  useEffect(() => {
-    console.log("Predictions updated:", predictions.length);
-    predictions.forEach(prediction => {
-      console.log(`- Prediction ${prediction.id}: ${prediction.symbol}`);
-    });
-  }, [predictions]);
-
-  const isLoading = authLoading || reportsLoading || predictionsLoading;
-
-  const handleSelectReport = (report: SavedReport) => {
-    console.log("Selecting report:", report.id);
+  const handleSelectReport = (report) => {
     setSelectedReport(report);
-    setSelectedPrediction(null);
-    
-    // Debug HTML content
-    if (report.html_content) {
-      console.log(`Report ${report.id} has HTML content of length: ${report.html_content.length}`);
-    } else {
-      console.warn(`Report ${report.id} has no HTML content`);
-    }
+    setSelectedPrediction(null); // Clear any selected prediction
   };
 
-  const handleSelectPrediction = (prediction: SavedPrediction) => {
-    console.log("Selecting prediction:", prediction.id);
+  const handleSelectPrediction = (prediction) => {
     setSelectedPrediction(prediction);
-    setSelectedReport(null);
+    setSelectedReport(null); // Clear any selected report
   };
 
-  const handleDeleteReport = async (reportId: string, e: React.MouseEvent) => {
-    e.stopPropagation();
-    console.log("Deleting report:", reportId);
+  const handleDeleteReport = async (reportId) => {
     const success = await deleteReport(reportId);
-    if (success && selectedReport?.id === reportId) {
-      setSelectedReport(null);
+    if (success) {
+      // If the deleted report was selected, clear the selection
+      if (selectedReport && selectedReport.id === reportId) {
+        setSelectedReport(null);
+      }
+      toast.success("Report deleted successfully");
     }
   };
 
-  const handleDeletePrediction = async (predictionId: string, e: React.MouseEvent) => {
-    e.stopPropagation();
-    console.log("Deleting prediction:", predictionId);
+  const handleDeletePrediction = async (predictionId) => {
     const success = await deletePrediction(predictionId);
-    if (success && selectedPrediction?.id === predictionId) {
-      setSelectedPrediction(null);
+    if (success) {
+      // If the deleted prediction was selected, clear the selection
+      if (selectedPrediction && selectedPrediction.id === predictionId) {
+        setSelectedPrediction(null);
+      }
+      toast.success("Prediction deleted successfully");
     }
   };
 
-  const handleDownloadHtml = (report: SavedReport) => {
+  const handleDownloadHtml = (report) => {
     if (!report.html_content) {
-      toast.error("HTML content not available for this report");
+      toast.error("No HTML content available for this report");
       return;
     }
 
@@ -92,42 +79,73 @@ export const useSavedContentPage = () => {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `${report.symbol}_research_report.html`;
+    a.download = `${report.symbol}_report_${new Date().toISOString().slice(0, 10)}.html`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
     
-    toast.success("Report downloaded as HTML");
+    toast.success("Report downloaded as HTML file");
   };
 
-  const handleRefresh = async () => {
-    setIsRefreshing(true);
-    console.log("Manually refreshing content...");
-    try {
-      await Promise.all([fetchReports(), fetchPredictions()]);
-      toast.success("Content refreshed");
-    } catch (error) {
-      console.error("Error refreshing content:", error);
-      toast.error("Failed to refresh content");
-    } finally {
-      setIsRefreshing(false);
+  const handleRefresh = async (tab) => {
+    const activeTabToRefresh = tab || activeTab;
+    
+    if (activeTabToRefresh === "reports") {
+      await fetchReports();
+    } else {
+      await fetchPredictions();
     }
   };
 
+  const clearErrors = useCallback(() => {
+    if (activeTab === "reports") {
+      clearReportsErrors();
+    } else {
+      clearPredictionsErrors();
+    }
+  }, [activeTab, clearReportsErrors, clearPredictionsErrors]);
+
+  const checkConnection = useCallback(async () => {
+    try {
+      const connectionStatus = await testConnection();
+      
+      if (connectionStatus === 'connected') {
+        toast.success("Successfully connected to database");
+        return true;
+      } else {
+        toast.error("Failed to connect to database");
+        return false;
+      }
+    } catch (err) {
+      toast.error("Connection check failed: " + (err instanceof Error ? err.message : String(err)));
+      return false;
+    }
+  }, []);
+
   return {
-    user,
     isLoading,
     isRefreshing,
     reports,
     predictions,
     selectedReport,
     selectedPrediction,
+    activeTab,
+    setActiveTab,
+    reportsError,
+    reportsLastError,
+    reportsDebugInfo,
+    predictionsError,
+    predictionsLastError,
+    predictionsDebugInfo,
+    connectionStatus,
     handleSelectReport,
     handleSelectPrediction,
     handleDeleteReport,
     handleDeletePrediction,
     handleDownloadHtml,
-    handleRefresh
+    handleRefresh,
+    clearErrors,
+    checkConnection
   };
 };
