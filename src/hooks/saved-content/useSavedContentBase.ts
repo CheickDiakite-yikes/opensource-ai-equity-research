@@ -7,6 +7,7 @@ export const useSavedContentBase = () => {
   const { user } = useAuth();
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   // Helper function to check if user is logged in
   const checkUserLoggedIn = () => {
@@ -27,6 +28,8 @@ export const useSavedContentBase = () => {
     user,
     isLoading,
     setIsLoading,
+    isRefreshing,
+    setIsRefreshing,
     error,
     setError,
     checkUserLoggedIn
