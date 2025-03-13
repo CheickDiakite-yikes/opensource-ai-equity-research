@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -73,7 +74,7 @@ export const countUserItems = async (
 export const deleteOldestItems = async (
   tableName: "user_research_reports" | "user_price_predictions",
   userId: string,
-  count: number
+  currentCount: number
 ): Promise<boolean> => {
   try {
     // Double check userId is valid before proceeding
@@ -82,13 +83,15 @@ export const deleteOldestItems = async (
       return false;
     }
     
-    if (count < MAX_SAVED_ITEMS) {
+    // If not over limit, no need to delete anything
+    if (currentCount < MAX_SAVED_ITEMS) {
+      console.log(`Current count (${currentCount}) is below limit (${MAX_SAVED_ITEMS}), no deletion needed`);
       return true;
     }
 
-    // If at or over limit, delete oldest to make room
-    const toDelete = count - MAX_SAVED_ITEMS + 1;
-    console.log(`Need to delete ${toDelete} oldest ${tableName}`);
+    // Calculate how many to delete to get down to MAX_SAVED_ITEMS - 1 (to make room for new item)
+    const toDelete = currentCount - MAX_SAVED_ITEMS + 1;
+    console.log(`Need to delete ${toDelete} oldest ${tableName} to make room for new item`);
     
     // Fetch oldest items
     const { data: oldestItems, error: fetchError } = await supabase
@@ -112,6 +115,7 @@ export const deleteOldestItems = async (
     const oldestIds = oldestItems.map(item => item.id);
     console.log(`Deleting oldest ${tableName}:`, oldestIds);
     
+    // Delete the oldest items in a single operation
     const { error: deleteError } = await supabase
       .from(tableName)
       .delete()

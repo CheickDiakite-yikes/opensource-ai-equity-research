@@ -4,7 +4,7 @@ import { toast } from "sonner";
 import { ResearchReport } from "@/types/ai-analysis/reportTypes";
 import { Json } from "@/integrations/supabase/types";
 import { generateReportHTML } from "./htmlGenerator";
-import { getUserId, countUserItems, deleteOldestItems } from "./baseService";
+import { getUserId, countUserItems, deleteOldestItems, MAX_SAVED_ITEMS } from "./baseService";
 
 /**
  * Save a research report for the current user
@@ -33,8 +33,8 @@ export const saveResearchReport = async (
     console.log("Current report count:", currentCount);
 
     // Delete oldest reports if over limit
-    if (currentCount >= 10) {
-      const deleted = await deleteOldestItems("user_research_reports", userId, currentCount - 9);
+    if (currentCount >= MAX_SAVED_ITEMS) {
+      const deleted = await deleteOldestItems("user_research_reports", userId, currentCount);
       if (!deleted) {
         console.error("Failed to delete oldest reports");
         toast.error("Failed to save report - couldn't manage report limit");

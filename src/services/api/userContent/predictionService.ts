@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { StockPrediction } from "@/types/ai-analysis/predictionTypes";
 import { Json } from "@/integrations/supabase/types";
-import { getUserId, countUserItems, deleteOldestItems } from "./baseService";
+import { getUserId, countUserItems, deleteOldestItems, MAX_SAVED_ITEMS } from "./baseService";
 
 /**
  * Save a price prediction for the current user
@@ -32,8 +32,8 @@ export const savePricePrediction = async (
     console.log("Current prediction count:", currentCount);
 
     // Delete oldest predictions if over limit
-    if (currentCount >= 10) {
-      const deleted = await deleteOldestItems("user_price_predictions", userId, currentCount - 9);
+    if (currentCount >= MAX_SAVED_ITEMS) {
+      const deleted = await deleteOldestItems("user_price_predictions", userId, currentCount);
       if (!deleted) {
         console.error("Failed to delete oldest predictions");
         toast.error("Failed to save prediction - couldn't manage prediction limit");
