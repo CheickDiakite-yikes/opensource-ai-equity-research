@@ -49,8 +49,7 @@ export const savePricePrediction = async (
     const { data: existingPredictions, error: checkError } = await supabase
       .from("user_price_predictions")
       .select("id")
-      .eq("user_id", userId)
-      .eq("symbol", symbol);
+      .match({ user_id: userId, symbol: symbol });
       
     if (checkError) {
       console.error("Error checking for existing prediction:", checkError);
@@ -84,8 +83,9 @@ export const savePricePrediction = async (
       console.log("Prediction updated successfully. ID:", predictionId);
       toast.success("Price prediction updated successfully");
     } else {
-      // Insert new prediction
+      // Insert new prediction - use type cast to Json
       console.log("Inserting new prediction into database");
+      console.log("Prediction data sample:", JSON.stringify(predictionData).substring(0, 200) + "...");
       
       const { data, error } = await supabase
         .from("user_price_predictions")

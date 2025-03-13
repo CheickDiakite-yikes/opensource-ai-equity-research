@@ -77,43 +77,6 @@ export interface ResearchReport {
   ratingDetails?: RatingDetails;
   scenarioAnalysis?: ScenarioAnalysis;
   catalysts?: GrowthCatalysts;
-  
-  // Added for compatibility with existing code
-  reportDate?: string;
-  executiveSummary?: string;
-  investmentHighlights?: string[];
-  companyDescription?: string;
-  businessModel?: string;
-  productsServices?: string;
-  industryOverview?: string;
-  competitiveLandscape?: string;
-  financialSummary?: string;
-  revenueAnalysis?: string;
-  profitabilityAnalysis?: string;
-  balanceSheetAnalysis?: string;
-  cashFlowAnalysis?: string;
-  valuationSummary?: string;
-  peRatio?: string;
-  pbRatio?: string;
-  evToEbitda?: string;
-  dividendYield?: string;
-  discountedCashFlow?: string;
-  priceForecast?: string;
-  technicalSummary?: string;
-  trendAnalysis?: string;
-  supportResistanceLevels?: string;
-  movingAverages?: string;
-  relativeStrengthIndex?: string;
-  macdAnalysis?: string;
-  investmentThesis?: string;
-  growthProspects?: string;
-  competitiveAdvantages?: string;
-  // We removed the duplicate catalysts field that was of type string
-  riskSummary?: string;
-  marketRisks?: string;
-  businessRisks?: string;
-  financialRisks?: string;
-  regulatoryRisks?: string;
 }
 
 /**

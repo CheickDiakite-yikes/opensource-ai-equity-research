@@ -1,7 +1,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { fetchStockQuote, fetchStockRating } from "@/services/api/profileService";
-import { useStockPrediction } from "@/hooks/stock-prediction";
+import { useStockPrediction } from "@/hooks/useStockPrediction";
 import { useState, useEffect } from "react";
 import { StockQuote } from "@/types";
 
@@ -47,14 +47,13 @@ export const useCompanyCardData = (symbol: string) => {
     }
   });
   
-  // Use prediction hook
-  const companyName = quote?.name || "";
+  // Use prediction hook with autoFetch and quickMode enabled
   const { 
     prediction, 
     isLoading: isPredictionLoading, 
     error: predictionError, 
-    generatePrediction
-  } = useStockPrediction(symbol, companyName);
+    retry: retryPrediction 
+  } = useStockPrediction(symbol, true, true);
 
   // Auto retry predictions with error once
   useEffect(() => {
@@ -64,13 +63,12 @@ export const useCompanyCardData = (symbol: string) => {
       // Only retry once to avoid infinite loops
       if (retryPredictionCount < 1) {
         setTimeout(() => {
-          // Call retryPrediction function
-          generatePrediction(true);
+          retryPrediction();
           setRetryPredictionCount(prev => prev + 1);
         }, 2000);
       }
     }
-  }, [predictionError, symbol, generatePrediction, retryPredictionCount]);
+  }, [predictionError, symbol, retryPrediction, retryPredictionCount]);
 
   return {
     quote,
@@ -82,6 +80,6 @@ export const useCompanyCardData = (symbol: string) => {
     isQuoteError,
     isRatingError,
     predictionError,
-    retryPrediction: () => generatePrediction(true)
+    retryPrediction
   };
 };
