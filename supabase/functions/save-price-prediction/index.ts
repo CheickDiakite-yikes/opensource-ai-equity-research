@@ -50,7 +50,13 @@ serve(async (req) => {
     if (deleteError) {
       console.error("Error deleting existing predictions:", deleteError);
       return new Response(
-        JSON.stringify({ error: deleteError.message, success: false }),
+        JSON.stringify({ 
+          error: deleteError.message, 
+          code: deleteError.code,
+          details: deleteError.details,
+          hint: deleteError.hint,
+          success: false 
+        }),
         {
           status: 500,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }

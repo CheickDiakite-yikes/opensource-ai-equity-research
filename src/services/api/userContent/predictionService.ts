@@ -95,6 +95,11 @@ export const savePricePrediction = async (
         throw new Error(`Edge function error: ${edgeFunctionError.message}`);
       } 
       
+      if (edgeFunctionData && edgeFunctionData.success === false) {
+        console.error("Edge function returned an error:", edgeFunctionData.error);
+        throw new Error(`Database error: ${edgeFunctionData.error || "Unknown error"}`);
+      }
+      
       if (edgeFunctionData && edgeFunctionData.id) {
         console.log("Edge function success - prediction saved with ID:", edgeFunctionData.id);
         toast.success("Price prediction saved successfully");
@@ -115,52 +120,67 @@ export const savePricePrediction = async (
       // Fallback: Direct database operations if edge function failed
       console.log("Using fallback: direct database operations");
 
-      // Step 1: Delete any existing predictions for this user and symbol
-      console.log("Deleting any existing predictions for symbol:", symbol);
-      const { error: deleteError } = await supabase
-        .from("user_price_predictions")
-        .delete()
-        .eq("user_id", userId)
-        .eq("symbol", symbol);
+      try {
+        // Step 1: Delete any existing predictions for this user and symbol
+        console.log("Deleting any existing predictions for symbol:", symbol);
+        const { error: deleteError } = await supabase
+          .from("user_price_predictions")
+          .delete()
+          .eq("user_id", userId)
+          .eq("symbol", symbol);
+          
+        if (deleteError) {
+          console.error("Error deleting existing predictions:", deleteError);
+          toast.error("Failed to update prediction: " + deleteError.message);
+          return null;
+        }
         
-      if (deleteError) {
-        console.error("Error deleting existing predictions:", deleteError);
-        toast.error("Failed to update prediction: " + deleteError.message);
+        // Calculate expiration date (30 days from now)
+        const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
+        
+        // Step 2: Insert a new prediction with explicit columns
+        console.log("Inserting new prediction for symbol:", symbol);
+        const { data, error } = await supabase
+          .from("user_price_predictions")
+          .insert({
+            user_id: userId,
+            symbol,
+            company_name: companyName,
+            prediction_data: predictionData as unknown as Json,
+            expires_at: expiresAt,
+            created_at: new Date().toISOString()
+          })
+          .select("id");
+
+        if (error) {
+          // Format error message for better user feedback
+          let errorMessage = "Failed to save prediction";
+          if (error.code) {
+            errorMessage += ` (Error code: ${error.code})`;
+          }
+          if (error.message) {
+            errorMessage += `: ${error.message}`;
+          }
+          
+          console.error("Error saving prediction:", error);
+          toast.error(errorMessage);
+          return null;
+        }
+
+        if (!data || data.length === 0) {
+          console.error("No data returned after saving prediction");
+          toast.error("Failed to save prediction - no data returned");
+          return null;
+        }
+
+        console.log("Prediction saved successfully. ID:", data[0].id);
+        toast.success("Price prediction saved successfully");
+        return data[0].id;
+      } catch (dbError) {
+        console.error("Database operation error:", dbError);
+        toast.error("Database error: " + (dbError.message || "Unknown error"));
         return null;
       }
-      
-      // Calculate expiration date (30 days from now)
-      const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
-      
-      // Step 2: Insert a new prediction with explicit columns
-      console.log("Inserting new prediction for symbol:", symbol);
-      const { data, error } = await supabase
-        .from("user_price_predictions")
-        .insert({
-          user_id: userId,
-          symbol,
-          company_name: companyName,
-          prediction_data: predictionData as unknown as Json,
-          expires_at: expiresAt,
-          created_at: new Date().toISOString()
-        })
-        .select("id");
-
-      if (error) {
-        console.error("Error saving prediction:", error);
-        toast.error("Failed to save prediction: " + error.message);
-        return null;
-      }
-
-      if (!data || data.length === 0) {
-        console.error("No data returned after saving prediction");
-        toast.error("Failed to save prediction - no data returned");
-        return null;
-      }
-
-      console.log("Prediction saved successfully. ID:", data[0].id);
-      toast.success("Price prediction saved successfully");
-      return data[0].id;
     }
   } catch (error) {
     console.error("Error in savePricePrediction:", error);
