@@ -17,30 +17,16 @@ export const saveResearchReport = async (
   try {
     console.log("Starting saveResearchReport for:", symbol);
     
-    // Get the current session directly
-    const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+    // Get the current user ID
+    const userId = await getUserId();
     
-    if (sessionError) {
-      console.error("Session error:", sessionError);
-      toast.error("Authentication error: " + sessionError.message);
-      return null;
-    }
-    
-    if (!sessionData.session) {
-      console.error("No active session found");
+    if (!userId) {
+      console.error("No user ID found");
       toast.error("You must be signed in to save reports");
       return null;
     }
     
-    const userId = sessionData.session.user.id;
-    
-    if (!userId) {
-      console.error("No user ID found in active session");
-      toast.error("Authentication error: Cannot identify user");
-      return null;
-    }
-    
-    console.log("Found user ID:", userId);
+    console.log("Using user ID:", userId);
 
     // Count existing reports
     const currentCount = await countUserItems("user_research_reports", userId);
@@ -81,7 +67,7 @@ export const saveResearchReport = async (
       console.error("Error generating HTML content:", htmlError);
     }
 
-    // Now, insert the new report - removed ON CONFLICT clause
+    // Insert the new report
     console.log("Inserting report for user:", userId);
     
     const { data, error } = await supabase
@@ -124,23 +110,11 @@ export const getUserResearchReports = async () => {
   try {
     console.log("Getting user research reports");
     
-    // Get the current session
-    const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
-    
-    if (sessionError) {
-      console.error("Session error:", sessionError);
-      return [];
-    }
-    
-    if (!sessionData.session) {
-      console.log("No active session found");
-      return [];
-    }
-    
-    const userId = sessionData.session.user.id;
+    // Get the current user ID
+    const userId = await getUserId();
     
     if (!userId) {
-      console.log("No user ID found in active session");
+      console.log("No user ID found");
       return [];
     }
 
@@ -176,25 +150,20 @@ export const getUserResearchReports = async () => {
  */
 export const deleteResearchReport = async (reportId: string): Promise<boolean> => {
   try {
-    // Get the current session
-    const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+    // Get the current user ID to ensure the user is authenticated
+    const userId = await getUserId();
     
-    if (sessionError) {
-      console.error("Session error:", sessionError);
-      toast.error("Authentication error: " + sessionError.message);
-      return false;
-    }
-    
-    if (!sessionData.session) {
-      console.error("No active session found");
-      toast.error("Authentication error. Please sign in again.");
+    if (!userId) {
+      console.error("No user ID found");
+      toast.error("You must be signed in to delete reports");
       return false;
     }
     
     const { error } = await supabase
       .from("user_research_reports")
       .delete()
-      .eq("id", reportId);
+      .eq("id", reportId)
+      .eq("user_id", userId); // Add this to ensure users can only delete their own reports
 
     if (error) {
       console.error("Error deleting report:", error);

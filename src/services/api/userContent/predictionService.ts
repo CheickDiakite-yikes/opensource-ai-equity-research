@@ -16,30 +16,16 @@ export const savePricePrediction = async (
   try {
     console.log("Starting savePricePrediction for:", symbol);
     
-    // Get the current user ID directly
-    const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+    // Get the current user ID
+    const userId = await getUserId();
     
-    if (sessionError) {
-      console.error("Session error:", sessionError);
-      toast.error("Authentication error: " + sessionError.message);
-      return null;
-    }
-    
-    if (!sessionData.session) {
-      console.error("No active session found");
+    if (!userId) {
+      console.error("No user ID found");
       toast.error("You must be signed in to save predictions");
       return null;
     }
     
-    const userId = sessionData.session.user.id;
-    
-    if (!userId) {
-      console.error("No user ID found in active session");
-      toast.error("Authentication error: Cannot identify user");
-      return null;
-    }
-    
-    console.log("Found user ID:", userId);
+    console.log("Using user ID:", userId);
 
     // Count existing predictions
     const currentCount = await countUserItems("user_price_predictions", userId);
@@ -55,7 +41,7 @@ export const savePricePrediction = async (
       }
     }
 
-    // Now, insert the new prediction - removed ON CONFLICT clause
+    // Insert the new prediction
     console.log("Inserting prediction for user:", userId);
     
     const { data, error } = await supabase
@@ -97,23 +83,11 @@ export const getUserPricePredictions = async () => {
   try {
     console.log("Getting user price predictions");
     
-    // Get the current session
-    const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
-    
-    if (sessionError) {
-      console.error("Session error:", sessionError);
-      return [];
-    }
-    
-    if (!sessionData.session) {
-      console.log("No active session found");
-      return [];
-    }
-    
-    const userId = sessionData.session.user.id;
+    // Get the current user ID
+    const userId = await getUserId();
     
     if (!userId) {
-      console.log("No user ID found in active session");
+      console.log("No user ID found");
       return [];
     }
 
@@ -149,25 +123,20 @@ export const getUserPricePredictions = async () => {
  */
 export const deletePricePrediction = async (predictionId: string): Promise<boolean> => {
   try {
-    // Get the current session
-    const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+    // Get the current user ID to ensure the user is authenticated
+    const userId = await getUserId();
     
-    if (sessionError) {
-      console.error("Session error:", sessionError);
-      toast.error("Authentication error: " + sessionError.message);
-      return false;
-    }
-    
-    if (!sessionData.session) {
-      console.error("No active session found");
-      toast.error("Authentication error. Please sign in again.");
+    if (!userId) {
+      console.error("No user ID found");
+      toast.error("You must be signed in to delete predictions");
       return false;
     }
     
     const { error } = await supabase
       .from("user_price_predictions")
       .delete()
-      .eq("id", predictionId);
+      .eq("id", predictionId)
+      .eq("user_id", userId); // Add this to ensure users can only delete their own predictions
 
     if (error) {
       console.error("Error deleting prediction:", error);
