@@ -49,7 +49,7 @@ export const savePricePrediction = async (
     console.log("Inserting prediction into database");
     console.log("Prediction data sample:", JSON.stringify(predictionData).substring(0, 200) + "...");
     
-    // Important - Explicitly include user_id in the insert to satisfy RLS policy
+    // Changed: Removed the ON CONFLICT clause since there's no unique constraint defined
     const { data, error } = await supabase
       .from("user_price_predictions")
       .insert({
