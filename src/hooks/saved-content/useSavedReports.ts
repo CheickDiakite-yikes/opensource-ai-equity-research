@@ -4,7 +4,7 @@ import {
   getUserResearchReports, 
   deleteResearchReport,
   saveResearchReport 
-} from "@/services/api/userContent/reportService";
+} from "@/services/api/userContent";
 import { ResearchReport } from "@/types/ai-analysis/reportTypes";
 import { useSavedContentBase } from "./useSavedContentBase";
 import { toast } from "sonner";
@@ -21,7 +21,16 @@ export interface SavedReport {
 
 export const useSavedReports = () => {
   const [reports, setReports] = useState<SavedReport[]>([]);
-  const { user, isLoading, setIsLoading, error, setError, checkUserLoggedIn } = useSavedContentBase();
+  const { 
+    user, 
+    isLoading, 
+    setIsLoading, 
+    isRefreshing,
+    setIsRefreshing,
+    error, 
+    setError, 
+    checkUserLoggedIn 
+  } = useSavedContentBase();
 
   const fetchReports = async () => {
     if (!checkUserLoggedIn()) {
@@ -39,15 +48,15 @@ export const useSavedReports = () => {
       // Enhanced debug logging
       console.log("Raw data from getUserResearchReports:", data);
       
-      if (!data || data.length === 0) {
+      if (data.length === 0) {
         console.log("No reports found for user");
         setReports([]);
         setIsLoading(false);
         return;
       }
       
-      // Handle data as any to avoid type issues
-      const convertedReports = (data as any[]).map(item => {
+      // Convert Json type to ResearchReport type with type assertion
+      const convertedReports = data.map(item => {
         console.log(`Processing report ${item.id}:`, {
           symbol: item.symbol,
           company_name: item.company_name,
@@ -63,15 +72,11 @@ export const useSavedReports = () => {
         }
         
         return {
-          id: item.id,
-          symbol: item.symbol,
-          company_name: item.company_name,
+          ...item,
           report_data: item.report_data as unknown as ResearchReport,
-          html_content: item.html_content || null,
-          created_at: item.created_at,
-          expires_at: item.expires_at
+          html_content: item.html_content || null
         };
-      });
+      }) as SavedReport[];
       
       // Debug
       console.log(`Fetched ${convertedReports.length} reports`);
@@ -94,25 +99,46 @@ export const useSavedReports = () => {
     if (success) {
       console.log("Report deleted successfully, updating state");
       setReports(prevReports => prevReports.filter(report => report.id !== reportId));
+      toast.success("Report deleted successfully");
     } else {
       console.error("Failed to delete report");
+      toast.error("Failed to delete report");
     }
     return success;
   };
 
   const saveReport = async (symbol: string, companyName: string, reportData: ResearchReport) => {
-    console.log("Saving report for:", symbol, companyName);
-    const reportId = await saveResearchReport(symbol, companyName, reportData);
-    console.log("Save result - report ID:", reportId);
-    
-    if (reportId) {
-      // Refresh reports list after saving
-      console.log("Report saved successfully, refreshing reports list");
-      await fetchReports();
-    } else {
-      console.error("Failed to save report - no ID returned");
+    if (!user) {
+      console.error("No user ID found when saving report");
+      toast.error("You must be signed in to save reports");
+      return null;
     }
-    return reportId;
+    
+    console.log("Saving report for:", symbol, companyName);
+    setIsRefreshing(true);
+    
+    try {
+      const reportId = await saveResearchReport(symbol, companyName, reportData);
+      console.log("Save result - report ID:", reportId);
+      
+      if (reportId) {
+        // Refresh reports list after saving
+        console.log("Report saved successfully, refreshing reports list");
+        toast.success("Research report saved successfully");
+        await fetchReports();
+        return reportId;
+      } else {
+        console.error("Failed to save report - no ID returned");
+        toast.error("Failed to save report");
+        return null;
+      }
+    } catch (err) {
+      console.error("Error in saveReport:", err);
+      toast.error("An unexpected error occurred while saving the report");
+      return null;
+    } finally {
+      setIsRefreshing(false);
+    }
   };
 
   // Fetch reports when the component mounts or user changes
@@ -121,5 +147,13 @@ export const useSavedReports = () => {
     fetchReports();
   }, [user]);
 
-  return { reports, isLoading, error, fetchReports, deleteReport, saveReport };
+  return { 
+    reports, 
+    isLoading, 
+    isRefreshing,
+    error, 
+    fetchReports, 
+    deleteReport, 
+    saveReport 
+  };
 };

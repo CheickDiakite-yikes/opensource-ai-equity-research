@@ -4,7 +4,7 @@ import { toast } from "sonner";
 import { ResearchReport } from "@/types/ai-analysis/reportTypes";
 import { Json } from "@/integrations/supabase/types";
 import { generateReportHTML } from "./htmlGenerator";
-import { getUserId, manageItemLimit } from "./baseService";
+import { getUserId, countUserItems, deleteOldestItems, MAX_SAVED_ITEMS } from "./baseService";
 
 /**
  * Save a research report for the current user
@@ -16,34 +16,30 @@ export const saveResearchReport = async (
 ): Promise<string | null> => {
   try {
     console.log("Starting saveResearchReport for:", symbol);
+    
+    // Get the current user ID
     const userId = await getUserId();
+    
     if (!userId) {
-      console.error("No user ID found when saving report");
+      console.error("No user ID found");
       toast.error("You must be signed in to save reports");
       return null;
     }
     
-    console.log("User ID:", userId);
+    console.log("Using user ID:", userId);
 
-    // First, count existing reports
-    const { count, error: countError } = await supabase
-      .from("user_research_reports")
-      .select("*", { count: "exact", head: true })
-      .eq("user_id", userId);
+    // Count existing reports
+    const currentCount = await countUserItems("user_research_reports", userId);
+    console.log("Current report count:", currentCount);
 
-    if (countError) {
-      console.error("Error counting reports:", countError);
-      toast.error("Failed to save report");
-      return null;
-    }
-
-    console.log("Current report count:", count);
-
-    // Manage item limit
-    const limitManaged = await manageItemLimit("user_research_reports", userId, count);
-    if (!limitManaged) {
-      console.error("Failed to manage item limit");
-      return null;
+    // Delete oldest reports if over limit
+    if (currentCount >= MAX_SAVED_ITEMS) {
+      const deleted = await deleteOldestItems("user_research_reports", userId, currentCount);
+      if (!deleted) {
+        console.error("Failed to delete oldest reports");
+        toast.error("Failed to save report - couldn't manage report limit");
+        return null;
+      }
     }
 
     // Generate HTML version of the report
@@ -71,40 +67,77 @@ export const saveResearchReport = async (
       console.error("Error generating HTML content:", htmlError);
     }
 
-    // Now, insert the new report - use type cast to Json
-    console.log("Inserting report into database with HTML:", htmlContent ? "YES" : "NO");
-    console.log("Report data sample:", JSON.stringify(reportData).substring(0, 200) + "...");
-    
-    const result = await supabase
+    // First, check if a report with this user_id and symbol already exists
+    console.log("Checking for existing report...");
+    const { data: existingData, error: existingError } = await supabase
       .from("user_research_reports")
-      .insert({
-        user_id: userId,
-        symbol,
-        company_name: companyName,
-        report_data: reportData as unknown as Json,
-        html_content: htmlContent
-      })
-      .select("id, html_content");
+      .select("id")
+      .eq("user_id", userId)
+      .eq("symbol", symbol)
+      .maybeSingle();
 
-    if (result.error) {
-      console.error("Error saving report:", result.error);
-      toast.error("Failed to save report: " + result.error.message);
+    if (existingError) {
+      console.error("Error checking for existing report:", existingError);
+      toast.error("Failed to save report: " + existingError.message);
       return null;
     }
 
-    // Using type assertion to handle data safely
-    const data = result.data as any[];
-    
-    if (!data || data.length === 0) {
+    let result;
+
+    if (existingData) {
+      // Update existing report
+      console.log("Updating existing report ID:", existingData.id);
+      const { data, error } = await supabase
+        .from("user_research_reports")
+        .update({
+          company_name: companyName,
+          report_data: reportData as unknown as Json,
+          html_content: htmlContent,
+          updated_at: new Date().toISOString()
+        })
+        .eq("id", existingData.id)
+        .select("id, html_content");
+
+      if (error) {
+        console.error("Error updating report:", error);
+        toast.error("Failed to update report: " + error.message);
+        return null;
+      }
+      
+      result = data;
+    } else {
+      // Insert new report
+      console.log("Inserting new report for user:", userId);
+      const { data, error } = await supabase
+        .from("user_research_reports")
+        .insert({
+          user_id: userId,
+          symbol,
+          company_name: companyName,
+          report_data: reportData as unknown as Json,
+          html_content: htmlContent
+        })
+        .select("id, html_content");
+
+      if (error) {
+        console.error("Error saving report:", error);
+        toast.error("Failed to save report: " + error.message);
+        return null;
+      }
+      
+      result = data;
+    }
+
+    if (!result || result.length === 0) {
       console.error("No data returned after saving report");
       toast.error("Failed to save report - no data returned");
       return null;
     }
 
-    console.log("Report saved successfully. ID:", data[0].id, "HTML content:", data[0].html_content ? "YES" : "NO");
+    console.log("Report saved successfully. ID:", result[0].id, "HTML content:", result[0].html_content ? "YES" : "NO");
     toast.success("Research report saved successfully");
-    return data[0].id;
-  } catch (error: any) {
+    return result[0].id;
+  } catch (error) {
     console.error("Error in saveResearchReport:", error);
     toast.error("An unexpected error occurred");
     return null;
@@ -117,36 +150,36 @@ export const saveResearchReport = async (
 export const getUserResearchReports = async () => {
   try {
     console.log("Getting user research reports");
+    
+    // Get the current user ID
     const userId = await getUserId();
+    
     if (!userId) {
-      console.log("No user ID found when getting reports");
+      console.log("No user ID found");
       return [];
     }
 
     console.log("Fetching reports for user:", userId);
-    const result = await supabase
+    const { data, error } = await supabase
       .from("user_research_reports")
       .select("*")
       .eq("user_id", userId)
       .order("created_at", { ascending: false });
 
-    if (result.error) {
-      console.error("Error fetching user reports:", result.error);
-      toast.error("Failed to load saved reports: " + result.error.message);
+    if (error) {
+      console.error("Error fetching user reports:", error);
+      toast.error("Failed to load saved reports: " + error.message);
       return [];
     }
 
-    // Using type assertion to handle the data
-    const data = result.data as any[];
-    
     if (!data || data.length === 0) {
       console.log("No reports found for user");
       return [];
     }
 
     console.log(`Found ${data.length} reports for user`);
-    return data;
-  } catch (error: any) {
+    return data || [];
+  } catch (error) {
     console.error("Error in getUserResearchReports:", error);
     toast.error("An unexpected error occurred");
     return [];
@@ -158,10 +191,20 @@ export const getUserResearchReports = async () => {
  */
 export const deleteResearchReport = async (reportId: string): Promise<boolean> => {
   try {
+    // Get the current user ID to ensure the user is authenticated
+    const userId = await getUserId();
+    
+    if (!userId) {
+      console.error("No user ID found");
+      toast.error("You must be signed in to delete reports");
+      return false;
+    }
+    
     const { error } = await supabase
       .from("user_research_reports")
       .delete()
-      .eq("id", reportId);
+      .eq("id", reportId)
+      .eq("user_id", userId); // Ensure users can only delete their own reports
 
     if (error) {
       console.error("Error deleting report:", error);
@@ -171,7 +214,7 @@ export const deleteResearchReport = async (reportId: string): Promise<boolean> =
 
     toast.success("Report deleted successfully");
     return true;
-  } catch (error: any) {
+  } catch (error) {
     console.error("Error in deleteResearchReport:", error);
     toast.error("An unexpected error occurred");
     return false;

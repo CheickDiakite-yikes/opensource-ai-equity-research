@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
@@ -12,7 +11,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { User, Settings, LogOut, ChevronDown, Bookmark } from "lucide-react";
+import { User, Settings, LogOut, ChevronDown, FileText } from "lucide-react";
 
 export default function UserMenu() {
   const { user, profile, signOut } = useAuth();
@@ -60,9 +59,9 @@ export default function UserMenu() {
           </Link>
         </DropdownMenuItem>
         <DropdownMenuItem asChild>
-          <Link to="/saved-content" className="cursor-pointer flex w-full items-center">
-            <Bookmark className="mr-2 h-4 w-4" />
-            <span>Saved Content</span>
+          <Link to="/my-docs" className="cursor-pointer flex w-full items-center">
+            <FileText className="mr-2 h-4 w-4" />
+            <span>My Docs</span>
           </Link>
         </DropdownMenuItem>
         <DropdownMenuItem asChild>

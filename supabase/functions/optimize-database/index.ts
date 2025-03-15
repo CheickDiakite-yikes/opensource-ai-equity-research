@@ -92,18 +92,30 @@ serve(async (req) => {
           RETURNS BOOLEAN
           LANGUAGE plpgsql
           AS $$
+          DECLARE
+            existing_id INTEGER;
           BEGIN
-            -- Insert or update the cache entry
-            INSERT INTO public.api_cache (cache_key, data, expires_at)
-            VALUES (
-              p_cache_key, 
-              p_data, 
-              NOW() + (p_ttl_minutes * INTERVAL '1 minute')
-            )
-            ON CONFLICT (cache_key) 
-            DO UPDATE SET 
-              data = p_data, 
-              expires_at = NOW() + (p_ttl_minutes * INTERVAL '1 minute');
+            -- Check if entry already exists
+            SELECT id INTO existing_id 
+            FROM public.api_cache
+            WHERE cache_key = p_cache_key;
+            
+            IF existing_id IS NOT NULL THEN
+              -- Update existing entry
+              UPDATE public.api_cache
+              SET 
+                data = p_data,
+                expires_at = NOW() + (p_ttl_minutes * INTERVAL '1 minute')
+              WHERE id = existing_id;
+            ELSE
+              -- Insert new entry
+              INSERT INTO public.api_cache (cache_key, data, expires_at)
+              VALUES (
+                p_cache_key, 
+                p_data, 
+                NOW() + (p_ttl_minutes * INTERVAL '1 minute')
+              );
+            END IF;
               
             RETURN TRUE;
           END;

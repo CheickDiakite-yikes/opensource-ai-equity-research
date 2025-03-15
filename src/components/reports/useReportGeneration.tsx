@@ -12,8 +12,10 @@ import type { StockQuote } from "@/types/profile/companyTypes";
 import { StockPrediction } from "@/types/ai-analysis/predictionTypes";
 
 import type { ReportData } from "./useResearchReportData";
-import { useAuth } from "@/hooks/auth/useAuth"; // Updated import
+import { useAuth } from "@/contexts/AuthContext";
 import { incrementUsedPredictions } from "@/services/api/userContent/freePredictionsService";
+import { useSavedReports } from "@/hooks/saved-content/useSavedReports";
+import { useSavedPredictions } from "@/hooks/saved-content/useSavedPredictions";
 
 export const useReportGeneration = (symbol: string, data: ReportData) => {
   const [isGenerating, setIsGenerating] = useState(false);
@@ -23,6 +25,8 @@ export const useReportGeneration = (symbol: string, data: ReportData) => {
   const [reportType, setReportType] = useState<string>("comprehensive");
   const [generationError, setGenerationError] = useState<string | null>(null);
   const { user } = useAuth();
+  const { saveReport } = useSavedReports();
+  const { savePrediction } = useSavedPredictions();
 
   const handleGenerateReport = async () => {
     try {
@@ -117,6 +121,10 @@ export const useReportGeneration = (symbol: string, data: ReportData) => {
       
       setReport(generatedReport);
       
+      // Auto-save the report
+      console.log("Auto-saving newly generated report");
+      await saveReport(symbol, data.profile.companyName, generatedReport);
+      
       toast({
         title: "AI Report Generated",
         description: `Research report for ${data.profile.companyName} successfully generated with ${generatedReport.sections.length} sections.`,
@@ -174,8 +182,12 @@ export const useReportGeneration = (symbol: string, data: ReportData) => {
       
       setPrediction(prediction);
       
-      // If user is not authenticated, increment the used predictions count
-      if (!user) {
+      // Auto-save prediction if user is authenticated
+      if (user) {
+        console.log("Auto-saving newly generated prediction");
+        await savePrediction(symbol, data.profile.companyName, prediction);
+      } else {
+        // If user is not authenticated, increment the used predictions count
         const usedCount = incrementUsedPredictions();
         console.log(`Anonymous user has used ${usedCount} predictions`);
       }
