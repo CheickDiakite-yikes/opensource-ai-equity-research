@@ -1,151 +1,96 @@
 
-import { useState, useEffect } from "react";
-import { 
-  getUserPricePredictions,
-  deletePricePrediction,
-  savePricePrediction 
-} from "@/services/api/userContent";
-import { StockPrediction } from "@/types/ai-analysis/predictionTypes";
-import { useSavedContentBase } from "./useSavedContentBase";
+import { useState, useCallback } from "react";
 import { toast } from "sonner";
+import { useSavedContentBase } from "./useSavedContentBase";
+import { StockPrediction } from "@/types/ai-analysis/predictionTypes";
+import { savePricePrediction, getUserPricePredictions, deletePricePrediction } from "@/services/api/userContent";
 
-export interface SavedPrediction {
+export type SavedPrediction = {
   id: string;
   symbol: string;
   company_name: string;
-  prediction_data: StockPrediction;
   created_at: string;
-  expires_at: string;
-}
+  prediction_data: StockPrediction;
+  user_id: string;
+  updated_at?: string;
+  expires_at?: string | null;
+};
 
 export const useSavedPredictions = () => {
   const [predictions, setPredictions] = useState<SavedPrediction[]>([]);
-  const { 
-    user, 
-    isLoading, 
-    setIsLoading, 
-    isRefreshing,
-    setIsRefreshing,
-    error, 
-    setError, 
-    checkUserLoggedIn 
-  } = useSavedContentBase();
+  const { user, isLoading, setIsLoading, isRefreshing, setIsRefreshing, error, setError, checkUserLoggedIn } = useSavedContentBase();
 
-  const fetchPredictions = async () => {
-    if (!checkUserLoggedIn()) {
-      setPredictions([]);
-      return;
-    }
+  const fetchPredictions = useCallback(async () => {
+    const isLoggedIn = await checkUserLoggedIn();
+    if (!isLoggedIn) return;
 
-    console.log("Fetching predictions for user:", user.id);
-    setIsLoading(true);
-    setError(null);
-    
     try {
-      const data = await getUserPricePredictions();
-      
-      console.log("Raw data from getUserPricePredictions:", data);
-      
-      if (data.length === 0) {
-        console.log("No predictions found for user");
-        setPredictions([]);
-        setIsLoading(false);
-        return;
-      }
-      
-      // Convert Json type to StockPrediction type with type assertion
-      const convertedPredictions = data.map(item => {
-        console.log(`Processing prediction ${item.id}:`, {
-          symbol: item.symbol,
-          company_name: item.company_name,
-          created_at: item.created_at,
-          expires_at: item.expires_at
-        });
-        
-        // Validate prediction_data
-        if (!item.prediction_data) {
-          console.error(`Prediction ${item.id} has no prediction_data!`);
-        }
-        
-        return {
-          ...item,
-          prediction_data: item.prediction_data as unknown as StockPrediction
-        };
-      }) as SavedPrediction[];
-      
-      console.log(`Fetched ${convertedPredictions.length} predictions`);
-      setPredictions(convertedPredictions);
-    } catch (err) {
-      console.error("Error fetching saved predictions:", err);
-      setError("Failed to load saved predictions");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const deletePrediction = async (predictionId: string) => {
-    console.log("Deleting prediction:", predictionId);
-    const success = await deletePricePrediction(predictionId);
-    if (success) {
-      console.log("Prediction deleted successfully, updating state");
-      setPredictions(prevPredictions => 
-        prevPredictions.filter(prediction => prediction.id !== predictionId)
-      );
-      toast.success("Prediction deleted successfully");
-    } else {
-      console.error("Failed to delete prediction");
-      toast.error("Failed to delete prediction");
-    }
-    return success;
-  };
-
-  const savePrediction = async (symbol: string, companyName: string, predictionData: StockPrediction) => {
-    if (!user) {
-      console.error("No user ID found when saving prediction");
-      toast.error("You must be signed in to save predictions");
-      return null;
-    }
-    
-    console.log("Saving prediction for:", symbol, companyName);
-    setIsRefreshing(true);
-    
-    try {
-      const predictionId = await savePricePrediction(symbol, companyName, predictionData);
-      console.log("Save result - prediction ID:", predictionId);
-      
-      if (predictionId) {
-        // Refresh predictions list after saving
-        console.log("Prediction saved successfully, refreshing predictions list");
-        toast.success("Price prediction saved successfully");
-        await fetchPredictions();
-        return predictionId;
-      } else {
-        console.error("Failed to save prediction - no ID returned");
-        toast.error("Failed to save prediction");
-        return null;
-      }
-    } catch (err) {
-      console.error("Error in savePrediction:", err);
-      toast.error("An unexpected error occurred while saving the prediction");
-      return null;
+      setIsRefreshing(true);
+      const predictionsList = await getUserPricePredictions();
+      console.log(`Fetched ${predictionsList.length} predictions`);
+      setPredictions(predictionsList as unknown as SavedPrediction[]);
+    } catch (err: any) {
+      console.error("Error fetching predictions:", err);
+      setError(err.message || "Failed to load saved predictions");
+      toast.error("Could not load your saved predictions");
     } finally {
       setIsRefreshing(false);
     }
-  };
+  }, [checkUserLoggedIn, setIsRefreshing, setError]);
 
-  // Fetch predictions when the component mounts or user changes
-  useEffect(() => {
-    console.log("useSavedPredictions useEffect - fetching predictions");
-    fetchPredictions();
-  }, [user]);
+  const savePrediction = useCallback(async (
+    symbol: string,
+    companyName: string,
+    predictionData: StockPrediction
+  ): Promise<string | null> => {
+    const isLoggedIn = await checkUserLoggedIn();
+    if (!isLoggedIn) return null;
 
-  return { 
-    predictions, 
-    isLoading, 
+    try {
+      setIsLoading(true);
+      const predictionId = await savePricePrediction(symbol, companyName, predictionData);
+      if (predictionId) {
+        toast.success("Prediction saved successfully");
+        fetchPredictions();
+      }
+      return predictionId;
+    } catch (err: any) {
+      console.error("Error saving prediction:", err);
+      toast.error("Could not save prediction: " + (err.message || "Unknown error"));
+      return null;
+    } finally {
+      setIsLoading(false);
+    }
+  }, [checkUserLoggedIn, fetchPredictions, setIsLoading]);
+
+  const deletePrediction = useCallback(async (predictionId: string): Promise<boolean> => {
+    const isLoggedIn = await checkUserLoggedIn();
+    if (!isLoggedIn) return false;
+
+    try {
+      setIsLoading(true);
+      const success = await deletePricePrediction(predictionId);
+      if (success) {
+        toast.success("Prediction deleted successfully");
+        setPredictions(prevPredictions => prevPredictions.filter(p => p.id !== predictionId));
+      }
+      return success;
+    } catch (err: any) {
+      console.error("Error deleting prediction:", err);
+      toast.error("Could not delete prediction: " + (err.message || "Unknown error"));
+      return false;
+    } finally {
+      setIsLoading(false);
+    }
+  }, [checkUserLoggedIn, setIsLoading]);
+
+  return {
+    predictions,
+    isLoading,
     isRefreshing,
-    error, 
-    fetchPredictions, 
-    deletePrediction, 
-    savePrediction 
+    error,
+    fetchPredictions,
+    savePrediction,
+    deletePrediction
   };
 };

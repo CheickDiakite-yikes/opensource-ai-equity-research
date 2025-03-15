@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertTriangle, Info, Lock } from "lucide-react";
@@ -7,11 +8,12 @@ import { StockPrediction } from "@/types/ai-analysis/predictionTypes";
 import ReportGeneratorForm from "./ReportGeneratorForm";
 import ReportTabs from "./ReportTabs";
 import { toast } from "sonner";
-import { useAuth } from "@/contexts/AuthContext";
-import { useSavedReports, useSavedPredictions } from "@/hooks/useSavedContent";
+import { useAuth } from "@/hooks/auth/useAuth";
+import { useSavedReports, useSavedPredictions } from "@/hooks/saved-content";
 import { useNavigate } from "react-router-dom";
 import { getRemainingPredictions, hasReachedFreeLimit } from "@/services/api/userContent/freePredictionsService";
 import { supabase } from "@/integrations/supabase/client";
+import ErrorDisplay from "./ErrorDisplay";
 
 interface ResearchReportContentProps {
   data: any;
@@ -236,10 +238,6 @@ const ResearchReportContent = ({
         isGenerating={isGenerating}
         isPredicting={isPredicting}
         hasData={hasStockData}
-        onSaveReport={report ? handleSaveReport : undefined}
-        onSavePrediction={prediction ? handleSavePrediction : undefined}
-        canSaveReport={!!report}
-        canSavePrediction={!!prediction}
       />
 
       {generationError && (

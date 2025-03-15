@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { toast } from "@/components/ui/use-toast";
 import { 
@@ -12,7 +11,7 @@ import type { StockQuote } from "@/types/profile/companyTypes";
 import { StockPrediction } from "@/types/ai-analysis/predictionTypes";
 
 import type { ReportData } from "./useResearchReportData";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth } from "@/hooks/auth/useAuth";
 import { incrementUsedPredictions } from "@/services/api/userContent/freePredictionsService";
 import { useSavedReports } from "@/hooks/saved-content/useSavedReports";
 import { useSavedPredictions } from "@/hooks/saved-content/useSavedPredictions";
@@ -207,7 +206,7 @@ export const useReportGeneration = (symbol: string, data: ReportData) => {
       setIsPredicting(false);
     }
   };
-
+  
   return {
     isGenerating,
     isPredicting,
