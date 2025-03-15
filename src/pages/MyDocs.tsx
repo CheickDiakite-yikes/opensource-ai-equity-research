@@ -2,7 +2,6 @@
 import React, { useState, useEffect } from "react";
 import { Navigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -11,157 +10,38 @@ import { AnimatePresence, motion } from "framer-motion";
 import { FileText, Trash2, Download, BarChart, Clock, AlertTriangle, Loader2 } from "lucide-react";
 import AppHeader from "@/components/layout/AppHeader";
 import { featuredSymbols } from "@/constants/featuredSymbols";
-import { ResearchReport } from "@/types/ai-analysis/reportTypes";
-import { StockPrediction } from "@/types/ai-analysis/predictionTypes";
+import { useSavedContentPage } from "@/hooks/saved-content/useSavedContentPage";
 
 const MyDocs = () => {
   const { user, isLoading: authLoading } = useAuth();
   const [activeTab, setActiveTab] = useState("reports");
-  const [reports, setReports] = useState<any[]>([]);
-  const [predictions, setPredictions] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [selectedItem, setSelectedItem] = useState<any>(null);
+  
+  const {
+    isLoading,
+    isRefreshing,
+    error,
+    reports,
+    predictions,
+    selectedReport,
+    selectedPrediction,
+    handleSelectReport,
+    handleSelectPrediction,
+    handleDeleteReport,
+    handleDeletePrediction,
+    handleDownloadHtml,
+    handleRefresh
+  } = useSavedContentPage();
 
   // If user is not logged in, redirect to login page
   if (!user && !authLoading) {
     return <Navigate to="/auth" />;
   }
 
-  useEffect(() => {
-    if (user) {
-      fetchUserDocs();
-    }
-  }, [user]);
-
-  const fetchUserDocs = async () => {
-    setIsLoading(true);
-    try {
-      // Fetch reports
-      const { data: reportsData, error: reportsError } = await supabase
-        .from('user_research_reports')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (reportsError) throw reportsError;
-      setReports(reportsData || []);
-
-      // Fetch predictions
-      const { data: predictionsData, error: predictionsError } = await supabase
-        .from('user_price_predictions')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (predictionsError) throw predictionsError;
-      setPredictions(predictionsData || []);
-
-      // Set initial selected item if available
-      if (reportsData && reportsData.length > 0) {
-        setSelectedItem(reportsData[0]);
-      } else if (predictionsData && predictionsData.length > 0 && activeTab === "predictions") {
-        setSelectedItem(predictionsData[0]);
-      }
-    } catch (error) {
-      console.error("Error fetching documents:", error);
-      toast.error("Failed to load your documents");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleDeleteItem = async (id: string, type: 'report' | 'prediction') => {
-    try {
-      const table = type === 'report' ? 'user_research_reports' : 'user_price_predictions';
-      const { error } = await supabase
-        .from(table)
-        .delete()
-        .eq('id', id);
-
-      if (error) throw error;
-
-      if (type === 'report') {
-        setReports(reports.filter(report => report.id !== id));
-        if (selectedItem && selectedItem.id === id) {
-          setSelectedItem(reports.length > 1 ? reports.find(r => r.id !== id) : null);
-        }
-      } else {
-        setPredictions(predictions.filter(prediction => prediction.id !== id));
-        if (selectedItem && selectedItem.id === id) {
-          setSelectedItem(predictions.length > 1 ? predictions.find(p => p.id !== id) : null);
-        }
-      }
-
-      toast.success(`${type === 'report' ? 'Report' : 'Prediction'} deleted successfully`);
-    } catch (error) {
-      console.error(`Error deleting ${type}:`, error);
-      toast.error(`Failed to delete ${type}`);
-    }
-  };
-
-  const handleDownloadHtml = async (report: any) => {
-    try {
-      // Basic HTML template for reports
-      const htmlContent = `
-        <!DOCTYPE html>
-        <html lang="en">
-        <head>
-          <meta charset="UTF-8">
-          <meta name="viewport" content="width=device-width, initial-scale=1.0">
-          <title>Research Report: ${report.symbol}</title>
-          <style>
-            body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
-            h1, h2, h3 { color: #2563eb; }
-            .summary { background: #f3f4f6; padding: 15px; border-radius: 5px; }
-            .section { margin-bottom: 20px; }
-            .recommendation { font-weight: bold; color: #047857; }
-            footer { margin-top: 40px; font-size: 0.8em; color: #6b7280; }
-          </style>
-        </head>
-        <body>
-          <h1>${report.symbol} - Research Report</h1>
-          <p><strong>Company:</strong> ${report.company_name}</p>
-          <p><strong>Date:</strong> ${new Date(report.created_at).toLocaleDateString()}</p>
-          
-          <div class="summary">
-            <h2>Executive Summary</h2>
-            <p>${report.report_data.summary}</p>
-            <p class="recommendation">Recommendation: ${report.report_data.recommendation}</p>
-            <p>Target Price: ${report.report_data.targetPrice}</p>
-          </div>
-          
-          ${report.report_data.sections.map((section: any) => `
-            <div class="section">
-              <h3>${section.title}</h3>
-              <p>${section.content}</p>
-            </div>
-          `).join('')}
-          
-          <footer>
-            <p>Generated using AI analysis. For informational purposes only.</p>
-            <p>© ${new Date().getFullYear()} Stock Research AI</p>
-          </footer>
-        </body>
-        </html>
-      `;
-
-      // Create blob and download
-      const blob = new Blob([htmlContent], { type: 'text/html' });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `${report.symbol}_research_report.html`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      
-      toast.success("Report downloaded successfully");
-    } catch (error) {
-      console.error("Error downloading report:", error);
-      toast.error("Failed to download report");
-    }
-  };
-
   const renderListItem = (item: any, type: 'report' | 'prediction') => {
-    const isSelected = selectedItem && selectedItem.id === item.id;
+    const isSelected = type === 'report' 
+      ? selectedReport && selectedReport.id === item.id
+      : selectedPrediction && selectedPrediction.id === item.id;
+    
     const date = new Date(item.created_at).toLocaleDateString();
     
     return (
@@ -173,7 +53,7 @@ const MyDocs = () => {
         className={`border rounded-lg p-4 mb-3 cursor-pointer transition-all ${
           isSelected ? "border-primary bg-primary/5" : "hover:border-primary/50"
         }`}
-        onClick={() => setSelectedItem(item)}
+        onClick={() => type === 'report' ? handleSelectReport(item) : handleSelectPrediction(item)}
       >
         <div className="flex justify-between items-center">
           <div className="flex items-center gap-3">
@@ -209,7 +89,7 @@ const MyDocs = () => {
   );
 
   const renderDetailView = () => {
-    if (!selectedItem) {
+    if (!selectedReport && !selectedPrediction) {
       return (
         <div className="flex flex-col items-center justify-center h-full text-center">
           <AlertTriangle className="h-16 w-16 text-muted-foreground/30 mb-4" />
@@ -219,11 +99,8 @@ const MyDocs = () => {
       );
     }
 
-    const isReport = 'report_data' in selectedItem;
-    const content = isReport ? selectedItem.report_data : selectedItem.prediction_data;
-
-    if (isReport) {
-      const report = content as ResearchReport;
+    if (selectedReport) {
+      const report = selectedReport.report_data;
       return (
         <div className="space-y-6">
           <div className="flex justify-between items-start">
@@ -242,7 +119,7 @@ const MyDocs = () => {
               <Button 
                 variant="outline" 
                 size="sm" 
-                onClick={() => handleDownloadHtml(selectedItem)}
+                onClick={() => handleDownloadHtml(selectedReport)}
               >
                 <Download className="h-4 w-4 mr-2" />
                 Download
@@ -250,7 +127,7 @@ const MyDocs = () => {
               <Button 
                 variant="destructive" 
                 size="sm"
-                onClick={() => handleDeleteItem(selectedItem.id, 'report')}
+                onClick={(e) => handleDeleteReport(selectedReport.id, e)}
               >
                 <Trash2 className="h-4 w-4 mr-2" />
                 Delete
@@ -279,8 +156,8 @@ const MyDocs = () => {
           ))}
         </div>
       );
-    } else {
-      const prediction = content as StockPrediction;
+    } else if (selectedPrediction) {
+      const prediction = selectedPrediction.prediction_data;
       return (
         <div className="space-y-6">
           <div className="flex justify-between items-start">
@@ -293,7 +170,7 @@ const MyDocs = () => {
             <Button 
               variant="destructive" 
               size="sm" 
-              onClick={() => handleDeleteItem(selectedItem.id, 'prediction')}
+              onClick={(e) => handleDeletePrediction(selectedPrediction.id, e)}
             >
               <Trash2 className="h-4 w-4 mr-2" />
               Delete
