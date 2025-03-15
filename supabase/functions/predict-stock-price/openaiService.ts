@@ -37,12 +37,19 @@ ${historyContext}
 
 INDUSTRY CONTEXT: ${data.industry || 'Technology'} stocks typically have ${getIndustryGrowthContext(data.industry || 'Technology')}
 
-YOUR PREDICTIONS SHOULD REFLECT:
-- Each company is unique - avoid using similar growth rates for different companies
-- Market conditions and industry trends vary significantly by sector
-- Growth rates typically increase with time horizon (1-year > 6-month > 3-month > 1-month)
-- Consider volatility - high-beta stocks can have larger price swings
-- The larger the company by market cap, the less extreme the growth predictions should be`;
+YOUR RESPONSE FORMAT MUST BE JSON:
+{
+  "predictedPrice": {
+    "oneMonth": number,
+    "threeMonths": number,
+    "sixMonths": number,
+    "oneYear": number
+  },
+  "sentimentAnalysis": string,
+  "confidenceLevel": number,
+  "keyDrivers": [string, string, string],
+  "risks": [string, string, string]
+}`;
 
   const userPrompt = `Please analyze these data points for ${data.symbol} and provide detailed price predictions:
 
@@ -57,7 +64,7 @@ ${JSON.stringify(data.financialSummary, null, 2)}
 TECHNICAL INDICATORS:
 ${JSON.stringify(data.technicalIndicators, null, 2)}
 
-NEWS SENTIMENT:
+NEWS SUMMARY:
 ${JSON.stringify(data.newsSummary, null, 2)}
 
 ${data.predictionHistory && data.predictionHistory.length > 0 ? 
@@ -65,18 +72,21 @@ ${data.predictionHistory && data.predictionHistory.length > 0 ?
 ${formatHistoricalPredictions(data.predictionHistory)}` : 
 'NO HISTORICAL PREDICTIONS AVAILABLE'}
 
-Based on this analysis, provide:
-1. Realistic price predictions for 1 month, 3 months, 6 months, and 1 year
-2. Sentiment analysis (bullish, neutral, or bearish with explanation)
-3. Confidence level (0-100%)
-4. 3-5 key growth drivers specific to this company
-5. 3-5 potential risks specific to this company
+IMPORTANT: Return your response in valid JSON format with these fields:
+{
+  "predictedPrice": {
+    "oneMonth": number,
+    "threeMonths": number,
+    "sixMonths": number,
+    "oneYear": number
+  },
+  "sentimentAnalysis": string,
+  "confidenceLevel": number,
+  "keyDrivers": [string, string, string],
+  "risks": [string, string, string]
+}
 
-MOST IMPORTANT: Your predictions MUST be different from the current price - showing either growth or decline
-based on your analysis of the data. Different companies should have different growth trajectories based on 
-their unique data profile and industry characteristics.
-
-The current price is $${data.currentPrice.toFixed(2)} - each of your predictions must differ from this value.`;
+DO NOT include any explanations or text outside of the JSON object. The output must be valid parseable JSON.`;
 
   try {
     const openAIApiKey = Deno.env.get("OPENAI_API_KEY") || "";
@@ -90,7 +100,7 @@ The current price is $${data.currentPrice.toFixed(2)} - each of your predictions
     const maxTokens = quickMode ? 1000 : 1500; 
     
     // Lower temperature for more consistent predictions
-    const temperature = 0.7; // Decreased from 0.95 to get more consistent results
+    const temperature = 0.5; // Decreased from 0.7 to get more consistent results
     
     console.log(`Generating prediction for ${data.symbol} using ${modelToUse} model (quickMode: ${quickMode})`);
     
@@ -118,7 +128,8 @@ The current price is $${data.currentPrice.toFixed(2)} - each of your predictions
           { role: "user", content: userPrompt }
         ],
         temperature: temperature,
-        max_tokens: maxTokens
+        max_tokens: maxTokens,
+        response_format: { type: "json_object" } // Explicitly request JSON format
       })
     });
 
@@ -137,7 +148,10 @@ The current price is $${data.currentPrice.toFixed(2)} - each of your predictions
       return getConsistentPrediction(data);
     }
 
+    console.log(`Raw OpenAI response for ${data.symbol}:`, content.substring(0, 200) + "...");
+    
     try {
+      // Use the enhanced JSON extraction function
       const predictionData = extractJSONFromText(content);
       
       // Check if prediction is valid and sufficiently different from current price
