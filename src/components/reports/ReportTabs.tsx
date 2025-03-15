@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { FileText, TrendingUp, Info, Download, ArrowUp, ArrowDown } from "lucide-react";
@@ -20,19 +19,19 @@ const ReportTabs: React.FC<ReportTabsProps> = ({ report, prediction }) => {
   
   if (!report && !prediction) {
     return (
-      <div className="flex flex-col items-center justify-center p-8 text-center rounded-lg border border-dashed border-muted-foreground/30 bg-gradient-to-b from-card/80 to-background h-80">
+      <div className="flex flex-col items-center justify-center p-8 text-center rounded-lg border border-dashed border-muted-foreground/30 bg-gradient-to-b from-card/80 to-background">
         <motion.div 
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
-          className="flex flex-col items-center max-w-md"
+          className="flex flex-col items-center max-w-md py-10"
         >
           <div className="flex items-center justify-center w-16 h-16 mb-5 rounded-full bg-primary/10">
             <Info className="h-8 w-8 text-primary" />
           </div>
           
           <h3 className="text-xl font-medium mb-3">No Reports Generated</h3>
-          <p className="text-muted-foreground max-w-md mx-auto mb-6">
+          <p className="text-muted-foreground max-w-md mx-auto mb-8 px-4">
             Generate a research report or price prediction to see detailed analysis here.
             These AI-powered reports provide comprehensive insights into the stock's fundamentals and future prospects.
           </p>
@@ -54,6 +53,7 @@ const ReportTabs: React.FC<ReportTabsProps> = ({ report, prediction }) => {
       </div>
     );
   }
+  
   
   return (
     <Tabs defaultValue={report ? "report" : "prediction"} className="w-full">

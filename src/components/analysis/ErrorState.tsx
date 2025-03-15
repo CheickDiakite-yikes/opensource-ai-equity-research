@@ -26,10 +26,10 @@ const ErrorState: React.FC<ErrorStateProps> = ({
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.3 }}
-        className="text-center py-8"
+        className="text-center py-10"
       >
-        <div className="flex justify-center mb-4">
-          <div className="flex items-center justify-center w-16 h-16 rounded-full bg-amber-500/10 mb-2">
+        <div className="flex justify-center mb-6">
+          <div className="flex items-center justify-center w-16 h-16 rounded-full bg-amber-500/10">
             <AlertTriangle className="h-8 w-8 text-amber-500" />
           </div>
         </div>
@@ -38,7 +38,7 @@ const ErrorState: React.FC<ErrorStateProps> = ({
             ? "No Financial Data Available" 
             : `${dataSource === "fallback" ? "Alternative" : "Primary"} Data Source Unavailable`}
         </h3>
-        <p className="text-muted-foreground mb-6">
+        <p className="text-muted-foreground mb-6 px-4">
           {message || `We couldn't load the financial data required for analysis. This may be due to:`}
         </p>
         <ul className="text-sm text-muted-foreground bg-muted p-4 rounded-md mb-6 mx-auto max-w-lg text-left">
