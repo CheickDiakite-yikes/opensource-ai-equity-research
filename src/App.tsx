@@ -11,7 +11,7 @@ import { useEffect } from "react";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import Profile from "./pages/Profile";
-import MyDocs from "./pages/MyDocs";
+import SavedContent from "./pages/SavedContent";
 import NotFound from "./pages/NotFound";
 import { Starfield } from "./components/ui/starfield";
 
@@ -63,9 +63,7 @@ const App = () => (
               <Route path="/" element={<Index />} />
               <Route path="/auth" element={<Auth />} />
               <Route path="/profile" element={<Profile />} />
-              <Route path="/my-docs" element={<MyDocs />} />
-              {/* Redirect old saved-content route to new my-docs route */}
-              <Route path="/saved-content" element={<Navigate to="/my-docs" replace />} />
+              <Route path="/saved-content" element={<SavedContent />} />
               {/* Redirect /stock/:symbol to /?symbol=:symbol */}
               <Route path="/stock/:symbol" element={<Navigate to="/" replace />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

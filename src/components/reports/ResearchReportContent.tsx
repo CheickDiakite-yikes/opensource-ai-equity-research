@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertTriangle, Info, Lock } from "lucide-react";
@@ -11,7 +12,6 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useSavedReports, useSavedPredictions } from "@/hooks/useSavedContent";
 import { useNavigate } from "react-router-dom";
 import { getRemainingPredictions, hasReachedFreeLimit } from "@/services/api/userContent/freePredictionsService";
-import { supabase } from "@/integrations/supabase/client";
 
 interface ResearchReportContentProps {
   data: any;
@@ -57,7 +57,6 @@ const ResearchReportContent = ({
   // Handle saving a report
   const handleSaveReport = async () => {
     if (!user) {
-      console.log("No user found, redirecting to auth page");
       toast.error("You must be signed in to save reports");
       navigate('/auth');
       return;
@@ -71,16 +70,6 @@ const ResearchReportContent = ({
     console.log("Saving report:", report.symbol, report.companyName);
     try {
       setSaveAttempted(true);
-      
-      // Verify auth status before saving
-      const { data: authData } = await supabase.auth.getUser();
-      if (!authData?.user) {
-        console.error("User not authenticated when attempting to save report");
-        toast.error("Authentication required. Please sign in again.");
-        navigate('/auth');
-        return;
-      }
-      
       const reportId = await saveReport(report.symbol, report.companyName, report);
       if (reportId) {
         toast.success(`Report for ${report.symbol} saved successfully`);
@@ -99,7 +88,6 @@ const ResearchReportContent = ({
   // Handle saving a prediction
   const handleSavePrediction = async () => {
     if (!user) {
-      console.log("No user found, redirecting to auth page");
       toast.error("You must be signed in to save predictions");
       navigate('/auth');
       return;
@@ -113,16 +101,6 @@ const ResearchReportContent = ({
     console.log("Saving prediction:", prediction.symbol, data.profile?.companyName || prediction.symbol);
     try {
       setSaveAttempted(true);
-      
-      // Verify auth status before saving
-      const { data: authData } = await supabase.auth.getUser();
-      if (!authData?.user) {
-        console.error("User not authenticated when attempting to save prediction");
-        toast.error("Authentication required. Please sign in again.");
-        navigate('/auth');
-        return;
-      }
-      
       const predictionId = await savePrediction(
         prediction.symbol, 
         data.profile?.companyName || prediction.symbol, 

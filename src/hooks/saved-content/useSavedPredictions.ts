@@ -20,16 +20,7 @@ export interface SavedPrediction {
 
 export const useSavedPredictions = () => {
   const [predictions, setPredictions] = useState<SavedPrediction[]>([]);
-  const { 
-    user, 
-    isLoading, 
-    setIsLoading, 
-    isRefreshing,
-    setIsRefreshing,
-    error, 
-    setError, 
-    checkUserLoggedIn 
-  } = useSavedContentBase();
+  const { user, isLoading, setIsLoading, error, setError, checkUserLoggedIn } = useSavedContentBase();
 
   const fetchPredictions = async () => {
     if (!checkUserLoggedIn()) {
@@ -91,46 +82,25 @@ export const useSavedPredictions = () => {
       setPredictions(prevPredictions => 
         prevPredictions.filter(prediction => prediction.id !== predictionId)
       );
-      toast.success("Prediction deleted successfully");
     } else {
       console.error("Failed to delete prediction");
-      toast.error("Failed to delete prediction");
     }
     return success;
   };
 
   const savePrediction = async (symbol: string, companyName: string, predictionData: StockPrediction) => {
-    if (!user) {
-      console.error("No user ID found when saving prediction");
-      toast.error("You must be signed in to save predictions");
-      return null;
-    }
-    
     console.log("Saving prediction for:", symbol, companyName);
-    setIsRefreshing(true);
+    const predictionId = await savePricePrediction(symbol, companyName, predictionData);
+    console.log("Save result - prediction ID:", predictionId);
     
-    try {
-      const predictionId = await savePricePrediction(symbol, companyName, predictionData);
-      console.log("Save result - prediction ID:", predictionId);
-      
-      if (predictionId) {
-        // Refresh predictions list after saving
-        console.log("Prediction saved successfully, refreshing predictions list");
-        toast.success("Price prediction saved successfully");
-        await fetchPredictions();
-        return predictionId;
-      } else {
-        console.error("Failed to save prediction - no ID returned");
-        toast.error("Failed to save prediction");
-        return null;
-      }
-    } catch (err) {
-      console.error("Error in savePrediction:", err);
-      toast.error("An unexpected error occurred while saving the prediction");
-      return null;
-    } finally {
-      setIsRefreshing(false);
+    if (predictionId) {
+      // Refresh predictions list after saving
+      console.log("Prediction saved successfully, refreshing predictions list");
+      fetchPredictions();
+    } else {
+      console.error("Failed to save prediction - no ID returned");
     }
+    return predictionId;
   };
 
   // Fetch predictions when the component mounts or user changes
@@ -142,7 +112,6 @@ export const useSavedPredictions = () => {
   return { 
     predictions, 
     isLoading, 
-    isRefreshing,
     error, 
     fetchPredictions, 
     deletePrediction, 

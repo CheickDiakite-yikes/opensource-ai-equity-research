@@ -29,7 +29,7 @@ const SavedContentHeader: React.FC<SavedContentHeaderProps> = ({
           transition={{ delay: 0.2, duration: 0.5 }}
           className="text-3xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent"
         >
-          My Docs
+          Saved Content
         </motion.h1>
         <motion.p 
           initial={{ opacity: 0 }}
