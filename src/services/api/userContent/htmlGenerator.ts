@@ -207,21 +207,21 @@ export const generateReportHTML = (report: ResearchReport): string => {
               ${report.scenarioAnalysis.bullCase ? `
               <tr>
                 <td>Bull Case</td>
-                <td>$${report.scenarioAnalysis.bullCase.targetPrice}</td>
+                <td>$${report.scenarioAnalysis.bullCase.price}</td>
                 <td>${report.scenarioAnalysis.bullCase.description}</td>
               </tr>` : ''}
               
               ${report.scenarioAnalysis.baseCase ? `
               <tr>
                 <td>Base Case</td>
-                <td>$${report.scenarioAnalysis.baseCase.targetPrice}</td>
+                <td>$${report.scenarioAnalysis.baseCase.price}</td>
                 <td>${report.scenarioAnalysis.baseCase.description}</td>
               </tr>` : ''}
               
               ${report.scenarioAnalysis.bearCase ? `
               <tr>
                 <td>Bear Case</td>
-                <td>$${report.scenarioAnalysis.bearCase.targetPrice}</td>
+                <td>$${report.scenarioAnalysis.bearCase.price}</td>
                 <td>${report.scenarioAnalysis.bearCase.description}</td>
               </tr>` : ''}
             </tbody>

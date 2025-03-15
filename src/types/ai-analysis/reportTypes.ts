@@ -76,7 +76,7 @@ export interface ResearchReport {
   sections: ReportSection[];
   ratingDetails?: RatingDetails;
   scenarioAnalysis?: ScenarioAnalysis;
-  catalysts?: GrowthCatalysts;
+  catalysts?: GrowthCatalysts | string[];
 }
 
 /**

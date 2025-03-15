@@ -53,3 +53,20 @@ export const resetUsedPredictions = (): void => {
     console.error('Error resetting used predictions count:', error);
   }
 };
+
+/**
+ * Check if a user can generate a report
+ * @param isAuthenticated Whether the user is authenticated or not
+ */
+export const canGenerateReport = (isAuthenticated: boolean): boolean => {
+  return isAuthenticated;
+};
+
+/**
+ * Check if a user can generate a prediction
+ * @param isAuthenticated Whether the user is authenticated or not
+ */
+export const canGeneratePrediction = (isAuthenticated: boolean): boolean => {
+  // Authenticated users always can, anonymous users only if they haven't reached the limit
+  return isAuthenticated || !hasReachedFreeLimit();
+};
