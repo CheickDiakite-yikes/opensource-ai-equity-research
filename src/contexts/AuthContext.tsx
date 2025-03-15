@@ -29,7 +29,7 @@ interface AuthContextProps {
   updateProfile: (updates: Partial<UserProfile>) => Promise<void>;
 }
 
-export const AuthContext = createContext<AuthContextProps | undefined>(undefined);
+const AuthContext = createContext<AuthContextProps | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);

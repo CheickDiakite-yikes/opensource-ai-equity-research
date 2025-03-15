@@ -1,97 +1,121 @@
 
-import { useState, useCallback } from "react";
-import { toast } from "sonner";
-import { useSavedContentBase } from "./useSavedContentBase";
+import { useState, useEffect } from "react";
+import { 
+  getUserResearchReports, 
+  deleteResearchReport,
+  saveResearchReport 
+} from "@/services/api/userContent";
 import { ResearchReport } from "@/types/ai-analysis/reportTypes";
-import { saveResearchReport, getUserResearchReports, deleteResearchReport } from "@/services/api/userContent";
+import { useSavedContentBase } from "./useSavedContentBase";
+import { toast } from "sonner";
 
-export type SavedReport = {
+export interface SavedReport {
   id: string;
   symbol: string;
   company_name: string;
-  created_at: string;
   report_data: ResearchReport;
+  created_at: string;
+  expires_at: string;
   html_content?: string | null;
-  user_id: string;
-  updated_at?: string;
-  expires_at?: string | null;
-};
+}
 
 export const useSavedReports = () => {
   const [reports, setReports] = useState<SavedReport[]>([]);
-  const { user, isLoading, setIsLoading, isRefreshing, setIsRefreshing, error, setError, checkUserLoggedIn } = useSavedContentBase();
+  const { user, isLoading, setIsLoading, error, setError, checkUserLoggedIn } = useSavedContentBase();
 
-  const fetchReports = useCallback(async () => {
-    const isLoggedIn = await checkUserLoggedIn();
-    if (!isLoggedIn) return;
-
-    try {
-      setIsRefreshing(true);
-      const reportsList = await getUserResearchReports();
-      console.log(`Fetched ${reportsList.length} reports`);
-      setReports(reportsList as unknown as SavedReport[]);
-    } catch (err: any) {
-      console.error("Error fetching reports:", err);
-      setError(err.message || "Failed to load saved reports");
-      toast.error("Could not load your saved reports");
-    } finally {
-      setIsRefreshing(false);
+  const fetchReports = async () => {
+    if (!checkUserLoggedIn()) {
+      setReports([]);
+      return;
     }
-  }, [checkUserLoggedIn, setIsRefreshing, setError]);
 
-  const saveReport = useCallback(async (
-    symbol: string,
-    companyName: string,
-    reportData: ResearchReport
-  ): Promise<string | null> => {
-    const isLoggedIn = await checkUserLoggedIn();
-    if (!isLoggedIn) return null;
-
+    console.log("Fetching reports for user:", user.id);
+    setIsLoading(true);
+    setError(null);
+    
     try {
-      setIsLoading(true);
-      const reportId = await saveResearchReport(symbol, companyName, reportData);
-      if (reportId) {
-        toast.success("Report saved successfully");
-        fetchReports();
+      const data = await getUserResearchReports();
+      
+      // Enhanced debug logging
+      console.log("Raw data from getUserResearchReports:", data);
+      
+      if (data.length === 0) {
+        console.log("No reports found for user");
+        setReports([]);
+        setIsLoading(false);
+        return;
       }
-      return reportId;
-    } catch (err: any) {
-      console.error("Error saving report:", err);
-      toast.error("Could not save report: " + (err.message || "Unknown error"));
-      return null;
+      
+      // Convert Json type to ResearchReport type with type assertion
+      const convertedReports = data.map(item => {
+        console.log(`Processing report ${item.id}:`, {
+          symbol: item.symbol,
+          company_name: item.company_name,
+          html_available: !!item.html_content,
+          html_length: item.html_content?.length || 0,
+          created_at: item.created_at,
+          expires_at: item.expires_at
+        });
+        
+        // Validate report_data
+        if (!item.report_data) {
+          console.error(`Report ${item.id} has no report_data!`);
+        }
+        
+        return {
+          ...item,
+          report_data: item.report_data as unknown as ResearchReport,
+          html_content: item.html_content || null
+        };
+      }) as SavedReport[];
+      
+      // Debug
+      console.log(`Fetched ${convertedReports.length} reports`);
+      convertedReports.forEach(report => {
+        console.log(`Report ${report.id}: Symbol=${report.symbol}, HTML content: ${report.html_content ? `YES (${report.html_content.length} chars)` : 'NO'}`);
+      });
+      
+      setReports(convertedReports);
+    } catch (err) {
+      console.error("Error fetching saved reports:", err);
+      setError("Failed to load saved reports");
     } finally {
       setIsLoading(false);
     }
-  }, [checkUserLoggedIn, fetchReports, setIsLoading]);
-
-  const deleteReport = useCallback(async (reportId: string): Promise<boolean> => {
-    const isLoggedIn = await checkUserLoggedIn();
-    if (!isLoggedIn) return false;
-
-    try {
-      setIsLoading(true);
-      const success = await deleteResearchReport(reportId);
-      if (success) {
-        toast.success("Report deleted successfully");
-        setReports(prevReports => prevReports.filter(r => r.id !== reportId));
-      }
-      return success;
-    } catch (err: any) {
-      console.error("Error deleting report:", err);
-      toast.error("Could not delete report: " + (err.message || "Unknown error"));
-      return false;
-    } finally {
-      setIsLoading(false);
-    }
-  }, [checkUserLoggedIn, setIsLoading]);
-
-  return {
-    reports,
-    isLoading,
-    isRefreshing,
-    error,
-    fetchReports,
-    saveReport,
-    deleteReport
   };
+
+  const deleteReport = async (reportId: string) => {
+    console.log("Deleting report:", reportId);
+    const success = await deleteResearchReport(reportId);
+    if (success) {
+      console.log("Report deleted successfully, updating state");
+      setReports(prevReports => prevReports.filter(report => report.id !== reportId));
+    } else {
+      console.error("Failed to delete report");
+    }
+    return success;
+  };
+
+  const saveReport = async (symbol: string, companyName: string, reportData: ResearchReport) => {
+    console.log("Saving report for:", symbol, companyName);
+    const reportId = await saveResearchReport(symbol, companyName, reportData);
+    console.log("Save result - report ID:", reportId);
+    
+    if (reportId) {
+      // Refresh reports list after saving
+      console.log("Report saved successfully, refreshing reports list");
+      await fetchReports();
+    } else {
+      console.error("Failed to save report - no ID returned");
+    }
+    return reportId;
+  };
+
+  // Fetch reports when the component mounts or user changes
+  useEffect(() => {
+    console.log("useSavedReports useEffect - fetching reports");
+    fetchReports();
+  }, [user]);
+
+  return { reports, isLoading, error, fetchReports, deleteReport, saveReport };
 };

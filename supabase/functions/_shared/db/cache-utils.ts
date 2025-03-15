@@ -98,10 +98,9 @@ export async function createCacheFunctions(supabase: any): Promise<boolean> {
         AS $$
         DECLARE
           cached_data JSONB;
-          existing_id INTEGER;
         BEGIN
           -- Try to get cached data
-          SELECT data, id INTO cached_data, existing_id
+          SELECT data INTO cached_data
           FROM api_cache
           WHERE cache_key = p_cache_key AND expires_at > NOW();
           
@@ -110,32 +109,21 @@ export async function createCacheFunctions(supabase: any): Promise<boolean> {
             -- Update the last_accessed timestamp and access_count
             UPDATE api_cache 
             SET last_accessed = NOW(), access_count = access_count + 1
-            WHERE id = existing_id;
+            WHERE cache_key = p_cache_key;
             
             RETURN cached_data;
           END IF;
           
-          -- Check if entry exists but is expired
-          SELECT id INTO existing_id
-          FROM api_cache
-          WHERE cache_key = p_cache_key;
-          
-          IF existing_id IS NOT NULL THEN
-            -- Update existing entry
-            UPDATE api_cache
-            SET 
-              data = p_default_data,
-              expires_at = p_expires_at,
-              last_accessed = NOW(),
-              access_count = access_count + 1
-            WHERE id = existing_id
-            RETURNING data INTO cached_data;
-          ELSE
-            -- Insert default data as new entry
-            INSERT INTO api_cache (cache_key, data, expires_at, last_accessed, access_count)
-            VALUES (p_cache_key, p_default_data, p_expires_at, NOW(), 1)
-            RETURNING data INTO cached_data;
-          END IF;
+          -- Insert default data if no cache found
+          INSERT INTO api_cache (cache_key, data, expires_at, last_accessed, access_count)
+          VALUES (p_cache_key, p_default_data, p_expires_at, NOW(), 1)
+          ON CONFLICT (cache_key) 
+          DO UPDATE SET 
+            data = p_default_data, 
+            expires_at = p_expires_at,
+            last_accessed = NOW(),
+            access_count = api_cache.access_count + 1
+          RETURNING data INTO cached_data;
           
           RETURN cached_data;
         END;
