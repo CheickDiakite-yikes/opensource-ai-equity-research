@@ -5,18 +5,30 @@
 export function validatePrediction(predictionData: any, currentPrice: number): boolean {
   if (!predictionData || !predictionData.predictedPrice) return false;
   
-  const oneYearPrice = predictionData.predictedPrice.oneYear;
-  if (typeof oneYearPrice !== 'number' || isNaN(oneYearPrice)) return false;
+  // Check if values are valid numbers and not extremely large values
+  const timeframes = ['oneMonth', 'threeMonths', 'sixMonths', 'oneYear'] as const;
+  for (const timeframe of timeframes) {
+    const price = predictionData.predictedPrice[timeframe];
+    
+    // Check for invalid prediction values
+    if (typeof price !== 'number' || 
+        isNaN(price) || 
+        !isFinite(price) || 
+        price <= 0 || 
+        price > currentPrice * 10) { // Price shouldn't be more than 10x current
+      console.warn(`Invalid ${timeframe} prediction: ${price} (current: ${currentPrice})`);
+      return false;
+    }
+  }
   
   // Check one-year prediction (should be at least 1% different)
-  const yearDiff = Math.abs((oneYearPrice - currentPrice) / currentPrice);
+  const yearDiff = Math.abs((predictionData.predictedPrice.oneYear - currentPrice) / currentPrice);
   if (yearDiff < 0.01) return false;
   
   // Validate other timeframes
-  const timeframes = ['oneMonth', 'threeMonths', 'sixMonths'] as const;
   return timeframes.every(timeframe => {
     const price = predictionData.predictedPrice[timeframe];
-    return typeof price === 'number' && !isNaN(price) && Math.abs((price - currentPrice) / currentPrice) >= 0.005;
+    return Math.abs((price - currentPrice) / currentPrice) >= 0.005;
   });
 }
 

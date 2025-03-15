@@ -7,6 +7,7 @@ import { generatePredictionWithOpenAI } from './predictionService.ts';
 import { createFallbackPrediction } from './fallbackGenerator.ts';
 import { validatePrediction } from './validationService.ts';
 import { determineIndustry } from './industryAnalysis.ts';
+import { processPredictionPrices } from './utils.ts';
 
 const supabaseUrl = Deno.env.get("SUPABASE_URL") || "";
 const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY") || "";
@@ -30,7 +31,7 @@ Deno.serve(async (req) => {
     }
     
     console.log(`Generating AI price prediction for ${symbol}${quickMode ? ' (quick mode)' : ''}`);
-    console.log(`Stock data received: price=${stockData.price}, marketCap=${stockData.marketCap || 'N/A'}`);
+    console.log(`Stock data received: price=${stockData.price}, market cap=${stockData.marketCap || 'N/A'}`);
     console.log(`Financial data received: ${financials ? 'yes' : 'no'}, News count: ${news?.length || 0}`);
     
     // Enhanced input validation
@@ -44,22 +45,7 @@ Deno.serve(async (req) => {
     // Add industry classification for better prediction context
     formattedData.industry = determineIndustry(symbol);
     
-    // Retrieve historical predictions for this symbol for consistency
-    const { data: historyData, error: historyError } = await supabase
-      .from('stock_prediction_history')
-      .select('*')
-      .eq('symbol', symbol)
-      .order('prediction_date', { ascending: false })
-      .limit(5);
-    
-    if (historyError) {
-      console.warn(`Error retrieving prediction history for ${symbol}:`, historyError);
-    }
-    
-    // Add historical predictions to formatted data
-    formattedData.predictionHistory = historyData || [];
-    
-    // Attempt to generate AI prediction with a max of 3 retries for better quality
+    // Try to generate prediction with a max of 3 retries
     let prediction: StockPrediction | null = null;
     let attempts = 0;
     const maxAttempts = 4;
@@ -69,7 +55,6 @@ Deno.serve(async (req) => {
       console.log(`Prediction attempt ${attempts}/${maxAttempts} for ${symbol}`);
       
       try {
-        // If we're on the last attempt, force fallback to ensure we return something
         if (attempts === maxAttempts) {
           console.log(`Using fallback prediction for ${symbol} on final attempt`);
           prediction = createFallbackPrediction(formattedData);
@@ -78,22 +63,27 @@ Deno.serve(async (req) => {
         
         prediction = await generatePredictionWithOpenAI(formattedData);
         
-        // Critical validation: Ensure prediction is meaningfully different from current price
-        const currentPrice = stockData.price;
-        
-        // Enhanced validation with more criteria
-        if (!validatePrediction(prediction, currentPrice)) {
-          console.warn(`Invalid prediction generated for ${symbol}, retrying...`);
-          prediction = null;
-          continue;
+        // Process and validate prediction values
+        if (prediction) {
+          // Ensure prediction values are within realistic bounds
+          prediction.predictedPrice = processPredictionPrices(
+            prediction.predictedPrice, 
+            stockData.price
+          );
+          
+          // Validate the processed prediction
+          if (!validatePrediction(prediction, stockData.price)) {
+            console.warn(`Invalid prediction generated for ${symbol}, retrying...`);
+            prediction = null;
+            continue;
+          }
+          
+          console.log(`Valid prediction generated for ${symbol}`);
         }
-        
-        console.log(`Valid prediction generated for ${symbol}`);
       } catch (predictionError) {
         console.error(`Error in prediction attempt ${attempts}:`, predictionError);
         prediction = null;
         
-        // On last attempt, use fallback
         if (attempts === maxAttempts - 1) {
           console.log(`Falling back to enhanced prediction generator for ${symbol}`);
           prediction = createFallbackPrediction(formattedData);
@@ -105,42 +95,14 @@ Deno.serve(async (req) => {
       throw new Error(`Failed to generate valid prediction for ${symbol} after ${maxAttempts} attempts`);
     }
     
-    // Save prediction to history table for future reference and consistency
-    try {
-      console.log(`Attempting to save prediction history for ${symbol} using admin client...`);
-      const { error: insertError } = await supabaseAdmin // <-- Using the admin client with service role
-        .from('stock_prediction_history')
-        .insert({
-          symbol: prediction.symbol,
-          current_price: prediction.currentPrice,
-          one_month_price: prediction.predictedPrice.oneMonth,
-          three_month_price: prediction.predictedPrice.threeMonths,
-          six_month_price: prediction.predictedPrice.sixMonths,
-          one_year_price: prediction.predictedPrice.oneYear,
-          sentiment_analysis: prediction.sentimentAnalysis,
-          confidence_level: prediction.confidenceLevel,
-          key_drivers: prediction.keyDrivers,
-          risks: prediction.risks,
-          metadata: {
-            generation_method: attempts === maxAttempts ? 'fallback' : 'openai',
-            quick_mode: quickMode === true,
-            industry: formattedData.industry,
-            attempt_count: attempts
-          }
-        });
-        
-      if (insertError) {
-        console.error(`Error saving prediction history for ${symbol}:`, insertError);
-      } else {
-        console.log(`Successfully saved prediction history for ${symbol}`);
-      }
-    } catch (saveError) {
-      console.error(`Exception saving prediction history for ${symbol}:`, saveError);
-      // Non-critical error, continue with returning the prediction
-    }
-    
-    // Final logging of prediction values
-    logPredictionResults(symbol, stockData.price, prediction);
+    // Log the final prediction values
+    console.log(`Final prediction for ${symbol}:`, {
+      current: prediction.currentPrice,
+      oneMonth: prediction.predictedPrice.oneMonth,
+      threeMonths: prediction.predictedPrice.threeMonths,
+      sixMonths: prediction.predictedPrice.sixMonths,
+      oneYear: prediction.predictedPrice.oneYear
+    });
     
     return new Response(JSON.stringify(prediction), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -155,23 +117,3 @@ Deno.serve(async (req) => {
     });
   }
 });
-
-/**
- * Log detailed prediction results
- */
-function logPredictionResults(symbol: string, currentPrice: number, prediction: StockPrediction): void {
-  const oneMonthChange = ((prediction.predictedPrice.oneMonth / currentPrice) - 1) * 100;
-  const threeMonthChange = ((prediction.predictedPrice.threeMonths / currentPrice) - 1) * 100;
-  const sixMonthChange = ((prediction.predictedPrice.sixMonths / currentPrice) - 1) * 100;
-  const oneYearChange = ((prediction.predictedPrice.oneYear / currentPrice) - 1) * 100;
-  
-  console.log(`Final prediction for ${symbol}: 
-    Current: $${currentPrice.toFixed(2)}
-    1-month: $${prediction.predictedPrice.oneMonth.toFixed(2)} (${oneMonthChange.toFixed(2)}%)
-    3-month: $${prediction.predictedPrice.threeMonths.toFixed(2)} (${threeMonthChange.toFixed(2)}%)
-    6-month: $${prediction.predictedPrice.sixMonths.toFixed(2)} (${sixMonthChange.toFixed(2)}%)
-    1-year: $${prediction.predictedPrice.oneYear.toFixed(2)} (${oneYearChange.toFixed(2)}%)
-    Sentiment: ${prediction.sentimentAnalysis || 'N/A'}
-    Confidence: ${prediction.confidenceLevel}%
-  `);
-}

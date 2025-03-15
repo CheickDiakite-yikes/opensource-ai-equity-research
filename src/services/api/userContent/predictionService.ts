@@ -45,6 +45,22 @@ export const savePricePrediction = async (
       return null;
     }
 
+    // Validate prediction data before saving
+    // Add safety check for unrealistic prediction values
+    const isValid = validatePredictionData(predictionData);
+    if (!isValid) {
+      console.error("Invalid prediction data detected:", 
+        JSON.stringify({
+          symbol: predictionData.symbol,
+          current: predictionData.currentPrice,
+          oneMonth: predictionData.predictedPrice.oneMonth,
+          oneYear: predictionData.predictedPrice.oneYear
+        })
+      );
+      toast.error("Failed to save prediction: Invalid prediction values");
+      return null;
+    }
+
     // Now, insert the new prediction
     console.log("Inserting prediction into database");
     console.log("Prediction data sample:", JSON.stringify(predictionData).substring(0, 200) + "...");
@@ -81,6 +97,37 @@ export const savePricePrediction = async (
     return null;
   }
 };
+
+/**
+ * Validate prediction data to ensure it has reasonable values
+ */
+function validatePredictionData(prediction: StockPrediction): boolean {
+  if (!prediction || !prediction.predictedPrice) return false;
+  
+  const { currentPrice, predictedPrice } = prediction;
+  
+  // Basic validation
+  if (typeof currentPrice !== 'number' || currentPrice <= 0) return false;
+  
+  // Check prediction values - no extreme values (more than 5x current price)
+  const maxPrice = currentPrice * 5;
+  const timeframes = ['oneMonth', 'threeMonths', 'sixMonths', 'oneYear'] as const;
+  
+  for (const timeframe of timeframes) {
+    const price = predictedPrice[timeframe];
+    if (
+      typeof price !== 'number' || 
+      !isFinite(price) || 
+      price <= 0 || 
+      price > maxPrice
+    ) {
+      console.error(`Invalid ${timeframe} price: ${price} (current: ${currentPrice})`);
+      return false;
+    }
+  }
+  
+  return true;
+}
 
 /**
  * Get all saved price predictions for the current user
