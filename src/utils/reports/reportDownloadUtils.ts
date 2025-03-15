@@ -32,7 +32,7 @@ export const downloadReportAsHTML = (report: ResearchReport) => {
   // Add Growth Catalysts if available
   if (report.catalysts) {
     // The report.catalysts could be either GrowthCatalysts or string[]
-    // We need to handle both types safely
+    // We handle both types in the generateGrowthCatalysts function
     content += generateGrowthCatalysts(report.catalysts);
   }
   
