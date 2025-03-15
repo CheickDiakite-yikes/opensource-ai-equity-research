@@ -45,7 +45,7 @@ export const savePricePrediction = async (
       return null;
     }
 
-    // Now, insert the new prediction - use type cast to Json
+    // Now, insert the new prediction
     console.log("Inserting prediction into database");
     console.log("Prediction data sample:", JSON.stringify(predictionData).substring(0, 200) + "...");
     
@@ -126,10 +126,18 @@ export const getUserPricePredictions = async () => {
  */
 export const deletePricePrediction = async (predictionId: string): Promise<boolean> => {
   try {
+    const userId = await getUserId();
+    if (!userId) {
+      console.error("No user ID found when deleting prediction");
+      toast.error("You must be signed in to delete predictions");
+      return false;
+    }
+
     const { error } = await supabase
       .from("user_price_predictions")
       .delete()
-      .eq("id", predictionId);
+      .eq("id", predictionId)
+      .eq("user_id", userId); // Important for RLS - explicitly filter by user_id
 
     if (error) {
       console.error("Error deleting prediction:", error);

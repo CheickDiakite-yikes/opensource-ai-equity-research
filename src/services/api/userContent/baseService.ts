@@ -81,11 +81,11 @@ export const manageItemLimit = async (
 };
 
 /**
- * Check if a table exists in the database - using raw SQL query approach
+ * Check if a table exists in the database - using Supabase RPC
  */
 export const checkIfTableExists = async (tableName: string): Promise<boolean> => {
   try {
-    // Use rpc to call a Postgres function instead of direct schema query
+    // Call the table_exists Postgres function through RPC
     const { data, error } = await supabase.rpc('table_exists', { 
       schema_name: 'public', 
       table_name: tableName 

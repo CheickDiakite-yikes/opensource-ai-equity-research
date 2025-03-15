@@ -152,10 +152,18 @@ export const getUserResearchReports = async () => {
  */
 export const deleteResearchReport = async (reportId: string): Promise<boolean> => {
   try {
+    const userId = await getUserId();
+    if (!userId) {
+      console.error("No user ID found when deleting report");
+      toast.error("You must be signed in to delete reports");
+      return false;
+    }
+
     const { error } = await supabase
       .from("user_research_reports")
       .delete()
-      .eq("id", reportId);
+      .eq("id", reportId)
+      .eq("user_id", userId); // Important for RLS - explicitly filter by user_id
 
     if (error) {
       console.error("Error deleting report:", error);
