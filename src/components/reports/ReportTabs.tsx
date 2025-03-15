@@ -8,6 +8,7 @@ import ResearchReportDisplay from "./ResearchReportDisplay";
 import PricePredictionDisplay from "./PricePredictionDisplay";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface ReportTabsProps {
   report: ResearchReport | null;
@@ -15,32 +16,38 @@ interface ReportTabsProps {
 }
 
 const ReportTabs: React.FC<ReportTabsProps> = ({ report, prediction }) => {
+  const isMobile = useIsMobile();
+  
   if (!report && !prediction) {
     return (
-      <div className="flex flex-col items-center justify-center p-10 text-center rounded-lg border border-dashed border-muted-foreground/30 bg-muted/10 h-80">
+      <div className="flex flex-col items-center justify-center p-8 text-center rounded-lg border border-dashed border-muted-foreground/30 bg-gradient-to-b from-card/80 to-background h-80">
         <motion.div 
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
+          className="flex flex-col items-center max-w-md"
         >
-          <Info className="h-14 w-14 text-muted-foreground mb-5" />
+          <div className="flex items-center justify-center w-16 h-16 mb-5 rounded-full bg-primary/10">
+            <Info className="h-8 w-8 text-primary" />
+          </div>
+          
           <h3 className="text-xl font-medium mb-3">No Reports Generated</h3>
           <p className="text-muted-foreground max-w-md mx-auto mb-6">
             Generate a research report or price prediction to see detailed analysis here.
             These AI-powered reports provide comprehensive insights into the stock's fundamentals and future prospects.
           </p>
           
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mt-4">
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mt-2">
             <div className="flex items-center gap-2 p-3 rounded-lg bg-primary/5 border border-primary/10 text-sm">
               <FileText className="h-4 w-4 text-primary" />
-              <span>Research Reports</span>
-              <ArrowUp className="h-3 w-3 text-primary" />
+              <span className="font-medium">Research Reports</span>
+              <ArrowUp className="h-3 w-3 text-primary ml-1" />
             </div>
             
             <div className="flex items-center gap-2 p-3 rounded-lg bg-primary/5 border border-primary/10 text-sm">
               <TrendingUp className="h-4 w-4 text-primary" />
-              <span>Price Predictions</span>
-              <ArrowUp className="h-3 w-3 text-primary" />
+              <span className="font-medium">Price Predictions</span>
+              <ArrowUp className="h-3 w-3 text-primary ml-1" />
             </div>
           </div>
         </motion.div>
@@ -112,4 +119,4 @@ const ReportTabs: React.FC<ReportTabsProps> = ({ report, prediction }) => {
   );
 };
 
-export default ReportTabs;
+export default React.memo(ReportTabs);

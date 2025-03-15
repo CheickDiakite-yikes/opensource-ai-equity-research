@@ -4,6 +4,7 @@ import { FileText, TrendingUp, PlusCircle, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface EmptyContentStateProps {
   type: "reports" | "predictions";
@@ -11,6 +12,7 @@ interface EmptyContentStateProps {
 
 const EmptyContentState: React.FC<EmptyContentStateProps> = ({ type }) => {
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
   
   const handleNavigateToSearch = () => {
     navigate("/");
@@ -24,15 +26,13 @@ const EmptyContentState: React.FC<EmptyContentStateProps> = ({ type }) => {
       className="flex flex-col items-center justify-center p-10 text-center rounded-xl border border-dashed border-primary/20 bg-gradient-to-b from-primary/5 to-background h-[60vh] shadow-sm"
     >
       <div className="flex flex-col items-center max-w-md">
-        {type === "reports" ? (
-          <div className="h-20 w-20 bg-primary/10 rounded-full flex items-center justify-center mb-6">
+        <div className="flex items-center justify-center w-20 h-20 rounded-full bg-primary/10 mb-6">
+          {type === "reports" ? (
             <FileText className="h-10 w-10 text-primary" />
-          </div>
-        ) : (
-          <div className="h-20 w-20 bg-primary/10 rounded-full flex items-center justify-center mb-6">
+          ) : (
             <TrendingUp className="h-10 w-10 text-primary" />
-          </div>
-        )}
+          )}
+        </div>
         
         <h3 className="text-2xl font-medium mb-3">
           No Saved {type === "reports" ? "Research Reports" : "Price Predictions"}
@@ -71,4 +71,4 @@ const EmptyContentState: React.FC<EmptyContentStateProps> = ({ type }) => {
   );
 };
 
-export default EmptyContentState;
+export default React.memo(EmptyContentState);

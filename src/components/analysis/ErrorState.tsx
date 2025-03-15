@@ -3,13 +3,14 @@ import React from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { RefreshCw, AlertTriangle } from "lucide-react";
+import { motion } from "framer-motion";
 
 interface ErrorStateProps {
   symbol: string;
   onRetry: () => void;
   isRetrying: boolean;
-  message?: string; // Make message optional
-  dataSource?: string; // Indicate which data source failed
+  message?: string;
+  dataSource?: string;
 }
 
 const ErrorState: React.FC<ErrorStateProps> = ({ 
@@ -21,9 +22,16 @@ const ErrorState: React.FC<ErrorStateProps> = ({
 }) => {
   return (
     <Card className="p-6">
-      <div className="text-center py-8">
+      <motion.div 
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.3 }}
+        className="text-center py-8"
+      >
         <div className="flex justify-center mb-4">
-          <AlertTriangle className="h-12 w-12 text-amber-500" />
+          <div className="flex items-center justify-center w-16 h-16 rounded-full bg-amber-500/10 mb-2">
+            <AlertTriangle className="h-8 w-8 text-amber-500" />
+          </div>
         </div>
         <h3 className="text-xl font-medium text-red-600 mb-4">
           {dataSource === "all" 
@@ -47,9 +55,9 @@ const ErrorState: React.FC<ErrorStateProps> = ({
           <RefreshCw className={`h-4 w-4 ${isRetrying ? 'animate-spin' : ''}`} />
           <span>{isRetrying ? 'Retrying...' : 'Try Again'}</span>
         </Button>
-      </div>
+      </motion.div>
     </Card>
   );
 };
 
-export default ErrorState;
+export default React.memo(ErrorState);
