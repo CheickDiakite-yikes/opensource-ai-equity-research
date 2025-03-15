@@ -95,18 +95,6 @@ export const getUserPricePredictions = async () => {
     }
 
     console.log("Fetching predictions for user:", userId);
-    // First test if we can see all predictions regardless of user_id (RLS issue)
-    const { data: allData, error: allError } = await supabase
-      .from("user_price_predictions")
-      .select("*");
-      
-    if (allError) {
-      console.error("Error fetching all predictions (RLS test):", allError);
-    } else {
-      console.log(`Found ${allData?.length || 0} total predictions in the database (RLS test)`);
-    }
-    
-    // Now fetch only this user's predictions
     const { data, error } = await supabase
       .from("user_price_predictions")
       .select("*")

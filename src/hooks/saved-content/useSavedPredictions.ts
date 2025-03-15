@@ -8,7 +8,6 @@ import {
 import { StockPrediction } from "@/types/ai-analysis/predictionTypes";
 import { useSavedContentBase } from "./useSavedContentBase";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
 
 export interface SavedPrediction {
   id: string;
@@ -34,19 +33,6 @@ export const useSavedPredictions = () => {
     setError(null);
     
     try {
-      // First check if RLS is working by directly querying the table
-      console.log("Directly testing RLS by querying user_price_predictions table...");
-      const { data: directData, error: directError } = await supabase
-        .from("user_price_predictions")
-        .select("*");
-      
-      if (directError) {
-        console.error("Direct RLS test failed:", directError);
-      } else {
-        console.log("Direct RLS test result:", directData);
-      }
-      
-      // Now try the regular service function
       const data = await getUserPricePredictions();
       
       console.log("Raw data from getUserPricePredictions:", data);
@@ -96,10 +82,8 @@ export const useSavedPredictions = () => {
       setPredictions(prevPredictions => 
         prevPredictions.filter(prediction => prediction.id !== predictionId)
       );
-      toast.success("Prediction deleted successfully");
     } else {
       console.error("Failed to delete prediction");
-      toast.error("Failed to delete prediction");
     }
     return success;
   };
@@ -112,11 +96,9 @@ export const useSavedPredictions = () => {
     if (predictionId) {
       // Refresh predictions list after saving
       console.log("Prediction saved successfully, refreshing predictions list");
-      await fetchPredictions();
-      toast.success("Prediction saved successfully");
+      fetchPredictions();
     } else {
       console.error("Failed to save prediction - no ID returned");
-      toast.error("Failed to save prediction");
     }
     return predictionId;
   };

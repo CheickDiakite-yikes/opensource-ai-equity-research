@@ -20,12 +20,9 @@ export const useSavedContentPage = () => {
   // Refresh reports when page loads
   useEffect(() => {
     if (user) {
-      console.log("SavedContent component mounted, fetching content...");
-      console.log("Current user:", user);
+      console.log("SavedContent component mounted, fetching reports...");
       fetchReports();
       fetchPredictions();
-    } else {
-      console.log("No user logged in yet");
     }
   }, [user]);
 
@@ -41,7 +38,7 @@ export const useSavedContentPage = () => {
   useEffect(() => {
     console.log("Predictions updated:", predictions.length);
     predictions.forEach(prediction => {
-      console.log(`- Prediction ${prediction.id}: ${prediction.symbol}, ${prediction.company_name}`);
+      console.log(`- Prediction ${prediction.id}: ${prediction.symbol}`);
     });
   }, [predictions]);
 
@@ -62,7 +59,6 @@ export const useSavedContentPage = () => {
 
   const handleSelectPrediction = (prediction: SavedPrediction) => {
     console.log("Selecting prediction:", prediction.id);
-    console.log("Prediction data:", prediction.prediction_data);
     setSelectedPrediction(prediction);
     setSelectedReport(null);
   };
