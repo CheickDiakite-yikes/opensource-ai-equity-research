@@ -10,7 +10,12 @@ import { determineIndustry } from './industryAnalysis.ts';
 
 const supabaseUrl = Deno.env.get("SUPABASE_URL") || "";
 const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY") || "";
+const supabaseServiceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
+
+// Create clients with different permissions
 const supabase = createClient(supabaseUrl, supabaseAnonKey);
+// Create a separate client with service role for admin operations
+const supabaseAdmin = createClient(supabaseUrl, supabaseServiceRoleKey);
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -102,7 +107,8 @@ Deno.serve(async (req) => {
     
     // Save prediction to history table for future reference and consistency
     try {
-      const { error: insertError } = await supabase
+      console.log(`Attempting to save prediction history for ${symbol} using admin client...`);
+      const { error: insertError } = await supabaseAdmin // <-- Using the admin client with service role
         .from('stock_prediction_history')
         .insert({
           symbol: prediction.symbol,

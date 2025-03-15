@@ -263,4 +263,3 @@ export const generateDisclaimer = (): string => {
     </div>
   `;
 };
-
