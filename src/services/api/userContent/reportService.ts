@@ -99,9 +99,13 @@ export const saveResearchReport = async (
       return null;
     }
 
-    console.log("Report saved successfully. ID:", data[0].id, "HTML content:", data[0].html_content ? "YES" : "NO");
+    // Use type assertion to access data safely
+    const savedId = (data as any)[0]?.id;
+    const hasHtml = !!(data as any)[0]?.html_content;
+    
+    console.log("Report saved successfully. ID:", savedId, "HTML content:", hasHtml ? "YES" : "NO");
     toast.success("Research report saved successfully");
-    return data[0].id;
+    return savedId;
   } catch (error) {
     console.error("Error in saveResearchReport:", error);
     toast.error("An unexpected error occurred");

@@ -72,9 +72,11 @@ export const savePricePrediction = async (
       return null;
     }
 
-    console.log("Prediction saved successfully. ID:", data[0].id);
+    // Use type assertion to access data safely
+    const savedId = (data as any)[0]?.id;
+    console.log("Prediction saved successfully. ID:", savedId);
     toast.success("Price prediction saved successfully");
-    return data[0].id;
+    return savedId;
   } catch (error) {
     console.error("Error in savePricePrediction:", error);
     toast.error("An unexpected error occurred");

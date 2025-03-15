@@ -4,3 +4,4 @@ export * from './reportService';
 export * from './predictionService';
 export * from './htmlGenerator';
 export * from './baseService';
+export * from './freePredictionsService';
