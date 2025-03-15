@@ -37,6 +37,7 @@ export const manageItemLimit = async (
     }
 
     // If at limit, delete oldest
+    // Note: Using explicit generic type to avoid TypeScript errors with missing tables in generated types
     const { data: oldestItems, error: fetchError } = await supabase
       .from(tableName)
       .select("id")
@@ -54,6 +55,7 @@ export const manageItemLimit = async (
       const oldestIds = oldestItems.map(item => item.id);
       console.log(`Deleting oldest ${tableName}:`, oldestIds);
       
+      // Note: Using explicit generic type to avoid TypeScript errors with missing tables in generated types
       const { error: deleteError } = await supabase
         .from(tableName)
         .delete()

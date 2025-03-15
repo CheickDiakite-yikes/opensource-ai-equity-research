@@ -132,6 +132,48 @@ export type Database = {
         }
         Relationships: []
       }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string | null
+          firm_name: string | null
+          first_name: string | null
+          id: string
+          industry: string | null
+          job_role: string | null
+          last_name: string | null
+          location: string | null
+          updated_at: string | null
+          years_experience: number | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string | null
+          firm_name?: string | null
+          first_name?: string | null
+          id: string
+          industry?: string | null
+          job_role?: string | null
+          last_name?: string | null
+          location?: string | null
+          updated_at?: string | null
+          years_experience?: number | null
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string | null
+          firm_name?: string | null
+          first_name?: string | null
+          id?: string
+          industry?: string | null
+          job_role?: string | null
+          last_name?: string | null
+          location?: string | null
+          updated_at?: string | null
+          years_experience?: number | null
+        }
+        Relationships: []
+      }
       saved_analyses: {
         Row: {
           analysis_data: Json
@@ -261,13 +303,54 @@ export type Database = {
         }
         Relationships: []
       }
+      user_activity_summary: {
+        Row: {
+          created_at: string | null
+          favorite_symbols: string[] | null
+          id: string
+          last_activity: string | null
+          prediction_accuracy: number | null
+          report_success_rate: number | null
+          total_predictions: number | null
+          total_reports: number | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          favorite_symbols?: string[] | null
+          id?: string
+          last_activity?: string | null
+          prediction_accuracy?: number | null
+          report_success_rate?: number | null
+          total_predictions?: number | null
+          total_reports?: number | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          favorite_symbols?: string[] | null
+          id?: string
+          last_activity?: string | null
+          prediction_accuracy?: number | null
+          report_success_rate?: number | null
+          total_predictions?: number | null
+          total_reports?: number | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_analytics: {
         Row: {
+          access_count: number | null
           action: string
           category: string
           created_at: string
           id: string
           label: string | null
+          last_accessed: string | null
           metadata: Json | null
           session_id: string
           timestamp: string
@@ -275,11 +358,13 @@ export type Database = {
           value: number | null
         }
         Insert: {
+          access_count?: number | null
           action: string
           category: string
           created_at?: string
           id?: string
           label?: string | null
+          last_accessed?: string | null
           metadata?: Json | null
           session_id: string
           timestamp?: string
@@ -287,11 +372,13 @@ export type Database = {
           value?: number | null
         }
         Update: {
+          access_count?: number | null
           action?: string
           category?: string
           created_at?: string
           id?: string
           label?: string | null
+          last_accessed?: string | null
           metadata?: Json | null
           session_id?: string
           timestamp?: string
@@ -467,6 +554,16 @@ export type Database = {
           similarity: number
         }[]
       }
+      get_service_status: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
+      }
+      is_active_content: {
+        Args: {
+          expires_at: string
+        }
+        Returns: boolean
+      }
       schedule_cache_cleanup: {
         Args: Record<PropertyKey, never>
         Returns: undefined
@@ -487,6 +584,14 @@ export type Database = {
           relevance: number
           content_snippet: string
         }[]
+      }
+      set_cache: {
+        Args: {
+          p_cache_key: string
+          p_data: Json
+          p_ttl_minutes?: number
+        }
+        Returns: boolean
       }
       table_exists: {
         Args: {
