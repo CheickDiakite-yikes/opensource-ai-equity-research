@@ -25,9 +25,9 @@ export const saveResearchReport = async (
     
     console.log("User ID:", userId);
 
-    // First, count existing reports - using explicit any type to bypass type checking
+    // First, count existing reports
     const { count, error: countError } = await supabase
-      .from('user_research_reports' as any)
+      .from("user_research_reports")
       .select("*", { count: "exact", head: true })
       .eq("user_id", userId);
 
@@ -71,13 +71,12 @@ export const saveResearchReport = async (
       console.error("Error generating HTML content:", htmlError);
     }
 
-    // Now, insert the new report - use type cast to bypass type checking
+    // Now, insert the new report - use type cast to Json
     console.log("Inserting report into database with HTML:", htmlContent ? "YES" : "NO");
     console.log("Report data sample:", JSON.stringify(reportData).substring(0, 200) + "...");
     
-    // Insert without relying on generated types
     const { data, error } = await supabase
-      .from('user_research_reports' as any)
+      .from("user_research_reports")
       .insert({
         user_id: userId,
         symbol,
@@ -85,7 +84,7 @@ export const saveResearchReport = async (
         report_data: reportData as unknown as Json,
         html_content: htmlContent
       })
-      .select();
+      .select("id, html_content");
 
     if (error) {
       console.error("Error saving report:", error);
@@ -99,13 +98,9 @@ export const saveResearchReport = async (
       return null;
     }
 
-    // Use type assertion to access data safely
-    const savedId = (data as any)[0]?.id;
-    const hasHtml = !!(data as any)[0]?.html_content;
-    
-    console.log("Report saved successfully. ID:", savedId, "HTML content:", hasHtml ? "YES" : "NO");
+    console.log("Report saved successfully. ID:", data[0].id, "HTML content:", data[0].html_content ? "YES" : "NO");
     toast.success("Research report saved successfully");
-    return savedId;
+    return data[0].id;
   } catch (error) {
     console.error("Error in saveResearchReport:", error);
     toast.error("An unexpected error occurred");
@@ -126,9 +121,8 @@ export const getUserResearchReports = async () => {
     }
 
     console.log("Fetching reports for user:", userId);
-    // Use explicit any to bypass type checking
     const { data, error } = await supabase
-      .from('user_research_reports' as any)
+      .from("user_research_reports")
       .select("*")
       .eq("user_id", userId)
       .order("created_at", { ascending: false });
@@ -159,7 +153,7 @@ export const getUserResearchReports = async () => {
 export const deleteResearchReport = async (reportId: string): Promise<boolean> => {
   try {
     const { error } = await supabase
-      .from('user_research_reports' as any)
+      .from("user_research_reports")
       .delete()
       .eq("id", reportId);
 

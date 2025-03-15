@@ -24,9 +24,9 @@ export const savePricePrediction = async (
     
     console.log("User ID:", userId);
 
-    // First, count existing predictions - using explicit any type to bypass type checking
+    // First, count existing predictions
     const { count, error: countError } = await supabase
-      .from('user_price_predictions' as any)
+      .from("user_price_predictions")
       .select("*", { count: "exact", head: true })
       .eq("user_id", userId);
 
@@ -45,20 +45,19 @@ export const savePricePrediction = async (
       return null;
     }
 
-    // Now, insert the new prediction - use type cast to bypass type checking
+    // Now, insert the new prediction - use type cast to Json
     console.log("Inserting prediction into database");
     console.log("Prediction data sample:", JSON.stringify(predictionData).substring(0, 200) + "...");
     
-    // Insert without relying on generated types
     const { data, error } = await supabase
-      .from('user_price_predictions' as any)
+      .from("user_price_predictions")
       .insert({
         user_id: userId,
         symbol,
         company_name: companyName,
         prediction_data: predictionData as unknown as Json,
       })
-      .select();
+      .select("id");
 
     if (error) {
       console.error("Error saving prediction:", error);
@@ -72,11 +71,9 @@ export const savePricePrediction = async (
       return null;
     }
 
-    // Use type assertion to access data safely
-    const savedId = (data as any)[0]?.id;
-    console.log("Prediction saved successfully. ID:", savedId);
+    console.log("Prediction saved successfully. ID:", data[0].id);
     toast.success("Price prediction saved successfully");
-    return savedId;
+    return data[0].id;
   } catch (error) {
     console.error("Error in savePricePrediction:", error);
     toast.error("An unexpected error occurred");
@@ -97,9 +94,8 @@ export const getUserPricePredictions = async () => {
     }
 
     console.log("Fetching predictions for user:", userId);
-    // Use explicit any to bypass type checking
     const { data, error } = await supabase
-      .from('user_price_predictions' as any)
+      .from("user_price_predictions")
       .select("*")
       .eq("user_id", userId)
       .order("created_at", { ascending: false });
@@ -130,7 +126,7 @@ export const getUserPricePredictions = async () => {
 export const deletePricePrediction = async (predictionId: string): Promise<boolean> => {
   try {
     const { error } = await supabase
-      .from('user_price_predictions' as any)
+      .from("user_price_predictions")
       .delete()
       .eq("id", predictionId);
 

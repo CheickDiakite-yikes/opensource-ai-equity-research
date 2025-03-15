@@ -39,7 +39,7 @@ export const useSavedReports = () => {
       // Enhanced debug logging
       console.log("Raw data from getUserResearchReports:", data);
       
-      if (!data || data.length === 0) {
+      if (data.length === 0) {
         console.log("No reports found for user");
         setReports([]);
         setIsLoading(false);
@@ -79,7 +79,6 @@ export const useSavedReports = () => {
     } catch (err) {
       console.error("Error fetching saved reports:", err);
       setError("Failed to load saved reports");
-      toast.error("Failed to load saved reports");
     } finally {
       setIsLoading(false);
     }
@@ -106,22 +105,16 @@ export const useSavedReports = () => {
       // Refresh reports list after saving
       console.log("Report saved successfully, refreshing reports list");
       await fetchReports();
-      toast.success(`Report for ${symbol} saved successfully`);
     } else {
       console.error("Failed to save report - no ID returned");
-      toast.error("Failed to save report");
     }
     return reportId;
   };
 
   // Fetch reports when the component mounts or user changes
   useEffect(() => {
-    console.log("useSavedReports useEffect - fetching reports", user?.id);
-    if (user) {
-      fetchReports();
-    } else {
-      setReports([]);
-    }
+    console.log("useSavedReports useEffect - fetching reports");
+    fetchReports();
   }, [user]);
 
   return { reports, isLoading, error, fetchReports, deleteReport, saveReport };

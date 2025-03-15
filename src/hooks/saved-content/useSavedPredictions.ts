@@ -37,7 +37,7 @@ export const useSavedPredictions = () => {
       
       console.log("Raw data from getUserPricePredictions:", data);
       
-      if (!data || data.length === 0) {
+      if (data.length === 0) {
         console.log("No predictions found for user");
         setPredictions([]);
         setIsLoading(false);
@@ -69,7 +69,6 @@ export const useSavedPredictions = () => {
     } catch (err) {
       console.error("Error fetching saved predictions:", err);
       setError("Failed to load saved predictions");
-      toast.error("Failed to load saved predictions");
     } finally {
       setIsLoading(false);
     }
@@ -97,23 +96,17 @@ export const useSavedPredictions = () => {
     if (predictionId) {
       // Refresh predictions list after saving
       console.log("Prediction saved successfully, refreshing predictions list");
-      await fetchPredictions();
-      toast.success(`Prediction for ${symbol} saved successfully`);
+      fetchPredictions();
     } else {
       console.error("Failed to save prediction - no ID returned");
-      toast.error("Failed to save prediction");
     }
     return predictionId;
   };
 
   // Fetch predictions when the component mounts or user changes
   useEffect(() => {
-    console.log("useSavedPredictions useEffect - fetching predictions", user?.id);
-    if (user) {
-      fetchPredictions();
-    } else {
-      setPredictions([]);
-    }
+    console.log("useSavedPredictions useEffect - fetching predictions");
+    fetchPredictions();
   }, [user]);
 
   return { 

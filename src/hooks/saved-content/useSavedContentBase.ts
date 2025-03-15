@@ -13,8 +13,6 @@ export const useSavedContentBase = () => {
     if (!user) {
       console.log("No user logged in, clearing data");
       setIsLoading(false);
-      setError("Please log in to view saved content.");
-      toast.error("You must be logged in to view saved content");
       return false;
     }
     return true;
@@ -22,15 +20,8 @@ export const useSavedContentBase = () => {
 
   // Reset loading state when component mounts
   useEffect(() => {
-    console.log("useSavedContentBase hook initialized", user ? "User authenticated" : "No user");
-    setIsLoading(true);
-    setError(null);
-    
-    if (!user) {
-      setIsLoading(false);
-      setError("Please log in to view saved content.");
-    }
-  }, [user]);
+    console.log("useSavedContentBase hook initialized");
+  }, []);
 
   return {
     user,
