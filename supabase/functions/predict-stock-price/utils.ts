@@ -3,6 +3,8 @@
  * Extract JSON from text response
  */
 export function extractJSONFromText(text: string) {
+  console.log("Attempting to extract JSON from response text...");
+  
   // First try direct JSON parsing
   try {
     return JSON.parse(text);
