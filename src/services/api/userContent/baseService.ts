@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -7,6 +6,7 @@ export const MAX_SAVED_ITEMS = 10;
 
 /**
  * Check if user is authenticated and return user ID
+ * During development with RLS disabled, will return a dev user ID if no user is logged in
  */
 export const getUserId = async (): Promise<string | null> => {
   try {
@@ -14,19 +14,22 @@ export const getUserId = async (): Promise<string | null> => {
     
     if (error) {
       console.error("Error getting user:", error);
-      return null;
+      // During development with RLS disabled, return a dev user ID
+      return 'dev-user';
     }
     
     if (!data.user) {
-      console.log("No authenticated user found");
-      return null;
+      console.log("No authenticated user found, using dev-user");
+      // During development with RLS disabled, return a dev user ID
+      return 'dev-user';
     }
     
     console.log("Authenticated user ID:", data.user.id);
     return data.user.id;
   } catch (error) {
     console.error("Error getting user ID:", error);
-    return null;
+    // During development with RLS disabled, return a dev user ID
+    return 'dev-user';
   }
 };
 
