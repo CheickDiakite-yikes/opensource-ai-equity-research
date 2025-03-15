@@ -75,7 +75,6 @@ export const saveResearchReport = async (
     console.log("Inserting report into database with HTML:", htmlContent ? "YES" : "NO");
     console.log("Report data sample:", JSON.stringify(reportData).substring(0, 200) + "...");
     
-    // Remove the ON CONFLICT clause that was causing the error
     const { data, error } = await supabase
       .from("user_research_reports")
       .insert({
@@ -85,7 +84,7 @@ export const saveResearchReport = async (
         report_data: reportData as unknown as Json,
         html_content: htmlContent
       })
-      .select();
+      .select("id, html_content");
 
     if (error) {
       console.error("Error saving report:", error);

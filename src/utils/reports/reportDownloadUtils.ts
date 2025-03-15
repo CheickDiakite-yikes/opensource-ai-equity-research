@@ -1,6 +1,6 @@
 
 import { toast } from "@/components/ui/use-toast";
-import { ResearchReport, GrowthCatalysts } from "@/types/ai-analysis/reportTypes";
+import { ResearchReport } from "@/types/ai-analysis/reportTypes";
 import {
   generateReportHeader,
   generateExecutiveSummary,
@@ -31,17 +31,7 @@ export const downloadReportAsHTML = (report: ResearchReport) => {
   
   // Add Growth Catalysts if available
   if (report.catalysts) {
-    // Handle both GrowthCatalysts object and string array
-    if (Array.isArray(report.catalysts)) {
-      // If it's a string array, convert to simple GrowthCatalysts format
-      const simpleCatalysts: GrowthCatalysts = {
-        positive: report.catalysts
-      };
-      content += generateGrowthCatalysts(simpleCatalysts);
-    } else {
-      // It's already a GrowthCatalysts object
-      content += generateGrowthCatalysts(report.catalysts);
-    }
+    content += generateGrowthCatalysts(report.catalysts);
   }
   
   // Add all standard sections from the report

@@ -1,72 +1,116 @@
 
-// Constants
-const STORAGE_KEY = 'freePredictionCount';
-const MAX_FREE_PREDICTIONS = 5;
+/**
+ * Service to manage the free predictions limit for anonymous users
+ */
+
+import { toast } from "sonner";
+
+const FREE_PREDICTIONS_LIMIT = 5;
+const FREE_PREDICTIONS_KEY = 'free_predictions_count';
 
 /**
- * Get the number of free predictions used by anonymous users
+ * Check if the user has reached their free predictions limit
+ * @returns true if user has used all free predictions
  */
-export const getUsedPredictions = (): number => {
+export const hasReachedFreeLimit = (): boolean => {
   try {
-    const count = localStorage.getItem(STORAGE_KEY);
+    const usedPredictions = getUsedPredictionsCount();
+    return usedPredictions >= FREE_PREDICTIONS_LIMIT;
+  } catch (error) {
+    console.error("Error checking free predictions limit:", error);
+    return false; // Default to false if there's an error checking
+  }
+};
+
+/**
+ * Get the count of predictions used by the anonymous user
+ */
+export const getUsedPredictionsCount = (): number => {
+  try {
+    const count = localStorage.getItem(FREE_PREDICTIONS_KEY);
     return count ? parseInt(count, 10) : 0;
   } catch (error) {
-    console.error('Error getting used predictions count:', error);
+    console.error("Error getting used predictions count:", error);
     return 0;
   }
 };
 
 /**
- * Get the number of remaining free predictions for anonymous users
+ * Get the number of predictions remaining for the anonymous user
  */
 export const getRemainingPredictions = (): number => {
-  const used = getUsedPredictions();
-  return Math.max(0, MAX_FREE_PREDICTIONS - used);
+  return Math.max(0, FREE_PREDICTIONS_LIMIT - getUsedPredictionsCount());
 };
 
 /**
- * Check if user has reached the free limit
+ * Increment the used predictions count
+ * @returns The new count of used predictions
  */
-export const hasReachedFreeLimit = (): boolean => {
-  return getUsedPredictions() >= MAX_FREE_PREDICTIONS;
-};
-
-/**
- * Increment the count of used predictions
- */
-export const incrementUsedPredictions = (): void => {
+export const incrementUsedPredictions = (): number => {
   try {
-    const currentCount = getUsedPredictions();
-    localStorage.setItem(STORAGE_KEY, (currentCount + 1).toString());
+    const current = getUsedPredictionsCount();
+    const newCount = current + 1;
+    localStorage.setItem(FREE_PREDICTIONS_KEY, newCount.toString());
+    return newCount;
   } catch (error) {
-    console.error('Error incrementing used predictions count:', error);
+    console.error("Error incrementing predictions count:", error);
+    return 0;
   }
 };
 
 /**
- * Reset the count of used predictions (e.g., when user logs in)
+ * Reset the used predictions count
  */
 export const resetUsedPredictions = (): void => {
   try {
-    localStorage.removeItem(STORAGE_KEY);
+    localStorage.removeItem(FREE_PREDICTIONS_KEY);
   } catch (error) {
-    console.error('Error resetting used predictions count:', error);
+    console.error("Error resetting predictions count:", error);
   }
 };
 
 /**
- * Check if a user can generate a report
- * @param isAuthenticated Whether the user is authenticated or not
+ * Check if a user can generate a prediction and show appropriate message
+ * @param isAuthenticated Whether the user is authenticated
+ * @returns true if the user can proceed
  */
-export const canGenerateReport = (isAuthenticated: boolean): boolean => {
-  return isAuthenticated;
+export const canGeneratePrediction = (isAuthenticated: boolean): boolean => {
+  // Authenticated users can always generate predictions
+  if (isAuthenticated) {
+    return true;
+  }
+  
+  // Check if anonymous user has reached their limit
+  if (hasReachedFreeLimit()) {
+    toast.error(
+      "You've reached the limit of 5 free predictions. Please sign in to continue.", 
+      { duration: 5000 }
+    );
+    return false;
+  }
+  
+  // Anonymous user still has free predictions
+  const remaining = getRemainingPredictions();
+  toast.info(
+    `You have ${remaining} free predictions remaining. Sign in to get unlimited predictions.`, 
+    { duration: 4000 }
+  );
+  return true;
 };
 
 /**
- * Check if a user can generate a prediction
- * @param isAuthenticated Whether the user is authenticated or not
+ * Check if a user can generate a research report
+ * @param isAuthenticated Whether the user is authenticated
+ * @returns true if the user can proceed
  */
-export const canGeneratePrediction = (isAuthenticated: boolean): boolean => {
-  // Authenticated users always can, anonymous users only if they haven't reached the limit
-  return isAuthenticated || !hasReachedFreeLimit();
+export const canGenerateReport = (isAuthenticated: boolean): boolean => {
+  if (!isAuthenticated) {
+    toast.error(
+      "You must be signed in to generate research reports.", 
+      { duration: 5000 }
+    );
+    return false;
+  }
+  
+  return true;
 };

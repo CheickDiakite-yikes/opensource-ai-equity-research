@@ -49,7 +49,6 @@ export const savePricePrediction = async (
     console.log("Inserting prediction into database");
     console.log("Prediction data sample:", JSON.stringify(predictionData).substring(0, 200) + "...");
     
-    // Remove the ON CONFLICT clause that was causing the error
     const { data, error } = await supabase
       .from("user_price_predictions")
       .insert({
@@ -58,7 +57,7 @@ export const savePricePrediction = async (
         company_name: companyName,
         prediction_data: predictionData as unknown as Json,
       })
-      .select();
+      .select("id");
 
     if (error) {
       console.error("Error saving prediction:", error);

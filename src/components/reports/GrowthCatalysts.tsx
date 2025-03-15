@@ -9,32 +9,12 @@ import {
 import { GrowthCatalysts as GrowthCatalystsType } from "@/types/ai-analysis/reportTypes";
 
 interface GrowthCatalystsProps {
-  catalysts: GrowthCatalystsType | string[] | undefined;
+  catalysts: GrowthCatalystsType | undefined;
 }
 
 export const GrowthCatalysts: React.FC<GrowthCatalystsProps> = ({ catalysts }) => {
   if (!catalysts) return null;
   
-  // If catalysts is an array of strings, convert it to the GrowthCatalystsType format
-  if (Array.isArray(catalysts)) {
-    return (
-      <div>
-        <div className="flex items-center mb-2">
-          <TrendingUp className="h-4 w-4 text-green-600 mr-1.5" />
-          <h4 className="font-medium">Growth Catalysts</h4>
-        </div>
-        <ul className="pl-6 space-y-1.5">
-          {catalysts.map((catalyst, i) => (
-            <li key={i} className="text-sm list-disc text-muted-foreground">
-              {catalyst}
-            </li>
-          ))}
-        </ul>
-      </div>
-    );
-  }
-  
-  // Handle GrowthCatalystsType object
   return (
     <div className="space-y-4">
       {/* Positive Catalysts */}
