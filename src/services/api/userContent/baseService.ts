@@ -10,6 +10,7 @@ export const MAX_SAVED_ITEMS = 10;
  */
 export const getUserId = async (): Promise<string | null> => {
   try {
+    // Try to get the current session directly from Supabase
     const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
     
     if (sessionError) {
@@ -51,6 +52,8 @@ export const countUserItems = async (
       return 0;
     }
     
+    console.log(`Counting ${tableName} for user: ${userId}`);
+    
     const { count, error } = await supabase
       .from(tableName)
       .select("*", { count: "exact", head: true })
@@ -61,6 +64,7 @@ export const countUserItems = async (
       return 0;
     }
 
+    console.log(`Found ${count || 0} ${tableName} for user ${userId}`);
     return count || 0;
   } catch (error) {
     console.error(`Error in countUserItems for ${tableName}:`, error);
