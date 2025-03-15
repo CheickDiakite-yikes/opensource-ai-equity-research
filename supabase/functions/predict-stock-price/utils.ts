@@ -68,9 +68,9 @@ export function ensureArrayWithItems(array: any, defaultArray: string[]): string
 export function processPredictionPrices(prices: any, currentPrice: number): any {
   if (!prices) return null;
   
-  // Maximum allowed multiplier relative to current price
-  const maxMultiplier = 3.0; // Max 3x current price
-  const minMultiplier = 0.3; // Min 0.3x current price (70% drop)
+  // Maximum allowed multiplier relative to current price - increased for more flexibility
+  const maxMultiplier = 5.0; // Increased from 3.0 to 5.0
+  const minMultiplier = 0.2; // Changed from 0.3 to 0.2 (80% drop max)
   
   // Process each timeframe
   const timeframes = ['oneMonth', 'threeMonths', 'sixMonths', 'oneYear'];
@@ -83,10 +83,10 @@ export function processPredictionPrices(prices: any, currentPrice: number): any 
     if (typeof value !== 'number' || isNaN(value) || !isFinite(value) || value <= 0) {
       // Generate reasonable default based on timeframe
       const defaults = {
-        oneMonth: 1.02, // 2% change
-        threeMonths: 1.05, // 5% change
-        sixMonths: 1.08, // 8% change
-        oneYear: 1.15 // 15% change
+        oneMonth: 1.01, // 1% change
+        threeMonths: 1.03, // 3% change
+        sixMonths: 1.05, // 5% change
+        oneYear: 1.10 // 10% change
       };
       const multiplier = defaults[timeframe as keyof typeof defaults];
       value = currentPrice * multiplier;

@@ -36,63 +36,6 @@ export type Database = {
         }
         Relationships: []
       }
-      dcf_assumptions: {
-        Row: {
-          assumptions: Json
-          created_at: string
-          expires_at: string
-          id: string
-          is_mock: boolean | null
-          symbol: string
-        }
-        Insert: {
-          assumptions: Json
-          created_at?: string
-          expires_at: string
-          id?: string
-          is_mock?: boolean | null
-          symbol: string
-        }
-        Update: {
-          assumptions?: Json
-          created_at?: string
-          expires_at?: string
-          id?: string
-          is_mock?: boolean | null
-          symbol?: string
-        }
-        Relationships: []
-      }
-      dcf_calculations: {
-        Row: {
-          created_at: string
-          id: string
-          is_mock: boolean | null
-          parameters: Json | null
-          result: Json
-          symbol: string
-          type: string
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          is_mock?: boolean | null
-          parameters?: Json | null
-          result: Json
-          symbol: string
-          type: string
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          is_mock?: boolean | null
-          parameters?: Json | null
-          result?: Json
-          symbol?: string
-          type?: string
-        }
-        Relationships: []
-      }
       earnings_transcripts: {
         Row: {
           content: string | null

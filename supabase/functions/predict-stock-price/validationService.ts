@@ -10,25 +10,25 @@ export function validatePrediction(predictionData: any, currentPrice: number): b
   for (const timeframe of timeframes) {
     const price = predictionData.predictedPrice[timeframe];
     
-    // Check for invalid prediction values
+    // Check for invalid prediction values - be more tolerant of variations
     if (typeof price !== 'number' || 
         isNaN(price) || 
         !isFinite(price) || 
         price <= 0 || 
-        price > currentPrice * 10) { // Price shouldn't be more than 10x current
+        price > currentPrice * 20) { // Increased max multiplier from 10x to 20x
       console.warn(`Invalid ${timeframe} prediction: ${price} (current: ${currentPrice})`);
       return false;
     }
   }
   
-  // Check one-year prediction (should be at least 1% different)
+  // Check one-year prediction - reduced minimum difference threshold
   const yearDiff = Math.abs((predictionData.predictedPrice.oneYear - currentPrice) / currentPrice);
-  if (yearDiff < 0.01) return false;
+  if (yearDiff < 0.005) return false; // Reduced from 0.01 to 0.005
   
-  // Validate other timeframes
+  // Validate other timeframes with reduced threshold
   return timeframes.every(timeframe => {
     const price = predictionData.predictedPrice[timeframe];
-    return Math.abs((price - currentPrice) / currentPrice) >= 0.005;
+    return Math.abs((price - currentPrice) / currentPrice) >= 0.0025; // Reduced from 0.005 to 0.0025
   });
 }
 
@@ -57,12 +57,12 @@ export function validateConsistency(prediction: any, historicalPredictions: any[
   // Calculate absolute difference in growth rates
   const growthRateDiff = Math.abs(newGrowthRate - lastGrowthRate);
   
-  // If the difference is more than 25 percentage points, consider it inconsistent
-  // unless there's significant price change already
+  // If the difference is more than 40 percentage points, consider it inconsistent
+  // Increased from 25 percentage points to 40 to be more lenient
   const priceChangePct = Math.abs((currentPrice / mostRecent.current_price) - 1);
   
   // Allow larger prediction differences if the price has changed significantly
-  const maxAllowedDiff = priceChangePct > 0.1 ? 0.4 : 0.25;
+  const maxAllowedDiff = priceChangePct > 0.1 ? 0.5 : 0.4; // Increased both thresholds
   
   return growthRateDiff <= maxAllowedDiff;
 }

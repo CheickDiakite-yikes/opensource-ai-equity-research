@@ -45,8 +45,7 @@ export const savePricePrediction = async (
       return null;
     }
 
-    // Validate prediction data before saving
-    // Add safety check for unrealistic prediction values
+    // Validate prediction data before saving with more lenient checks
     const isValid = validatePredictionData(predictionData);
     if (!isValid) {
       console.error("Invalid prediction data detected:", 
@@ -65,7 +64,7 @@ export const savePricePrediction = async (
     console.log("Inserting prediction into database");
     console.log("Prediction data sample:", JSON.stringify(predictionData).substring(0, 200) + "...");
     
-    // Changed: Removed the ON CONFLICT clause since there's no unique constraint defined
+    // Insert without ON CONFLICT clause since there's no unique constraint
     const { data, error } = await supabase
       .from("user_price_predictions")
       .insert({
@@ -100,6 +99,7 @@ export const savePricePrediction = async (
 
 /**
  * Validate prediction data to ensure it has reasonable values
+ * Using more lenient validation to match the edge function
  */
 function validatePredictionData(prediction: StockPrediction): boolean {
   if (!prediction || !prediction.predictedPrice) return false;
@@ -109,8 +109,8 @@ function validatePredictionData(prediction: StockPrediction): boolean {
   // Basic validation
   if (typeof currentPrice !== 'number' || currentPrice <= 0) return false;
   
-  // Check prediction values - no extreme values (more than 5x current price)
-  const maxPrice = currentPrice * 5;
+  // Check prediction values - allow up to 10x current price (increased from 5x)
+  const maxPrice = currentPrice * 10;
   const timeframes = ['oneMonth', 'threeMonths', 'sixMonths', 'oneYear'] as const;
   
   for (const timeframe of timeframes) {
