@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Header from "@/components/layout/Header";
 import LandingView from "@/components/home/LandingView";
 import StockView from "@/components/stocks/StockView";
@@ -33,11 +33,17 @@ const Index = () => {
   ]);
 
   useEffect(() => {
-    const savedSearches = localStorage.getItem('recentSearches');
-    if (savedSearches) {
-      setRecentSearches(JSON.parse(savedSearches));
+    // Load recent searches from localStorage
+    try {
+      const savedSearches = localStorage.getItem('recentSearches');
+      if (savedSearches) {
+        setRecentSearches(JSON.parse(savedSearches));
+      }
+    } catch (error) {
+      console.error("Failed to load recent searches:", error);
     }
     
+    // Set symbol from URL param if available
     const symbolParam = searchParams.get('symbol');
     if (symbolParam) {
       setSymbol(symbolParam);
@@ -58,58 +64,69 @@ const Index = () => {
     };
   }, [searchParams]);
 
-  const handleSearch = () => {
+  const handleSearch = useCallback(() => {
     if (!symbol.trim()) return;
     
     const symbolUpperCase = symbol.toUpperCase();
     setIsLoading(true);
     setSearchedSymbol(symbolUpperCase);
     
-    const updatedSearches = [
-      symbolUpperCase,
-      ...recentSearches.filter(s => s !== symbolUpperCase)
-    ].slice(0, 5);
-    
-    setRecentSearches(updatedSearches);
-    localStorage.setItem('recentSearches', JSON.stringify(updatedSearches));
+    // Update recent searches
+    try {
+      const updatedSearches = [
+        symbolUpperCase,
+        ...recentSearches.filter(s => s !== symbolUpperCase)
+      ].slice(0, 5);
+      
+      setRecentSearches(updatedSearches);
+      localStorage.setItem('recentSearches', JSON.stringify(updatedSearches));
+    } catch (error) {
+      console.error("Failed to save recent searches:", error);
+    }
     
     // Default to report tab when searching
     setSearchParams({ symbol: symbolUpperCase, tab: "report" });
     
+    // Simulate loading for better UX
     setTimeout(() => {
       setIsLoading(false);
       toast.success(`Successfully loaded data for ${symbolUpperCase}`, {
         duration: 3000,
       });
-    }, 800);
-  };
+    }, isMobile ? 600 : 800); // Shorter loading time on mobile
+  }, [symbol, recentSearches, setSearchParams, isMobile]);
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
+  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
     if (e.key === "Enter") {
       handleSearch();
     }
-  };
+  }, [handleSearch]);
 
-  const clearSearch = () => {
+  const clearSearch = useCallback(() => {
     setSearchedSymbol("");
     setSymbol("");
     navigate('/');
     toast.info("Returned to home view", {
       duration: 2000,
     });
-  };
+  }, [navigate]);
 
-  const searchSymbol = (sym: string) => {
+  const searchSymbol = useCallback((sym: string) => {
     setSymbol(sym);
     setSearchedSymbol(sym);
     
-    const updatedSearches = [
-      sym,
-      ...recentSearches.filter(s => s !== sym)
-    ].slice(0, 5);
-    
-    setRecentSearches(updatedSearches);
-    localStorage.setItem('recentSearches', JSON.stringify(updatedSearches));
+    // Update recent searches
+    try {
+      const updatedSearches = [
+        sym,
+        ...recentSearches.filter(s => s !== sym)
+      ].slice(0, 5);
+      
+      setRecentSearches(updatedSearches);
+      localStorage.setItem('recentSearches', JSON.stringify(updatedSearches));
+    } catch (error) {
+      console.error("Failed to save recent searches:", error);
+    }
     
     // Always set tab to "report" when selecting from featured companies
     setSearchParams({ symbol: sym, tab: "report" });
@@ -117,11 +134,11 @@ const Index = () => {
     toast.success(`Loading research data for ${sym}`, {
       duration: 3000,
     });
-  };
+  }, [recentSearches, setSearchParams]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background to-muted/30 dark:bg-gradient-to-br dark:from-gray-900 dark:to-slate-900 safe-area-padding transition-colors duration-300">
-      <Starfield starsCount={150} />
+      <Starfield starsCount={isMobile ? 100 : 150} />
       <Header 
         symbol={symbol}
         setSymbol={setSymbol}

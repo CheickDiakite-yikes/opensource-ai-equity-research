@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useCallback } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Briefcase, BarChart4, FileText, Signal } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -22,13 +22,14 @@ const StockTabsNavigation: React.FC<StockTabsNavigationProps> = ({
   const [searchParams] = useSearchParams();
   const isMobile = useMediaQuery("(max-width: 640px)");
 
-  const handleTabClick = (tabName: string) => {
+  // Memoize tab click handler
+  const handleTabClick = useCallback((tabName: string) => {
     const newParams = new URLSearchParams(searchParams);
     newParams.set("tab", tabName);
     
     navigate(`/?symbol=${symbol}&${newParams.toString()}`, { replace: true });
     onTabChange(tabName);
-  };
+  }, [navigate, symbol, searchParams, onTabChange]);
 
   const tabs = [
     { 
@@ -43,29 +44,30 @@ const StockTabsNavigation: React.FC<StockTabsNavigationProps> = ({
     },
     { 
       id: "report", 
-      label: "Research", // Shortened for mobile
+      label: isMobile ? "Research" : "Research Report", 
       icon: <FileText className="h-4 w-4" /> 
     },
     { 
       id: "alternative", 
-      label: "Alt Data", // Shortened for mobile
+      label: isMobile ? "Alt Data" : "Alternative Data", 
       icon: <Signal className="h-4 w-4" /> 
     }
   ];
 
   return (
-    <div className="w-full border-b border-border mb-6">
+    <div className="w-full border-b border-border mb-4 sm:mb-6">
       {isMobile ? (
-        <ScrollArea className="pb-2 w-full">
+        <ScrollArea className="pb-2 w-full overflow-x-auto scrollbar-none">
           <div className="flex space-x-1 min-w-max p-1">
             {tabs.map((tab) => (
               <button
                 key={tab.id}
                 onClick={() => handleTabClick(tab.id)}
                 className={cn(
-                  "flex items-center justify-center gap-1 min-w-[70px] px-2 py-2 text-xs font-medium relative whitespace-nowrap",
+                  "flex items-center justify-center gap-1 min-w-[70px] px-3 py-2 text-xs font-medium relative whitespace-nowrap touch-target",
                   activeTab === tab.id ? "text-primary" : "text-muted-foreground hover:text-foreground"
                 )}
+                aria-selected={activeTab === tab.id}
               >
                 {tab.icon}
                 <span>{tab.label}</span>
@@ -93,6 +95,7 @@ const StockTabsNavigation: React.FC<StockTabsNavigationProps> = ({
                 "flex items-center gap-2 px-4 py-3 font-medium text-sm relative",
                 activeTab === tab.id ? "text-primary" : "text-muted-foreground hover:text-foreground"
               )}
+              aria-selected={activeTab === tab.id}
             >
               {tab.icon}
               <span>{tab.label}</span>
@@ -114,4 +117,4 @@ const StockTabsNavigation: React.FC<StockTabsNavigationProps> = ({
   );
 };
 
-export default StockTabsNavigation;
+export default React.memo(StockTabsNavigation);

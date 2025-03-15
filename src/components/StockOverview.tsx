@@ -1,14 +1,18 @@
 
+import React, { useMemo } from "react";
 import { useStockOverviewData } from "@/hooks/useStockOverviewData";
 import StockOverviewSkeleton from "./stock-overview/StockOverviewSkeleton";
 import ErrorDisplay from "./stock-overview/ErrorDisplay";
 import StockOverviewContent from "./stock-overview/StockOverviewContent";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface StockOverviewProps {
   symbol: string;
 }
 
 const StockOverview = ({ symbol }: StockOverviewProps) => {
+  const isMobile = useIsMobile();
+  
   const {
     profile,
     quote,
@@ -23,6 +27,19 @@ const StockOverview = ({ symbol }: StockOverviewProps) => {
     refetch
   } = useStockOverviewData(symbol);
 
+  // Memoize filtered documents for mobile
+  const memoizedEarningsCalls = useMemo(() => {
+    if (!earningsCalls) return [];
+    // Show fewer items on mobile
+    return isMobile ? earningsCalls.slice(0, 3) : earningsCalls;
+  }, [earningsCalls, isMobile]);
+
+  const memoizedSecFilings = useMemo(() => {
+    if (!secFilings) return [];
+    // Show fewer items on mobile
+    return isMobile ? secFilings.slice(0, 5) : secFilings;
+  }, [secFilings, isMobile]);
+
   if (loading) {
     return <StockOverviewSkeleton />;
   }
@@ -36,8 +53,8 @@ const StockOverview = ({ symbol }: StockOverviewProps) => {
       profile={profile}
       quote={quote}
       rating={rating}
-      earningsCalls={earningsCalls}
-      secFilings={secFilings}
+      earningsCalls={memoizedEarningsCalls}
+      secFilings={memoizedSecFilings}
       ownershipData={ownershipData}
       documentsLoading={documentsLoading}
       ownershipLoading={ownershipLoading}
@@ -46,4 +63,4 @@ const StockOverview = ({ symbol }: StockOverviewProps) => {
   );
 };
 
-export default StockOverview;
+export default React.memo(StockOverview);
