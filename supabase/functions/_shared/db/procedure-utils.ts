@@ -45,31 +45,38 @@ export async function executeDBFunction<T>(
       // Create a cache key based on function name and params
       const cacheKey = `db_func:${functionName}:${JSON.stringify(params)}`;
       
-      // Calculate expiry time
-      const expiresAt = new Date();
-      expiresAt.setMinutes(expiresAt.getMinutes() + cacheTTLMinutes);
-      
-      // Try to get from cache or create with default
-      const { data, error } = await supabase.rpc('get_or_create_cache', {
-        p_cache_key: cacheKey,
-        p_expires_at: expiresAt.toISOString(),
-        p_default_data: null
+      // Try to get from cache
+      const { data: cachedData } = await supabase.rpc('get_cache', {
+        p_cache_key: cacheKey
       });
       
-      if (error) {
-        console.error(`Cache error for DB function ${functionName}:`, error);
-      } else if (data !== null) {
+      if (cachedData) {
         console.log(`Cache hit for DB function ${functionName}`);
-        return data as T;
+        return cachedData as T;
       }
+      
+      // No cached data or expired, proceed to execute function
+      console.log(`Cache miss for DB function ${functionName}, executing function`);
     }
     
-    // Execute the function directly if no cache or cache miss
+    // Execute the function directly
     const { data, error } = await supabase.rpc(functionName, params);
     
     if (error) {
       console.error(`Error executing DB function ${functionName}:`, error);
       return null;
+    }
+    
+    // Store in cache if needed
+    if (useCache && data !== null) {
+      // Calculate expiry time
+      console.log(`Storing result in cache for DB function ${functionName}`);
+      
+      await supabase.rpc('set_cache', {
+        p_cache_key: `db_func:${functionName}:${JSON.stringify(params)}`,
+        p_data: data,
+        p_ttl_minutes: cacheTTLMinutes
+      });
     }
     
     return data as T;
