@@ -1,36 +1,411 @@
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Navigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import { AnimatePresence } from "framer-motion";
+import { supabase } from "@/integrations/supabase/client";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { toast } from "sonner";
+import { AnimatePresence, motion } from "framer-motion";
+import { FileText, Trash2, Download, BarChart, Clock, AlertTriangle, Loader2 } from "lucide-react";
 import AppHeader from "@/components/layout/AppHeader";
-import SavedContentLoader from "@/components/saved-content/SavedContentLoader";
-import SavedContentMain from "@/components/saved-content/SavedContentMain";
-import { useSavedContentPage } from "@/hooks/saved-content/useSavedContentPage";
 import { featuredSymbols } from "@/constants/featuredSymbols";
+import { ResearchReport } from "@/types/ai-analysis/reportTypes";
+import { StockPrediction } from "@/types/ai-analysis/predictionTypes";
 
-const SavedContent = () => {
+const MyDocs = () => {
   const { user, isLoading: authLoading } = useAuth();
-  const {
-    isLoading,
-    isRefreshing,
-    reports,
-    predictions,
-    selectedReport,
-    selectedPrediction,
-    handleSelectReport,
-    handleSelectPrediction,
-    handleDeleteReport,
-    handleDeletePrediction,
-    handleDownloadHtml,
-    handleRefresh
-  } = useSavedContentPage();
+  const [activeTab, setActiveTab] = useState("reports");
+  const [reports, setReports] = useState<any[]>([]);
+  const [predictions, setPredictions] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [selectedItem, setSelectedItem] = useState<any>(null);
 
   // If user is not logged in, redirect to login page
   if (!user && !authLoading) {
-    console.log("No user logged in, redirecting to /auth");
     return <Navigate to="/auth" />;
   }
+
+  useEffect(() => {
+    if (user) {
+      fetchUserDocs();
+    }
+  }, [user]);
+
+  const fetchUserDocs = async () => {
+    setIsLoading(true);
+    try {
+      // Fetch reports
+      const { data: reportsData, error: reportsError } = await supabase
+        .from('user_research_reports')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (reportsError) throw reportsError;
+      setReports(reportsData || []);
+
+      // Fetch predictions
+      const { data: predictionsData, error: predictionsError } = await supabase
+        .from('user_price_predictions')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (predictionsError) throw predictionsError;
+      setPredictions(predictionsData || []);
+
+      // Set initial selected item if available
+      if (reportsData && reportsData.length > 0) {
+        setSelectedItem(reportsData[0]);
+      } else if (predictionsData && predictionsData.length > 0 && activeTab === "predictions") {
+        setSelectedItem(predictionsData[0]);
+      }
+    } catch (error) {
+      console.error("Error fetching documents:", error);
+      toast.error("Failed to load your documents");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleDeleteItem = async (id: string, type: 'report' | 'prediction') => {
+    try {
+      const table = type === 'report' ? 'user_research_reports' : 'user_price_predictions';
+      const { error } = await supabase
+        .from(table)
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+
+      if (type === 'report') {
+        setReports(reports.filter(report => report.id !== id));
+        if (selectedItem && selectedItem.id === id) {
+          setSelectedItem(reports.length > 1 ? reports.find(r => r.id !== id) : null);
+        }
+      } else {
+        setPredictions(predictions.filter(prediction => prediction.id !== id));
+        if (selectedItem && selectedItem.id === id) {
+          setSelectedItem(predictions.length > 1 ? predictions.find(p => p.id !== id) : null);
+        }
+      }
+
+      toast.success(`${type === 'report' ? 'Report' : 'Prediction'} deleted successfully`);
+    } catch (error) {
+      console.error(`Error deleting ${type}:`, error);
+      toast.error(`Failed to delete ${type}`);
+    }
+  };
+
+  const handleDownloadHtml = async (report: any) => {
+    try {
+      // Basic HTML template for reports
+      const htmlContent = `
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+          <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>Research Report: ${report.symbol}</title>
+          <style>
+            body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
+            h1, h2, h3 { color: #2563eb; }
+            .summary { background: #f3f4f6; padding: 15px; border-radius: 5px; }
+            .section { margin-bottom: 20px; }
+            .recommendation { font-weight: bold; color: #047857; }
+            footer { margin-top: 40px; font-size: 0.8em; color: #6b7280; }
+          </style>
+        </head>
+        <body>
+          <h1>${report.symbol} - Research Report</h1>
+          <p><strong>Company:</strong> ${report.company_name}</p>
+          <p><strong>Date:</strong> ${new Date(report.created_at).toLocaleDateString()}</p>
+          
+          <div class="summary">
+            <h2>Executive Summary</h2>
+            <p>${report.report_data.summary}</p>
+            <p class="recommendation">Recommendation: ${report.report_data.recommendation}</p>
+            <p>Target Price: ${report.report_data.targetPrice}</p>
+          </div>
+          
+          ${report.report_data.sections.map((section: any) => `
+            <div class="section">
+              <h3>${section.title}</h3>
+              <p>${section.content}</p>
+            </div>
+          `).join('')}
+          
+          <footer>
+            <p>Generated using AI analysis. For informational purposes only.</p>
+            <p>© ${new Date().getFullYear()} Stock Research AI</p>
+          </footer>
+        </body>
+        </html>
+      `;
+
+      // Create blob and download
+      const blob = new Blob([htmlContent], { type: 'text/html' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `${report.symbol}_research_report.html`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      toast.success("Report downloaded successfully");
+    } catch (error) {
+      console.error("Error downloading report:", error);
+      toast.error("Failed to download report");
+    }
+  };
+
+  const renderListItem = (item: any, type: 'report' | 'prediction') => {
+    const isSelected = selectedItem && selectedItem.id === item.id;
+    const date = new Date(item.created_at).toLocaleDateString();
+    
+    return (
+      <motion.div
+        key={item.id}
+        initial={{ opacity: 0, y: 5 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3 }}
+        className={`border rounded-lg p-4 mb-3 cursor-pointer transition-all ${
+          isSelected ? "border-primary bg-primary/5" : "hover:border-primary/50"
+        }`}
+        onClick={() => setSelectedItem(item)}
+      >
+        <div className="flex justify-between items-center">
+          <div className="flex items-center gap-3">
+            {type === 'report' ? (
+              <FileText className="h-5 w-5 text-primary" />
+            ) : (
+              <BarChart className="h-5 w-5 text-primary" />
+            )}
+            <div>
+              <div className="font-medium">{item.symbol}</div>
+              <div className="text-sm text-muted-foreground">{item.company_name}</div>
+            </div>
+          </div>
+          <div className="flex items-center gap-1 text-xs text-muted-foreground">
+            <Clock className="h-3 w-3" />
+            <span>{date}</span>
+          </div>
+        </div>
+      </motion.div>
+    );
+  };
+
+  const renderEmptyState = (type: 'report' | 'prediction') => (
+    <div className="flex flex-col items-center justify-center py-12 text-center">
+      {type === 'report' ? <FileText className="h-16 w-16 text-muted-foreground/30 mb-4" /> : <BarChart className="h-16 w-16 text-muted-foreground/30 mb-4" />}
+      <h3 className="text-lg font-medium">No {type === 'report' ? 'reports' : 'predictions'} found</h3>
+      <p className="text-muted-foreground mt-1 max-w-md">
+        {type === 'report' 
+          ? "You haven't generated any research reports yet." 
+          : "You haven't generated any price predictions yet."}
+      </p>
+    </div>
+  );
+
+  const renderDetailView = () => {
+    if (!selectedItem) {
+      return (
+        <div className="flex flex-col items-center justify-center h-full text-center">
+          <AlertTriangle className="h-16 w-16 text-muted-foreground/30 mb-4" />
+          <h3 className="text-lg font-medium">No document selected</h3>
+          <p className="text-muted-foreground mt-1">Select a document from the list to view its details</p>
+        </div>
+      );
+    }
+
+    const isReport = 'report_data' in selectedItem;
+    const content = isReport ? selectedItem.report_data : selectedItem.prediction_data;
+
+    if (isReport) {
+      const report = content as ResearchReport;
+      return (
+        <div className="space-y-6">
+          <div className="flex justify-between items-start">
+            <div>
+              <h2 className="text-2xl font-bold">{report.symbol} - {report.companyName}</h2>
+              <div className="flex items-center gap-2 mt-1">
+                <span className="bg-primary/10 text-primary px-3 py-1 rounded-full text-sm font-medium">
+                  {report.recommendation}
+                </span>
+                <span className="text-sm text-muted-foreground">
+                  Target: {report.targetPrice}
+                </span>
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => handleDownloadHtml(selectedItem)}
+              >
+                <Download className="h-4 w-4 mr-2" />
+                Download
+              </Button>
+              <Button 
+                variant="destructive" 
+                size="sm"
+                onClick={() => handleDeleteItem(selectedItem.id, 'report')}
+              >
+                <Trash2 className="h-4 w-4 mr-2" />
+                Delete
+              </Button>
+            </div>
+          </div>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Executive Summary</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p>{report.summary}</p>
+            </CardContent>
+          </Card>
+
+          {report.sections.map((section, index) => (
+            <Card key={index}>
+              <CardHeader>
+                <CardTitle>{section.title}</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p>{section.content}</p>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      );
+    } else {
+      const prediction = content as StockPrediction;
+      return (
+        <div className="space-y-6">
+          <div className="flex justify-between items-start">
+            <div>
+              <h2 className="text-2xl font-bold">{prediction.symbol}</h2>
+              <div className="text-sm text-muted-foreground mt-1">
+                Current Price: ${prediction.currentPrice}
+              </div>
+            </div>
+            <Button 
+              variant="destructive" 
+              size="sm" 
+              onClick={() => handleDeleteItem(selectedItem.id, 'prediction')}
+            >
+              <Trash2 className="h-4 w-4 mr-2" />
+              Delete
+            </Button>
+          </div>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Price Predictions</CardTitle>
+              <CardDescription>AI-generated price targets based on financial analysis</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm text-muted-foreground">1 Month</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-2xl font-bold">${prediction.predictedPrice.oneMonth}</p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {((prediction.predictedPrice.oneMonth / prediction.currentPrice - 1) * 100).toFixed(2)}%
+                    </p>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm text-muted-foreground">3 Months</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-2xl font-bold">${prediction.predictedPrice.threeMonths}</p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {((prediction.predictedPrice.threeMonths / prediction.currentPrice - 1) * 100).toFixed(2)}%
+                    </p>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm text-muted-foreground">6 Months</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-2xl font-bold">${prediction.predictedPrice.sixMonths}</p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {((prediction.predictedPrice.sixMonths / prediction.currentPrice - 1) * 100).toFixed(2)}%
+                    </p>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm text-muted-foreground">1 Year</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-2xl font-bold">${prediction.predictedPrice.oneYear}</p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {((prediction.predictedPrice.oneYear / prediction.currentPrice - 1) * 100).toFixed(2)}%
+                    </p>
+                  </CardContent>
+                </Card>
+              </div>
+            </CardContent>
+          </Card>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Key Drivers</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ul className="list-disc ml-5 space-y-2">
+                  {prediction.keyDrivers.map((driver, index) => (
+                    <li key={index}>{driver}</li>
+                  ))}
+                </ul>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader>
+                <CardTitle>Risks</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ul className="list-disc ml-5 space-y-2">
+                  {prediction.risks.map((risk, index) => (
+                    <li key={index}>{risk}</li>
+                  ))}
+                </ul>
+              </CardContent>
+            </Card>
+          </div>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Sentiment Analysis</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p>{prediction.sentimentAnalysis}</p>
+              <div className="mt-4">
+                <p className="text-sm text-muted-foreground mb-1">Confidence Level</p>
+                <div className="w-full bg-secondary rounded-full h-2.5">
+                  <div 
+                    className="bg-primary h-2.5 rounded-full" 
+                    style={{ width: `${prediction.confidenceLevel * 100}%` }}
+                  ></div>
+                </div>
+                <p className="text-xs text-muted-foreground mt-1 text-right">
+                  {(prediction.confidenceLevel * 100).toFixed(1)}%
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      );
+    }
+  };
 
   return (
     <>
@@ -38,26 +413,71 @@ const SavedContent = () => {
       
       <AnimatePresence>
         {isLoading ? (
-          <SavedContentLoader />
+          <div className="container py-12 flex items-center justify-center">
+            <div className="flex flex-col items-center">
+              <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
+              <p className="text-muted-foreground">Loading your documents...</p>
+            </div>
+          </div>
         ) : (
-          <SavedContentMain
-            userEmail={user?.email || null}
-            isRefreshing={isRefreshing}
-            reports={reports}
-            predictions={predictions}
-            selectedReport={selectedReport}
-            selectedPrediction={selectedPrediction}
-            onRefresh={handleRefresh}
-            onSelectReport={handleSelectReport}
-            onSelectPrediction={handleSelectPrediction}
-            onDeleteReport={handleDeleteReport}
-            onDeletePrediction={handleDeletePrediction}
-            onDownloadHtml={handleDownloadHtml}
-          />
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="container py-12"
+          >
+            <div className="mb-8">
+              <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent mb-2">
+                My Docs
+              </h1>
+              <p className="text-muted-foreground">
+                View and manage your saved research reports and predictions
+              </p>
+            </div>
+            
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+              <div className="lg:col-span-1">
+                <Tabs defaultValue="reports" onValueChange={(value) => setActiveTab(value)}>
+                  <TabsList className="w-full mb-4">
+                    <TabsTrigger value="reports" className="flex-1">Research Reports</TabsTrigger>
+                    <TabsTrigger value="predictions" className="flex-1">Price Predictions</TabsTrigger>
+                  </TabsList>
+                  
+                  <TabsContent value="reports" className="h-[calc(100vh-300px)] overflow-y-auto pr-2">
+                    {reports.length > 0 ? (
+                      <div>
+                        {reports.map(report => renderListItem(report, 'report'))}
+                      </div>
+                    ) : (
+                      renderEmptyState('report')
+                    )}
+                  </TabsContent>
+                  
+                  <TabsContent value="predictions" className="h-[calc(100vh-300px)] overflow-y-auto pr-2">
+                    {predictions.length > 0 ? (
+                      <div>
+                        {predictions.map(prediction => renderListItem(prediction, 'prediction'))}
+                      </div>
+                    ) : (
+                      renderEmptyState('prediction')
+                    )}
+                  </TabsContent>
+                </Tabs>
+              </div>
+              
+              <div className="lg:col-span-2">
+                <Card className="h-[calc(100vh-220px)] overflow-y-auto">
+                  <CardContent className="p-6">
+                    {renderDetailView()}
+                  </CardContent>
+                </Card>
+              </div>
+            </div>
+          </motion.div>
         )}
       </AnimatePresence>
     </>
   );
 };
 
-export default SavedContent;
+export default MyDocs;
