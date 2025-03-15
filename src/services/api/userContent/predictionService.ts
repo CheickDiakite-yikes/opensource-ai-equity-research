@@ -49,7 +49,7 @@ export const savePricePrediction = async (
     console.log("Inserting prediction into database");
     console.log("Prediction data sample:", JSON.stringify(predictionData).substring(0, 200) + "...");
     
-    const { data, error } = await supabase
+    const result = await supabase
       .from("user_price_predictions")
       .insert({
         user_id: userId,
@@ -59,12 +59,16 @@ export const savePricePrediction = async (
       })
       .select("id");
 
-    if (error) {
-      console.error("Error saving prediction:", error);
-      toast.error("Failed to save prediction: " + error.message);
+    // Handle possible errors
+    if (result.error) {
+      console.error("Error saving prediction:", result.error);
+      toast.error("Failed to save prediction: " + result.error.message);
       return null;
     }
 
+    // Type assertion to handle the data safely
+    const data = result.data as any[];
+    
     if (!data || data.length === 0) {
       console.error("No data returned after saving prediction");
       toast.error("Failed to save prediction - no data returned");
@@ -74,7 +78,7 @@ export const savePricePrediction = async (
     console.log("Prediction saved successfully. ID:", data[0].id);
     toast.success("Price prediction saved successfully");
     return data[0].id;
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error in savePricePrediction:", error);
     toast.error("An unexpected error occurred");
     return null;
@@ -94,26 +98,29 @@ export const getUserPricePredictions = async () => {
     }
 
     console.log("Fetching predictions for user:", userId);
-    const { data, error } = await supabase
+    const result = await supabase
       .from("user_price_predictions")
       .select("*")
       .eq("user_id", userId)
       .order("created_at", { ascending: false });
 
-    if (error) {
-      console.error("Error fetching user predictions:", error);
-      toast.error("Failed to load saved predictions: " + error.message);
+    if (result.error) {
+      console.error("Error fetching user predictions:", result.error);
+      toast.error("Failed to load saved predictions: " + result.error.message);
       return [];
     }
 
+    // Using type assertion to handle the data
+    const data = result.data as any[];
+    
     if (!data || data.length === 0) {
       console.log("No predictions found for user");
       return [];
     }
 
     console.log(`Found ${data.length} predictions for user`);
-    return data || [];
-  } catch (error) {
+    return data;
+  } catch (error: any) {
     console.error("Error in getUserPricePredictions:", error);
     toast.error("An unexpected error occurred");
     return [];
@@ -138,7 +145,7 @@ export const deletePricePrediction = async (predictionId: string): Promise<boole
 
     toast.success("Prediction deleted successfully");
     return true;
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error in deletePricePrediction:", error);
     toast.error("An unexpected error occurred");
     return false;

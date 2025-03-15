@@ -1,38 +1,37 @@
-
-import { useState, useEffect } from "react";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { AlertTriangle, Info, Lock } from "lucide-react";
-import LoadingSkeleton from "@/components/LoadingSkeleton";
+import React, { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
+import ReportHeader from "@/components/reports/ReportHeader";
+import ReportSectionsList from "@/components/reports/ReportSectionsList";
+import PricePredictionDisplay from "@/components/reports/PricePredictionDisplay";
+import ReportGeneratorForm from "@/components/reports/ReportGeneratorForm";
+import DisclaimerSection from "@/components/reports/DisclaimerSection";
+import ErrorDisplay from "@/components/reports/ErrorDisplay";
+import { useAuth } from "@/hooks/auth/useAuth"; // Updated import
+import { useSavedReports, useSavedPredictions } from "@/hooks/saved-content"; 
 import { ResearchReport } from "@/types/ai-analysis/reportTypes";
 import { StockPrediction } from "@/types/ai-analysis/predictionTypes";
-import ReportGeneratorForm from "./ReportGeneratorForm";
-import ReportTabs from "./ReportTabs";
-import { toast } from "sonner";
-import { useAuth } from "@/contexts/AuthContext";
-import { useSavedReports, useSavedPredictions } from "@/hooks/useSavedContent";
-import { useNavigate } from "react-router-dom";
-import { getRemainingPredictions, hasReachedFreeLimit } from "@/services/api/userContent/freePredictionsService";
+import { canGenerateMorePredictions, incrementUsedPredictions } from "@/services/api/userContent/freePredictionsService";
+import { ReportData } from "@/components/reports/useResearchReportData";
 
-interface ResearchReportContentProps {
-  data: any;
-  hasStockData: boolean;
-  showDataWarning: boolean;
+export interface ResearchReportContentProps {
   isGenerating: boolean;
   isPredicting: boolean;
   report: ResearchReport | null;
   prediction: StockPrediction | null;
   reportType: string;
-  setReportType: (type: string) => void;
-  onGenerateReport: () => void;
-  onPredictPrice: () => void;
+  setReportType: React.Dispatch<React.SetStateAction<string>>;
+  onGenerateReport: () => Promise<void>;
+  onPredictPrice: () => Promise<void>;
+  data: ReportData;
+  showDataWarning: boolean;
+  hasStockData: boolean;
+  // Add the missing properties
   isReportTooBasic: boolean;
   generationError: string | null;
 }
 
-const ResearchReportContent = ({
-  data,
-  hasStockData,
-  showDataWarning,
+const ResearchReportContent: React.FC<ResearchReportContentProps> = ({
   isGenerating,
   isPredicting,
   report,
@@ -41,169 +40,136 @@ const ResearchReportContent = ({
   setReportType,
   onGenerateReport,
   onPredictPrice,
+  data,
+  showDataWarning,
+  hasStockData,
   isReportTooBasic,
   generationError
-}: ResearchReportContentProps) => {
+}) => {
+  const [saveInProgress, setSaveInProgress] = useState<boolean>(false);
   const { user } = useAuth();
-  const navigate = useNavigate();
-  const [showTip, setShowTip] = useState(true);
-  const { saveReport, fetchReports } = useSavedReports();
-  const { savePrediction, fetchPredictions } = useSavedPredictions();
-  const [saveAttempted, setSaveAttempted] = useState(false);
-  const isAuthenticated = !!user;
-  const remainingPredictions = getRemainingPredictions();
-  const reachedFreeLimit = hasReachedFreeLimit();
+  const { saveReport } = useSavedReports();
+  const { savePrediction } = useSavedPredictions();
   
-  // Handle saving a report
+  const canSaveReport = !!report && !saveInProgress && user;
+  const canSavePrediction = !!prediction && !saveInProgress && user;
+
   const handleSaveReport = async () => {
+    if (!report || !data.profile) {
+      toast({
+        title: "Error",
+        description: "Cannot save report: missing report data",
+        variant: "destructive",
+      });
+      return;
+    }
+
     if (!user) {
-      toast.error("You must be signed in to save reports");
-      navigate('/auth');
+      toast({
+        title: "Authentication Required",
+        description: "You must be signed in to save reports",
+        variant: "destructive",
+      });
       return;
     }
     
-    if (!report) {
-      toast.error("No report to save");
-      return;
-    }
-    
-    console.log("Saving report:", report.symbol, report.companyName);
+    setSaveInProgress(true);
     try {
-      setSaveAttempted(true);
-      const reportId = await saveReport(report.symbol, report.companyName, report);
+      const reportId = await saveReport(report.symbol, data.profile.companyName, report);
       if (reportId) {
-        toast.success(`Report for ${report.symbol} saved successfully`);
-        console.log("Report saved with ID:", reportId);
-        fetchReports(); // Refresh the reports list
+        toast({
+          title: "Report Saved",
+          description: "Research report has been saved to your account.",
+        });
       } else {
-        toast.error("Failed to save report. Please try again.");
-        console.error("No report ID returned from saveReport");
+        toast({
+          title: "Error",
+          description: "Failed to save report.",
+          variant: "destructive",
+        });
       }
     } catch (error) {
       console.error("Error saving report:", error);
-      toast.error("An error occurred while saving the report");
+      toast({
+        title: "Error",
+        description: "Failed to save report: " + error,
+        variant: "destructive",
+      });
+    } finally {
+      setSaveInProgress(false);
     }
   };
-  
-  // Handle saving a prediction
+
   const handleSavePrediction = async () => {
+    if (!prediction || !data.profile) {
+      toast({
+        title: "Error",
+        description: "Cannot save prediction: missing prediction data",
+        variant: "destructive",
+      });
+      return;
+    }
+
     if (!user) {
-      toast.error("You must be signed in to save predictions");
-      navigate('/auth');
+      toast({
+        title: "Authentication Required",
+        description: "You must be signed in to save predictions",
+        variant: "destructive",
+      });
       return;
     }
     
-    if (!prediction) {
-      toast.error("No prediction to save");
-      return;
-    }
-    
-    console.log("Saving prediction:", prediction.symbol, data.profile?.companyName || prediction.symbol);
+    setSaveInProgress(true);
     try {
-      setSaveAttempted(true);
-      const predictionId = await savePrediction(
-        prediction.symbol, 
-        data.profile?.companyName || prediction.symbol, 
-        prediction
-      );
-      
+      const predictionId = await savePrediction(prediction.symbol, data.profile.companyName, prediction);
       if (predictionId) {
-        toast.success(`Prediction for ${prediction.symbol} saved successfully`);
-        console.log("Prediction saved with ID:", predictionId);
-        fetchPredictions(); // Refresh the predictions list
+        toast({
+          title: "Prediction Saved",
+          description: "Price prediction has been saved to your account.",
+        });
       } else {
-        toast.error("Failed to save prediction. Please try again.");
-        console.error("No prediction ID returned from savePrediction");
+        toast({
+          title: "Error",
+          description: "Failed to save prediction.",
+          variant: "destructive",
+        });
       }
     } catch (error) {
       console.error("Error saving prediction:", error);
-      toast.error("An error occurred while saving the prediction");
+      toast({
+        title: "Error",
+        description: "Failed to save prediction: " + error,
+        variant: "destructive",
+      });
+    } finally {
+      setSaveInProgress(false);
     }
   };
   
-  useEffect(() => {
-    if (isReportTooBasic && report) {
-      toast.warning(
-        "This report appears to be basic. Try generating again or updating the report type.",
-        { duration: 6000 }
-      );
-    }
-  }, [isReportTooBasic, report]);
-
-  // Auto-save report when it's generated (if user is logged in)
-  useEffect(() => {
-    if (user && report && !isGenerating && !saveAttempted) {
-      console.log("Auto-saving newly generated report");
-      handleSaveReport();
-    }
-  }, [report, isGenerating, user]);
-  
-  // Auto-save prediction when it's generated (if user is logged in)
-  useEffect(() => {
-    if (user && prediction && !isPredicting && !saveAttempted) {
-      console.log("Auto-saving newly generated prediction");
-      handleSavePrediction();
-    }
-  }, [prediction, isPredicting, user]);
-
-  // Reset save attempted flag when new report/prediction is being generated
-  useEffect(() => {
-    if (isGenerating || isPredicting) {
-      setSaveAttempted(false);
-    }
-  }, [isGenerating, isPredicting]);
-
-  if (!data) {
-    return <LoadingSkeleton />;
-  }
+  const showPredictionLimitWarning = !user && !canGenerateMorePredictions();
 
   return (
-    <div className="space-y-8">
+    <div className="flex flex-col space-y-6">
+      <ReportHeader symbol={data.profile?.symbol || ""} companyName={data.profile?.companyName || ""} />
+
       {showDataWarning && (
-        <Alert className="bg-amber-50 text-amber-800 border-amber-200 dark:bg-amber-950/30 dark:text-amber-300 dark:border-amber-700">
-          <AlertTriangle className="h-4 w-4" />
-          <AlertTitle>Limited data available</AlertTitle>
-          <AlertDescription className="text-amber-700/80 dark:text-amber-400/80">
-            We found limited financial data for this stock. The report may contain incomplete analysis.
-          </AlertDescription>
-        </Alert>
-      )}
-
-      {showTip && (
-        <Alert className="bg-blue-50 border-blue-200 dark:bg-blue-950/30 dark:border-blue-700 dark:text-blue-300">
-          <Info className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-          <AlertTitle className="text-blue-800 dark:text-blue-300">Generate AI analysis</AlertTitle>
-          <AlertDescription className="text-blue-700/80 dark:text-blue-400/80 flex justify-between items-center">
-            <span>Create a detailed equity research report or price prediction by selecting an option below.</span>
-            <button 
-              onClick={() => setShowTip(false)} 
-              className="text-xs text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
-            >
-              Dismiss
-            </button>
-          </AlertDescription>
-        </Alert>
-      )}
-
-      {!isAuthenticated && (
-        <Alert className="bg-indigo-50 border-indigo-200 dark:bg-indigo-950/30 dark:border-indigo-700 dark:text-indigo-300">
-          <Lock className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
-          <AlertTitle className="text-indigo-800 dark:text-indigo-300">Premium features available</AlertTitle>
-          <AlertDescription className="text-indigo-700/80 dark:text-indigo-400/80">
-            <p className="mb-2">Sign in to unlock full access to research reports and unlimited price predictions.</p>
-            <ul className="list-disc ml-5 text-xs space-y-1">
-              <li>Create detailed research reports</li>
-              <li>Get unlimited price predictions</li>
-              <li>Save your reports and predictions</li>
-              <li>Access saved content for 7 days</li>
-            </ul>
-            {remainingPredictions > 0 && (
-              <p className="mt-2 text-sm font-medium">
-                You have {remainingPredictions} free predictions remaining
-              </p>
-            )}
-          </AlertDescription>
-        </Alert>
+        <div className="rounded-md bg-yellow-50 p-4">
+          <div className="flex">
+            <div className="flex-shrink-0">
+              <svg className="h-5 w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                <path fillRule="evenodd" d="M8.485 2.495c.67-.759 1.785-.759 2.455 0l8.25 9.33a1 1 0 00-.216 1.836H19V19a2 2 0 01-2 2H3a2 2 0 01-2-2V13.66l.216-1.836 8.25-9.33zM10 5a.75.75 0 01.75.75v3.25a.75.75 0 01-1.5 0V5.75A.75.75 0 0110 5zm-7.75 8.25a.75.75 0 01.75-.75h1.5a.75.75 0 01.75.75v.75a.75.75 0 01-.75.75h-1.5a.75.75 0 01-.75-.75v-.75z" clipRule="evenodd" />
+              </svg>
+            </div>
+            <div className="ml-3">
+              <h3 className="text-sm font-medium text-yellow-800">Data Incompleteness</h3>
+              <div className="mt-2 text-sm text-yellow-700">
+                <p>
+                  The report may be limited due to missing financial data.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
 
       <ReportGeneratorForm
@@ -214,41 +180,79 @@ const ResearchReportContent = ({
         isGenerating={isGenerating}
         isPredicting={isPredicting}
         hasData={hasStockData}
-        onSaveReport={report ? handleSaveReport : undefined}
-        onSavePrediction={prediction ? handleSavePrediction : undefined}
-        canSaveReport={!!report}
-        canSavePrediction={!!prediction}
+        onSaveReport={handleSaveReport}
+        onSavePrediction={handleSavePrediction}
+        canSaveReport={canSaveReport}
+        canSavePrediction={canSavePrediction}
       />
 
       {generationError && (
-        <Alert variant="destructive">
-          <AlertTriangle className="h-4 w-4" />
-          <AlertTitle>Error generating report</AlertTitle>
-          <AlertDescription>
-            {generationError}
-          </AlertDescription>
-        </Alert>
+        <ErrorDisplay message={generationError} />
       )}
 
-      {user ? (
-        <Alert className="bg-green-50 border-green-200 dark:bg-green-950/30 dark:border-green-700 dark:text-green-300">
-          <Info className="h-4 w-4 text-green-600 dark:text-green-400" />
-          <AlertTitle className="text-green-800 dark:text-green-300">Auto-save enabled</AlertTitle>
-          <AlertDescription className="text-green-700/80 dark:text-green-400/80">
-            Reports and predictions will be automatically saved to your account.
-          </AlertDescription>
-        </Alert>
-      ) : reachedFreeLimit ? (
-        <Alert className="bg-amber-50 border-amber-200 dark:bg-amber-950/30 dark:border-amber-700 dark:text-amber-300">
-          <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400" />
-          <AlertTitle className="text-amber-800 dark:text-amber-300">Free prediction limit reached</AlertTitle>
-          <AlertDescription className="text-amber-700/80 dark:text-amber-400/80">
-            You've used all 5 free predictions. Sign in to get unlimited predictions and reports.
-          </AlertDescription>
-        </Alert>
-      ) : null}
+      {report && (
+        <div className="space-y-4">
+          <h2 className="text-xl font-semibold">Research Report</h2>
+          {isReportTooBasic && (
+            <div className="rounded-md bg-blue-50 p-4">
+              <div className="flex">
+                <div className="flex-shrink-0">
+                  <svg className="h-5 w-5 text-blue-400" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 00-1 1v4a1 1 0 002 0V8a1 1 0 00-1-1zM9.309 13.16a.75.75 0 101.392 1.08A2.25 2.25 0 0110 15a2.25 2.25 0 01-.691-1.84.75.75 0 00-.309-.58z" clipRule="evenodd" />
+                  </svg>
+                </div>
+                <div className="ml-3">
+                  <h3 className="text-sm font-medium text-blue-800">Report Quality</h3>
+                  <div className="mt-2 text-sm text-blue-700">
+                    <p>
+                      This report is based on limited data. For a more comprehensive analysis, consider generating a report with more available financial data.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+          <ReportSectionsList sections={report.sections} />
+          <DisclaimerSection />
+        </div>
+      )}
 
-      <ReportTabs report={report} prediction={prediction} />
+      {prediction && (
+        <div className="space-y-4">
+          <h2 className="text-xl font-semibold">Price Prediction</h2>
+          <PricePredictionDisplay prediction={prediction} />
+          <DisclaimerSection />
+        </div>
+      )}
+
+      {showPredictionLimitWarning && (
+        <div className="rounded-md bg-red-50 p-4">
+          <div className="flex">
+            <div className="flex-shrink-0">
+              <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v3.586L7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4a1 1 0 00-1.414-1.414L11 10.586V7z" clipRule="evenodd" />
+              </svg>
+            </div>
+            <div className="ml-3">
+              <h3 className="text-sm font-medium text-red-800">Free Prediction Limit Reached</h3>
+              <div className="mt-2 text-sm text-red-700">
+                <p>
+                  You have used all your free price predictions. Sign up to unlock unlimited predictions.
+                </p>
+              </div>
+            </div>
+          </div>
+          <Button onClick={() => {
+            incrementUsedPredictions();
+            toast({
+              title: "Limit Reached",
+              description: "Please sign up to continue generating predictions.",
+            });
+          }}>
+            Continue as Guest
+          </Button>
+        </div>
+      )}
     </div>
   );
 };

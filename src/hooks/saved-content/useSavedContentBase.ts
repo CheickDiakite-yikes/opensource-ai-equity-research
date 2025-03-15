@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from "react";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth } from "../auth/useAuth"; // Fix the import path
 import { toast } from "sonner";
 
 export const useSavedContentBase = () => {

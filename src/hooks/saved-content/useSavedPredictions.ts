@@ -4,7 +4,7 @@ import {
   getUserPricePredictions,
   deletePricePrediction,
   savePricePrediction 
-} from "@/services/api/userContent";
+} from "@/services/api/userContent/predictionService";
 import { StockPrediction } from "@/types/ai-analysis/predictionTypes";
 import { useSavedContentBase } from "./useSavedContentBase";
 import { toast } from "sonner";
@@ -37,15 +37,15 @@ export const useSavedPredictions = () => {
       
       console.log("Raw data from getUserPricePredictions:", data);
       
-      if (data.length === 0) {
+      if (!data || data.length === 0) {
         console.log("No predictions found for user");
         setPredictions([]);
         setIsLoading(false);
         return;
       }
       
-      // Convert Json type to StockPrediction type with type assertion
-      const convertedPredictions = data.map(item => {
+      // Handle data as any to avoid type issues
+      const convertedPredictions = (data as any[]).map(item => {
         console.log(`Processing prediction ${item.id}:`, {
           symbol: item.symbol,
           company_name: item.company_name,
@@ -59,10 +59,14 @@ export const useSavedPredictions = () => {
         }
         
         return {
-          ...item,
-          prediction_data: item.prediction_data as unknown as StockPrediction
+          id: item.id,
+          symbol: item.symbol,
+          company_name: item.company_name,
+          prediction_data: item.prediction_data as unknown as StockPrediction,
+          created_at: item.created_at,
+          expires_at: item.expires_at
         };
-      }) as SavedPrediction[];
+      });
       
       console.log(`Fetched ${convertedPredictions.length} predictions`);
       setPredictions(convertedPredictions);

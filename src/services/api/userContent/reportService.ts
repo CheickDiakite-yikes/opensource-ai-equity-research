@@ -75,7 +75,7 @@ export const saveResearchReport = async (
     console.log("Inserting report into database with HTML:", htmlContent ? "YES" : "NO");
     console.log("Report data sample:", JSON.stringify(reportData).substring(0, 200) + "...");
     
-    const { data, error } = await supabase
+    const result = await supabase
       .from("user_research_reports")
       .insert({
         user_id: userId,
@@ -86,12 +86,15 @@ export const saveResearchReport = async (
       })
       .select("id, html_content");
 
-    if (error) {
-      console.error("Error saving report:", error);
-      toast.error("Failed to save report: " + error.message);
+    if (result.error) {
+      console.error("Error saving report:", result.error);
+      toast.error("Failed to save report: " + result.error.message);
       return null;
     }
 
+    // Using type assertion to handle data safely
+    const data = result.data as any[];
+    
     if (!data || data.length === 0) {
       console.error("No data returned after saving report");
       toast.error("Failed to save report - no data returned");
@@ -101,7 +104,7 @@ export const saveResearchReport = async (
     console.log("Report saved successfully. ID:", data[0].id, "HTML content:", data[0].html_content ? "YES" : "NO");
     toast.success("Research report saved successfully");
     return data[0].id;
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error in saveResearchReport:", error);
     toast.error("An unexpected error occurred");
     return null;
@@ -121,26 +124,29 @@ export const getUserResearchReports = async () => {
     }
 
     console.log("Fetching reports for user:", userId);
-    const { data, error } = await supabase
+    const result = await supabase
       .from("user_research_reports")
       .select("*")
       .eq("user_id", userId)
       .order("created_at", { ascending: false });
 
-    if (error) {
-      console.error("Error fetching user reports:", error);
-      toast.error("Failed to load saved reports: " + error.message);
+    if (result.error) {
+      console.error("Error fetching user reports:", result.error);
+      toast.error("Failed to load saved reports: " + result.error.message);
       return [];
     }
 
+    // Using type assertion to handle the data
+    const data = result.data as any[];
+    
     if (!data || data.length === 0) {
       console.log("No reports found for user");
       return [];
     }
 
     console.log(`Found ${data.length} reports for user`);
-    return data || [];
-  } catch (error) {
+    return data;
+  } catch (error: any) {
     console.error("Error in getUserResearchReports:", error);
     toast.error("An unexpected error occurred");
     return [];
@@ -165,7 +171,7 @@ export const deleteResearchReport = async (reportId: string): Promise<boolean> =
 
     toast.success("Report deleted successfully");
     return true;
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error in deleteResearchReport:", error);
     toast.error("An unexpected error occurred");
     return false;

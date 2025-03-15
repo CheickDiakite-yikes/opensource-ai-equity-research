@@ -4,7 +4,7 @@ import {
   getUserResearchReports, 
   deleteResearchReport,
   saveResearchReport 
-} from "@/services/api/userContent";
+} from "@/services/api/userContent/reportService";
 import { ResearchReport } from "@/types/ai-analysis/reportTypes";
 import { useSavedContentBase } from "./useSavedContentBase";
 import { toast } from "sonner";
@@ -39,15 +39,15 @@ export const useSavedReports = () => {
       // Enhanced debug logging
       console.log("Raw data from getUserResearchReports:", data);
       
-      if (data.length === 0) {
+      if (!data || data.length === 0) {
         console.log("No reports found for user");
         setReports([]);
         setIsLoading(false);
         return;
       }
       
-      // Convert Json type to ResearchReport type with type assertion
-      const convertedReports = data.map(item => {
+      // Handle data as any to avoid type issues
+      const convertedReports = (data as any[]).map(item => {
         console.log(`Processing report ${item.id}:`, {
           symbol: item.symbol,
           company_name: item.company_name,
@@ -63,11 +63,15 @@ export const useSavedReports = () => {
         }
         
         return {
-          ...item,
+          id: item.id,
+          symbol: item.symbol,
+          company_name: item.company_name,
           report_data: item.report_data as unknown as ResearchReport,
-          html_content: item.html_content || null
+          html_content: item.html_content || null,
+          created_at: item.created_at,
+          expires_at: item.expires_at
         };
-      }) as SavedReport[];
+      });
       
       // Debug
       console.log(`Fetched ${convertedReports.length} reports`);

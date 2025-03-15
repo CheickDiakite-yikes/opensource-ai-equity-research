@@ -12,7 +12,7 @@ import type { StockQuote } from "@/types/profile/companyTypes";
 import { StockPrediction } from "@/types/ai-analysis/predictionTypes";
 
 import type { ReportData } from "./useResearchReportData";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth } from "@/hooks/auth/useAuth"; // Updated import
 import { incrementUsedPredictions } from "@/services/api/userContent/freePredictionsService";
 
 export const useReportGeneration = (symbol: string, data: ReportData) => {

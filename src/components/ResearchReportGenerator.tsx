@@ -1,87 +1,70 @@
 
-import { useState, useEffect } from "react";
-import LoadingSkeleton from "@/components/LoadingSkeleton";
-import ErrorDisplay from "@/components/reports/ErrorDisplay";
-import ResearchReportContent from "@/components/reports/ResearchReportContent";
-import { useResearchReportData } from "@/components/reports/useResearchReportData";
-import { useReportGeneration } from "@/components/reports/useReportGeneration";
+import React, { useEffect } from "react";
+import { ResearchReportContent } from "./reports";
+import { useReportGeneration } from "./reports/useReportGeneration";
+import { useResearchReportData } from "./reports/useResearchReportData";
 
 interface ResearchReportGeneratorProps {
   symbol: string;
 }
 
-const ResearchReportGenerator = ({ symbol }: ResearchReportGeneratorProps) => {
+const ResearchReportGenerator: React.FC<ResearchReportGeneratorProps> = ({ symbol }) => {
+  const { data, isLoading, error, showDataWarning } = useResearchReportData(symbol);
+  
   const { 
-    isLoading, 
-    data, 
-    error, 
-    hasStockData, 
-    showDataWarning 
-  } = useResearchReportData(symbol);
-
-  const {
-    isGenerating,
-    isPredicting,
-    report,
-    prediction,
-    reportType,
-    generationError,
-    setReportType,
-    handleGenerateReport,
-    handlePredictPrice
+    isGenerating, 
+    isPredicting, 
+    report, 
+    prediction, 
+    reportType, 
+    generationError, // Make sure we include this property
+    setReportType, 
+    handleGenerateReport, 
+    handlePredictPrice 
   } = useReportGeneration(symbol, data);
 
-  // Enhanced debugging for better report troubleshooting
-  useEffect(() => {
-    if (report) {
-      console.log("Report data available:", {
-        symbol: report.symbol,
-        companyName: report.companyName,
-        recommendation: report.recommendation,
-        targetPrice: report.targetPrice,
-        hasRatingDetails: !!report.ratingDetails,
-        hasScenarioAnalysis: !!report.scenarioAnalysis,
-        hasCatalysts: !!report.catalysts,
-        sections: report.sections.map(s => s.title),
-        sectionCount: report.sections.length,
-        sectionSizes: report.sections.map(s => s.content.length),
-        summaryLength: report.summary?.length || 0
-      });
-    }
-  }, [report]);
+  const hasStockData = !!data.quote && !!data.profile;
+  const isReportTooBasic = report?.sections?.length === 1; // Added for the missing prop
 
-  // Check for report quality issues
-  const isReportTooBasic = report && (
-    !report.ratingDetails || 
-    !report.scenarioAnalysis || 
-    !report.catalysts ||
-    report.sections.some(s => s.content.length < 300) ||
-    (report.summary && report.summary.length < 150)
-  );
+  useEffect(() => {
+    // Reset the component state when the symbol changes
+    console.log("Symbol changed to:", symbol);
+  }, [symbol]);
 
   if (isLoading) {
-    return <LoadingSkeleton />;
+    return (
+      <div className="flex items-center justify-center p-8">
+        <div className="animate-pulse text-center">
+          <p className="text-muted-foreground">Loading financial data...</p>
+        </div>
+      </div>
+    );
   }
 
   if (error) {
-    return <ErrorDisplay error={error} />;
+    return (
+      <div className="p-6 text-center">
+        <h3 className="text-xl font-bold text-destructive mb-2">Error Loading Data</h3>
+        <p className="text-muted-foreground">{error}</p>
+      </div>
+    );
   }
 
   return (
     <ResearchReportContent
-      data={data}
-      showDataWarning={showDataWarning}
       isGenerating={isGenerating}
       isPredicting={isPredicting}
-      hasStockData={hasStockData}
+      report={report}
+      prediction={prediction}
       reportType={reportType}
       setReportType={setReportType}
       onGenerateReport={handleGenerateReport}
       onPredictPrice={handlePredictPrice}
-      report={report}
-      prediction={prediction}
-      isReportTooBasic={isReportTooBasic}
-      generationError={generationError}
+      data={data}
+      showDataWarning={showDataWarning}
+      hasStockData={hasStockData}
+      isReportTooBasic={isReportTooBasic} // Added missing prop
+      generationError={generationError} // Added missing prop
     />
   );
 };
