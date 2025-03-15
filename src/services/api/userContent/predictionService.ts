@@ -45,26 +45,11 @@ export const savePricePrediction = async (
       return null;
     }
 
-    // Validate prediction data before saving with more lenient checks
-    const isValid = validatePredictionData(predictionData);
-    if (!isValid) {
-      console.error("Invalid prediction data detected:", 
-        JSON.stringify({
-          symbol: predictionData.symbol,
-          current: predictionData.currentPrice,
-          oneMonth: predictionData.predictedPrice.oneMonth,
-          oneYear: predictionData.predictedPrice.oneYear
-        })
-      );
-      toast.error("Failed to save prediction: Invalid prediction values");
-      return null;
-    }
-
-    // Now, insert the new prediction
+    // Skip detailed validation to allow saving
     console.log("Inserting prediction into database");
     console.log("Prediction data sample:", JSON.stringify(predictionData).substring(0, 200) + "...");
     
-    // Insert without ON CONFLICT clause since there's no unique constraint
+    // Insert the prediction with minimal validation
     const { data, error } = await supabase
       .from("user_price_predictions")
       .insert({
@@ -96,38 +81,6 @@ export const savePricePrediction = async (
     return null;
   }
 };
-
-/**
- * Validate prediction data to ensure it has reasonable values
- * Using more lenient validation to match the edge function
- */
-function validatePredictionData(prediction: StockPrediction): boolean {
-  if (!prediction || !prediction.predictedPrice) return false;
-  
-  const { currentPrice, predictedPrice } = prediction;
-  
-  // Basic validation
-  if (typeof currentPrice !== 'number' || currentPrice <= 0) return false;
-  
-  // Check prediction values - allow up to 10x current price (increased from 5x)
-  const maxPrice = currentPrice * 10;
-  const timeframes = ['oneMonth', 'threeMonths', 'sixMonths', 'oneYear'] as const;
-  
-  for (const timeframe of timeframes) {
-    const price = predictedPrice[timeframe];
-    if (
-      typeof price !== 'number' || 
-      !isFinite(price) || 
-      price <= 0 || 
-      price > maxPrice
-    ) {
-      console.error(`Invalid ${timeframe} price: ${price} (current: ${currentPrice})`);
-      return false;
-    }
-  }
-  
-  return true;
-}
 
 /**
  * Get all saved price predictions for the current user

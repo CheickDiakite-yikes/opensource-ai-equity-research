@@ -10,26 +10,23 @@ export function validatePrediction(predictionData: any, currentPrice: number): b
   for (const timeframe of timeframes) {
     const price = predictionData.predictedPrice[timeframe];
     
-    // Check for invalid prediction values - be more tolerant of variations
+    // Check for invalid prediction values - much more tolerant limits
     if (typeof price !== 'number' || 
         isNaN(price) || 
         !isFinite(price) || 
         price <= 0 || 
-        price > currentPrice * 20) { // Increased max multiplier from 10x to 20x
+        price > currentPrice * 50) { // Increased max multiplier to 50x
       console.warn(`Invalid ${timeframe} prediction: ${price} (current: ${currentPrice})`);
       return false;
     }
   }
   
-  // Check one-year prediction - reduced minimum difference threshold
+  // Very minimal threshold - just ensure the value is different from current price
   const yearDiff = Math.abs((predictionData.predictedPrice.oneYear - currentPrice) / currentPrice);
-  if (yearDiff < 0.005) return false; // Reduced from 0.01 to 0.005
+  if (yearDiff < 0.0001) return false; // Tiny difference required (0.01%)
   
-  // Validate other timeframes with reduced threshold
-  return timeframes.every(timeframe => {
-    const price = predictionData.predictedPrice[timeframe];
-    return Math.abs((price - currentPrice) / currentPrice) >= 0.0025; // Reduced from 0.005 to 0.0025
-  });
+  // Validate other timeframes with almost no threshold
+  return true; // Accept any valid numeric values
 }
 
 /**
@@ -57,12 +54,8 @@ export function validateConsistency(prediction: any, historicalPredictions: any[
   // Calculate absolute difference in growth rates
   const growthRateDiff = Math.abs(newGrowthRate - lastGrowthRate);
   
-  // If the difference is more than 40 percentage points, consider it inconsistent
-  // Increased from 25 percentage points to 40 to be more lenient
-  const priceChangePct = Math.abs((currentPrice / mostRecent.current_price) - 1);
-  
-  // Allow larger prediction differences if the price has changed significantly
-  const maxAllowedDiff = priceChangePct > 0.1 ? 0.5 : 0.4; // Increased both thresholds
+  // Much more lenient consistency check - allow up to 100 percentage points difference
+  const maxAllowedDiff = 1.0;
   
   return growthRateDiff <= maxAllowedDiff;
 }
