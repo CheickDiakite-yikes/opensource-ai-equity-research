@@ -15,6 +15,7 @@ import { RecentSearchItem } from "./RecentSearchItem";
 import { SearchResultSkeleton } from "./SearchResultSkeleton";
 import { SearchResultsEmpty } from "./SearchResultsEmpty";
 import { SearchResultsSection } from "./SearchResultsSection";
+import { StockCategory } from "./types";
 
 interface SearchResultsProps {
   query: string;
@@ -33,9 +34,10 @@ export const SearchResults = forwardRef<HTMLDivElement, SearchResultsProps>(({
   featuredSymbols,
   onSelectStock
 }, ref) => {
-  const exactMatches = results.filter(stock => stock.category === "Exact Match");
-  const apiResults = results.filter(stock => stock.category === "Search Results");
-  const commonResults = results.filter(stock => stock.category === "Popular Stocks");
+  const exactMatches = results.filter(stock => stock.category === StockCategory.EXACT_MATCH);
+  const apiResults = results.filter(stock => stock.category === StockCategory.API);
+  const aiSuggestions = results.filter(stock => stock.category === StockCategory.AI);
+  const commonResults = results.filter(stock => stock.category === StockCategory.COMMON);
   
   // Filter featured symbols based on query
   const filteredFeaturedSymbols = featuredSymbols.filter(
@@ -90,7 +92,7 @@ export const SearchResults = forwardRef<HTMLDivElement, SearchResultsProps>(({
         )}
         
         {/* Recent Searches Section - Show at the top when there's no query */}
-        {!isLoading && !query && filteredRecentSearches.length > 0 && (
+        {!isLoading && filteredRecentSearches.length > 0 && (
           <SearchResultsSection 
             icon={History} 
             title="RECENT SEARCHES"
@@ -134,6 +136,25 @@ export const SearchResults = forwardRef<HTMLDivElement, SearchResultsProps>(({
             {apiResults.map((stock) => (
               <SearchResultItem
                 key={stock.symbol}
+                stock={stock}
+                onSelect={() => onSelectStock(stock.symbol)}
+                highlightMatch={highlightMatch}
+                query={query}
+              />
+            ))}
+          </SearchResultsSection>
+        )}
+        
+        {/* AI Suggestions Section */}
+        {!isLoading && aiSuggestions.length > 0 && (
+          <SearchResultsSection 
+            icon={Sparkles} 
+            title="AI SUGGESTIONS"
+            showSeparator={apiResults.length > 0}
+          >
+            {aiSuggestions.map((stock) => (
+              <SearchResultItem
+                key={`ai-${stock.symbol}`}
                 stock={stock}
                 onSelect={() => onSelectStock(stock.symbol)}
                 highlightMatch={highlightMatch}

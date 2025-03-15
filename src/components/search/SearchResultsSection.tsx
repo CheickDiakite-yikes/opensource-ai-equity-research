@@ -1,27 +1,29 @@
 
-import { ReactNode } from "react";
-import { CommandGroup, CommandSeparator } from "@/components/ui/command";
-import { LucideIcon } from "lucide-react";
+import React from "react";
+import { CommandGroup, CommandList } from "@/components/ui/command";
+import { Sparkles, LucideIcon } from "lucide-react";
 
 interface SearchResultsSectionProps {
-  icon: LucideIcon;
   title: string;
-  children: ReactNode;
+  icon: LucideIcon;
+  children: React.ReactNode;
   showSeparator?: boolean;
 }
 
-export const SearchResultsSection = ({ 
-  icon: Icon, 
-  title, 
-  children, 
-  showSeparator = false 
-}: SearchResultsSectionProps) => {
+export const SearchResultsSection: React.FC<SearchResultsSectionProps> = ({
+  title,
+  icon: Icon,
+  children,
+  showSeparator = false
+}) => {
   return (
     <>
-      {showSeparator && <CommandSeparator />}
+      {showSeparator && (
+        <div className="h-px bg-border my-1" />
+      )}
       <CommandGroup heading={
-        <div className="flex items-center gap-1 text-xs font-medium text-muted-foreground">
-          <Icon size={14} />
+        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+          <Icon className="h-3.5 w-3.5" />
           <span>{title}</span>
         </div>
       }>

@@ -24,7 +24,7 @@ const SearchBar = ({
     query, 
     setQuery, 
     results, 
-    setResults,  // Get setResults from useSearch hook
+    setResults,
     isLoading, 
     isOpen, 
     setIsOpen,
