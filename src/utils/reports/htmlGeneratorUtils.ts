@@ -1,190 +1,203 @@
-
 /**
- * Utilities for generating HTML content for research reports
+ * Generate the HTML for the report header
  */
-
-import { ResearchReport, ScenarioAnalysis, GrowthCatalysts } from "@/types/ai-analysis/reportTypes";
-
-/**
- * Generates the HTML header section for a research report
- */
-export const generateReportHeader = (report: ResearchReport): string => {
-  const title = `${report.companyName} (${report.symbol}) - Equity Research Report`;
-  
+export const generateReportHeader = (report: any): string => {
   return `
     <div class="report-header">
-      <h1>${title}</h1>
-      <p class="date">Report Date: ${report.date}</p>
-      
-      <div class="rating-section">
-        <div class="rating-item">
-          <h3>Recommendation</h3>
-          <p class="recommendation">${report.recommendation}</p>
-        </div>
-        
-        <div class="rating-item">
-          <h3>Price Target</h3>
-          <p class="price-target">${report.targetPrice}</p>
-        </div>
-        
-        <div class="rating-item">
-          <h3>Rating Scale</h3>
-          <p>Buy, Sell, Hold, Overweight, Underweight</p>
-        </div>
-      </div>
-    </div>`;
+      <h1>${report.companyName}</h1>
+      <h2>${report.symbol} - Equity Research Report</h2>
+      <p>Date: ${report.date}</p>
+      <p>Recommendation: ${report.recommendation}</p>
+      <p>Target Price: ${report.targetPrice}</p>
+    </div>
+  `;
 };
 
 /**
- * Generates the executive summary HTML section for a research report
+ * Generate the HTML for the executive summary section
  */
-export const generateExecutiveSummary = (report: ResearchReport): string => {
+export const generateExecutiveSummary = (report: any): string => {
   return `
-    <div class="summary">
+    <div class="report-section">
       <h2>Executive Summary</h2>
-      <p>${report.summary || "No summary available"}</p>
-    </div>`;
+      <p>${report.summary}</p>
+    </div>
+  `;
 };
 
 /**
- * Generates the scenario analysis HTML section for a research report
+ * Generate the HTML for scenario analysis section
  */
-export const generateScenarioAnalysis = (scenarioAnalysis?: ScenarioAnalysis): string => {
-  if (!scenarioAnalysis) return '';
-  
+export const generateScenarioAnalysis = (scenarioAnalysis: any): string => {
   return `
-    <div class="section scenario-analysis">
-      <h2>Sensitivity Analysis</h2>
-      
-      <div class="scenario bull">
-        <h3>Bull Case: ${scenarioAnalysis.bullCase?.price || "N/A"}</h3>
-        <p>Probability: ${scenarioAnalysis.bullCase?.probability || "N/A"}</p>
-        ${scenarioAnalysis.bullCase?.drivers && scenarioAnalysis.bullCase.drivers.length ? 
-          `<div class="drivers">
-            <h4>Key Drivers:</h4>
-            <ul>${scenarioAnalysis.bullCase.drivers.map(d => `<li>${d}</li>`).join('')}</ul>
-          </div>` : ''
-        }
+    <div class="report-section">
+      <h2>Scenario Analysis</h2>
+      <div class="scenario">
+        <h3>Bull Case</h3>
+        <p>Price: ${scenarioAnalysis.bullCase.price}</p>
+        <p>Description: ${scenarioAnalysis.bullCase.description}</p>
+        ${scenarioAnalysis.bullCase.probability ? `<p>Probability: ${scenarioAnalysis.bullCase.probability}</p>` : ''}
+        ${scenarioAnalysis.bullCase.drivers ? `<p>Drivers: ${scenarioAnalysis.bullCase.drivers.join(', ')}</p>` : ''}
       </div>
-      
-      <div class="scenario base">
-        <h3>Base Case: ${scenarioAnalysis.baseCase?.price || "N/A"}</h3>
-        <p>Probability: ${scenarioAnalysis.baseCase?.probability || "N/A"}</p>
-        ${scenarioAnalysis.baseCase?.drivers && scenarioAnalysis.baseCase.drivers.length ? 
-          `<div class="drivers">
-            <h4>Key Drivers:</h4>
-            <ul>${scenarioAnalysis.baseCase.drivers.map(d => `<li>${d}</li>`).join('')}</ul>
-          </div>` : ''
-        }
+      <div class="scenario">
+        <h3>Base Case</h3>
+        <p>Price: ${scenarioAnalysis.baseCase.price}</p>
+        <p>Description: ${scenarioAnalysis.baseCase.description}</p>
+        ${scenarioAnalysis.baseCase.probability ? `<p>Probability: ${scenarioAnalysis.baseCase.probability}</p>` : ''}
+        ${scenarioAnalysis.baseCase.drivers ? `<p>Drivers: ${scenarioAnalysis.baseCase.drivers.join(', ')}</p>` : ''}
       </div>
-      
-      <div class="scenario bear">
-        <h3>Bear Case: ${scenarioAnalysis.bearCase?.price || "N/A"}</h3>
-        <p>Probability: ${scenarioAnalysis.bearCase?.probability || "N/A"}</p>
-        ${scenarioAnalysis.bearCase?.drivers && scenarioAnalysis.bearCase.drivers.length ? 
-          `<div class="drivers">
-            <h4>Key Drivers:</h4>
-            <ul>${scenarioAnalysis.bearCase.drivers.map(d => `<li>${d}</li>`).join('')}</ul>
-          </div>` : ''
-        }
+      <div class="scenario">
+        <h3>Bear Case</h3>
+        <p>Price: ${scenarioAnalysis.bearCase.price}</p>
+        <p>Description: ${scenarioAnalysis.bearCase.description}</p>
+        ${scenarioAnalysis.bearCase.probability ? `<p>Probability: ${scenarioAnalysis.bearCase.probability}</p>` : ''}
+        ${scenarioAnalysis.bearCase.drivers ? `<p>Drivers: ${scenarioAnalysis.bearCase.drivers.join(', ')}</p>` : ''}
       </div>
-    </div>`;
+    </div>
+  `;
 };
 
 /**
- * Generates growth catalysts HTML section for a research report
+ * Generate the HTML for growth catalysts section
  */
-export const generateGrowthCatalysts = (catalysts?: GrowthCatalysts): string => {
-  if (!catalysts) return '';
+export const generateGrowthCatalysts = (catalysts: any): string => {
+  if (!catalysts) return "";
   
-  return `
-    <div class="section catalysts">
-      <h2>Growth Catalysts & Inhibitors</h2>
-      
-      ${catalysts.positive && catalysts.positive.length ? 
-        `<div class="positive-catalysts">
-          <h3>Positive Catalysts</h3>
-          <ul>${catalysts.positive.map(c => `<li>${c}</li>`).join('')}</ul>
-        </div>` : ''
-      }
-      
-      ${catalysts.negative && catalysts.negative.length ? 
-        `<div class="negative-catalysts">
-          <h3>Negative Catalysts</h3>
-          <ul>${catalysts.negative.map(c => `<li>${c}</li>`).join('')}</ul>
-        </div>` : ''
-      }
-      
-      ${catalysts.timeline ? 
-        `<div class="catalysts-timeline">
-          <h3>Timeline of Expected Catalysts</h3>
-          
-          ${catalysts.timeline.shortTerm && catalysts.timeline.shortTerm.length ? 
-            `<div class="timeline-section">
-              <h4>Short-term</h4>
-              <ul>${catalysts.timeline.shortTerm.map(c => `<li>${c}</li>`).join('')}</ul>
-            </div>` : ''
-          }
-          
-          ${catalysts.timeline.mediumTerm && catalysts.timeline.mediumTerm.length ? 
-            `<div class="timeline-section">
-              <h4>Medium-term</h4>
-              <ul>${catalysts.timeline.mediumTerm.map(c => `<li>${c}</li>`).join('')}</ul>
-            </div>` : ''
-          }
-          
-          ${catalysts.timeline.longTerm && catalysts.timeline.longTerm.length ? 
-            `<div class="timeline-section">
-              <h4>Long-term</h4>
-              <ul>${catalysts.timeline.longTerm.map(c => `<li>${c}</li>`).join('')}</ul>
-            </div>` : ''
-          }
-        </div>` : ''
-      }
-    </div>`;
+  // Handle if catalysts is a simple string array (legacy format)
+  if (Array.isArray(catalysts)) {
+    return `
+      <div class="report-section">
+        <h2>Key Catalysts</h2>
+        <ul>
+          ${catalysts.map(catalyst => `<li>${catalyst}</li>`).join('')}
+        </ul>
+      </div>
+    `;
+  }
+  
+  // Handle GrowthCatalysts object format
+  let html = `
+    <div class="report-section">
+      <h2>Growth Catalysts</h2>
+  `;
+  
+  // Add positive catalysts if available
+  if (catalysts.positive && catalysts.positive.length > 0) {
+    html += `
+      <div class="subsection">
+        <h3>Positive Catalysts</h3>
+        <ul class="positive">
+          ${catalysts.positive.map(item => `<li>${item}</li>`).join('')}
+        </ul>
+      </div>
+    `;
+  }
+  
+  // Add negative catalysts if available
+  if (catalysts.negative && catalysts.negative.length > 0) {
+    html += `
+      <div class="subsection">
+        <h3>Negative Catalysts</h3>
+        <ul class="negative">
+          ${catalysts.negative.map(item => `<li>${item}</li>`).join('')}
+        </ul>
+      </div>
+    `;
+  }
+  
+  // Add timeline if available
+  if (catalysts.timeline) {
+    html += `<div class="subsection"><h3>Catalyst Timeline</h3>`;
+    
+    if (catalysts.timeline.shortTerm && catalysts.timeline.shortTerm.length > 0) {
+      html += `
+        <h4>Short-term (0-6 months)</h4>
+        <ul>
+          ${catalysts.timeline.shortTerm.map(item => `<li>${item}</li>`).join('')}
+        </ul>
+      `;
+    }
+    
+    if (catalysts.timeline.mediumTerm && catalysts.timeline.mediumTerm.length > 0) {
+      html += `
+        <h4>Medium-term (6-18 months)</h4>
+        <ul>
+          ${catalysts.timeline.mediumTerm.map(item => `<li>${item}</li>`).join('')}
+        </ul>
+      `;
+    }
+    
+    if (catalysts.timeline.longTerm && catalysts.timeline.longTerm.length > 0) {
+      html += `
+        <h4>Long-term (18+ months)</h4>
+        <ul>
+          ${catalysts.timeline.longTerm.map(item => `<li>${item}</li>`).join('')}
+        </ul>
+      `;
+    }
+    
+    html += `</div>`;
+  }
+  
+  html += `</div>`;
+  return html;
 };
 
 /**
- * Generates the report sections HTML for a research report
+ * Generate the HTML for report sections
  */
-export const generateReportSections = (report: ResearchReport): string => {
-  let sectionsContent = '';
+export const generateReportSections = (report: any): string => {
+  if (!report.sections || report.sections.length === 0) {
+    return '<div class="report-section"><h2>No sections available</h2><p>No content to display.</p></div>';
+  }
   
+  let sectionsHTML = '';
   report.sections.forEach(section => {
-    sectionsContent += `
-      <div class="section ${section.title.toLowerCase().replace(/\s+/g, '-')}">
+    sectionsHTML += `
+      <div class="report-section">
         <h2>${section.title}</h2>
-        <div class="section-content">${section.content}</div>
-      </div>`;
+        <p>${section.content}</p>
+      </div>
+    `;
   });
-  
-  return sectionsContent;
+  return sectionsHTML;
 };
 
 /**
- * Generates the rating details HTML section for a research report
+ * Generate the HTML for rating details section
  */
-export const generateRatingDetails = (report: ResearchReport): string => {
-  if (!report.ratingDetails) return '';
+export const generateRatingDetails = (report: any): string => {
+  if (!report.ratingDetails) {
+    return '';
+  }
+  
+  const { ratingDetails } = report;
   
   return `
-    <div class="section rating-details">
-      <h2>Rating and Recommendation</h2>
-      <p><strong>Rating Scale:</strong> Our recommendations include: Buy, Sell, Hold, Overweight, and Underweight</p>
-      <p><strong>Recommendation:</strong> ${report.recommendation}</p>
-      ${report.ratingDetails.ratingJustification ? 
-        `<p><strong>Justification:</strong> ${report.ratingDetails.ratingJustification}</p>` : ''
-      }
-    </div>`;
+    <div class="report-section">
+      <h2>Rating Details</h2>
+      <p>Overall Rating: ${ratingDetails.overallRating}</p>
+      <p>Financial Strength: ${ratingDetails.financialStrength}</p>
+      <p>Growth Outlook: ${ratingDetails.growthOutlook}</p>
+      <p>Valuation Attractiveness: ${ratingDetails.valuationAttractiveness}</p>
+      <p>Competitive Position: ${ratingDetails.competitivePosition}</p>
+      ${ratingDetails.ratingScale ? `<p>Rating Scale: ${ratingDetails.ratingScale}</p>` : ''}
+      ${ratingDetails.ratingJustification ? `<p>Rating Justification: ${ratingDetails.ratingJustification}</p>` : ''}
+    </div>
+  `;
 };
 
 /**
- * Generates the disclaimer HTML section
+ * Generate the HTML for the disclaimer section
  */
 export const generateDisclaimer = (): string => {
   return `
-    <div class="disclaimer">
+    <div class="report-section disclaimer">
       <h2>Disclaimer</h2>
-      <p>This equity research report has been generated using DiDi's proprietary artificial intelligence system and is provided for informational purposes only. The analysis, opinions, and recommendations contained herein do not constitute financial, investment, or professional advice, nor an offer or solicitation to buy or sell securities. DiDi does not guarantee the accuracy, completeness, or reliability of the content, and shall not be liable for any errors, omissions, or losses arising from its use. Investors must conduct their own independent analysis and consult qualified financial advisors before making any investment decisions.</p>
-    </div>`;
+      <p>
+        This report is for informational purposes only and should not be considered financial advice. 
+        Please consult with a financial advisor before making any investment decisions.
+      </p>
+    </div>
+  `;
 };

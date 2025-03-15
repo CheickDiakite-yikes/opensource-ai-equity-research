@@ -71,7 +71,7 @@ export const saveResearchReport = async (
       console.error("Error generating HTML content:", htmlError);
     }
 
-    // Now, insert the new report - use type cast to Json
+    // Now, insert the new report - use type cast to Json and explicitly include user_id
     console.log("Inserting report into database with HTML:", htmlContent ? "YES" : "NO");
     console.log("Report data sample:", JSON.stringify(reportData).substring(0, 200) + "...");
     

@@ -1,6 +1,6 @@
 
 import { toast } from "@/components/ui/use-toast";
-import { ResearchReport } from "@/types/ai-analysis/reportTypes";
+import { ResearchReport, GrowthCatalysts } from "@/types/ai-analysis/reportTypes";
 import {
   generateReportHeader,
   generateExecutiveSummary,
@@ -31,6 +31,8 @@ export const downloadReportAsHTML = (report: ResearchReport) => {
   
   // Add Growth Catalysts if available
   if (report.catalysts) {
+    // The report.catalysts could be either GrowthCatalysts or string[]
+    // We need to handle both types safely
     content += generateGrowthCatalysts(report.catalysts);
   }
   
