@@ -8,6 +8,7 @@ import {
 import { StockPrediction } from "@/types/ai-analysis/predictionTypes";
 import { useSavedContentBase } from "./useSavedContentBase";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 export interface SavedPrediction {
   id: string;
@@ -23,19 +24,35 @@ export const useSavedPredictions = () => {
   const { user, isLoading, setIsLoading, error, setError, checkUserLoggedIn } = useSavedContentBase();
 
   const fetchPredictions = async () => {
-    // In development mode, we'll fetch predictions even without a logged-in user
-    console.log("Fetching predictions (RLS disabled)");
+    if (!checkUserLoggedIn()) {
+      setPredictions([]);
+      return;
+    }
+
+    console.log("Fetching predictions for user:", user.id);
     setIsLoading(true);
     setError(null);
     
     try {
-      // Get all predictions from the database
+      // First check if RLS is working by directly querying the table
+      console.log("Directly testing RLS by querying user_price_predictions table...");
+      const { data: directData, error: directError } = await supabase
+        .from("user_price_predictions")
+        .select("*");
+      
+      if (directError) {
+        console.error("Direct RLS test failed:", directError);
+      } else {
+        console.log("Direct RLS test result:", directData);
+      }
+      
+      // Now try the regular service function
       const data = await getUserPricePredictions();
       
       console.log("Raw data from getUserPricePredictions:", data);
       
       if (data.length === 0) {
-        console.log("No predictions found");
+        console.log("No predictions found for user");
         setPredictions([]);
         setIsLoading(false);
         return;
@@ -104,11 +121,11 @@ export const useSavedPredictions = () => {
     return predictionId;
   };
 
-  // Fetch predictions regardless of user state during development
+  // Fetch predictions when the component mounts or user changes
   useEffect(() => {
-    console.log("useSavedPredictions useEffect - fetching predictions (RLS disabled)");
+    console.log("useSavedPredictions useEffect - fetching predictions");
     fetchPredictions();
-  }, []);
+  }, [user]);
 
   return { 
     predictions, 

@@ -15,15 +15,41 @@ export const savePricePrediction = async (
 ): Promise<string | null> => {
   try {
     console.log("Starting savePricePrediction for:", symbol);
-    // Since RLS is disabled, we'll still try to get a user ID but won't fail if it's not available
-    const userId = await getUserId() || 'dev-user';
+    const userId = await getUserId();
+    if (!userId) {
+      console.error("No user ID found when saving prediction");
+      toast.error("You must be signed in to save predictions");
+      return null;
+    }
+    
     console.log("User ID:", userId);
 
-    // In development mode with RLS disabled, we don't need to count existing predictions
+    // First, count existing predictions
+    const { count, error: countError } = await supabase
+      .from("user_price_predictions")
+      .select("*", { count: "exact", head: true })
+      .eq("user_id", userId);
+
+    if (countError) {
+      console.error("Error counting predictions:", countError);
+      toast.error("Failed to save prediction");
+      return null;
+    }
+
+    console.log("Current prediction count:", count);
+
+    // Manage item limit
+    const limitManaged = await manageItemLimit("user_price_predictions", userId, count);
+    if (!limitManaged) {
+      console.error("Failed to manage item limit");
+      return null;
+    }
+
+    // Now, insert the new prediction
     console.log("Inserting prediction into database");
     console.log("Prediction data sample:", JSON.stringify(predictionData).substring(0, 200) + "...");
     
-    // Insert the new prediction (with RLS disabled, we don't need to worry about user_id matching)
+    // Important - Explicitly include user_id in the insert to satisfy RLS policy
     const { data, error } = await supabase
       .from("user_price_predictions")
       .insert({
@@ -62,29 +88,43 @@ export const savePricePrediction = async (
 export const getUserPricePredictions = async () => {
   try {
     console.log("Getting user price predictions");
-    // With RLS disabled, we can fetch all predictions without filtering by user_id
-    // But we'll still try to get the user ID for logging purposes
-    const userId = await getUserId() || 'dev-user';
-    console.log("Fetching predictions (with RLS disabled)");
+    const userId = await getUserId();
+    if (!userId) {
+      console.log("No user ID found when getting predictions");
+      return [];
+    }
+
+    console.log("Fetching predictions for user:", userId);
+    // First test if we can see all predictions regardless of user_id (RLS issue)
+    const { data: allData, error: allError } = await supabase
+      .from("user_price_predictions")
+      .select("*");
+      
+    if (allError) {
+      console.error("Error fetching all predictions (RLS test):", allError);
+    } else {
+      console.log(`Found ${allData?.length || 0} total predictions in the database (RLS test)`);
+    }
     
-    // Fetch all predictions without strict user filtering
+    // Now fetch only this user's predictions
     const { data, error } = await supabase
       .from("user_price_predictions")
       .select("*")
+      .eq("user_id", userId)
       .order("created_at", { ascending: false });
 
     if (error) {
-      console.error("Error fetching predictions:", error);
+      console.error("Error fetching user predictions:", error);
       toast.error("Failed to load saved predictions: " + error.message);
       return [];
     }
 
     if (!data || data.length === 0) {
-      console.log("No predictions found");
+      console.log("No predictions found for user");
       return [];
     }
 
-    console.log(`Found ${data.length} predictions`);
+    console.log(`Found ${data.length} predictions for user`);
     return data || [];
   } catch (error) {
     console.error("Error in getUserPricePredictions:", error);
@@ -98,12 +138,18 @@ export const getUserPricePredictions = async () => {
  */
 export const deletePricePrediction = async (predictionId: string): Promise<boolean> => {
   try {
-    console.log("Deleting prediction:", predictionId);
-    // With RLS disabled, we can delete any prediction without checking user_id
+    const userId = await getUserId();
+    if (!userId) {
+      console.error("No user ID found when deleting prediction");
+      toast.error("You must be signed in to delete predictions");
+      return false;
+    }
+
     const { error } = await supabase
       .from("user_price_predictions")
       .delete()
-      .eq("id", predictionId);
+      .eq("id", predictionId)
+      .eq("user_id", userId); // Important for RLS - explicitly filter by user_id
 
     if (error) {
       console.error("Error deleting prediction:", error);

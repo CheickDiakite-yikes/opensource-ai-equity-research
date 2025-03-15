@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { 
@@ -16,18 +17,17 @@ export const useSavedContentPage = () => {
   const [selectedPrediction, setSelectedPrediction] = useState<SavedPrediction | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
-  // In development mode with RLS disabled, we'll fetch content regardless of user state
+  // Refresh reports when page loads
   useEffect(() => {
-    console.log("SavedContent component mounted, fetching content (RLS disabled)...");
     if (user) {
+      console.log("SavedContent component mounted, fetching content...");
       console.log("Current user:", user);
+      fetchReports();
+      fetchPredictions();
     } else {
-      console.log("No user logged in, but continuing with dev mode");
+      console.log("No user logged in yet");
     }
-    
-    fetchReports();
-    fetchPredictions();
-  }, []);
+  }, [user]);
 
   // Log reports when they change
   useEffect(() => {
@@ -44,6 +44,8 @@ export const useSavedContentPage = () => {
       console.log(`- Prediction ${prediction.id}: ${prediction.symbol}, ${prediction.company_name}`);
     });
   }, [predictions]);
+
+  const isLoading = authLoading || reportsLoading || predictionsLoading;
 
   const handleSelectReport = (report: SavedReport) => {
     console.log("Selecting report:", report.id);
@@ -119,7 +121,7 @@ export const useSavedContentPage = () => {
 
   return {
     user,
-    isLoading: authLoading || reportsLoading || predictionsLoading,
+    isLoading,
     isRefreshing,
     reports,
     predictions,
