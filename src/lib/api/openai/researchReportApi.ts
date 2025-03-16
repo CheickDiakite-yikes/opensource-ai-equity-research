@@ -1,3 +1,4 @@
+
 /**
  * OpenAI API for research report generation
  */
@@ -67,11 +68,11 @@ Peer Companies: ${data.peers.join(', ')}
 
 Please provide a comprehensive equity research report based on this data. Structure it according to the standard sections and include a clear BUY/HOLD/SELL recommendation with a 12-month price target. The report should be detailed and professional, suitable for institutional investors.`;
 
-    // Call OpenAI API
+    // Call OpenAI API with reasoning effort instead of temperature
     const completion = await callOpenAI([
       { role: "system", content: systemPrompt },
       { role: "user", content: userPrompt }
-    ], 0.7);
+    ], "high", 1500); // Using high reasoning effort and larger output for comprehensive reports
 
     const reportText = completion.choices[0].message.content;
     
