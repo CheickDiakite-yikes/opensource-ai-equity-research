@@ -10,33 +10,84 @@ export const API_KEY = "sk-svcacct-QXmC18RcbnAvXNtmGOvU-xtV6O5Ds1_Qv-3WLMhxHcXri
 export const API_URL = "https://api.openai.com/v1/chat/completions";
 
 /**
- * Function to call OpenAI API
+ * Calls the o3-mini model first (which doesn't support temperature)
+ * and, if that fails, falls back to GPT-4o.
+ *
+ * @param messages - Array of message objects in [{role, content}, ...] format
+ * @param reasoningEffort - "low" | "medium" | "high"; controls how many reasoning tokens are used
+ * @param maxOutputTokens - The maximum number of output tokens from o3-mini (not counting hidden reasoning tokens)
  */
-export async function callOpenAI(messages: any[], temperature: number = 0.7) {
+export async function callOpenAI(
+  messages: any[],
+  reasoningEffort: "low" | "medium" | "high" = "medium",
+  maxOutputTokens = 150
+) {
+  // Primary model: o3-mini (reasoning model)
+  const primaryModel = "o3-mini";
+  // Fallback model: GPT-4o
+  const fallbackModel = "gpt-4o";
+
+  // Primary request payload for o3-mini
+  // - No temperature or top_p, etc., because reasoning models don't support them
+  // - Use reasoning_effort and max_output_tokens as documented
+  const primaryPayload = {
+    model: primaryModel,
+    messages,
+    reasoning_effort: reasoningEffort, // "low" | "medium" | "high"
+    max_output_tokens: maxOutputTokens, // max tokens for the *final* answer (not counting hidden reasoning tokens)
+  };
+
   try {
     const response = await fetch(API_URL, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": `Bearer ${API_KEY}`
+        Authorization: `Bearer ${API_KEY}`,
       },
-      body: JSON.stringify({
-        model: "gpt-4o-mini",
-        messages,
-        temperature
-      })
+      body: JSON.stringify(primaryPayload),
     });
 
     if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error?.message || "OpenAI API request failed");
+      const errorResp = await response.json();
+      throw new Error(errorResp.error?.message || "o3-mini API request failed");
     }
 
     return await response.json();
-  } catch (error) {
-    console.error("OpenAI API error:", error);
-    toast.error(`OpenAI API error: ${error instanceof Error ? error.message : 'Unknown error'}`);
-    throw error;
+  } catch (primaryError) {
+    console.error("Primary model (o3-mini) error:", primaryError);
+
+    // Fallback: GPT-4o, which still supports temperature
+    const fallbackPayload = {
+      model: fallbackModel,
+      messages,
+      temperature: 0.7, // you can adjust or remove as needed
+      max_tokens: 150,   // standard param name for GPT-4o
+    };
+
+    try {
+      const fallbackResponse = await fetch(API_URL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${API_KEY}`,
+        },
+        body: JSON.stringify(fallbackPayload),
+      });
+
+      if (!fallbackResponse.ok) {
+        const fallbackErrorResp = await fallbackResponse.json();
+        throw new Error(
+          fallbackErrorResp.error?.message || "Fallback GPT-4o request failed"
+        );
+      }
+
+      return await fallbackResponse.json();
+    } catch (fallbackError) {
+      console.error("Fallback model (gpt-4o) error:", fallbackError);
+      // Optionally show an error toast if your UI supports it
+      // toast.error(`OpenAI API error: ${fallbackError}`);
+      throw fallbackError;
+    }
   }
 }
 
