@@ -87,11 +87,11 @@ Please provide all the necessary financial and valuation data in JSON format wit
 
 Use actual financial data if available, otherwise provide reasonable estimates based on industry standards.`;
 
-    // Call OpenAI API with reasoning effort instead of temperature
+    // Call OpenAI API with the correct model and parameters for o3-mini
     const completion = await callOpenAI([
       { role: "system", content: systemPrompt },
       { role: "user", content: userPrompt }
-    ], "high", 1000); // Using high reasoning effort for financial analysis
+    ], "high"); // Using high reasoning effort for financial analysis
 
     const resultText = completion.choices[0].message.content;
     
