@@ -1,76 +1,114 @@
 
 /**
- * OpenAI API Utilities
+ * Common utilities for OpenAI API interactions
  */
 
 import { toast } from "sonner";
 
-interface Message {
-  role: "system" | "user" | "assistant";
-  content: string;
-}
-
-type ReasoningEffort = "low" | "medium" | "high";
+// API key from environment variable
+export const API_KEY = "sk-svcacct-QXmC18RcbnAvXNtmGOvU-xtV6O5Ds1_Qv-3WLMhxHcXriCw6FQTsGWZFNSJ3VT3BlbkFJIOwO9pVDw8Qj1X27LH_Dyf3cJZUpRIXftpAPKt-tL6plF0fIWy7iQpmGmd-AA";
+export const API_URL = "https://api.openai.com/v1/chat/completions";
 
 /**
- * Call OpenAI API with proper error handling and retries
+ * Calls the o3-mini model first (which doesn't support temperature)
+ * and, if that fails, falls back to GPT-4o.
+ *
+ * @param messages - Array of message objects in [{role, content}, ...] format
+ * @param reasoningEffort - "low" | "medium" | "high"; controls how many reasoning tokens are used
+ * @param maxOutputTokens - The maximum number of output tokens from o3-mini (not counting hidden reasoning tokens)
  */
 export async function callOpenAI(
-  messages: Message[],
-  reasoningEffort: ReasoningEffort = "medium",
-  maxRetries: number = 3
-): Promise<any> {
-  let retries = 0;
-  let lastError;
+  messages: any[],
+  reasoningEffort: "low" | "medium" | "high" = "medium",
+  maxOutputTokens = 150
+) {
+  // Primary model: o3-mini (reasoning model)
+  const primaryModel = "o3-mini";
+  // Fallback model: GPT-4o
+  const fallbackModel = "gpt-4o";
 
-  while (retries < maxRetries) {
+  // Primary request payload for o3-mini
+  // - No temperature or top_p, etc., because reasoning models don't support them
+  // - Use reasoning_effort and max_output_tokens as documented
+  const primaryPayload = {
+    model: primaryModel,
+    messages,
+    reasoning_effort: reasoningEffort, // "low" | "medium" | "high"
+    max_output_tokens: maxOutputTokens, // max tokens for the *final* answer (not counting hidden reasoning tokens)
+  };
+
+  try {
+    const response = await fetch(API_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${API_KEY}`,
+      },
+      body: JSON.stringify(primaryPayload),
+    });
+
+    if (!response.ok) {
+      const errorResp = await response.json();
+      throw new Error(errorResp.error?.message || "o3-mini API request failed");
+    }
+
+    return await response.json();
+  } catch (primaryError) {
+    console.error("Primary model (o3-mini) error:", primaryError);
+
+    // Fallback: GPT-4o, which still supports temperature
+    const fallbackPayload = {
+      model: fallbackModel,
+      messages,
+      temperature: 0.7, // you can adjust or remove as needed
+      max_tokens: 150,   // standard param name for GPT-4o
+    };
+
     try {
-      console.log(`Calling OpenAI API (attempt ${retries + 1}/${maxRetries})...`);
-      
-      // For o3-mini model, we need to use the new reasoning-oriented parameters
-      const response = await fetch("https://api.openai.com/v1/chat/completions", {
+      const fallbackResponse = await fetch(API_URL, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${process.env.NEXT_PUBLIC_OPENAI_API_KEY || ""}`,
+          Authorization: `Bearer ${API_KEY}`,
         },
-        body: JSON.stringify({
-          model: "gpt-4o-mini", // Use gpt-4o-mini as it's available and supported
-          messages: messages,
-          temperature: 0.2, // Lower temperature for more factual responses
-          reasoning: { effort: reasoningEffort }, // Use reasoning effort parameter
-        }),
+        body: JSON.stringify(fallbackPayload),
       });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        console.error("OpenAI API error:", errorData);
-        throw new Error(`OpenAI API returned ${response.status}: ${JSON.stringify(errorData)}`);
+      if (!fallbackResponse.ok) {
+        const fallbackErrorResp = await fallbackResponse.json();
+        throw new Error(
+          fallbackErrorResp.error?.message || "Fallback GPT-4o request failed"
+        );
       }
 
-      const data = await response.json();
-      console.log("OpenAI API response received successfully");
-      return data;
-    } catch (error) {
-      console.error(`OpenAI API call failed (attempt ${retries + 1}/${maxRetries}):`, error);
-      lastError = error;
-      retries++;
-      if (retries < maxRetries) {
-        // Exponential backoff with jitter
-        const delay = Math.floor(Math.random() * 1000 + 1000 * Math.pow(2, retries));
-        console.log(`Retrying in ${delay}ms...`);
-        await new Promise((resolve) => setTimeout(resolve, delay));
-      }
+      return await fallbackResponse.json();
+    } catch (fallbackError) {
+      console.error("Fallback model (gpt-4o) error:", fallbackError);
+      toast.error(`OpenAI API error: ${fallbackError instanceof Error ? fallbackError.message : 'Unknown error'}`);
+      throw fallbackError;
     }
   }
-
-  // We've exhausted our retries, show an error notification and throw the last error
-  toast.error("Failed to generate AI content after multiple attempts");
-  throw lastError;
 }
 
 /**
- * Format financials for OpenAI prompts
+ * Format financial numbers for better readability in prompts
+ */
+export function formatFinancialNumber(num: number): string {
+  if (num === undefined || num === null) return 'N/A';
+  
+  if (Math.abs(num) >= 1e9) {
+    return `$${(num / 1e9).toFixed(2)}B`;
+  } else if (Math.abs(num) >= 1e6) {
+    return `$${(num / 1e6).toFixed(2)}M`;
+  } else if (Math.abs(num) >= 1e3) {
+    return `$${(num / 1e3).toFixed(2)}K`;
+  } else {
+    return `$${num.toFixed(2)}`;
+  }
+}
+
+/**
+ * Format company financials for the prompt
  */
 export function formatFinancialsForPrompt(
   income: any[], 
@@ -120,21 +158,4 @@ export function formatFinancialsForPrompt(
   }
   
   return result;
-}
-
-/**
- * Format a financial number for display (e.g., 1234567 -> $1.23M)
- */
-export function formatFinancialNumber(num: number): string {
-  if (num === undefined || num === null) return 'N/A';
-  
-  if (Math.abs(num) >= 1_000_000_000) {
-    return `$${(num / 1_000_000_000).toFixed(2)}B`;
-  } else if (Math.abs(num) >= 1_000_000) {
-    return `$${(num / 1_000_000).toFixed(2)}M`;
-  } else if (Math.abs(num) >= 1_000) {
-    return `$${(num / 1_000).toFixed(2)}K`;
-  } else {
-    return `$${num.toFixed(2)}`;
-  }
 }

@@ -69,7 +69,7 @@ Based on this information, predict the stock price for different time horizons a
     const completion = await callOpenAI([
       { role: "system", content: systemPrompt },
       { role: "user", content: userPrompt }
-    ], "medium"); // Using medium reasoning effort for prediction
+    ], "medium", 500); // Using medium reasoning effort for prediction
 
     // Parse JSON response
     const resultText = completion.choices[0].message.content;
