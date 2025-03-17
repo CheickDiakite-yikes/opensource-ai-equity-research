@@ -5,7 +5,7 @@
 
 import { toast } from "sonner";
 import { ComparablesRequest, ComparablesResponse } from "@/types/comparables";
-import { callOpenAI } from "./apiUtils";
+import { callOpenAI, formatFinancialsForPrompt } from "./apiUtils";
 
 /**
  * Generate comparable companies analysis

@@ -1,4 +1,3 @@
-
 import { extractJSONFromText, ensureNumberInRange, ensureArrayWithItems } from "./utils.ts";
 import { FormattedData, StockPrediction, PredictionHistoryEntry } from "./types.ts";
 import { createFallbackPrediction } from "./fallbackGenerator.ts";
@@ -86,12 +85,6 @@ The current price is $${data.currentPrice.toFixed(2)} - each of your predictions
     // For detailed reports use the more powerful model
     const modelToUse = quickMode ? "gpt-4o-mini" : "gpt-4o-mini";
     
-    // Reduce tokens for featured companies for speed
-    const maxTokens = quickMode ? 1000 : 1500; 
-    
-    // Lower temperature for more consistent predictions
-    const temperature = 0.7; // Decreased from 0.95 to get more consistent results
-    
     console.log(`Generating prediction for ${data.symbol} using ${modelToUse} model (quickMode: ${quickMode})`);
     
     // Skip API call and use enhanced fallback prediction in the following scenarios:
@@ -117,8 +110,11 @@ The current price is $${data.currentPrice.toFixed(2)} - each of your predictions
           { role: "system", content: systemPrompt },
           { role: "user", content: userPrompt }
         ],
-        temperature: temperature,
-        max_tokens: maxTokens
+        temperature: 0.7,
+        // Use reasoning parameter instead of max_tokens
+        reasoning: { 
+          effort: quickMode ? "medium" : "high" 
+        }
       })
     });
 

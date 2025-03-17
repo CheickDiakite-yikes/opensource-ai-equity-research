@@ -68,3 +68,73 @@ export async function callOpenAI(
   toast.error("Failed to generate AI content after multiple attempts");
   throw lastError;
 }
+
+/**
+ * Format financials for OpenAI prompts
+ */
+export function formatFinancialsForPrompt(
+  income: any[], 
+  ratios: any[]
+): string {
+  let result = "Financial Highlights:\n";
+  
+  // Get the most recent statements
+  const latestIncome = income.length > 0 ? income[0] : null;
+  const previousIncome = income.length > 1 ? income[1] : null;
+  const latestRatio = ratios.length > 0 ? ratios[0] : null;
+  
+  if (latestIncome) {
+    result += `Revenue: ${formatFinancialNumber(latestIncome.revenue)}`;
+    
+    if (previousIncome) {
+      const revenueDiff = ((latestIncome.revenue - previousIncome.revenue) / previousIncome.revenue * 100).toFixed(2);
+      result += ` (${Number(revenueDiff) >= 0 ? '+' : ''}${revenueDiff}% YoY)\n`;
+    } else {
+      result += "\n";
+    }
+    
+    result += `Net Income: ${formatFinancialNumber(latestIncome.netIncome)}`;
+    
+    if (previousIncome) {
+      const netIncomeDiff = ((latestIncome.netIncome - previousIncome.netIncome) / previousIncome.netIncome * 100).toFixed(2);
+      result += ` (${Number(netIncomeDiff) >= 0 ? '+' : ''}${netIncomeDiff}% YoY)\n`;
+    } else {
+      result += "\n";
+    }
+    
+    result += `EPS: ${formatFinancialNumber(latestIncome.eps)}`;
+    
+    if (previousIncome) {
+      const epsDiff = ((latestIncome.eps - previousIncome.eps) / previousIncome.eps * 100).toFixed(2);
+      result += ` (${Number(epsDiff) >= 0 ? '+' : ''}${epsDiff}% YoY)\n`;
+    } else {
+      result += "\n";
+    }
+  }
+  
+  if (latestRatio) {
+    result += `P/E Ratio: ${latestRatio.priceEarningsRatio ? latestRatio.priceEarningsRatio.toFixed(2) : 'N/A'}\n`;
+    result += `Return on Equity: ${latestRatio.returnOnEquity ? (latestRatio.returnOnEquity * 100).toFixed(2) + '%' : 'N/A'}\n`;
+    result += `Profit Margin: ${latestRatio.netProfitMargin ? (latestRatio.netProfitMargin * 100).toFixed(2) + '%' : 'N/A'}\n`;
+    result += `Debt to Equity: ${latestRatio.debtEquityRatio ? latestRatio.debtEquityRatio.toFixed(2) : 'N/A'}\n`;
+  }
+  
+  return result;
+}
+
+/**
+ * Format a financial number for display (e.g., 1234567 -> $1.23M)
+ */
+export function formatFinancialNumber(num: number): string {
+  if (num === undefined || num === null) return 'N/A';
+  
+  if (Math.abs(num) >= 1_000_000_000) {
+    return `$${(num / 1_000_000_000).toFixed(2)}B`;
+  } else if (Math.abs(num) >= 1_000_000) {
+    return `$${(num / 1_000_000).toFixed(2)}M`;
+  } else if (Math.abs(num) >= 1_000) {
+    return `$${(num / 1_000).toFixed(2)}K`;
+  } else {
+    return `$${num.toFixed(2)}`;
+  }
+}

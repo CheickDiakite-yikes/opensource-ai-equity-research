@@ -5,7 +5,7 @@
 
 import { toast } from "sonner";
 import { ResearchReport, ReportRequest } from "@/types";
-import { callOpenAI, formatFinancialNumber } from "./apiUtils";
+import { callOpenAI, formatFinancialsForPrompt, formatFinancialNumber } from "./apiUtils";
 
 /**
  * Generate an equity research report
@@ -72,7 +72,7 @@ Please provide a comprehensive equity research report based on this data. Struct
     const completion = await callOpenAI([
       { role: "system", content: systemPrompt },
       { role: "user", content: userPrompt }
-    ], "high", 1500); // Using high reasoning effort and larger output for comprehensive reports
+    ], "high"); // Using high reasoning effort and larger output for comprehensive reports
 
     const reportText = completion.choices[0].message.content;
     
