@@ -1,7 +1,7 @@
 
 import React, { useCallback } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { Briefcase, BarChart4, FileText, Signal } from "lucide-react";
+import { Briefcase, BarChart4, FileText, Signal, GitCompare } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
 import { useMediaQuery } from "@/hooks/use-mobile";
@@ -46,6 +46,11 @@ const StockTabsNavigation: React.FC<StockTabsNavigationProps> = ({
       id: "report", 
       label: isMobile ? "Research" : "Research Report", 
       icon: <FileText className="h-4 w-4" /> 
+    },
+    { 
+      id: "comps", 
+      label: isMobile ? "Comps" : "Comparables", 
+      icon: <GitCompare className="h-4 w-4" /> 
     },
     { 
       id: "alternative", 

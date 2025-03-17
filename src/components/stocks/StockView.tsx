@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useSearchParams } from "react-router-dom";
 import StockHeader from "./StockHeader";
@@ -5,6 +6,7 @@ import StockOverview from "@/components/StockOverview";
 import StockAnalysis from "@/components/StockAnalysis";
 import ResearchReportGenerator from "@/components/ResearchReportGenerator";
 import AlternativeDataView from "@/components/alternative/AlternativeDataView";
+import { ComparableCompaniesView } from "@/components/comparables";
 import StockTabsNavigation from "./StockTabsNavigation";
 import { toast } from "sonner";
 
@@ -23,7 +25,7 @@ const StockView: React.FC<StockViewProps> = ({ symbol, onClear }) => {
   
   useEffect(() => {
     const tabParam = searchParams.get("tab");
-    if (tabParam && ["overview", "analysis", "report", "alternative"].includes(tabParam)) {
+    if (tabParam && ["overview", "analysis", "report", "comps", "alternative"].includes(tabParam)) {
       setActiveTab(tabParam);
       console.log("Setting active tab from URL to:", tabParam);
     } else if (!tabParam) {
@@ -95,6 +97,12 @@ const StockView: React.FC<StockViewProps> = ({ symbol, onClear }) => {
         return (
           <ErrorBoundary>
             <ResearchReportGenerator key={`report-${key}-${symbol}`} symbol={symbol} />
+          </ErrorBoundary>
+        );
+      case "comps":
+        return (
+          <ErrorBoundary>
+            <ComparableCompaniesView key={`comps-${key}-${symbol}`} symbol={symbol} />
           </ErrorBoundary>
         );
       case "alternative":

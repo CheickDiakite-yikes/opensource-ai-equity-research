@@ -7,3 +7,4 @@
 export * from "./apiUtils";
 export * from "./researchReportApi";
 export * from "./stockPredictionApi";
+export * from "./comparablesApi";
