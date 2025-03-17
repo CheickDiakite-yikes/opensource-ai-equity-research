@@ -27,7 +27,10 @@ export function useComparableCompanies(symbol: string) {
         
         // Fetch peer companies
         const peersData = await fetchCompanyPeers(symbol);
-        const peers = peersData?.[0]?.peers || [];
+        // Fix: Check if peersData is an array with at least one item and contains a peers array
+        const peers = Array.isArray(peersData) && peersData.length > 0 && Array.isArray(peersData[0]?.peers) 
+          ? peersData[0].peers 
+          : [];
         
         // Generate comparables analysis
         const comparablesData = await generateComparablesAnalysis({
