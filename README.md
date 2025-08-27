@@ -2,7 +2,6 @@
 
 <div align="center">
 
-![EquiSight Logo](public/og-image.png)
 
 **A comprehensive, AI-powered equity research platform for investment professionals, analysts, and individual investors**
 
