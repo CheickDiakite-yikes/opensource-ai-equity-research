@@ -5,8 +5,9 @@
 
 import { toast } from "sonner";
 
-// API key from environment variable
-export const API_KEY = "sk-svcacct-QXmC18RcbnAvXNtmGOvU-xtV6O5Ds1_Qv-3WLMhxHcXriCw6FQTsGWZFNSJ3VT3BlbkFJIOwO9pVDw8Qj1X27LH_Dyf3cJZUpRIXftpAPKt-tL6plF0fIWy7iQpmGmd-AA";
+// This file is deprecated for security reasons
+// Direct OpenAI API calls with hardcoded keys are disabled
+// All AI functionality should use Supabase edge functions
 export const API_URL = "https://api.openai.com/v1/chat/completions";
 
 /**
@@ -22,72 +23,11 @@ export async function callOpenAI(
   reasoningEffort: "low" | "medium" | "high" = "medium",
   maxOutputTokens = 150
 ) {
-  // Primary model: o3-mini (reasoning model)
-  const primaryModel = "o3-mini";
-  // Fallback model: GPT-4o
-  const fallbackModel = "gpt-4o";
-
-  // Primary request payload for o3-mini
-  // - No temperature or top_p, etc., because reasoning models don't support them
-  // - Use reasoning_effort and max_output_tokens as documented
-  const primaryPayload = {
-    model: primaryModel,
-    messages,
-    reasoning_effort: reasoningEffort, // "low" | "medium" | "high"
-    max_output_tokens: maxOutputTokens, // max tokens for the *final* answer (not counting hidden reasoning tokens)
-  };
-
-  try {
-    const response = await fetch(API_URL, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${API_KEY}`,
-      },
-      body: JSON.stringify(primaryPayload),
-    });
-
-    if (!response.ok) {
-      const errorResp = await response.json();
-      throw new Error(errorResp.error?.message || "o3-mini API request failed");
-    }
-
-    return await response.json();
-  } catch (primaryError) {
-    console.error("Primary model (o3-mini) error:", primaryError);
-
-    // Fallback: GPT-4o, which still supports temperature
-    const fallbackPayload = {
-      model: fallbackModel,
-      messages,
-      temperature: 0.7, // you can adjust or remove as needed
-      max_tokens: 150,   // standard param name for GPT-4o
-    };
-
-    try {
-      const fallbackResponse = await fetch(API_URL, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${API_KEY}`,
-        },
-        body: JSON.stringify(fallbackPayload),
-      });
-
-      if (!fallbackResponse.ok) {
-        const fallbackErrorResp = await fallbackResponse.json();
-        throw new Error(
-          fallbackErrorResp.error?.message || "Fallback GPT-4o request failed"
-        );
-      }
-
-      return await fallbackResponse.json();
-    } catch (fallbackError) {
-      console.error("Fallback model (gpt-4o) error:", fallbackError);
-      toast.error(`OpenAI API error: ${fallbackError instanceof Error ? fallbackError.message : 'Unknown error'}`);
-      throw fallbackError;
-    }
-  }
+  // Direct OpenAI API calls are disabled for security reasons
+  // All AI functionality should use Supabase edge functions instead
+  console.error("Direct OpenAI API calls are disabled for security. Use Supabase edge functions instead.");
+  toast.error("Direct API calls disabled for security. Use proper backend integration.");
+  throw new Error("Direct OpenAI API calls disabled for security");
 }
 
 /**

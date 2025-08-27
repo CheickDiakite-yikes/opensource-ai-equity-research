@@ -15,35 +15,19 @@ import {
   NewsArticle
 } from "@/types";
 
-// API key from environment variable
-const API_KEY = "d4pXGs1r5epkkuckDZxOzSiG7DTd7BEg";
+// This file is deprecated for security reasons
+// API calls with keys should be made through Supabase edge functions
+// Keeping minimal functionality for backward compatibility
 const BASE_URL = "https://financialmodelingprep.com/api/v3";
 
 /**
  * Generic fetch function with error handling
  */
 async function fetchFromFMP<T>(endpoint: string): Promise<T> {
-  const url = `${BASE_URL}${endpoint}${endpoint.includes('?') ? '&' : '?'}apikey=${API_KEY}`;
-  
-  try {
-    const response = await fetch(url);
-    
-    if (!response.ok) {
-      throw new Error(`API error: ${response.status}`);
-    }
-    
-    const data = await response.json();
-    
-    // FMP returns an empty array for invalid requests
-    if (Array.isArray(data) && data.length === 0) {
-      console.warn(`No data returned from ${endpoint}`);
-    }
-    
-    return data;
-  } catch (error) {
-    console.error(`Error fetching ${endpoint}:`, error);
-    throw error; // Let the calling function handle the error
-  }
+  // This function is deprecated for security reasons
+  // Frontend should not make direct API calls with keys
+  console.error("Direct FMP API calls are disabled for security. Use Supabase edge functions instead.");
+  throw new Error("Direct API calls disabled for security");
 }
 
 /**
@@ -118,13 +102,10 @@ export async function getCompanyNews(symbol: string, limit: number = 10): Promis
 export async function searchStocks(query: string): Promise<StockQuote[]> {
   if (!query || query.length < 1) return [];
   
-  try {
-    return await fetchFromFMP<StockQuote[]>(`/search?query=${query}&limit=10`);
-  } catch (error) {
-    console.error(`Error searching for ${query}:`, error);
-    // Return empty array instead of throwing, so the UI can still show common tickers
-    return [];
-  }
+  // Direct FMP API calls disabled for security - search functionality
+  // should be implemented through Supabase edge functions if needed
+  console.warn("Direct FMP search disabled for security. Implement through edge function if needed.");
+  return [];
 }
 
 /**

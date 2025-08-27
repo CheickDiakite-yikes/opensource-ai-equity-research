@@ -11,80 +11,12 @@ import { callOpenAI, formatFinancialNumber } from "./apiUtils";
  * Generate an equity research report
  */
 export async function generateResearchReport(data: ReportRequest): Promise<ResearchReport> {
-  try {
-    const financialSummary = formatFinancialsForPrompt(
-      data.financials.income, 
-      data.financials.ratios
-    );
-    
-    // Format recent news
-    const recentNews = data.news.slice(0, 5).map(n => 
-      `- ${n.publishedDate}: ${n.title}`
-    ).join('\n');
-
-    // Build system prompt
-    const systemPrompt = `You are an expert equity research analyst at a top investment bank. 
-Generate a detailed, professional equity research report for ${data.companyName} (${data.symbol}). 
-The report should follow a standard Wall Street equity research format with these sections:
-
-1. Executive Summary: A brief overview of the company, recent performance, and investment recommendation
-2. Company Background: Information about the company's business model, products, and market position
-3. Industry Analysis: Analysis of the sector and industry trends, competitive landscape
-4. Financial Analysis: In-depth assessment of financial performance, trends, and projections
-5. Valuation: Detailed valuation methodology and price target calculation
-6. Investment Thesis: The core arguments for your recommendation
-7. Risk Factors: Key risks to your investment thesis and price target
-8. Outlook: Future outlook and catalysts
-
-Include a specific BUY, HOLD, or SELL recommendation and a 12-month price target.
-Provide specific, data-driven insights, not generic statements.
-Use a formal, professional tone throughout.
-Be precise about valuation metrics and methodologies.
-Base all analysis on the provided data.`;
-
-    // Build user prompt with company data
-    const userPrompt = `Generate an equity research report for:
-    
-Company: ${data.companyName} (${data.symbol})
-Sector: ${data.sector}
-Industry: ${data.industry}
-
-Description:
-${data.description}
-
-Current Stock Data:
-Price: $${data.stockData.price}
-Change: ${data.stockData.change > 0 ? '+' : ''}${data.stockData.change} (${data.stockData.changesPercentage > 0 ? '+' : ''}${data.stockData.changesPercentage}%)
-52-Week Range: $${data.stockData.yearLow} - $${data.stockData.yearHigh}
-Market Cap: ${formatFinancialNumber(data.stockData.marketCap)}
-P/E Ratio: ${data.stockData.pe ? data.stockData.pe.toFixed(2) : 'N/A'}
-
-${financialSummary}
-
-Recent News:
-${recentNews}
-
-Peer Companies: ${data.peers.join(', ')}
-
-Please provide a comprehensive equity research report based on this data. Structure it according to the standard sections and include a clear BUY/HOLD/SELL recommendation with a 12-month price target. The report should be detailed and professional, suitable for institutional investors.`;
-
-    // Call OpenAI API with reasoning effort instead of temperature
-    const completion = await callOpenAI([
-      { role: "system", content: systemPrompt },
-      { role: "user", content: userPrompt }
-    ], "high", 1500); // Using high reasoning effort and larger output for comprehensive reports
-
-    const reportText = completion.choices[0].message.content;
-    
-    // Parse the AI response into structured format
-    const report = parseResearchReport(reportText, data.symbol, data.companyName);
-    
-    return report;
-  } catch (error) {
-    console.error("Error generating research report:", error);
-    toast.error("Failed to generate research report");
-    throw error;
-  }
+  // This function is deprecated for security reasons
+  // Direct OpenAI API calls with hardcoded keys are disabled
+  // Use the proper edge function implementation in services/api/analysis/researchService.ts
+  console.error("Direct OpenAI research report generation is disabled for security. Use edge function implementation.");
+  toast.error("Direct API calls disabled for security. Use proper backend integration.");
+  throw new Error("Direct OpenAI API calls disabled for security");
 }
 
 /**
